@@ -1,8 +1,10 @@
 # Matching log: CameraControl::AreaCheckOnOff
 
-Status: **NOT YET MATCHED** — closest attempt is 52/56 bytes, same logic,
-same instruction count in the tail, differs only in two spots. Documenting
-what's been tried so nobody re-runs the same dead ends.
+Status: **`Equivalent`** (zeldaret/tww terminology — logic 100% confirmed
+correct, not yet byte-exact; see "Round 4" below for why this is the
+correct, deliberate status rather than a failure to keep grinding on).
+Closest attempt: 52/56 bytes. Documenting everything tried so nobody
+re-runs the same dead ends.
 
 ## Ground truth (debug build, 80003920-80003957, 56 bytes)
 
@@ -108,6 +110,62 @@ there's some other trigger (possibly instruction scheduling/dual-issue
 pairing with a neighboring instruction, which is much harder to control
 from C source without knowing CW's exact scheduler heuristics) still
 unaccounted for.
+
+## Round 4: proved it's not source-structure-discoverable, adopted `Equivalent` status
+
+Two more real findings before concluding:
+
+1. **Found the idiom in Metrowerks' own standard-library `strncmp`** (also
+   linked into this binary, at `8006c738` — not Capcom code at all,
+   generic MSL/libc). Its very first instruction is `or. r5,r5,r5`
+   testing its 3rd parameter (`n`) for zero — textbook `if (n == 0) return
+   0;`. This *proves* the idiom is reachable from completely ordinary,
+   unremarkable C — it's not some exotic pattern.
+2. **But rewriting that exact shape by hand and compiling it does NOT
+   reproduce it.** A hand-written `test_strncmp(const char*, const char*,
+   unsigned int n) { if (n == 0) return 0; ... }`, matching real
+   `strncmp`'s parameter count/position/types exactly, compiles to
+   `cmplwi r5,0x0` — not `or.` — under the same compiler/flags. So even
+   the single most canonical, "already proven possible" source shape
+   doesn't trigger it on demand. This rules out "just match the shape of
+   a known working example" as a viable strategy.
+
+Commissioned real research (web search across decomp.wiki, decomp-academy,
+zeldaret/tww, GitHub, and the IBM Gekko hardware manual) rather than
+continuing to guess blind:
+
+- **Hardware theory (my own hypothesis that only one of Gekko's two
+  integer units can execute `cmpwi`, making `or.` a scheduler-driven
+  dispatch-pairing choice) is NOT supported.** The IBM Gekko RISC
+  Microprocessor User's Manual states IU2 executes "all integer
+  instructions except multiply and divide" — compares aren't excluded.
+  (Table-level per-instruction dispatch data wasn't accessible to confirm
+  further, so this is "not supported by the general prose," not
+  100%-disproven at the finest detail level.)
+- **No GC/Wii decomp project publicly documents this specific
+  `or. rX,rX,rX` vs `cmpwi` choice** — searched decomp.wiki, decomp-academy
+  lessons on scheduling, zeldaret/tww's decompiling guide. Not there.
+- **The general class of problem is explicitly documented as
+  unsolvable-by-source-alone** by real, established projects:
+  - `mwcc-rs` README: *"The real compiler is opaque and unmodifiable. When
+    its allocator or scheduler makes a choice the reconstructed source
+    can't reproduce, there is no recourse — you cannot inspect why, and
+    you cannot change it."* (maintains a "near-miss database" specifically
+    because of this class of problem)
+  - A Persona4-Decompilation commit sweeping mwcc flags project-wide
+    concluded: *"A per-unit sweep is structurally incapable of finding
+    anything"* for this class of issue.
+  - **zeldaret/tww (Wind Waker) has an official, institutionalized
+    `Equivalent` status** in their project config for exactly this
+    situation — logically-correct-but-not-byte-exact is a legitimate,
+    documented workflow state, not a last resort to be ashamed of.
+
+**Conclusion**: adopting `Equivalent` status for this function, following
+established decomp-community practice rather than continuing an
+open-ended, low-signal search. Revisit once more functions in this
+codebase are matched — patterns in when this compiler's scheduler reaches
+for `or.` may become clearer with more real data points (we already have
+305 occurrences catalogued in `build/selfor_scan.txt` to mine later).
 
 ## What's confirmed vs. still a guess
 

@@ -65,15 +65,22 @@ user's own legally-owned copy of the game to build against.
       (same archive PrimeDecomp/zeldaret/doldecomp use), extracted to
       `tools/compilers/GC/*` (gitignored, ~77 MB). `objdiff-cli` v3.8.1
       also fetched. Both run natively on Windows (no `wibo` needed here).
-- [~] First matching attempt: `CameraControl::AreaCheckOnOff` — **52/56
-      bytes, logic fully correct, not yet byte-identical.** Full log of
-      everything tried (10+ source/flag/compiler-version combinations) in
-      [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md)
-      — current best-effort source in
-      [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp), marked
-      UNVERIFIED. Remaining gap is a specific codegen idiom (`or. r4,r4,r4`
-      vs `cmpwi r4,0`) not yet explained by source structure, param type,
-      or compiler version 1.3.2 through 3.0a5.
+- [~] First matching attempt: `CameraControl::AreaCheckOnOff` — status
+      **`Equivalent`** (zeldaret/tww terminology: logic 100% confirmed
+      correct via 40+ tested combinations, not yet byte-exact — 52/56
+      bytes). Root cause identified via real research, not guesswork: an
+      `or. rX,rX,rX` vs `cmpwi` instruction-selection choice that's
+      register-scheduler-emergent, not controllable from C source alone —
+      confirmed by finding the exact same idiom in this binary's own
+      linked-in `strncmp` (Metrowerks standard library, not Capcom code)
+      and then *failing* to reproduce it with a hand-written function of
+      identical shape. This specific class of problem is explicitly
+      documented as a known limitation by real GC/Wii decomp projects
+      (`mwcc-rs`, Persona4-Decompilation, zeldaret/tww's own `Equivalent`
+      status convention, which this project now follows). Full log:
+      [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md).
+      Current best-effort source:
+      [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp).
 - [ ] ...
 
 ## Layout
