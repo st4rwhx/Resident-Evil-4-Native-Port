@@ -52,21 +52,38 @@ support. Need both:
   spec, covers Gekko-specific instructions (paired-singles, `dcbz_l`) that
   Ghidra's stock PowerPC support doesn't model correctly
 
-## 4. The retail compiler — Metrowerks CodeWarrior for GCN — STATUS: not yet obtained
+## 4. The retail compiler — Metrowerks CodeWarrior for GCN — STATUS: identified, not yet fetched (pending go-ahead)
 
-We don't have this yet — flagging clearly rather than sourcing it silently,
-since (like the debug prototype disc) this isn't something freely
-redistributable: it was Nintendo-licensed devkit software, not public
-software. Unlike the retail ISO (dumped from the user's own copy), there's
-no equivalent "I own a legal copy" story for a devkit compiler unless the
-user actually has GameCube devkit/CodeWarrior IDE access from back in the
-day. In practice, the established GC/Wii decomp community (Metroid Prime,
-Melee, Paper Mario, etc.) has settled on a specific known-good CodeWarrior
-build that gets fetched during CI/setup from community-maintained mirrors
-made for exactly this purpose — worth checking how those projects document
-obtaining it (their `setup.py`/build docs usually say exactly where from)
-before assuming it's off-limits. This needs a decision with the user before
-fetching anything, same as the debug disc was.
+Researched 2026-09-10 how established GC/Wii decomp projects actually get
+this compiler. Confirmed (not inferred) by reading their actual repo
+source, not just READMEs:
+
+- `PrimeDecomp/prime`, `zeldaret/tp` (Twilight Princess), and
+  `doldecomp/melee` all use the same `tools/download_tool.py`, sourced from
+  the standard project template `encounter/dtk-template`
+  (https://github.com/encounter/dtk-template). It's invoked automatically
+  by `configure.py` + `ninja` as a build-graph rule — no manual step.
+- That script fetches `https://files.decomp.dev/compilers_<dated-tag>.zip`
+  — a single dated archive containing every supported GC/Wii compiler
+  version (organized `GC/2.7`, etc.), maintained by the same person
+  (`encounter`/Luke Street) who maintains `decomp-toolkit` itself.
+- This is the **same archive** that backs decomp.me's own public compiler
+  sandbox (`decompme/compilers`,
+  https://github.com/decompme/compilers/blob/main/platforms/gc_wii/mwcc_247_108/Dockerfile
+  pulls the identical URL pattern). It's open community infrastructure,
+  not a leaked/hidden file — used openly in these projects' public CI logs.
+- **Not found anywhere**: any explicit legal/licensing statement from these
+  projects about redistributing CodeWarrior this way. It's presented as a
+  silent engineering convenience, with no disclaimer either way. Noting
+  this plainly rather than assuming it's fine — worth a conscious decision,
+  not a silent download, before we pull from it here.
+- **Version for RE4 GC specifically: not confirmed anywhere** (no existing
+  decomp effort to check against). By era, GC titles cluster around
+  `mwcc_233_1xx` (~2001-2002 launch titles), `mwcc_242_xx` (~2004-2005,
+  RE4's era — best guess, unverified), `mwcc_247_1xx` (~2006+, Wii-era e.g.
+  Twilight Princess GC uses this per its config). Needs empirical
+  confirmation — try compiling a known function and see which version
+  produces byte-identical output.
 
 Once obtained: byte-matching requires building with the *actual* compiler
 Capcom used (`mwcceppc.exe`), not a modern GCC/Clang cross-compiler —
