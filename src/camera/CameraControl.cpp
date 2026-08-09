@@ -46,6 +46,21 @@ void CameraControl::Disable()
     mFlags = flags | 0x8;
 }
 
+// --- Matching status: Equivalent ---
+// 80003898-800038af, 24 bytes / 6 instructions:
+//   lwz r0,0x30(r3); li r3,1; andi. r9,r0,0x2; bnelr; li r3,0; blr
+// Tried: "(flags&2)!=0", "if(flags&2) return true; return false;", ternary
+// "(flags&2)?true:false" - every form produces a DIFFERENT boolean-
+// canonicalization sequence (extrwi bitfield-extract at -opt on/all;
+// rlwinm+cmplwi+beq/li at -opt off; subic+subfe branchless-compare trick
+// for the ternary) but never target's specific andi.-record-bit +
+// fused-bnelr + prefetched-li idiom. Same category as AreaCheckOnOff -
+// moving on rather than continuing to guess boolean-conversion phrasings.
+bool CameraControl::IsChangeCamera()
+{
+    return (mFlags2 & 0x2) != 0;
+}
+
 // --- Matching status: MATCHED (byte-identical, verified against ground truth) ---
 // 80003964-8000396f, 12 bytes / 3 instructions: lbz r3,0x690(r3); extsb r3,r3; blr
 s32 CameraControl::CurrentAreaNo()
@@ -58,4 +73,31 @@ s32 CameraControl::CurrentAreaNo()
 s32 CameraControl::CurrentCameraNo()
 {
     return mCurrentCameraNo;
+}
+
+// --- Matching status: Equivalent (see docs/matching/CameraControl_pointers.md) ---
+// 80003958-80003963, 12 bytes / 3 instructions:
+//   lwz r9,0x5c(r3); lbz r3,0x5(r9); blr
+// Compiles to the same 3 instructions/order/opcodes but keeps the loaded
+// pointer in r3 (reused) instead of moving it to r9 like the target does.
+u8 CameraControl::AreaNum()
+{
+    return mAreaDataPtr->num;
+}
+
+// --- Matching status: Equivalent (see docs/matching/CameraControl_pointers.md) ---
+// 80008fd0-80008fdb, 12 bytes / 3 instructions:
+//   lwz r9,0x68c(r3); stw r4,0x1d0(r9); blr
+// Same story as AreaNum: r3 reused here instead of moved to r9.
+void CameraControl::setMotionBaseMatPtr(void* mat)
+{
+    mMotionBase->matPtr = mat;
+}
+
+// --- Matching status: MATCHED (byte-identical, verified against ground truth) ---
+// 80008fdc-80008fe7, 12 bytes / 3 instructions:
+//   lwz r3,0x68c(r3); addi r3,r3,0x100; blr
+void* CameraControl::getMotionInfoPtr()
+{
+    return mMotionBase->unk_100;
 }

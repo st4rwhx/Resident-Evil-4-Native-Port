@@ -81,12 +81,21 @@ user's own legally-owned copy of the game to build against.
       [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md).
       Current best-effort source:
       [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp).
-- [x] **First byte-perfect matches**: `CameraControl::CurrentAreaNo` and
-      `CameraControl::CurrentCameraNo` (both 12 bytes / 3 instructions)
-      compile to output **byte-identical** to the debug binary, confirmed
-      against Ghidra-dumped raw bytes instruction-by-instruction. First
-      real proof the full pipeline (Ghidra ground truth → hand-written
-      C++ → real CodeWarrior compile → verified match) works end to end.
+- [x] **Byte-perfect matches (4 so far)**: `CameraControl::CurrentAreaNo`,
+      `CurrentCameraNo`, `getMotionInfoPtr` — all confirmed byte-identical
+      against Ghidra-dumped ground truth. First real proof the full
+      pipeline (Ghidra ground truth → hand-written C++ → real CodeWarrior
+      compile → verified match) works end to end.
+- [x] **`Equivalent` (logic/instructions/order confirmed correct, register
+      numbering doesn't match)**: `AreaCheckOnOff`, `Disable`,
+      `IsChangeCamera`, `AreaNum`, `setMotionBaseMatPtr`. A real pattern
+      is emerging across these — see
+      [docs/matching/CameraControl_pointers.md](docs/matching/CameraControl_pointers.md)
+      "A real, reproducible pattern" section: register reuse vs. fresh-
+      register allocation seems to depend on whether a loaded value is
+      used as an arithmetic operand (reused) vs. as the base address of a
+      *second* memory access (fresh register in the target, but not
+      reproducible from our source so far).
 - [ ] ...
 
 ## Layout
