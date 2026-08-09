@@ -24,6 +24,51 @@ the legal concern clean-room exists for — the repo never contains Capcom's
 binary or assets, only tooling + reconstructed source that requires the
 user's own legally-owned copy of the game to build against.
 
+## Progress — where this project actually is
+
+Run `python tools/scripts/progress_report.py` for current numbers (source
+of truth: `config/progress.yaml`, updated every time a function's status
+changes). As of the last update:
+
+```
+Main DOL: 10383 named functions, 2,199,665 bytes of function bodies
+Matched (byte-identical):         3 fns  (0.029% of fn count, 0.00164% of code bytes)
+Equivalent (logic-verified only): 5 fns  (0.048% of fn count, 0.00582% of code bytes)
+Not yet started:              10375 fns  (99.923%)
+```
+
+**Read that plainly: we are at the very start of Phase 1, not close to
+"done."** Every function tackled so far was deliberately picked because it
+was small and simple, to validate the pipeline and build a track record —
+this is not a representative sample of the codebase's difficulty. For
+calibration: Metroid Prime's decomp (`PrimeDecomp`, an actively maintained
+project with many contributors over several years) was measured at
+~56.5% matched via `decomp.dev` when first researched for this project
+(see [docs/RESEARCH.md](docs/RESEARCH.md)) — years of sustained multi-
+contributor effort to get roughly half done, on a comparable-era GameCube
+title. Nobody should read the numbers above as "8% done" or "close" — read
+them as "the toolchain and methodology are proven correct; the actual work
+of matching ~10,000 functions has barely begun."
+
+### The two separate phases — don't conflate them
+
+1. **Phase 1 (where we are): decompile the original GameCube game.**
+   Recover C/C++ source for the ~10,383 functions in the main DOL (plus
+   everything in the 11 REL modules) until it matches Capcom's actual
+   binary, function by function. This alone is a multi-year undertaking
+   at any realistic solo or small-team pace — see
+   [docs/METHODOLOGY.md](docs/METHODOLOGY.md) "Realistic expectations."
+   **Nothing runs on Windows yet, and nothing will until a meaningful
+   fraction of this phase is done** — a "port" needs real source to port.
+2. **Phase 2 (not started): port the matched source to native Windows.**
+   Once enough of the engine is matched and understood, swap GX (graphics)
+   calls for Direct3D/Vulkan, the GameCube audio HW/DSP calls for
+   XAudio2/WASAPI, `OSReport`/thread/memory calls for Win32 equivalents,
+   etc. — a real, substantial engineering project in its own right, done
+   against source we can actually read and trust rather than raw assembly.
+   This hasn't begun and can't usefully begin until Phase 1 has real
+   coverage of the systems being ported (rendering, audio, input, etc.).
+
 ## Status
 
 - [x] Legally-dumped GameCube ISO of RE4 obtained and hashed against known
@@ -81,7 +126,7 @@ user's own legally-owned copy of the game to build against.
       [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md).
       Current best-effort source:
       [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp).
-- [x] **Byte-perfect matches (4 so far)**: `CameraControl::CurrentAreaNo`,
+- [x] **Byte-perfect matches (3 so far)**: `CameraControl::CurrentAreaNo`,
       `CurrentCameraNo`, `getMotionInfoPtr` — all confirmed byte-identical
       against Ghidra-dumped ground truth. First real proof the full
       pipeline (Ghidra ground truth → hand-written C++ → real CodeWarrior

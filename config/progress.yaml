@@ -1,0 +1,40 @@
+# Function-by-function matching ledger for the main DOL.
+# Status values: matched (byte-identical, verified), equivalent (logic
+# confirmed correct via hand-tracing + compile, not yet byte-exact),
+# not_started.
+#
+# This is the source of truth `tools/scripts/progress_report.py` reads to
+# compute the honest completion percentage in README.md - update this file
+# whenever a function's status changes, the README number is derived, not
+# hand-maintained.
+
+total_functions_main_dol: 10383  # config/symbols/Bio4.dolphin.map, header line excluded
+total_symbol_lines_all_modules: 25974  # every .dolphin.map in config/symbols/, 123 modules total
+total_ghidra_functions_main_dol: 7471  # actual distinct Function objects Ghidra recognizes (some symbols are labels/thunks, not separate functions)
+total_function_body_bytes_main_dol: 2199665  # sum of every function's body size - the honest metric, since one big function outweighs dozens of tiny ones
+
+functions:
+  - name: CameraControl::CurrentAreaNo
+    status: matched
+    bytes: 12
+  - name: CameraControl::CurrentCameraNo
+    status: matched
+    bytes: 12
+  - name: CameraControl::getMotionInfoPtr
+    status: matched
+    bytes: 12
+  - name: CameraControl::AreaCheckOnOff
+    status: equivalent
+    bytes: 56
+  - name: CameraControl::Disable
+    status: equivalent
+    bytes: 24
+  - name: CameraControl::IsChangeCamera
+    status: equivalent
+    bytes: 24
+  - name: CameraControl::AreaNum
+    status: equivalent
+    bytes: 12
+  - name: CameraControl::setMotionBaseMatPtr
+    status: equivalent
+    bytes: 12
