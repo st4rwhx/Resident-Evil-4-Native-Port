@@ -77,6 +77,19 @@ mirrored at https://www.retroreversing.com/gamecube-debug-symbols).
   extract that disc's filesystem and look for `Bio4.*.SYM` files directly,
   the same way we extracted the retail DOL.
 
+**Which specific prototype — resolved (2026-09-10)**: there are at least two
+distinct GameCube "Debug" builds, not one:
+- **"Resident Evil 4 - Debug Disc 1" (2004-11-25, DOL timestamp
+  10:19:49)** — full game, ~1.4 GB ISO. Hidden Palace's own page for this
+  exact prototype states directly: *"Includes debugging symbols for the
+  main executable and overlays (function names only), can be extracted
+  with re4sym tool."* (https://hiddenpalace.org/Resident_Evil_4_(Nov_25,_2004_prototype))
+  — **this is source-confirmed as the target build**, not a guess. A Disc 2
+  from the same prototype may also exist (passing mention only, unverified).
+- **"Debug E3" (2004-09-02)** — much smaller (144.8 MB), E3-demo scale.
+  No confirmation either way that it carries SYM data; likely a stripped
+  show build. Not the target.
+
 **Important distinction from the retail ISO**: the retail disc we're
 building against is something the user dumped from their own legally
 purchased copy — clean legal footing. A *debug/prototype build* was never
