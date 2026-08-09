@@ -1,0 +1,7 @@
+Pl12Init 0x80000000
+cSubAda::cSubAda 0x80000060
+cSubAda::modelSet 0x800000b4
+_prolog 0x8000013c
+_epilog 0x80000150
+_unresolved 0x80000154
+cSubAda::~cSubAda 0x80000158

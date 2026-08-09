@@ -99,6 +99,47 @@ for archival/research purposes, but "own a legit copy" doesn't apply the
 same way here. Whether to pursue this path is the user's call, not
 something to grab automatically.
 
+## Symbols obtained — 2026-09-10
+
+User supplied "Resident Evil 4 Debug (Disc 1).iso" (1.36 GB, raw ISO, not
+Redump-verifiable since it's an unreleased prototype — that's expected).
+Extracted with `dtk disc extract`. Found **123 `Bio4.*.sym` files** at
+`files/` root of the debug disc, confirming Hidden Palace's documentation.
+Ran `re4sym` (from `JaderLink/re4-research_build-1.3a/`, confirmed to be
+emoose's real tool) on all of them.
+
+Results copied into `config/symbols/*.dolphin.map` and `*.ghidra.txt`
+(2.0 MB total, 246 files — kept in the repo, not gitignored, since this is
+derived name/address metadata, not the binary/ISO itself; this matches
+established practice in other GC/N64 decomp communities that have
+recovered leaked debug symbol data, e.g. Melee, Perfect Dark).
+
+- `Bio4.sym` (main DOL): **10,383 symbols**, real demangled C++
+  `Class::Method` names (e.g. `CameraControl::HermiteExport`,
+  `CameraControl::AreaCheckOnOff`) — confirms the engine is written in C++
+  with a fairly conventional OOP structure (per-system classes:
+  `CameraControl` and presumably similarly for player/enemy/weapon
+  systems).
+- Every retail REL (`Sscrn`, `st1_0..3`, `st2_0..4`, `st4_0`) has a
+  matching `.sym` — direct 1:1 coverage for the modules we already
+  extracted from retail.
+- **Bonus beyond what emoose's README described**: dozens of additional
+  `em*` (enemy behavior), `pl*` (player behavior), `wep*` (weapon), and
+  `t_*` (camera/event/light/scene tool) modules also ship symbols on the
+  debug disc — ~25,974 symbol lines total across everything. These appear
+  to be additional overlay modules used during development (possibly
+  debug-only, or stripped/merged differently in the retail RELs) —
+  need to check the debug disc's own `files/Rel/` folder to see if these
+  exist as loadable `.rel` files there too, separate from the 11 retail
+  ones.
+
+**Not yet solved**: the debug `main.dol` is 2.55 MB vs retail's 2.17 MB —
+different code layout (extra debug/assert code, presumably), so these
+symbol *addresses* don't transfer directly onto the retail DOL. The
+*names* should still be highly reusable once functions are matched between
+the two builds (same engine, same era) — this reconciliation step is the
+next real technical challenge, not a solved problem yet.
+
 ## Open questions to resolve once the ISO is available
 
 1. Does the GC retail disc's filesystem actually match the formats above,

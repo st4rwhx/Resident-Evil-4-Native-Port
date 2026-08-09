@@ -36,11 +36,21 @@ user's own legally-owned copy of the game to build against.
       `sys/main.dol` (2.17 MB, SHA-1 `5aa53851...`) + 11 REL modules in
       `files/Rel/` (`Sscrn.rel`, `st1_0..3.rel`, `st2_0..4.rel`, `st4_0.rel`
       — one module per stage/chapter, loaded over the main DOL)
-- [ ] Symbol map imported (emoose/re4-research SYM data, if recoverable —
-      see [docs/RESEARCH.md](docs/RESEARCH.md)) — **blocking real analysis**:
-      `dtk dol info` already fails with overlapping-function errors around
-      `0x8005C2E0` when run with no symbols, confirming naive auto-analysis
-      isn't reliable on optimized CodeWarrior output
+- [x] Symbol map recovered — obtained the "Debug Disc 1" (2004-11-25)
+      GameCube prototype, extracted it, found 123 `Bio4.*.sym` files
+      (confirmed genuine: Hidden Palace explicitly documents this exact
+      prototype as containing them), ran `re4sym` on all of them.
+      **10,383 symbols** for the main executable alone (real C++
+      `Class::Method` names, e.g. `CameraControl::HermiteExport`), plus
+      full symbol coverage for every REL overlay *and* dozens of
+      enemy/player/weapon/UI overlay modules not present on the retail
+      disc at all (~25,974 symbol lines total). Exported as Dolphin `.map`
+      + Ghidra import scripts in `config/symbols/`.
+- [ ] Reconcile debug-build addresses/symbols against the retail DOL (debug
+      main.dol is 2.55 MB vs retail's 2.17 MB — different layout, so
+      addresses won't line up 1:1; names should still transfer function-by-
+      function once matched)
+- [ ] Ghidra set up with GameCube loader + symbols imported
 - [ ] First function matched
 - [ ] ...
 

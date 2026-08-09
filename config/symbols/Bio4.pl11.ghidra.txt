@@ -1,0 +1,11 @@
+Pl11Init 0x80000000
+cSubAshley::cSubAshley 0x80000060
+cSubAshley::modelSet 0x800000ec
+cSubAshley::setFace 0x8000024c
+cSubAshley::setHand 0x80000328
+_prolog 0x80000474
+_epilog 0x80000488
+_unresolved 0x8000048c
+cSubAshley::~cSubAshley 0x80000490
+cSubAshley::initCloth 0x800004b4
+cSubAshley::moveCloth 0x800004f0

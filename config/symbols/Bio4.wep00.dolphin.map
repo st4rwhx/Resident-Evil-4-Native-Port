@@ -1,0 +1,16 @@
+.text section layout
+80500000 Wep00_init
+8050007c Wep00_move
+80500080 equipWeapon
+8050016c ObjHand_init
+805001a4 cObjHand::setMotion
+80500434 _prolog
+80500490 _epilog
+805004a0 _unresolved
+805004a4 cManager_cObj_::countActiveWork
+80500560 cManager_cObj_::createBack
+805006d0 cUnit::beginEvent
+805006d4 cUnit::endEvent
+805006d8 cObjHand::~cObjHand
+805006f8 cUnit::~cUnit
+80500740 cUnit::operator_delete

@@ -1,0 +1,8 @@
+R004Init 0x80000000
+R004Main 0x80000b70
+SetTexRender 0x80000d3c
+set 0x80000e50
+setTbl 0x80000e70
+_prolog 0x80000ea4
+_epilog 0x80000f08
+_unresolved 0x80000f68

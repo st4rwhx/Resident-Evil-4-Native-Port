@@ -1,0 +1,6 @@
+.text section layout
+80500000 Wep03_init
+80500004 Wep03_move
+80500008 _prolog
+80500064 _epilog
+80500068 _unresolved

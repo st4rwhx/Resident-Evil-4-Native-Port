@@ -1,0 +1,9 @@
+.text section layout
+80500000 R004Init
+80500b70 R004Main
+80500d3c SetTexRender
+80500e50 set
+80500e70 setTbl
+80500ea4 _prolog
+80500f08 _epilog
+80500f68 _unresolved

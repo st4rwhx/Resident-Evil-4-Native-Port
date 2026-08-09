@@ -1,0 +1,23 @@
+.text section layout
+80500000 _prolog
+8050003c _epilog
+80500040 _unresolved
+80500044 Em30Init
+8050007c em30DmCk
+805001f4 cEm30::move
+805002cc em30_R0_Init
+805006e0 em30_R0_Move
+80500718 em30_R1_Wait
+805007d8 em30_R1_Walk
+805008c4 em30_R0_Damage
+8050090c em30_R1_Dm_Normal
+805009bc em30_R0_Die
+80500a04 em30_R1_Die_Normal
+80500b54 em30RouteCk
+80500cc4 em30NeckMove
+80500dc0 em30SetParasite
+805011b4 cUnit::beginEvent
+805011b8 cUnit::endEvent
+805011bc cEm30::~cEm30
+805011dc cUnit::~cUnit
+80501224 cUnit::operator_delete

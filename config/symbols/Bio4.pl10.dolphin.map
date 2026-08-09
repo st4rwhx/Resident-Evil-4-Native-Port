@@ -1,0 +1,11 @@
+.text section layout
+80500000 Pl10Init
+80500060 cSubLeon::cSubLeon
+8050009c cSubLeon::modelSet
+805000a0 cSubLeon::setHand
+805000a4 _prolog
+805000b8 _epilog
+805000bc _unresolved
+805000c0 cSubLeon::~cSubLeon
+805000e4 cSubLeon::initCloth
+8050011c cSubLeon::moveCloth

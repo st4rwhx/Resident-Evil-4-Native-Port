@@ -1,0 +1,21 @@
+.text section layout
+80500000 cPlHunk::cPlHunk
+805000b4 cPlHunk::setMotion
+8050020c cPlHunk::move
+8050022c cPlHunk::setModel
+805003b0 cPlHunk::setRightHand
+805004c0 cPlHunk::setLeftHand
+805005f0 cPlHunk::setFace
+805005f4 cPlHunk::setHead
+80500678 cPlHunk::setHead_0
+805006f0 Pl06Init
+80500710 _prolog
+8050074c _epilog
+80500750 _unresolved
+80500754 cPlHunk::~cPlHunk
+80500774 cPlHunk::initCloth
+80500778 cPlHunk::moveCloth
+8050077c cUnit::~cUnit
+805007c4 cUnit::beginEvent
+805007c8 cUnit::endEvent
+805007cc cUnit::operator_delete

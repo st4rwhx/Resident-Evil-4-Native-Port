@@ -1,0 +1,15 @@
+_prolog 0x80000000
+_epilog 0x8000003c
+_unresolved 0x80000040
+Pl03Init 0x80000044
+cPl03::move 0x8000007c
+pl03_R0_Init 0x80000100
+pl03_R0_Move 0x80000274
+pl03_R1_Wait 0x800002ac
+pl03_R1_Walk 0x80000358
+pl03RouteCk 0x80000438
+cUnit::beginEvent 0x800005a8
+cUnit::endEvent 0x800005ac
+cPl03::~cPl03 0x800005b0
+cUnit::~cUnit 0x800005d0
+cUnit::operator_delete 0x80000618

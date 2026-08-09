@@ -1,0 +1,27 @@
+.text section layout
+80500000 _prolog
+8050003c _epilog
+80500040 _unresolved
+80500044 Em18Init
+8050007c em18DmCk
+80500180 em18BloodSet
+80500264 cEm18::move
+80500328 em18_R0_Init
+80500764 em18_R0_Move
+8050079c em18_R1_Wait
+80500830 em18_R1_Trade
+80500afc em18ActEvtSetTrade
+80500c94 em18TradeAction
+80500d1c em18_R0_Damage
+80500d64 em18_R1_Dm_Normal
+80500e14 em18_R0_Die
+80500e5c em18_R1_Die_Normal
+80500fb4 em18NeckMove
+805010b0 em18ClothPartsSet
+80501158 em18GoodsPartsSet
+805011f4 em18HandSet
+805012d4 cUnit::beginEvent
+805012d8 cUnit::endEvent
+805012dc cEm18::~cEm18
+805012fc cUnit::~cUnit
+80501344 cUnit::operator_delete

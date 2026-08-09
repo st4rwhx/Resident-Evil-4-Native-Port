@@ -1,0 +1,12 @@
+.text section layout
+80500000 Pl11Init
+80500060 cSubAshley::cSubAshley
+805000ec cSubAshley::modelSet
+8050024c cSubAshley::setFace
+80500328 cSubAshley::setHand
+80500474 _prolog
+80500488 _epilog
+8050048c _unresolved
+80500490 cSubAshley::~cSubAshley
+805004b4 cSubAshley::initCloth
+805004f0 cSubAshley::moveCloth

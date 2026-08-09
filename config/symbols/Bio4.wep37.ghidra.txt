@@ -1,0 +1,15 @@
+Wep37_init 0x80000000
+Wep37_move 0x8000007c
+equipWeapon 0x80000080
+ObjHand_init 0x8000015c
+cObjHand::setMotion 0x80000194
+_prolog 0x800003c0
+_epilog 0x8000041c
+_unresolved 0x8000042c
+cManager_cObj_::countActiveWork 0x80000430
+cManager_cObj_::createBack 0x800004ec
+cUnit::beginEvent 0x8000065c
+cUnit::endEvent 0x80000660
+cObjHand::~cObjHand 0x80000664
+cUnit::~cUnit 0x80000684
+cUnit::operator_delete 0x800006cc
