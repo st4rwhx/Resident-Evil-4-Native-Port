@@ -1,0 +1,27 @@
+# NEVER commit the original game data. This repo must only ever contain
+# tooling + reconstructed source, never Capcom's copyrighted assets/binary.
+*.iso
+*.gcm
+*.gcz
+*.rvz
+*.dol
+*.rel
+*.lfs
+*.udas
+*.das
+/orig/
+/baserom*/
+/assets/
+
+# Build artifacts
+/build/*
+!/build/.gitkeep
+
+# Toolchain downloads (Ghidra, wibo, CodeWarrior, decomp-toolkit binaries)
+/tools/*
+!/tools/.gitkeep
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
