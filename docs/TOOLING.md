@@ -4,6 +4,24 @@ Nothing here is installed yet — this is the checklist for when we start.
 None of these tools require the ISO to install; only using them on real
 game data does.
 
+## Build note: MSVC vs GNU on this machine
+
+This machine has no Visual Studio Build Tools installed, so a plain
+`cargo install` fails during linking (`link.exe` either resolves to Git
+Bash's own `link` utility, which isn't the MSVC linker, or isn't found at
+all — don't chase either of those, they're the same underlying problem).
+Fix used: install a fully GNU-hosted Rust toolchain instead of pulling in
+several GB of VS Build Tools —
+
+```
+rustup toolchain install stable-x86_64-pc-windows-gnu
+cargo +stable-x86_64-pc-windows-gnu install --git <repo> --locked
+```
+
+This applies to any Rust tool installed for this project (`dtk`, `objdiff`,
+etc.) — always use the `+stable-x86_64-pc-windows-gnu` toolchain override
+when running `cargo install` here.
+
 ## 1. decomp-toolkit (dtk-rs)
 
 https://github.com/encounter/decomp-toolkit — Rust CLI, install via

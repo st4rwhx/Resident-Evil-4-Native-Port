@@ -26,12 +26,21 @@ user's own legally-owned copy of the game to build against.
 
 ## Status
 
-- [ ] Legally-dumped GameCube ISO of RE4 obtained and hashed against known
-      good dumps (Redump.org) — **blocking everything else**
-- [ ] Toolchain installed (see [docs/TOOLING.md](docs/TOOLING.md))
-- [ ] DOL/REL/filesystem extracted and split
+- [x] Legally-dumped GameCube ISO of RE4 obtained and hashed against known
+      good dumps — verified as a clean Redump match: "Resident Evil 4
+      (USA) (Disc 1)", CRC32 `f5c51b40`, SHA-1 `9de89c7f...`
+- [x] Toolchain installed (see [docs/TOOLING.md](docs/TOOLING.md)) —
+      `decomp-toolkit` (`dtk`) built from source via the GNU Rust toolchain
+      (no MSVC Build Tools on this machine; see TOOLING.md note)
+- [x] DOL/REL/filesystem extracted (`orig/disc1/`, gitignored) —
+      `sys/main.dol` (2.17 MB, SHA-1 `5aa53851...`) + 11 REL modules in
+      `files/Rel/` (`Sscrn.rel`, `st1_0..3.rel`, `st2_0..4.rel`, `st4_0.rel`
+      — one module per stage/chapter, loaded over the main DOL)
 - [ ] Symbol map imported (emoose/re4-research SYM data, if recoverable —
-      see [docs/RESEARCH.md](docs/RESEARCH.md))
+      see [docs/RESEARCH.md](docs/RESEARCH.md)) — **blocking real analysis**:
+      `dtk dol info` already fails with overlapping-function errors around
+      `0x8005C2E0` when run with no symbols, confirming naive auto-analysis
+      isn't reliable on optimized CodeWarrior output
 - [ ] First function matched
 - [ ] ...
 
