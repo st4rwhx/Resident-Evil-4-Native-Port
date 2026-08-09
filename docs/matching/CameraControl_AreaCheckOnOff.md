@@ -81,6 +81,34 @@ type, and every available compiler version (1.3.2 through 3.0a5, 8
 versions total, all tested, all producing pixel-identical output to each
 other for a given source on this function).
 
+## Round 3: found the idiom elsewhere, still can't reproduce it
+
+Scanned the *entire* debug binary (`tools/scripts/ScanSelfOrIdiom.java`,
+549,933 instructions) for the same `or. rX,rX,rX` self-OR idiom. **Not
+rare — 305 occurrences**, several at function entry just like ours (e.g.
+`CameraControl::getAttachModel+0x0`, `CameraControl::getAttachCamera+0x0`,
+`Ctrl12Set+0x0`, `Ctrl12CntAdd+0x0`). So this is a real, recurring
+compiler behavior in this codebase, not a one-off — confirms it's worth
+continuing to chase rather than a red herring.
+
+Studied `CameraControl::getAttachModel` closely (also a member function
+testing its second parameter, same as us) — full disassembly in
+`build/getattachmodel_ref.txt`. Its `or. r4,r4,r4` / `bne` opens the
+function, and critically: **r4 (the tested parameter) gets read again
+later**, inside a loop in the `else` branch (`cmpw r4,r0` at
+`+0x48`). That's a real, testable hypothesis: `or.` shows up when the
+compiler's scheduler/allocator sees the tested register will be needed
+again later in the function, vs `cmpwi` for a "last use" compare.
+
+**Doesn't fully explain our case though**: `AreaCheckOnOff`'s `mode` (r4)
+*is* read again too (the second `cmpwi r4,0x1` check), and yet all our
+attempts using this exact shape still produce `cmpwi` not `or.` for the
+first check. So "register reused later" is necessary but not sufficient —
+there's some other trigger (possibly instruction scheduling/dual-issue
+pairing with a neighboring instruction, which is much harder to control
+from C source without knowing CW's exact scheduler heuristics) still
+unaccounted for.
+
 ## What's confirmed vs. still a guess
 
 - Confirmed: the mFlags/offset-0x2c logic, the bit manipulation, the
