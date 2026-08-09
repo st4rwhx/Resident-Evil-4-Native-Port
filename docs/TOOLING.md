@@ -52,10 +52,25 @@ support. Need both:
   spec, covers Gekko-specific instructions (paired-singles, `dcbz_l`) that
   Ghidra's stock PowerPC support doesn't model correctly
 
-## 4. The retail compiler — Metrowerks CodeWarrior for GCN
+## 4. The retail compiler — Metrowerks CodeWarrior for GCN — STATUS: not yet obtained
 
-Byte-matching requires building with the *actual* compiler Capcom used
-(`mwcceppc.exe`), not a modern GCC/Clang cross-compiler — CodeWarrior's
+We don't have this yet — flagging clearly rather than sourcing it silently,
+since (like the debug prototype disc) this isn't something freely
+redistributable: it was Nintendo-licensed devkit software, not public
+software. Unlike the retail ISO (dumped from the user's own copy), there's
+no equivalent "I own a legal copy" story for a devkit compiler unless the
+user actually has GameCube devkit/CodeWarrior IDE access from back in the
+day. In practice, the established GC/Wii decomp community (Metroid Prime,
+Melee, Paper Mario, etc.) has settled on a specific known-good CodeWarrior
+build that gets fetched during CI/setup from community-maintained mirrors
+made for exactly this purpose — worth checking how those projects document
+obtaining it (their `setup.py`/build docs usually say exactly where from)
+before assuming it's off-limits. This needs a decision with the user before
+fetching anything, same as the debug disc was.
+
+Once obtained: byte-matching requires building with the *actual* compiler
+Capcom used (`mwcceppc.exe`), not a modern GCC/Clang cross-compiler —
+CodeWarrior's
 codegen/optimizer quirks are exactly what we're trying to reproduce.
 Standard approach in every GC/Wii decomp project: run the real
 `mwcceppc.exe` through **wibo** (https://github.com/decompals/wibo), a
