@@ -81,6 +81,12 @@ user's own legally-owned copy of the game to build against.
       [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md).
       Current best-effort source:
       [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp).
+- [x] **First byte-perfect matches**: `CameraControl::CurrentAreaNo` and
+      `CameraControl::CurrentCameraNo` (both 12 bytes / 3 instructions)
+      compile to output **byte-identical** to the debug binary, confirmed
+      against Ghidra-dumped raw bytes instruction-by-instruction. First
+      real proof the full pipeline (Ghidra ground truth → hand-written
+      C++ → real CodeWarrior compile → verified match) works end to end.
 - [ ] ...
 
 ## Layout
