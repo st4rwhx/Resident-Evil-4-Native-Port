@@ -17,9 +17,12 @@
 /build/*
 !/build/.gitkeep
 
-# Toolchain downloads (Ghidra, wibo, CodeWarrior, decomp-toolkit binaries)
+# Toolchain downloads (Ghidra, wibo, CodeWarrior, decomp-toolkit binaries,
+# cloned extension repos) - but keep our own hand-written scripts
 /tools/*
 !/tools/.gitkeep
+!/tools/scripts/
+/tools/scripts/*.txt
 
 # OS / editor cruft
 .DS_Store
