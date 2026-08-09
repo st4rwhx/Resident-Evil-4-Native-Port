@@ -54,6 +54,38 @@ Sourced from fan documentation (ZenHAX, TCRF); not yet independently
 verified against an actual GC ISO in this project — first thing to confirm
 once we have the ISO.
 
+## SYM file location — resolved (2026-09-10)
+
+Checked `emoose/re4-research`'s README, all 4 GitHub releases, commit
+history, and the `retroReversing` PR that documents the SYM discovery
+(https://github.com/emoose/retroReversing/commit/03d950c4c5b05b37f0e7cd91440f39b84f8892a4,
+mirrored at https://www.retroreversing.com/gamecube-debug-symbols).
+
+- **Confirmed**: `re4sym` reads `Bio4.*.SYM` files "included with the RE4 GC
+  debug build," covering the main DOL + REL overlays (some RELs packed in
+  DRS containers), ~10,380+ symbols total. Even emoose says the origin of
+  who generated these SYMs is unknown.
+- **Not found**: no standalone `.sym` file is shipped in any release asset,
+  archive.org item, or forum post I could locate. It is not a separate
+  downloadable artifact.
+- **Inferred (unverified) most likely path**: the SYM files live *inside* a
+  debug-build GameCube disc image — e.g. the "Resident Evil 4 Debug (Disc 1)"
+  prototype documented on Hidden Palace
+  (https://hiddenpalace.org/File:Resident_Evil_4_Debug_(Disc_1).7z) and
+  mirrored on Internet Archive as "Resident Evil 4 - Debug Disc 1.iso"
+  (https://archive.org/details/resident-evil-4-pre-release-builds) — you'd
+  extract that disc's filesystem and look for `Bio4.*.SYM` files directly,
+  the same way we extracted the retail DOL.
+
+**Important distinction from the retail ISO**: the retail disc we're
+building against is something the user dumped from their own legally
+purchased copy — clean legal footing. A *debug/prototype build* was never
+sold at retail; it only exists because it leaked out of Capcom/Nintendo's
+internal QA pipeline. Preservation sites like Hidden Palace/TCRF host these
+for archival/research purposes, but "own a legit copy" doesn't apply the
+same way here. Whether to pursue this path is the user's call, not
+something to grab automatically.
+
 ## Open questions to resolve once the ISO is available
 
 1. Does the GC retail disc's filesystem actually match the formats above,
