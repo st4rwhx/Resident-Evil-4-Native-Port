@@ -55,6 +55,32 @@ Logic (confirmed, not in question): `this->mFlags` is a `u32` at offset
 | `if(mode==0){...return;}` | `u32` (unsigned) | any | 52 bytes but uses `cmplwi` not `or.`/`cmpwi`, and both branches funnel to one shared trailing `blr` (no separate per-branch `blr`) — also changes the mangled name (`FUi` vs `Fi`), so probably wrong type anyway since we have no confirmation of the real param type |
 | Compiler versions 1.3.2, 2.0, 2.5, 2.6, 2.7, 3.0a3, 3.0a3.2, 3.0a5 | `s32`, sequential-if | any | **all produce byte-identical output to each other** for this source — the `or.` vs `cmpwi` choice isn't a compiler-version thing, at least not across this range |
 
+## Round 2 (continued iteration, same session)
+
+More combinations tried, none producing the exact `or. r4,r4,r4` +
+non-fused-final-`blr` pattern:
+
+| Attempt | Result |
+|---|---|
+| `if(mode){ if(mode==1){...} } else {...}` (outer truthy check) | 52 bytes, `cmpwi` not `or.`, bodies laid out in wrong order (else-body last) |
+| `if/else if` chain + explicit trailing `else return;` | 60 bytes unoptimized (extra dead branches); `-opt all` collapses it back to the same 52-byte fused form as every other variant |
+| `switch` with explicit `default: return;` | 68/56 bytes depending on `-opt`, but always tests `case 1` *before* `case 0` (wrong order) and uses range-check opcodes (`bge`/`bgelr`), never matches |
+| Sweeping every individual `-opt` sub-flag (`deadcode`, `nopeephole`, `schedule`, `level=0..4`, `space`, `speed`, combinations) on the simplest 2-if source | **Zero effect** — always identical 52-byte fused output regardless of flags. The `bnelr`-fusion for a trailing `if(cond) return; stmt;` is baseline front-end behavior in this compiler build, not something any `-opt` flag controls. |
+| `-opt level=3,nopeephole` on the explicit-else source | Coincidentally exactly 56 bytes, but it's a *dead* trailing `blr` instruction the optimizer failed to prune, not a real structural match — wrong instructions in the wrong positions. Confirmed by inspecting the full disassembly, not just the size. |
+| Isolated single-branch test (`if(mode==0){...}`, no second check at all) at true default (no `-opt` flag) | Still `cmpwi`, not `or.` — rules out "`or.` is just how this compiler tests any parameter against 0 as its first use," the pattern really is specific to the real target function somehow. |
+
+**New working theory**: the compilers archive (`files.decomp.dev`) jumps
+directly from `GC/2.0`/`2.0p1` to `GC/2.5` — there is no `2.1`/`2.2`/`2.3`/
+`2.4` entry at all. Given the confirmed mapping `GC/2.7` = `mwcc 2.4.7`,
+the missing `GC/2.1`-`2.4` range would correspond to `mwcc 2.4.1`-`2.4.4` —
+exactly astride the "~2004-2005, RE4's likely era" guess from the original
+compiler-version research. It's plausible the real compiler used isn't in
+the standard archive at all. Not confirmed, just the most likely
+explanation left standing after ruling out source structure, parameter
+type, and every available compiler version (1.3.2 through 3.0a5, 8
+versions total, all tested, all producing pixel-identical output to each
+other for a given source on this function).
+
 ## What's confirmed vs. still a guess
 
 - Confirmed: the mFlags/offset-0x2c logic, the bit manipulation, the
