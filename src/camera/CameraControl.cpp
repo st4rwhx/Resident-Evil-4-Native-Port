@@ -20,11 +20,12 @@
 //              i.e. clears only that one bit; equivalent to & ~0x8)
 void CameraControl::AreaCheckOnOff(s32 mode)
 {
-    if (mode == 0) {
+    if (!mode) {
         mFlags |= 0x8;
         return;
     }
     if (mode == 1) {
         mFlags = (mFlags & ~0x8) | 0x10;
+        return;
     }
 }

@@ -61,15 +61,19 @@ user's own legally-owned copy of the game to build against.
       main.dol is 2.55 MB vs retail's 2.17 MB — different layout, so
       addresses won't line up 1:1; names should still transfer function-by-
       function once matched)
-- [~] First function attempted: `CameraControl::AreaCheckOnOff` (debug
-      build, 80003920-80003957, 56 bytes/14 instructions — picked as a
-      minimal first target). Hand-traced from the disassembly and written
-      as C++ in [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp)
-      — sets/clears flag bits 0x8/0x10 in a member at offset 0x2c depending
-      on a mode parameter. **Not yet compiled or byte-verified** — blocked
-      on having the real Metrowerks CodeWarrior GC compiler (see
-      [docs/TOOLING.md](docs/TOOLING.md) "CodeWarrior" section); this is
-      the real next milestone once that's sorted.
+- [x] CodeWarrior compiler obtained — `files.decomp.dev/compilers_20251118.zip`
+      (same archive PrimeDecomp/zeldaret/doldecomp use), extracted to
+      `tools/compilers/GC/*` (gitignored, ~77 MB). `objdiff-cli` v3.8.1
+      also fetched. Both run natively on Windows (no `wibo` needed here).
+- [~] First matching attempt: `CameraControl::AreaCheckOnOff` — **52/56
+      bytes, logic fully correct, not yet byte-identical.** Full log of
+      everything tried (10+ source/flag/compiler-version combinations) in
+      [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md)
+      — current best-effort source in
+      [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp), marked
+      UNVERIFIED. Remaining gap is a specific codegen idiom (`or. r4,r4,r4`
+      vs `cmpwi r4,0`) not yet explained by source structure, param type,
+      or compiler version 1.3.2 through 3.0a5.
 - [ ] ...
 
 ## Layout
