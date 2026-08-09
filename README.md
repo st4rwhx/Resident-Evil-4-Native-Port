@@ -46,12 +46,23 @@ user's own legally-owned copy of the game to build against.
       enemy/player/weapon/UI overlay modules not present on the retail
       disc at all (~25,974 symbol lines total). Exported as Dolphin `.map`
       + Ghidra import scripts in `config/symbols/`.
+- [x] Ghidra set up with GameCube loader + symbols imported — Ghidra
+      12.1.3 + `Cuyler36/Ghidra-GameCube-Loader` (built from source, JDK 21
+      GNU toolchain) + Gekko/Broadway language, all headless (no GUI
+      interaction available/needed). Debug `main.dol` imported, fully
+      auto-analyzed (64s), all 10,383 symbols imported (0 skipped, 578
+      new functions created), verified with a sample decompile —
+      `CameraControl::AreaCheckOnOff`, `cameraHitCheck` etc. all produce
+      clean, real pseudo-C referencing other named functions/globals
+      (`EmHitCheck`, `cSatMgr::hitCheck`, `PSVECDistance`, `SatMgr`...).
+      Reusable headless scripts: `tools/scripts/ImportRE4Symbols.java`,
+      `tools/scripts/DecompileSample.java`.
 - [ ] Reconcile debug-build addresses/symbols against the retail DOL (debug
       main.dol is 2.55 MB vs retail's 2.17 MB — different layout, so
       addresses won't line up 1:1; names should still transfer function-by-
       function once matched)
-- [ ] Ghidra set up with GameCube loader + symbols imported
-- [ ] First function matched
+- [ ] First function matched (source written + compiled with real
+      CodeWarrior + verified byte-identical via objdiff)
 - [ ] ...
 
 ## Layout
