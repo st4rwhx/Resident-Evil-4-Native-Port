@@ -45,6 +45,31 @@ int strncmp(const char *, const char *, PORT_SIZE_T);
 // Le jeu est mono-thread pour ces appels : la macro ecrit, la fonction lit aussitot.
 extern int port_event_mode;
 
+// ---------------------------------------------------------------- donnees du disque
+//
+// Les donnees de RE4 sont rangees en gros-boutiste, comme son processeur. `DISC_STRUCT`
+// se pose sur une structure lue depuis le disque : le compilateur retourne alors les octets
+// a **chaque acces**, en lecture comme en ecriture, entiers et flottants compris. Le code du
+// jeu reste intact - aucun acces a reecrire dans les 520 000 lignes.
+//
+// **Seul GCC l implemente.** Clang ne refuse pas l attribut : il l ignore avec un simple
+// avertissement, et le programme compile en lisant des valeurs fausses. C est le pire des
+// comportements possibles, donc on refuse explicitement de compiler ces structures avec un
+// compilateur qui ne sait pas les traiter, plutot que de produire un binaire qui ment.
+#if defined(RE4_PORT)
+#  if defined(__GNUC__) && !defined(__clang__)
+#    define DISC_STRUCT __attribute__((scalar_storage_order("big-endian")))
+#    define PORT_HAVE_DISC_STRUCT 1
+#  else
+#    define DISC_STRUCT PORT_DISC_STRUCT_NEEDS_GCC
+#    define PORT_HAVE_DISC_STRUCT 0
+#  endif
+#else
+#  define DISC_STRUCT
+#  define PORT_HAVE_DISC_STRUCT 0
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
