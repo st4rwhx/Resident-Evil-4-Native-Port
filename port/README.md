@@ -13,6 +13,7 @@ build : il ajoute une **couche de plateforme** qui remplace le SDK Nintendo, act
 | Fonctions SDK a fournir | **249** (mesurees : 4903 sites d'appel) |
 | **Bibliotheque liee** | **`libre4dol.so`, ELF32/ARM, 1,3 Mo de `.text`, 5393 symboles** |
 | Symboles non definis / doublons au lien | **0 / 0** |
+| **Fonctions de plateforme reelles et verifiees sur l'appareil** | **83 / 249** |
 
 Elle **lie**, elle ne **tourne pas** : les 249 fonctions sont des souches qui journalisent leur
 premier appel et rendent une valeur neutre. C'est deliberé - a partir d'un binaire qui lie, on
@@ -54,13 +55,29 @@ DOL / RELs. La bibliotheque ci-dessus ne contient donc que les unites du DOL.
 `GXPosition3f32`, 187 a `GXTexCoord2f32` et 168 a `GXColor4u8` se redirigent donc vers un tampon
 hote sans toucher une ligne du jeu.
 
+## Textures
+
+Recensement du corpus reel avant d'ecrire une ligne : **227 TPL du jeu, 1002 images, trois
+formats seulement** - CMPR (534), IA8 (367), I4 (101). Les huit autres formats que GX definit
+n'apparaissent nulle part dans RE4 GameCube. Ils sont quand meme implementes, mais on sait
+desormais ou porte le risque.
+
+Le decodeur est la transcription exacte de `tools/re4tpl.py` (depot RE4444), et il est **juge
+contre lui** : `port/make_tex_cases.py` fabrique des cas depuis de vraies textures du jeu (plus
+du bruit reproductible pour les formats absents), et `port/test_texture.cpp` exige l'egalite
+**octet a octet** sur l'appareil. **33 cas sur 33, 11 formats, zero pixel d'ecart.**
+
+Cette exigence n'est pas du zele : une tuile mal dimensionnee (I8 et IA4 font 8x4, pas 8x8)
+produit une image parfaitement plausible et fausse, et RGBA8 lu en quadruplets reste lisible.
+Aucun de ces deux bugs ne se voit a l'oeil ; tous deux sautent au premier octet compare.
+
 ## Suite
 
-1. Implementer dans l'ordre que dicte `[PORT] non implemente :` a l'execution : OS/memoire,
-   puis DVD (lire l'ISO de l'utilisateur), puis VI.
-2. GX -> OpenGL ES 3.0 : ~110 fonctions, le gros morceau, mais TEV se traduit en shaders generes.
-3. PAD -> tactile, AX -> audio, CARD -> bac a sable.
-4. Coque Android, puis l'audit 64 bits pour iOS.
+1. **TEV -> shaders generes.** Le shader actuel a un seul etage (couleur de sommet x texture) ;
+   TEV en a jusqu'a seize. Dolphin est la reference.
+2. Eclairage et generation de coordonnees de texture (`GXSetTexCoordGen`, matrices de texture).
+3. AX -> audio, CARD -> bac a sable.
+4. Coque Android et interface tactile, puis l'audit 64 bits pour iOS.
 
 ## Fichiers
 
@@ -69,3 +86,19 @@ hote sans toucher une ligne du jeu.
 - `stubs_generated.cpp` — GENERE, ne pas editer.
 - `port_log.h` / `port_log.cpp` — journal du premier appel, sans STL (les macros du decompile
   cassent `<set>` de libc++).
+- `texture.cpp` — decodage des formats GX vers RGBA8. Aucune dependance GL : testable seul.
+- `texobj.cpp` — `GXTexObj` / `GXTlutObj` poses sur des textures GLES, avec cache et
+  invalidation. `PortTexObj` tient dans les 32 octets de `GXTexObj`, `static_assert` a l'appui.
+- `build_tests.sh` — construit, pousse et prepare les harnais. Il porte les trois pieges de
+  l'environnement (MSYS_NO_PATHCONV, le rechmod apres `adb push`, l'espace dans "RE4 PROJECT"
+  qui impose un fichier reponse avec un chemin entre guillemets par ligne).
+- `make_tex_cases.py` — fabrique les cas de test des textures depuis de vrais TPL.
+
+## Une correction generale
+
+`AT_ADDRESS` s'evaporait sous GCC, laissant une trentaine de variables materielles
+**definies** dans des en-tetes : en C ce sont des symboles communs que l'editeur de liens
+fusionne, en C++ ce sont des definitions, et deux unites suffisent a casser le lien. Sous
+`RE4_PORT`, `AT_ADDRESS` vaut maintenant `__attribute__((weak))`, ce qui retablit la semantique
+du C d'origine en un point unique - au lieu de `--allow-multiple-definition`, qui aurait aussi
+masque les vrais doublons.

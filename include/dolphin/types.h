@@ -20,7 +20,16 @@ typedef int BOOL;
 #define FALSE 0
 #define TRUE 1
 
-#if defined(__MWERKS__)
+#if defined(RE4_PORT)
+// Portage : ces variables designent des registres materiels et des mots fixes de la memoire
+// basse du GameCube. Les en-tetes les **definissent** au lieu de les declarer, ce qui en C
+// donne des symboles communs que l'editeur de liens fusionne ; en C++ ce sont autant de vraies
+// definitions, et le lien echoue des qu'un en-tete est inclus par deux unites - "duplicate
+// symbol: __OSExecParams", vu sur le premier harnais qui compilait deux fichiers.
+// `weak` retablit exactement la semantique du C d'origine, en un point unique, sans toucher
+// aux trente declarations ni masquer de vrais doublons avec --allow-multiple-definition.
+#define AT_ADDRESS(addr) __attribute__((weak))
+#elif defined(__MWERKS__)
 #define AT_ADDRESS(addr) : (addr)
 #elif defined(__GNUC__)
 //#define AT_ADDRESS(addr) __attribute__((address((addr))))

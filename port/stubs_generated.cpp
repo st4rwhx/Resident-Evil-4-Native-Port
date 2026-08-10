@@ -90,22 +90,17 @@ DVDDiskID* DVDGetCurrentDiskID() { PORT_TODO("DVDGetCurrentDiskID"); return null
 void* DVDGetFSTLocation() { PORT_TODO("DVDGetFSTLocation"); return nullptr; }   // include\dolphin\dvd.h
 int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); return 0; }   // include\dolphin\dvd.h
 int DVDReadDir(DVDDir* dir, DVDDirEntry* dirent) { PORT_TODO("DVDReadDir"); return 0; }   // include\dolphin\dvd.h
-void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts) { PORT_TODO("GXBegin"); }   // include\dolphin\gx\GXGeometry.h
 void GXBeginDisplayList(void* list, u32 size) { PORT_TODO("GXBeginDisplayList"); }   // include\dolphin\gx\GXDispList.h
 void GXCallDisplayList(void* list, u32 nbytes) { PORT_TODO("GXCallDisplayList"); }   // include\dolphin\gx\GXDispList.h
 void GXClearBoundingBox() { PORT_TODO("GXClearBoundingBox"); }   // include\dolphin\gx\GXFrameBuffer.h
-void GXClearVtxDesc() { PORT_TODO("GXClearVtxDesc"); }   // include\dolphin\gx\GXGeometry.h
-void GXCopyDisp(void* dest, GXBool clear) { PORT_TODO("GXCopyDisp"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXCopyTex(void* dest, GXBool clear) { PORT_TODO("GXCopyTex"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXDrawDone() { PORT_TODO("GXDrawDone"); }   // include\dolphin\gx\GXManage.h
 void GXDrawTorus(f32 rc, u8 numc, u8 numt) { PORT_TODO("GXDrawTorus"); }   // include\dolphin\gx\GXDraw.h
 void GXEnableTexOffsets(GXTexCoordID coord, u8 line_enable, u8 point_enable) { PORT_TODO("GXEnableTexOffsets"); }   // include\dolphin\gx\GXGeometry.h
 u32 GXEndDisplayList() { PORT_TODO("GXEndDisplayList"); return 0; }   // include\dolphin\gx\GXDispList.h
 void GXGetProjectionv(f32* ptr) { PORT_TODO("GXGetProjectionv"); }   // include\dolphin\gx\GXGet.h
-u32 GXGetTexBufferSize(u16 width, u16 height, u32 format, u8 mipmap, u8 max_lod) { PORT_TODO("GXGetTexBufferSize"); return 0; }   // include\dolphin\gx\GXTexture.h
 void* GXGetTexObjData(const GXTexObj* to) { PORT_TODO("GXGetTexObjData"); return nullptr; }   // include\dolphin\gx\GXGet.h
 void GXGetViewportv(f32* vp) { PORT_TODO("GXGetViewportv"); }   // include\dolphin\gx\GXGet.h
-GXFifoObj* GXInit(void* base, u32 size) { PORT_TODO("GXInit"); return nullptr; }   // include\dolphin\gx\GXManage.h
 void GXInitLightAttn(GXLightObj* lt_obj, f32 a0, f32 a1, f32 a2, f32 k0, f32 k1, f32 k2) { PORT_TODO("GXInitLightAttn"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightAttnK(GXLightObj* lt_obj, f32 k0, f32 k1, f32 k2) { PORT_TODO("GXInitLightAttnK"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightColor(GXLightObj* lt_obj, GXColor color) { PORT_TODO("GXInitLightColor"); }   // include\dolphin\gx\GXLighting.h
@@ -113,34 +108,21 @@ void GXInitLightDir(GXLightObj* lt_obj, f32 nx, f32 ny, f32 nz) { PORT_TODO("GXI
 void GXInitLightDistAttn(GXLightObj* lt_obj, f32 ref_dist, f32 ref_br, GXDistAttnFn dist_func) { PORT_TODO("GXInitLightDistAttn"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightPos(GXLightObj* lt_obj, f32 x, f32 y, f32 z) { PORT_TODO("GXInitLightPos"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightSpot(GXLightObj* lt_obj, f32 cutoff, GXSpotFn spot_func) { PORT_TODO("GXInitLightSpot"); }   // include\dolphin\gx\GXLighting.h
-void GXInitTexObj(GXTexObj* obj, void* image_ptr, u16 width, u16 height, GXTexFmt format, GXTexWrapMode wrap_s, GXTexWrapMode wrap_t, u8 mipmap) { PORT_TODO("GXInitTexObj"); }   // include\dolphin\gx\GXTexture.h
-void GXInitTexObjCI(GXTexObj* obj, void* image_ptr, u16 width, u16 height, GXCITexFmt format, GXTexWrapMode wrap_s, GXTexWrapMode wrap_t, u8 mipmap, u32 tlut_name) { PORT_TODO("GXInitTexObjCI"); }   // include\dolphin\gx\GXTexture.h
-void GXInitTexObjLOD(GXTexObj* obj, GXTexFilter min_filt, GXTexFilter mag_filt,
-    f32 min_lod, f32 max_lod, f32 lod_bias, GXBool bias_clamp,
-    GXBool do_edge_lod, GXAnisotropy max_aniso) { PORT_TODO("GXInitTexObjLOD"); }   // include\dolphin\gx\GXTexture.h
-void GXInitTlutObj(GXTlutObj* tlut_obj, void* lut, GXTlutFmt fmt, u16 n_entries) { PORT_TODO("GXInitTlutObj"); }   // include\dolphin\gx\GXTexture.h
-void GXInvalidateTexAll() { PORT_TODO("GXInvalidateTexAll"); }   // include\dolphin\gx\GXTexture.h
 void GXInvalidateVtxCache() { PORT_TODO("GXInvalidateVtxCache"); }   // include\dolphin\gx\GXGeometry.h
 void GXLoadLightObjImm(const GXLightObj* lt_obj, GXLightID light) { PORT_TODO("GXLoadLightObjImm"); }   // include\dolphin\gx\GXLighting.h
 void GXLoadNrmMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadNrmMtxImm"); }   // include\dolphin\gx\GXTransform.h
-void GXLoadPosMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadPosMtxImm"); }   // include\dolphin\gx\GXTransform.h
 void GXLoadTexMtxImm(const f32 mtx[][4], u32 id, GXTexMtxType type) { PORT_TODO("GXLoadTexMtxImm"); }   // include\dolphin\gx\GXTransform.h
-void GXLoadTexObj(GXTexObj* obj, GXTexMapID id) { PORT_TODO("GXLoadTexObj"); }   // include\dolphin\gx\GXTexture.h
-void GXLoadTlut(GXTlutObj* tlut_obj, u32 tlut_name) { PORT_TODO("GXLoadTlut"); }   // include\dolphin\gx\GXTexture.h
 void GXPeekZ(u16 x, u16 y, u32* z) { PORT_TODO("GXPeekZ"); }   // include\dolphin\gx\GXCpu2Efb.h
 void GXPixModeSync() { PORT_TODO("GXPixModeSync"); }   // include\dolphin\gx\GXManage.h
 void GXProject(f32 x, f32 y, f32 z, const f32 mtx[3][4], const f32* pm, const f32* vp, f32* sx, f32* sy, f32* sz) { PORT_TODO("GXProject"); }   // include\dolphin\gx\GXTransform.h
 void GXSetAlphaCompare(GXCompare comp0, u8 ref0, GXAlphaOp op, GXCompare comp1, u8 ref1) { PORT_TODO("GXSetAlphaCompare"); }   // include\dolphin\gx\GXTev.h
 void GXSetAlphaUpdate(GXBool update_enable) { PORT_TODO("GXSetAlphaUpdate"); }   // include\dolphin\gx\GXPixel.h
 void GXSetArray(GXAttr attr, void* base_ptr, u8 stride) { PORT_TODO("GXSetArray"); }   // include\dolphin\gx\GXGeometry.h
-void GXSetBlendMode(GXBlendMode type, GXBlendFactor src_factor, GXBlendFactor dst_factor, GXLogicOp op) { PORT_TODO("GXSetBlendMode"); }   // include\dolphin\gx\GXPixel.h
 void GXSetChanAmbColor(GXChannelID chan, GXColor amb_color) { PORT_TODO("GXSetChanAmbColor"); }   // include\dolphin\gx\GXLighting.h
 void GXSetChanCtrl(GXChannelID chan, GXBool enable, GXColorSrc amb_src, GXColorSrc mat_src, u32 light_mask, GXDiffuseFn diff_fn, GXAttnFn attn_fn) { PORT_TODO("GXSetChanCtrl"); }   // include\dolphin\gx\GXLighting.h
 void GXSetChanMatColor(GXChannelID chan, GXColor mat_color) { PORT_TODO("GXSetChanMatColor"); }   // include\dolphin\gx\GXLighting.h
 void GXSetColorUpdate(GXBool update_enable) { PORT_TODO("GXSetColorUpdate"); }   // include\dolphin\gx\GXPixel.h
-void GXSetCopyClear(GXColor clear_clr, u32 clear_z) { PORT_TODO("GXSetCopyClear"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXSetCopyFilter(GXBool aa, const u8 sample_pattern[12][2], GXBool vf, const u8 vfilter[7]) { PORT_TODO("GXSetCopyFilter"); }   // include\dolphin\gx\GXFrameBuffer.h
-void GXSetCullMode(GXCullMode mode) { PORT_TODO("GXSetCullMode"); }   // include\dolphin\gx\GXCull.h
 OSThread* GXSetCurrentGXThread() { PORT_TODO("GXSetCurrentGXThread"); return nullptr; }   // include\dolphin\gx\GXFifo.h
 void GXSetCurrentMtx(u32 id) { PORT_TODO("GXSetCurrentMtx"); }   // include\dolphin\gx\GXTransform.h
 void GXSetDispCopyDst(u16 wd, u16 ht) { PORT_TODO("GXSetDispCopyDst"); }   // include\dolphin\gx\GXFrameBuffer.h
@@ -156,13 +138,8 @@ void GXSetIndTexCoordScale(GXIndTexStageID ind_state, GXIndTexScale scale_s, GXI
 void GXSetIndTexMtx(GXIndTexMtxID mtx_id, const f32 offset[2][3], s8 scale_exp) { PORT_TODO("GXSetIndTexMtx"); }   // include\dolphin\gx\GXBump.h
 void GXSetIndTexOrder(GXIndTexStageID ind_stage, GXTexCoordID tex_coord, GXTexMapID tex_map) { PORT_TODO("GXSetIndTexOrder"); }   // include\dolphin\gx\GXBump.h
 void GXSetLineWidth(u8 width, GXTexOffset texOffsets) { PORT_TODO("GXSetLineWidth"); }   // include\dolphin\gx\GXGeometry.h
-void GXSetNumChans(u8 nChans) { PORT_TODO("GXSetNumChans"); }   // include\dolphin\gx\GXLighting.h
 void GXSetNumIndStages(u8 nIndStages) { PORT_TODO("GXSetNumIndStages"); }   // include\dolphin\gx\GXBump.h
-void GXSetNumTevStages(u8 nStages) { PORT_TODO("GXSetNumTevStages"); }   // include\dolphin\gx\GXTev.h
-void GXSetNumTexGens(u8 nTexGens) { PORT_TODO("GXSetNumTexGens"); }   // include\dolphin\gx\GXGeometry.h
 void GXSetPixelFmt(GXPixelFmt pix_fmt, GXZFmt16 z_fmt) { PORT_TODO("GXSetPixelFmt"); }   // include\dolphin\gx\GXPixel.h
-void GXSetProjection(const f32 mtx[4][4], GXProjectionType type) { PORT_TODO("GXSetProjection"); }   // include\dolphin\gx\GXTransform.h
-void GXSetScissor(u32 left, u32 top, u32 wd, u32 ht) { PORT_TODO("GXSetScissor"); }   // include\dolphin\gx\GXCull.h
 void GXSetTevAlphaIn(GXTevStageID stage, GXTevAlphaArg a, GXTevAlphaArg b, GXTevAlphaArg c, GXTevAlphaArg d) { PORT_TODO("GXSetTevAlphaIn"); }   // include\dolphin\gx\GXTev.h
 void GXSetTevAlphaOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg) { PORT_TODO("GXSetTevAlphaOp"); }   // include\dolphin\gx\GXTev.h
 void GXSetTevColor(GXTevRegID id, GXColor color) { PORT_TODO("GXSetTevColor"); }   // include\dolphin\gx\GXTev.h
@@ -176,18 +153,13 @@ void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel sel) { PORT_TODO("GXSe
 void GXSetTevKColor(GXTevKColorID id, GXColor color) { PORT_TODO("GXSetTevKColor"); }   // include\dolphin\gx\GXTev.h
 void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel sel) { PORT_TODO("GXSetTevKColorSel"); }   // include\dolphin\gx\GXTev.h
 void GXSetTevOp(GXTevStageID id, GXTevMode mode) { PORT_TODO("GXSetTevOp"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevOrder(GXTevStageID stage, GXTexCoordID coord, GXTexMapID map, GXChannelID color) { PORT_TODO("GXSetTevOrder"); }   // include\dolphin\gx\GXTev.h
 void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel ras_sel, GXTevSwapSel tex_sel) { PORT_TODO("GXSetTevSwapMode"); }   // include\dolphin\gx\GXTev.h
 void GXSetTevSwapModeTable(GXTevSwapSel table, GXTevColorChan red, GXTevColorChan green, GXTevColorChan blue, GXTevColorChan alpha) { PORT_TODO("GXSetTevSwapModeTable"); }   // include\dolphin\gx\GXTev.h
 void GXSetTexCoordGen2(GXTexCoordID dst_coord, GXTexGenType func, GXTexGenSrc src_param, u32 mtx, GXBool normalize, u32 pt_texmtx) { PORT_TODO("GXSetTexCoordGen2"); }   // include\dolphin\gx\GXGeometry.h
 void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap) { PORT_TODO("GXSetTexCopyDst"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetTexCopySrc"); }   // include\dolphin\gx\GXFrameBuffer.h
-void GXSetViewport(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz) { PORT_TODO("GXSetViewport"); }   // include\dolphin\gx\GXTransform.h
 void GXSetViewportJitter(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz, u32 field) { PORT_TODO("GXSetViewportJitter"); }   // include\dolphin\gx\GXTransform.h
-void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType type, u8 frac) { PORT_TODO("GXSetVtxAttrFmt"); }   // include\dolphin\gx\GXGeometry.h
-void GXSetVtxDesc(GXAttr attr, GXAttrType type) { PORT_TODO("GXSetVtxDesc"); }   // include\dolphin\gx\GXGeometry.h
 void GXSetZCompLoc(GXBool before_tex) { PORT_TODO("GXSetZCompLoc"); }   // include\dolphin\gx\GXPixel.h
-void GXSetZMode(GXBool compare_enable, GXCompare func, GXBool update_enable) { PORT_TODO("GXSetZMode"); }   // include\dolphin\gx\GXPixel.h
 OSTime OSCalendarTimeToTicks(OSCalendarTime* td) { PORT_TODO("OSCalendarTimeToTicks"); return {}; }   // include\dolphin\os.h
 void OSCancelThread(OSThread* thread) { PORT_TODO("OSCancelThread"); }   // include\dolphin\os\OSThread.h
 int OSCreateThread(OSThread* thread, void* (*func)(void*), void* param, void* stack, u32 stackSize, OSPriority priority, u16 attr) { PORT_TODO("OSCreateThread"); return 0; }   // include\dolphin\os\OSThread.h

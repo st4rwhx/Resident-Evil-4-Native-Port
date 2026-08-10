@@ -182,6 +182,72 @@ int main()
     std::printf("      centre : %02X %02X %02X\n", p.r, p.g, p.b);
     check(p.g > 200 && p.r < 60, "le triangle le plus proche gagne");
 
+    std::printf("\n== texture ==\n");
+    GXSetZMode(GX_FALSE, GX_ALWAYS, GX_FALSE);
+    clear_to(0, 0, 0);
+
+    // Une texture 4x4 en RGB5A3, soit exactement une tuile GX de 32 octets, avec un cadran de
+    // couleur par quart. Quatre couleurs plutot qu'une : une texture unie ne dirait rien de
+    // l'orientation, et c'est precisement la que se cachent les erreurs (U et V inverses, image
+    // retournee, tuile mal lue). Chaque cadran repond a une question differente.
+    u8 tex[32];
+    static const unsigned short QUAD[4] = {
+        0xFC00,   // rouge   : ligne du haut, gauche
+        0x801F,   // bleu    : ligne du haut, droite
+        0x83E0,   // vert    : ligne du bas, gauche
+        0xFFE0    // jaune   : ligne du bas, droite
+    };
+    for (int y = 0; y < 4; ++y)
+        for (int x = 0; x < 4; ++x) {
+            const unsigned short c = QUAD[(y >= 2 ? 2 : 0) + (x >= 2 ? 1 : 0)];
+            const int k = y * 4 + x;
+            tex[2 * k] = (u8)(c >> 8);
+            tex[2 * k + 1] = (u8)(c & 0xFF);
+        }
+
+    GXTexObj to;
+    GXInitTexObj(&to, tex, 4, 4, GX_TF_RGB5A3, GX_CLAMP, GX_CLAMP, GX_FALSE);
+    GXInitTexObjFilter(&to, GX_NEAR, GX_NEAR);   // pas d'interpolation : on veut lire la texture telle quelle
+    GXLoadTexObj(&to, GX_TEXMAP0);
+
+    // Un quadrilatere plein ecran, sommets blancs (la couleur de sommet multiplie la texture).
+    GXBegin(GX_QUADS, GX_VTXFMT0, 4);
+    GXPosition3f32(0.0f, 0.0f, 0.0f);       GXColor4u8(255, 255, 255, 255); GXTexCoord2f32(0.0f, 0.0f);
+    GXPosition3f32(0.0f, (f32)H, 0.0f);     GXColor4u8(255, 255, 255, 255); GXTexCoord2f32(0.0f, 1.0f);
+    GXPosition3f32((f32)W, (f32)H, 0.0f);   GXColor4u8(255, 255, 255, 255); GXTexCoord2f32(1.0f, 1.0f);
+    GXPosition3f32((f32)W, 0.0f, 0.0f);     GXColor4u8(255, 255, 255, 255); GXTexCoord2f32(1.0f, 0.0f);
+    GXEnd();
+
+    const Px tl = at(W / 4, H / 4), tr = at(3 * W / 4, H / 4);
+    const Px bl = at(W / 4, 3 * H / 4), br = at(3 * W / 4, 3 * H / 4);
+    std::printf("      haut  : %02X%02X%02X  %02X%02X%02X\n", tl.r, tl.g, tl.b, tr.r, tr.g, tr.b);
+    std::printf("      bas   : %02X%02X%02X  %02X%02X%02X\n", bl.r, bl.g, bl.b, br.r, br.g, br.b);
+    check(tl.r > 200 && tl.g < 60 && tl.b < 60, "cadran haut-gauche rouge : la texture est echantillonnee");
+    check(tr.b > 200 && tr.r < 60, "cadran haut-droit bleu : U croit vers la droite");
+    check(bl.g > 200 && bl.r < 60, "cadran bas-gauche vert : V croit vers le bas, image non retournee");
+    check(br.r > 200 && br.g > 200 && br.b < 60, "cadran bas-droit jaune");
+
+    // La couleur de sommet doit moduler la texture, sinon l'eclairage par sommet de RE4 - dont
+    // la moitie de l'ambiance de ce jeu depend - n'aurait aucun effet.
+    clear_to(0, 0, 0);
+    GXBegin(GX_QUADS, GX_VTXFMT0, 4);
+    GXPosition3f32(0.0f, 0.0f, 0.0f);       GXColor4u8(128, 128, 128, 255); GXTexCoord2f32(0.0f, 0.0f);
+    GXPosition3f32(0.0f, (f32)H, 0.0f);     GXColor4u8(128, 128, 128, 255); GXTexCoord2f32(0.0f, 1.0f);
+    GXPosition3f32((f32)W, (f32)H, 0.0f);   GXColor4u8(128, 128, 128, 255); GXTexCoord2f32(1.0f, 1.0f);
+    GXPosition3f32((f32)W, 0.0f, 0.0f);     GXColor4u8(128, 128, 128, 255); GXTexCoord2f32(1.0f, 0.0f);
+    GXEnd();
+    p = at(W / 4, H / 4);
+    std::printf("      rouge assombri de moitie : %02X %02X %02X\n", p.r, p.g, p.b);
+    check(p.r > 100 && p.r < 160 && p.g < 40, "la couleur de sommet module la texture");
+
+    // Et sans texture liee, on revient a la couleur de sommet pure : un etat qui ne se remet
+    // pas produirait une interface texturee de la salle precedente.
+    GXInvalidateTexAll();
+    clear_to(0, 0, 0);
+    tri(160, 100, 480, 100, 320, 380, 0x00, 0xFF, 0x00);
+    p = at(320, 224);
+    check(p.g > 200 && p.r < 40, "apres GXInvalidateTexAll, le rendu redevient non texture");
+
     std::printf("\n%s : %d echec(s)\n", g_fail ? "ECHEC" : "TOUT PASSE", g_fail);
     return g_fail ? 1 : 0;
 }

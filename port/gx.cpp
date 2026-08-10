@@ -20,6 +20,8 @@
 //    dupliquant les sommets : le jeu en emet beaucoup pour l'interface.
 #include "port_log.h"
 
+extern "C" unsigned int port_gx_bound_texture(int unit);
+
 #include <cstdio>
 #include <cstring>
 
@@ -66,7 +68,7 @@ bool g_blend = false;
 GXColor g_clear = {0, 0, 0, 255};
 
 GLuint g_prog = 0, g_vao = 0, g_vbo = 0, g_ibo = 0;
-GLint g_u_mvp = -1;
+GLint g_u_mvp = -1, g_u_tex = -1, g_u_texon = -1;
 unsigned short g_idx[MAX_VERTS * 3];
 
 // ---------------------------------------------------------------- matrices
@@ -119,13 +121,18 @@ const char *VS =
     "out vec2 vUV;\n"
     "void main(){ vCol = aCol; vUV = aUV; gl_Position = uMVP * vec4(aPos,1.0); }\n";
 
+// Etage unique en attendant TEV : couleur de sommet, multipliee par la texture quand il y en a
+// une. TEV en a jusqu'a seize et sait bien davantage ; ce shader est la marche intermediaire qui
+// rend les textures visibles sans prejuger de la generation a venir.
 const char *FS =
     "#version 300 es\n"
     "precision highp float;\n"
     "in vec4 vCol;\n"
     "in vec2 vUV;\n"
+    "uniform sampler2D uTex;\n"
+    "uniform bool uTexOn;\n"
     "out vec4 oCol;\n"
-    "void main(){ oCol = vCol; }\n";
+    "void main(){ oCol = uTexOn ? vCol * texture(uTex, vUV) : vCol; }\n";
 
 GLuint make_shader(GLenum type, const char *src)
 {
@@ -202,6 +209,8 @@ extern "C" bool port_gx_init_offscreen(u32 w, u32 h)
     glAttachShader(g_prog, fs);
     glLinkProgram(g_prog);
     g_u_mvp = glGetUniformLocation(g_prog, "uMVP");
+    g_u_tex = glGetUniformLocation(g_prog, "uTex");
+    g_u_texon = glGetUniformLocation(g_prog, "uTexOn");
 
     glGenVertexArrays(1, &g_vao);
     glGenBuffers(1, &g_vbo);
@@ -332,6 +341,16 @@ void port_gx_end(void)
 
     glUseProgram(g_prog);
     glUniformMatrix4fv(g_u_mvp, 1, GL_FALSE, mvp);
+
+    // La texture liee sur l unite 0 decide de l echantillonnage. GXLoadTexObj l a
+    // deja rendue courante ; ici on ne fait que dire au shader si elle existe.
+    const GLuint tex = port_gx_bound_texture(0);
+    glUniform1i(g_u_texon, tex ? 1 : 0);
+    if (tex) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glUniform1i(g_u_tex, 0);
+    }
 
     if (g_ztest) { glEnable(GL_DEPTH_TEST); glDepthFunc(gl_compare(g_zfunc)); }
     else glDisable(GL_DEPTH_TEST);
