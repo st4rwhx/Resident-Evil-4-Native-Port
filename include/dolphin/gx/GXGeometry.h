@@ -25,22 +25,29 @@ static inline void GXSetTexCoordGen(GXTexCoordID dst_coord, GXTexGenType func, G
 
 void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts);
 
+#ifdef RE4_PORT
+// Portage : sur le materiel, GXEnd ne soumet rien - la geometrie part par le write-gather pipe
+// au fil des GXPosition/GXColor, et cette fonction n'est qu'une assertion de debug. Un portage
+// doit au contraire savoir **quand la primitive est finie** pour emettre son appel de dessin.
+// C'est donc ici le point d'accroche, au meme endroit et de la meme facon que GXVert.h bascule
+// deja ses macros en fonctions externes sous `#if DEBUG`.
+//
+// (L'assertion d'origine est abandonnee : elle redeclare OSPanic sans `const`, en conflit avec
+// os.h pour un compilateur moderne.)
+void port_gx_end(void);
+static inline void GXEnd(void) { port_gx_end(); }
+#else
 static inline void GXEnd(void) {
 #if DEBUG
     extern GXBool __GXinBegin;
-#ifdef RE4_PORT
-    // Portage : os.h declare deja OSPanic avec des `const char*`. Les deux declarations sont
-    // en conflit pour un compilateur moderne ; on garde celle de os.h.
-#   include <dolphin/os.h>
-#else
     extern void OSPanic(char* file, int line, char* msg, ...);
-#endif
     if (!__GXinBegin) {
         OSPanic(__FILE__, 118, "GXEnd: called without a GXBegin");
     }
     __GXinBegin = GX_FALSE;
 #endif
 }
+#endif
 
 void GXSetLineWidth(u8 width, GXTexOffset texOffsets);
 void GXSetPointSize(u8 pointSize, GXTexOffset texOffsets);
