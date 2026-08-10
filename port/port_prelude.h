@@ -39,6 +39,12 @@ char *strncat(char *, const char *, PORT_SIZE_T);
 int strcmp(const char *, const char *);
 int strncmp(const char *, const char *, PORT_SIZE_T);
 
+// Le mode d un evenement, entre la macro BEGIN_EVENT/END_EVENT et cPlayer::beginEvent() -
+// qui le lisait dans r4 sur PowerPC, parce que cUnit::beginEvent prend un int dans le jeu
+// d origine et que le decompile ne le declare pas (dette notee dans include/cManager.h).
+// Le jeu est mono-thread pour ces appels : la macro ecrit, la fonction lit aussitot.
+extern int port_event_mode;
+
 #ifdef __cplusplus
 }
 #endif

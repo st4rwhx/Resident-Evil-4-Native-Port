@@ -63,6 +63,8 @@ Vertex g_cur;              // sommet en cours d'assemblage
 bool g_cur_open = false;   // une position a ete recue depuis le dernier commit
 GXPrimitive g_prim = GX_TRIANGLES;
 int g_prim_first = 0;      // premier sommet de la primitive en cours
+int g_prim_want = 0;       // sommets annonces par GXBegin ; 0 = pas de primitive ouverte
+int g_last_attr = -1;      // dernier attribut du descripteur : celui qui clot un sommet
 
 float g_proj[16];
 float g_modelview[16];
@@ -218,6 +220,18 @@ GLenum gl_compare(GXCompare f)
     }
 }
 
+// **Le jeu n appelle jamais GXEnd.** Sur GameCube c est une macro vide : GXBegin annonce le
+// nombre de sommets, et le materiel termine la primitive des qu il les a recus. Le portage
+// attendait un appel qui ne vient pas - id_sys, l ecran-titre, toute l interface emettaient
+// leurs quatre sommets dans le vide, et l image restait noire alors que la table
+// d ordonnancement executait bien ses 96 entrees par image.
+//
+// Un sommet est complet quand son **dernier attribut declare** arrive : l ordre est celui du
+// materiel (indices de matrice, position, normale, couleurs, coordonnees de texture), et le
+// descripteur courant dit lesquels sont presents. C est la meme regle que suit deja le flux
+// direct par le write-gather pipe.
+void attr_done(GXAttr a);
+
 void commit_vertex()
 {
     if (g_cur_open && g_nverts < MAX_VERTS)
@@ -346,9 +360,15 @@ void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType typ
 
 void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts)
 {
-    (void)vtxfmt; (void)nverts;
+    (void)vtxfmt;
+    port_gx_end();   // une primitive laissee ouverte par un appelant qui ne ferme pas
     g_prim = type;
     g_prim_first = g_nverts;
+    g_prim_want = nverts;
+    g_last_attr = -1;
+    for (int i = 0; i < STREAM_N; ++i)
+        if (g_desc[STREAM_ORDER[i]] != GX_NONE)
+            g_last_attr = (int) STREAM_ORDER[i];
     g_cur_open = false;
     std::memset(&g_cur, 0, sizeof(g_cur));
     g_cur.r = g_cur.g = g_cur.b = g_cur.a = 255;
@@ -363,11 +383,16 @@ void GXPosition3f32(f32 x, f32 y, f32 z)
     g_cur.u = g_cur.v = 0.0f;
     g_cur.r = g_cur.g = g_cur.b = g_cur.a = 255;
     g_cur_open = true;
+    attr_done(GX_VA_POS);
 }
 
-void GXColor4u8(u8 r, u8 g, u8 b, u8 a) { g_cur.r = r; g_cur.g = g; g_cur.b = b; g_cur.a = a; }
-void GXTexCoord2f32(f32 u, f32 v) { g_cur.u = u; g_cur.v = v; }
-void GXNormal3f32(f32 x, f32 y, f32 z) { (void)x; (void)y; (void)z; }
+void GXColor4u8(u8 r, u8 g, u8 b, u8 a)
+{
+    g_cur.r = r; g_cur.g = g; g_cur.b = b; g_cur.a = a;
+    attr_done(GX_VA_CLR0);
+}
+void GXTexCoord2f32(f32 u, f32 v) { g_cur.u = u; g_cur.v = v; attr_done(GX_VA_TEX0); }
+void GXNormal3f32(f32 x, f32 y, f32 z) { (void)x; (void)y; (void)z; attr_done(GX_VA_NRM); }
 
 // Les memes attributs en virgule fixe. RE4 s'en sert partout ou il peut : c'est par la que
 // passe la geometrie des salles et des personnages, pas par les variantes flottantes.
@@ -385,16 +410,17 @@ void GXTexCoord2s16(s16 s, s16 t)
 {
     g_cur.u = fixed_to_f(s, g_frac_tex);
     g_cur.v = fixed_to_f(t, g_frac_tex);
+    attr_done(GX_VA_TEX0);
 }
 
 // Les normales s8 sont toujours en 1.7 : le bit de signe et sept bits de fraction, donc 127
 // vaut presque 1. Elles ne servent pas encore (l'eclairage viendra avec TEV), mais il faut les
 // consommer : une normale laissee dans le flux decalerait l'attribut suivant.
-void GXNormal3s8(s8 x, s8 y, s8 z) { (void)x; (void)y; (void)z; }
+void GXNormal3s8(s8 x, s8 y, s8 z) { (void)x; (void)y; (void)z; attr_done(GX_VA_NRM); }
 
 // L'indice de matrice par sommet, pour la palette de skinning. Il sera lu quand le portage
 // gerera les matrices multiples ; pour l'instant tout passe par la matrice courante.
-void GXMatrixIndex1u8(u8 idx) { (void)idx; }
+void GXMatrixIndex1u8(u8 idx) { (void)idx; attr_done(GX_VA_PNMTXIDX); }
 
 // ------------------------------------------------- flux direct : le pipe
 //
@@ -466,7 +492,33 @@ void port_wg_push_f32(f32 v) { stream_push(v, false); }
 
 PortWGPipe port_wg_pipe;
 
+// Voir la note au-dessus de commit_vertex : c est ce qui remplace le GXEnd que le jeu
+// n emet pas.
+namespace {
+void attr_done(GXAttr a)
+{
+    if (g_last_attr < 0 || (int) a != g_last_attr)
+        return;
+    commit_vertex();
+    if (g_prim_want && g_nverts - g_prim_first >= g_prim_want)
+        port_gx_end();
+}
+} // namespace
+
+static void port_gx_flush_prim(void);
+
 void port_gx_end(void)
+{
+    if (!g_prim_want && g_nverts == g_prim_first && !g_cur_open)
+        return;
+    port_gx_flush_prim();
+    // Une primitive ne se dessine qu une fois : la suivante repart d ici.
+    g_prim_first = g_nverts;
+    g_prim_want = 0;
+    g_last_attr = -1;
+}
+
+static void port_gx_flush_prim(void)
 {
     commit_vertex();
     const int n = g_nverts - g_prim_first;

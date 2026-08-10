@@ -47,3 +47,7 @@ void MIXSetPan(AXVPB *p, int pan) { (void) p; (void) pan; }
 void MIXSetSPan(AXVPB *p, int span) { (void) p; (void) span; }
 
 }
+
+// Voir port/port_prelude.h : le mode d un evenement, que la signature de
+// cPlayer::beginEvent ne transporte pas.
+int port_event_mode = 0;

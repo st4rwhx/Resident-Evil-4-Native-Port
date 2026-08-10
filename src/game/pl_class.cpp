@@ -66,7 +66,13 @@ public:
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
 };
+#ifdef RE4_PORT
+// Le mode voyage aussi par port_event_mode : cPlayer::endEvent le lisait dans un
+// registre, faute de le recevoir en parametre. Voir port/port_prelude.h.
+#define END_EVENT(p, mode) (port_event_mode = (int) (mode), ((cUnitEvent*) (p))->endEvent(mode))
+#else
 #define END_EVENT(p, mode) ((cUnitEvent*) (p))->endEvent(mode)
+#endif
 
 // `flags &= 0xFFFE` through a u16 reference: the 16-bit mask survives (`rlwinm 16,30`, BitOff16
 // gives `clrrwi`) and the following `pPL` load stays below the store (cPlNeck::move).
@@ -1094,7 +1100,8 @@ int cPlayer::getLifeLevel()
 void cPlayer::beginEvent()
 {
     #ifdef RE4_PORT
-    int modeReg;   // portage : epinglage sur r4, sans objet hors PowerPC
+    // portage : le mode arrive par port_event_mode, pose par la macro BEGIN_EVENT.
+    int modeReg = port_event_mode;
     #else
     register int modeReg asm("r4");
     #endif
@@ -1215,7 +1222,8 @@ int cPlayer::endCamera()
 void cPlayer::endEvent()
 {
     #ifdef RE4_PORT
-    u32 modeReg;   // portage : epinglage sur r4, sans objet hors PowerPC
+    // portage : le mode arrive par port_event_mode, pose par la macro END_EVENT.
+    u32 modeReg = (u32) port_event_mode;
     #else
     register u32 modeReg asm("r4");
     #endif
@@ -1757,7 +1765,10 @@ void cMot3::set(cModel* m, void* m0, void* m1, void* m2, int a, u8 b, int c, u16
     // zero_extendqisi2 no LOG_LINK to fold through (and no CC clobber: sched1 weight 0, so it
     // is ranked like the original's insn).
     #ifdef RE4_PORT
-    int rb;   // portage : epinglage sur r9, sans objet hors PowerPC
+    // portage : sur PowerPC ce pin lisait r9 - le parametre `b` de cMot3::set - sans le masque
+    // que le compilateur aurait applique. Hors PowerPC il faut nommer la valeur :
+    // laisser la variable non initialisee, c est lire de la pile au hasard.
+    int rb = b;
     #else
     register int rb asm("r9");
     #endif

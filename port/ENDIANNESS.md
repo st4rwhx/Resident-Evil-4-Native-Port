@@ -86,15 +86,13 @@ transfere en memoire principale (`readExit`). Ce sont les deux seuls points ou l
 
 ## Ordre de travail restant
 
-Le jeu ne tombe plus. Il traverse l ecran-titre et **tourne en boucle** sans planter, en
-chargeant ses vraies donnees depuis le disque de l utilisateur. Ce qui l arrete maintenant
-n est plus l endianness :
+Le jeu ne tombe plus, et **il dessine**. Il traverse l ecran-titre, charge ses vraies donnees
+depuis le disque de l utilisateur et emet 94 appels de dessin par image, aux bonnes positions.
+Ce qui manque n est plus de l endianness :
 
-* **rien n est dessine** - zero appel de dessin par image, mesure par `RE4_DUMP_FRAME`. Les
-  unites de l ecran-titre ne se declarent pas (`IDSystem::unitPtr(m[00],c[28]): Not found`) et
-  la table d ordonnancement du rendu ne distribue aucune primitive. C est le prochain chantier,
-  et il est de rendu, pas de conversion ;
-* les fonctions de TEV, de canaux de couleur et de texture indirecte sont encore des bouchons ;
+* le **TEV** n existe pas : sans lui les surfaces sortent blanches, et les textures deja
+  decodees ne sont pas appliquees. C est le prochain chantier ;
+* les canaux de couleur, la texture indirecte et le brouillard sont encore des bouchons ;
 * le lecteur de films (Sofdec) ne fait rien, donc les logos d ouverture sont sautes.
 
 Cote conversion, il reste, dans l ordre ou l execution le reclamera :

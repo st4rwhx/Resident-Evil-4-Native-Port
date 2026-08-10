@@ -100,7 +100,13 @@ public:
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
 };
+#ifdef RE4_PORT
+// Le mode voyage aussi par port_event_mode : cPlayer::beginEvent le lisait dans un
+// registre, faute de le recevoir en parametre. Voir port/port_prelude.h.
+#define BEGIN_EVENT(p, mode) (port_event_mode = (int) (mode), ((cUnitEvent*) (p))->beginEvent(mode))
+#else
 #define BEGIN_EVENT(p, mode) ((cUnitEvent*) (p))->beginEvent(mode)
+#endif
 
 // Deletes every message slot (the &cMes pointer is hoisted into a callee-saved register).
 static inline void EvtMesDeleteAll()

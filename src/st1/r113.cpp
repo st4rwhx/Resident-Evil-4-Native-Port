@@ -73,7 +73,13 @@ public:
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
 };
+#ifdef RE4_PORT
+// Le mode voyage aussi par port_event_mode : cPlayer::endEvent le lisait dans un
+// registre, faute de le recevoir en parametre. Voir port/port_prelude.h.
+#define END_EVENT(p, mode) (port_event_mode = (int) (mode), ((cUnitEvent*) (p))->endEvent(mode))
+#else
 #define END_EVENT(p, mode) ((cUnitEvent*) (p))->endEvent(mode)
+#endif
 struct PlPtr { cPlayer* p; };
 #define pPLS (((PlPtr*) &pPL)->p)
 

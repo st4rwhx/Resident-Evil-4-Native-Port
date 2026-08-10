@@ -81,7 +81,10 @@ void IDSystem::free()
 int IDSystem::setCk(u8 type)
 {
     #ifdef RE4_PORT
-    int raw;   // portage : epinglage sur r4, sans objet hors PowerPC
+    // portage : sur PowerPC ce pin lisait r4 - le parametre `type` de setCk - sans le masque
+    // que le compilateur aurait applique. Hors PowerPC il faut nommer la valeur :
+    // laisser la variable non initialisee, c est lire de la pile au hasard.
+    int raw = type;
     #else
     register int raw asm("r4");  // COMPILER-DIFF: #2 (the original masks the incoming u8 at the entry)
     #endif
@@ -92,7 +95,10 @@ int IDSystem::setCk(u8 type)
 void IDSystem::dispSw(u8 type, int sw)
 {
     #ifdef RE4_PORT
-    int r4v;   // portage : epinglage sur r4, sans objet hors PowerPC
+    // portage : sur PowerPC ce pin lisait r4 - le parametre `type` de dispSw - sans le masque
+    // que le compilateur aurait applique. Hors PowerPC il faut nommer la valeur :
+    // laisser la variable non initialisee, c est lire de la pile au hasard.
+    int r4v = type;
     #else
     register int r4v asm("r4");  // COMPILER-DIFF: #2 (the original masks the u8 at each use)
     #endif
@@ -177,7 +183,10 @@ IdUnit* IDSystem::unitPtr(u8 id, u8 type)
 {
     static IdUnit tmpId;
     #ifdef RE4_PORT
-    int r5v;   // portage : epinglage sur r5, sans objet hors PowerPC
+    // portage : sur PowerPC ce pin lisait r5 - le second parametre de unitPtr - sans le masque
+    // que le compilateur aurait applique. Hors PowerPC il faut nommer la valeur :
+    // laisser la variable non initialisee, c est lire de la pile au hasard.
+    int r5v = type;
     #else
     register int r5v asm("r5");  // COMPILER-DIFF: #2 (the original masks the u8 at the use)
     #endif
@@ -223,7 +232,10 @@ void IDSystem::set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode)
     IdUnit* c;
     u32 a;
     #ifdef RE4_PORT
-    int r6v;   // portage : epinglage sur r6, sans objet hors PowerPC
+    // portage : sur PowerPC ce pin lisait r6 - le troisieme parametre de set - sans le masque
+    // que le compilateur aurait applique. Hors PowerPC il faut nommer la valeur :
+    // laisser la variable non initialisee, c est lire de la pile au hasard.
+    int r6v = type;
     #else
     register int r6v asm("r6");  // COMPILER-DIFF: #2 (the original masks the u8 at the use)
     #endif
@@ -475,7 +487,10 @@ void IDSystem::set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode)
 void IDSystem::kill(u8 id, u8 type)
 {
     #ifdef RE4_PORT
-    int r5v;   // portage : epinglage sur r5, sans objet hors PowerPC
+    // portage : sur PowerPC ce pin lisait r5 - le second parametre de kill - sans le masque
+    // que le compilateur aurait applique. Hors PowerPC il faut nommer la valeur :
+    // laisser la variable non initialisee, c est lire de la pile au hasard.
+    int r5v = type;
     #else
     register int r5v asm("r5");  // COMPILER-DIFF: #2 (the original masks the u8 at each use)
     #endif
