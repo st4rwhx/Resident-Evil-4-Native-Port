@@ -2,6 +2,11 @@
 #define CMANAGER_H
 
 #include "types.h"
+#ifdef RE4_PORT
+// Portage : arrayPush() appelle Debug_alloc sans l'inclure, en comptant sur l'ordre d'inclusion
+// du .cpp appelant. L'inclusion reste sous garde pour ne pas perturber le build matching.
+#include "main_mem.h"
+#endif
 
 // Placement new for the managers' construct(): the work is constructed in place.
 #ifndef PLACEMENT_NEW_DEFINED

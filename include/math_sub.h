@@ -11,12 +11,20 @@
 
 // Float abs as the original SDK header defines it: a volatile asm, which also acts as a
 // scheduling barrier (loads after it are not hoisted above it).
+#ifdef RE4_PORT
+// Portage : `fabs` est une instruction PowerPC et la contrainte "=f" un registre flottant PPC,
+// donc ce bloc ne compile sur aucune autre cible. Seule une ligne, mais math_sub.h arrive
+// partout via player.h : elle faisait echouer **351 des 969 unites** en ARM. La barriere
+// d'ordonnancement que commente l'original n'importait que pour le matching.
+static inline f32 fabsf(f32 x) { return __builtin_fabsf(x); }
+#else
 static inline f32 fabsf(f32 x)
 {
     f32 r;
     asm volatile("fabs %0,%1" : "=f"(r) : "f"(x));
     return r;
 }
+#endif
 
 // game/math_sub.cpp
 void RotMatrix(Mtx m, Vec* rot);
