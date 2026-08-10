@@ -83,57 +83,97 @@ void arena_init()
 }
 
 // ---------------------------------------------------------------- tas
-
-// L'en-tete est **complete a 32 octets**, et ce n'est pas cosmetique : le bloc rendu est
-// `base + sizeof(Block)`, donc si l'en-tete ne fait pas un multiple de 32 le pointeur ne l'est
-// pas non plus. GX exige 32 octets pour les listes d'affichage et les textures ; avec un
-// en-tete de 16 (u32 + pointeur + int + u32 en ARM 32 bits) tout tenait quand meme et la
-// corruption ne serait apparue qu'au rendu, sans rapport visible avec l'allocateur.
-// Trouve par port/test_osdvd.cpp sur l'appareil, pas par relecture.
-struct Block {
-    u32 size;       // taille utile, hors en-tete
-    Block *next;    // chainage de la liste libre, ou nullptr si alloue
-    int heap;
-    u32 free;
-    u8 pad[32 - (sizeof(u32) + sizeof(void *) + sizeof(int) + sizeof(u32))];
+//
+// **Les structures sont celles du SDK, a l octet pres, et ce n est pas du zele.** RE4 ne se
+// contente pas d appeler OSAllocFromHeap : il **lit les descripteurs de tas lui-meme**.
+// `MemCheckHeapEnd` parcourt `HeapHead[h].allocated` pour trouver le sommet reellement occupe,
+// `MemSuspendHeap` recopie un descripteur entier, `MemReplaceHeap` s en sert pour redecouper
+// l arene entre deux zones de jeu. Le jeu a pose `HeapHead = (OSHeapDescriptor*) arenaLo` juste
+// avant d appeler OSInitAlloc, et attend d y trouver la table.
+//
+// Une implementation "equivalente" avec ses propres structures marche jusqu au premier
+// MemReplaceHeap, puis toutes les allocations echouent en silence - c est ce qui est arrive :
+// "alloc[a0]:free[0] trans_ot.cpp(53)", vingt-quatre fois, avant un dereferencement nul.
+//
+// Disposition (include/main_mem.h, qui la decrit telle que le jeu la lit) :
+//   OSHeapCell       { prev, next, size } — en-tete de **0x20 octets**, `size` le comprend
+//   OSHeapDescriptor { size, free, allocated } — 12 octets, size < 0 = tas inexistant
+struct HeapCell {
+    HeapCell *prev;
+    HeapCell *next;
+    s32 size;            // en-tete comprise
+    u8 pad[0x20 - 3 * sizeof(void *) - 0];
 };
 
-const int MAX_HEAPS = 16;
-
-struct Heap {
-    u8 *start;
-    u8 *end;
-    Block *freelist;
-    bool used;
+struct HeapDesc {
+    s32 size;
+    HeapCell *free;
+    HeapCell *allocated;
 };
 
-Heap g_heaps[MAX_HEAPS];
-int g_nheaps = 0;
+const u32 CELL_HDR = 0x20;      // taille de l en-tete, imposee par le format du SDK
+const u32 ALIGN = 32;
 
-Block *block_of(void *p) { return (Block *)((u8 *)p - sizeof(Block)); }
+HeapDesc *g_heap_array = nullptr;
+int g_num_heaps = 0;
 
-void heap_insert_free(Heap &h, Block *b)
+inline u32 round_up(u32 v) { return (v + (ALIGN - 1)) & ~(ALIGN - 1); }
+inline u8 *round_up_p(void *p) { return (u8 *) (((unsigned long) p + (ALIGN - 1)) & ~(unsigned long) (ALIGN - 1)); }
+inline u8 *round_down_p(void *p) { return (u8 *) ((unsigned long) p & ~(unsigned long) (ALIGN - 1)); }
+
+// Retire une cellule d une liste doublement chainee et rend la nouvelle tete.
+HeapCell *list_remove(HeapCell *list, HeapCell *c)
 {
-    b->free = 1;
-    // Insertion triee par adresse, puis fusion avec les voisins : sans cela la liste se
-    // fragmente et un chargement de salle finit par echouer alors que la place existe.
-    Block **pp = &h.freelist;
-    while (*pp && *pp < b)
-        pp = &(*pp)->next;
-    b->next = *pp;
-    *pp = b;
+    if (c->prev)
+        c->prev->next = c->next;
+    else
+        list = c->next;
+    if (c->next)
+        c->next->prev = c->prev;
+    return list;
+}
 
-    if (b->next && (u8 *)b + sizeof(Block) + b->size == (u8 *)b->next) {
-        b->size += sizeof(Block) + b->next->size;
-        b->next = b->next->next;
+HeapCell *list_push(HeapCell *list, HeapCell *c)
+{
+    c->prev = nullptr;
+    c->next = list;
+    if (list)
+        list->prev = c;
+    return c;
+}
+
+// Insertion **triee par adresse** avec fusion des voisins. Sans la fusion, un chargement de
+// salle fragmente le tas jusqu a l echec alors que la place existe.
+HeapCell *free_insert(HeapCell *list, HeapCell *c)
+{
+    HeapCell *prev = nullptr;
+    HeapCell *cur = list;
+    while (cur && cur < c) {
+        prev = cur;
+        cur = cur->next;
     }
-    for (Block *c = h.freelist; c && c != b; c = c->next) {
-        if ((u8 *)c + sizeof(Block) + c->size == (u8 *)b) {
-            c->size += sizeof(Block) + b->size;
-            c->next = b->next;
-            break;
-        }
+    c->prev = prev;
+    c->next = cur;
+    if (cur)
+        cur->prev = c;
+    if (prev)
+        prev->next = c;
+    else
+        list = c;
+
+    if (cur && (u8 *) c + c->size == (u8 *) cur) {
+        c->size += cur->size;
+        c->next = cur->next;
+        if (cur->next)
+            cur->next->prev = c;
     }
+    if (prev && (u8 *) prev + prev->size == (u8 *) c) {
+        prev->size += c->size;
+        prev->next = c->next;
+        if (c->next)
+            c->next->prev = prev;
+    }
+    return list;
 }
 
 } // namespace
@@ -147,8 +187,6 @@ volatile OSHeapHandle __OSCurrHeap = -1;
 void OSInit(void)
 {
     arena_init();
-    std::memset(g_heaps, 0, sizeof(g_heaps));
-    g_nheaps = 0;
     std::printf("[PORT] OSInit : arene %u Mo a %p\n", ARENA_SIZE / (1024u * 1024u),
                 (void *)g_arena);
 }
@@ -161,80 +199,146 @@ void OSSetArenaHi(void *hi) { g_arena_hi = (u8 *)hi; }
 void *OSInitAlloc(void *arenaStart, void *arenaEnd, int maxHeaps)
 {
     arena_init();
-    (void)maxHeaps;
-    std::memset(g_heaps, 0, sizeof(g_heaps));
-    g_nheaps = 0;
-    (void)arenaEnd;
-    return arenaStart;   // le jeu reprend l'arene a partir d'ici
+    (void) arenaEnd;
+    // La table des descripteurs vit **au debut de l arene**, la ou le jeu a deja pointe
+    // `HeapHead`. On rend l adresse qui suit, que le jeu prend pour nouveau bas d arene.
+    g_heap_array = (HeapDesc *) arenaStart;
+    g_num_heaps = maxHeaps;
+    for (int i = 0; i < maxHeaps; ++i) {
+        g_heap_array[i].size = -1;
+        g_heap_array[i].free = nullptr;
+        g_heap_array[i].allocated = nullptr;
+    }
+    return round_up_p((u8 *) arenaStart + (u32) maxHeaps * sizeof(HeapDesc));
 }
 
 int OSCreateHeap(void *start, void *end)
 {
-    if (g_nheaps >= MAX_HEAPS || !start || !end || end <= start)
+    if (!g_heap_array)
         return -1;
-    Heap &h = g_heaps[g_nheaps];
-    // Aligner aussi le debut du tas : sinon le premier bloc herite du desalignement de l'arene.
-    h.start = (u8 *)(((unsigned long)start + 31u) & ~31ul);
-    h.end = (u8 *)end;
-    h.used = true;
-    Block *b = (Block *)h.start;
-    b->size = (u32)((h.end - h.start) - sizeof(Block));
-    b->next = nullptr;
-    b->heap = g_nheaps;
-    b->free = 1;
-    h.freelist = b;
-    return g_nheaps++;
+    u8 *lo = round_up_p(start);
+    u8 *hi = round_down_p(end);
+    if (hi <= lo + (long) CELL_HDR)
+        return -1;
+
+    for (int i = 0; i < g_num_heaps; ++i) {
+        HeapDesc &d = g_heap_array[i];
+        if (d.size >= 0)
+            continue;
+        HeapCell *c = (HeapCell *) lo;
+        c->prev = nullptr;
+        c->next = nullptr;
+        c->size = (s32) (hi - lo);
+        d.size = (s32) (hi - lo);
+        d.free = c;
+        d.allocated = nullptr;
+        return i;
+    }
+    return -1;
 }
 
 void OSDestroyHeap(int heap)
 {
-    if (heap >= 0 && heap < g_nheaps)
-        g_heaps[heap].used = false;
+    if (g_heap_array && heap >= 0 && heap < g_num_heaps)
+        g_heap_array[heap].size = -1;
+}
+
+void OSAddToHeap(int heap, void *start, void *end)
+{
+    if (!g_heap_array || heap < 0 || heap >= g_num_heaps)
+        return;
+    u8 *lo = round_up_p(start);
+    u8 *hi = round_down_p(end);
+    if (hi <= lo + (long) CELL_HDR)
+        return;
+    HeapCell *c = (HeapCell *) lo;
+    c->size = (s32) (hi - lo);
+    HeapDesc &d = g_heap_array[heap];
+    d.free = free_insert(d.free, c);
+    d.size += c->size;
 }
 
 void *OSAllocFromHeap(int heap, u32 size)
 {
-    if (heap < 0 || heap >= g_nheaps || !g_heaps[heap].used)
+    if (!g_heap_array || heap < 0 || heap >= g_num_heaps)
         return nullptr;
-    Heap &h = g_heaps[heap];
-    size = (size + 31u) & ~31u;          // le materiel exige 32 octets d'alignement
-    Block **pp = &h.freelist;
-    for (; *pp; pp = &(*pp)->next) {
-        Block *b = *pp;
-        if (b->size < size)
+    HeapDesc &d = g_heap_array[heap];
+    if (d.size < 0)
+        return nullptr;
+
+    const u32 want = round_up(size + CELL_HDR);
+    for (HeapCell *c = d.free; c; c = c->next) {
+        if ((u32) c->size < want)
             continue;
-        if (b->size >= size + sizeof(Block) + 32u) {   // scinder
-            Block *rest = (Block *)((u8 *)b + sizeof(Block) + size);
-            rest->size = b->size - size - (u32)sizeof(Block);
-            rest->next = b->next;
-            rest->heap = heap;
-            rest->free = 1;
-            b->size = size;
-            *pp = rest;
+        // Scinder seulement si le reste peut porter une cellule utile ; sinon on donne tout,
+        // ce que fait aussi le SDK.
+        const u32 rest = (u32) c->size - want;
+        if (rest >= CELL_HDR + ALIGN) {
+            HeapCell *tail = (HeapCell *) ((u8 *) c + want);
+            tail->size = (s32) rest;
+            tail->prev = c->prev;
+            tail->next = c->next;
+            if (c->prev)
+                c->prev->next = tail;
+            else
+                d.free = tail;
+            if (c->next)
+                c->next->prev = tail;
+            c->size = (s32) want;
         } else {
-            *pp = b->next;
+            d.free = list_remove(d.free, c);
         }
-        b->next = nullptr;
-        b->heap = heap;
-        b->free = 0;
-        return (u8 *)b + sizeof(Block);
+        d.allocated = list_push(d.allocated, c);
+        return (u8 *) c + CELL_HDR;
     }
-    std::printf("[PORT] OSAllocFromHeap : tas %d plein, %u octets refuses\n", heap, size);
     return nullptr;
 }
 
 void OSFreeToHeap(int heap, void *ptr)
 {
-    if (!ptr || heap < 0 || heap >= g_nheaps)
+    if (!ptr || !g_heap_array || heap < 0 || heap >= g_num_heaps)
         return;
-    Block *b = block_of(ptr);
-    if (b->free)
-        return;                          // double liberation : ignoree, pas fatale
-    heap_insert_free(g_heaps[heap], b);
+    HeapDesc &d = g_heap_array[heap];
+    HeapCell *c = (HeapCell *) ((u8 *) ptr - CELL_HDR);
+    d.allocated = list_remove(d.allocated, c);
+    d.free = free_insert(d.free, c);
 }
 
 int OSSetCurrentHeap(int heap) { int old = __OSCurrHeap; __OSCurrHeap = heap; return old; }
-s32 OSCheckHeap(int heap) { (void)heap; return 0; }
+
+// Le jeu imprime ce retour quand une allocation echoue : il doit dire la place libre reelle,
+// sinon le message ne renseigne sur rien ("free[0]" quel que soit l etat du tas).
+s32 OSCheckHeap(int heap)
+{
+    if (!g_heap_array || heap < 0 || heap >= g_num_heaps || g_heap_array[heap].size < 0)
+        return -1;
+    s32 total = 0;
+    for (const HeapCell *c = g_heap_array[heap].free; c; c = c->next)
+        total += c->size;
+    return total;
+}
+
+u32 OSReferentSize(void *ptr)
+{
+    if (!ptr)
+        return 0;
+    const HeapCell *c = (const HeapCell *) ((u8 *) ptr - CELL_HDR);
+    return (u32) c->size - CELL_HDR;
+}
+
+void OSVisitAllocated(void (*visitor)(void *, u32))
+{
+    if (!g_heap_array || !visitor)
+        return;
+    for (int i = 0; i < g_num_heaps; ++i)
+        for (HeapCell *c = g_heap_array[i].allocated; c; c = c->next)
+            visitor((u8 *) c + CELL_HDR, (u32) c->size - CELL_HDR);
+}
+
+void OSDumpHeap(int heap)
+{
+    std::printf("[PORT] tas %d : %d octets libres\n", heap, (int) OSCheckHeap(heap));
+}
 
 // ---------------------------------------------------------------- temps
 

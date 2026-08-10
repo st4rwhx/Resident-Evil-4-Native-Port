@@ -17,6 +17,11 @@
 #include "types.h"
 #include "dvd.h"
 
+#ifdef RE4_PORT
+extern "C" void port_endian_fix(const char* name, void* data, u32 size);
+extern "C" void port_endian_fix_headers(void* block, u32 size);
+#endif
+
 // The file table is defined before the other headers are included: its strings precede the
 // map_obj.h/light.h/widget.h/card.h/sofdec.h strings in the original .rodata.
 FileTblEntry FileTbl[] = {
@@ -537,6 +542,13 @@ void cDvdQueue::readInit()
             mode = 3;
             break;
         }
+#ifdef RE4_PORT
+        // Portage : le bloc d en-tete de 0x400 octets vient d arriver. Il decrit les morceaux
+        // du fichier - type, taille, destination - en gros-boutiste, et **tout le chargement
+        // en depend**. Sans cette conversion la premiere taille lue vaut 0x80122300 au lieu de
+        // quelques kilo-octets, et le jeu demande un transfert de deux gigaoctets.
+        port_endian_fix_headers(&header_buff[depth << 10], 0x400);
+#endif
         if (chk(0x6) && depth == 0) {
             step++;
         } else {
@@ -624,6 +636,18 @@ void cDvdQueue::readMain()
 
     switch (step) {
     case 0:
+#ifdef RE4_PORT
+        // Portage : les morceaux 1 et 2 sont les banques de sons. Le pilote audio est
+        // volontairement inerte tant que leurs donnees ne sont pas converties (voir SndInit et
+        // port/ENDIANNESS.md) ; lui livrer une banque gros-boutiste l envoie suivre des
+        // decalages sauvages des sa premiere lecture - etc/core.das tombait ainsi dans
+        // Snd_str_ax_voice_play, sur un pointeur dont l octet de poids fort etait celui du
+        // mauvais bout. On saute ces morceaux comme le jeu saute un morceau vide.
+        if ((*ph)->type == 1 || (*ph)->type == 2) {
+            (*ph)++;
+            break;
+        }
+#endif
         switch ((*ph)->type) {
         case 0xFFFFFFFF:
             if (depth == 0) {
@@ -815,6 +839,14 @@ void cDvdQueue::readExit()
     fileClose();
     if (chk(0x04000000)) {
         setStatus(ST_COMPLETE);
+#ifdef RE4_PORT
+        // Portage : le fichier vient d arriver entier en memoire principale. C est le seul
+        // endroit ou l on connait **a la fois** son nom, son adresse et sa taille - donc le
+        // seul ou l on puisse retourner ses octets avant que le jeu ne les lise.
+        // Voir port/endian.cpp et port/ENDIANNESS.md.
+        if (addrTbl[0][0] && mramSize)
+            port_endian_fix(name, (void*) addrTbl[0][0], mramSize);
+#endif
         OSReport("DVD: Read Ok ");
     } else if (chk(0x100000)) {
         setStatus(ST_CANCEL);
@@ -1432,6 +1464,29 @@ int cDvd::ReadCheck(int req, int* result, int* size, void** addr)
 {
     DvdReadInfo info;
 
+#ifdef RE4_PORT
+    // Portage : **cette fonction n'avait pas de `return`.** C'est du code non defini, et le
+    // binaire d'origine s'en tirait parce que le PowerPC laissait dans r3 la valeur rendue par
+    // readCheckMain - donc, par accident, la bonne. Sur ARM le registre de retour contient
+    // autre chose, et les appelants concluent l'inverse de la verite.
+    //
+    // Consequence observee : `EprintfInit` lit etc/moji8.tpl, absent du disque de vente. La
+    // lecture echoue, l'appel rend une valeur positive par hasard, et le jeu deference un
+    // pointeur jamais ecrit. Rendre explicitement ce que la surcharge a un argument rend deja.
+    const int ret = readCheckMain(req, &info);
+    if (ret == 1) {
+        if (result) {
+            *result = info.mramSize;
+        }
+        if (size) {
+            *size = info.aramSize;
+        }
+        if (addr) {
+            *addr = (void*) info.addr[0][0];
+        }
+    }
+    return ret;
+#else
     if (readCheckMain(req, &info) == 1) {
         if (result) {
             *result = info.mramSize;
@@ -1443,6 +1498,7 @@ int cDvd::ReadCheck(int req, int* result, int* size, void** addr)
             *addr = (void*) info.addr[0][0];
         }
     }
+#endif
 }
 
 int cDvd::ReadCheck(int req)

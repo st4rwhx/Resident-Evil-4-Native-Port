@@ -28,7 +28,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # et qui desactive les macros de os.h masquant OSPhysicalToCached et consorts.
 COMMON = ['-DRE4_PORT', '-DDEBUG=1', '-DVERSION_G4BE08', '-D__GEKKO__',
           '-DSDK_REVISION=1', '-DBUILD_VERSION=0',
-          '-Oz', '-fno-exceptions', '-fno-rtti', '-w', '-c',
+          os.environ.get('PORT_OPT', '-Oz'), '-fno-exceptions', '-fno-rtti', '-w', '-c',
           # Tables de deroulement et pointeur de cadre : sans elles le tombstone Android ne
           # donne que la premiere adresse, souvent fausse (une instruction de retour), et on
           # cherche le bug au mauvais endroit. Le cout en taille est sans importance ici.
@@ -42,7 +42,7 @@ CXXONLY = ['-std=gnu++11', '-fdeclspec', '-Wno-c++11-narrowing']
 CONLY = ['-std=gnu99', '-fdeclspec']
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
-              'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'crash', 'prodg_rt', 'port_log',
+              'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
               'stubs_generated', 'stubs_link', 'main_port']
 
 

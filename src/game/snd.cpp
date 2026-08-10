@@ -22,6 +22,9 @@
 #include "atari.h"
 #define SND_SDK_NO_GX
 #define SND_DRV_GAME_API
+#ifdef RE4_PORT
+#include <cstring>
+#endif
 #include "snd.h"
 #include "snd_drv.h"
 #include "dvd.h"
@@ -113,6 +116,51 @@ void SndInit()
     ARQInit();
     memclr_asm(pSndRaw, sizeof(SndWork));
 
+#ifdef RE4_PORT
+    // Portage : **l'audio est volontairement inerte pour l'instant, et c'est une decision de
+    // priorite, pas un oubli.**
+    //
+    // Les quatre fichiers charges ici (index de flux, table de musiques, table de portes,
+    // banque) sont ranges en gros-boutiste, comme toutes les donnees de RE4. Les convertir
+    // demande de connaitre la disposition de SND_SHD, SND_RIT, SndBgmEnt et de leurs voisines -
+    // un travail reel, et qui ne fait apparaitre **aucune image**. Le chemin vers un premier
+    // ecran passe ailleurs : les textures et les modeles.
+    //
+    // Plutot que de charger des donnees qui seront mal interpretees - ce qui envoie le pilote
+    // de son suivre des decalages sauvages - on lui donne un etat vide et coherent : zero bloc
+    // de flux, zero entree. Le jeu demande alors des sons qui n'existent pas, ce que son propre
+    // code sait deja gerer (les banques ne sont pas toujours chargees).
+    //
+    // Voir port/ENDIANNESS.md. Retirer cette garde est le premier pas quand le son viendra.
+    {
+        static SndStrFile empty_str[2];
+        std::memset(empty_str, 0, sizeof(empty_str));
+        for (i = 0; i < 2; i++) {
+            SndMem.str_file[i] = &empty_str[i];
+            Snd_str_blk_init(i, &empty_str[i]);
+        }
+        str_flag = 0;
+        adr = SND_DATA_TOP;
+        SndMem.bgm_file = (u32*) adr;
+        SndMem.door_tbl = (SndDoorTbl*) adr;
+        SndMem.bgm_tbl = (SndBgmTbl*) adr;
+        std::memset((void*) adr, 0, 0x100);
+    }
+    ARAM_FREE_BASE = 0x800000;
+    SndMem.blk_mram[0] = (u8*) adr + 0x100;
+    SndMem.blk_mram[1] = SndMem.blk_mram[0] + 0x4000;
+    SndMem.blk_mram[2] = SndMem.blk_mram[1] + 0x4000;
+    SndMem.blk_mram[7] = SndMem.blk_mram[2] + 0x4000;
+    SndMem.mram_end = SndMem.blk_mram[7] + 0x4000;
+    adr = (u32) SndMem.mram_end;
+    for (i = 3; i >= 0; i--) {
+        SndMem.str_buf[i] = adr + 0x10000 + i * 0x8000;
+    }
+    SndMem.sub_adr = SndMem.str_buf[3] + 0x8000;
+    SndMem.sub_end = SndMem.sub_adr;
+    (void) len;
+    (void) r;
+#else
 #line 120 SND_FILE
     r = DvdRead(0, (void*) SND_DATA_TOP, 0, 0, 0, 0x11, __FILE__, __LINE__);
     str_flag = Dvd.ReadCheck(r, &len, 0, 0) > 0;
@@ -156,6 +204,7 @@ void SndInit()
     Dvd.ReadCheck(r, &len, 0, 0);
     SndMem.sub_end = SndMem.sub_adr + len;
 
+#endif
     SndDriverInit();
     pSys->sound_mode = Snd_get_sound_mode();
 }

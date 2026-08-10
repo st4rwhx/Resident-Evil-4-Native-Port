@@ -107,8 +107,22 @@ void ARQFlushQueue(void) {}
 void ARQPostRequest(ARQRequest *request, u32 owner, u32 type, u32 priority,
                     u32 source, u32 dest, u32 length, ARQCallback callback)
 {
-    (void) owner;
-    (void) priority;
+    // **La requete doit etre remplie avant le transfert.** Le SDK y range tout ce que la
+    // callback relira : `trans2aram_cb` de RE4 recupere le proprietaire par `r->owner` pour
+    // retrouver sa file DVD, et la taille transferee par `r->length`. Une souche qui se
+    // contente de copier les octets laisse ces champs indefinis, et la callback part suivre un
+    // pointeur pris dans la pile - le chargement de etc/core.das tombait juste apres son
+    // transfert ARAM, sur un appel a une adresse nulle.
+    if (request) {
+        request->next = nullptr;
+        request->owner = owner;
+        request->type = type;
+        request->priority = priority;
+        request->source = source;
+        request->dest = dest;
+        request->length = length;
+        request->callback = callback;
+    }
     if (length) {
         if (type == ARQ_TYPE_MRAM_TO_ARAM) {
             if (u8 *d = host(dest, length))

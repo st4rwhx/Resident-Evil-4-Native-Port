@@ -65,13 +65,29 @@ la meme connaissance, exprimee autrement.
 Et le decompile donne la seconde moitie : **les declarations C++ de chaque structure lue depuis
 le disque**. De quoi engendrer les convertisseurs plutot que les ecrire a la main.
 
-## Ordre de travail propose
+## Ce qui est fait
 
-Le chemin de demarrage ne touche qu'une poignee de formats. Les convertir dans l'ordre ou le jeu
-les demande - la meme methode que pour les fonctions de plateforme, et pour la meme raison :
-c'est l'execution qui dit ce qui compte.
+`port/endian.cpp` tient le registre, et la couche DVD l'appelle a deux endroits : sur le bloc
+d'en-tete d'une archive des qu'il arrive (`readInit`), et sur un fichier entier une fois
+transfere en memoire principale (`readExit`). Ce sont les deux seuls points ou l'on connait
+**a la fois** le nom du fichier, son adresse et sa taille.
 
-1. `bgm/bio4str.hed` et les tables de son (ce qui bloque maintenant) ;
-2. `etc/sizetbl.dat`, `etc/core.das` (tables d'objets et d'interface) ;
-3. l'archive de salle et ses textures TPL ;
-4. les modeles et leurs listes d'affichage.
+| format | etat | ce qu'il a debloque |
+|---|---|---|
+| bloc d'en-tete d'archive (`DvdHeader`) | **fait** | sans lui, la premiere taille lue valait 0x80122300 et le jeu demandait deux gigaoctets |
+| TPL (toutes les textures du jeu) | **fait** | en-tetes seulement : les pixels restent gros-boutistes, `port/texture.cpp` les lit deja ainsi |
+| `.fnt` (police = deux decalages + un TPL) | **fait** | `cMes.init()` passe, le jeu atteint sa premiere image |
+| banques de son | **contourne** | l'audio est inerte, les morceaux 1 et 2 des archives sont sautes |
+| contenu de `.das` (modeles, tables, listes d'affichage) | **a faire** | c'est la ou le jeu s'arrete aujourd'hui |
+
+## Ordre de travail restant
+
+Le jeu atteint maintenant `cSceSys::scheduler()` - sa boucle de scene - et tombe en lisant le
+contenu de `etc/core.das`. La suite, dans l'ordre ou l'execution la reclame :
+
+1. le contenu de `etc/core.das` : tables d'objets, d'interface, textures ;
+2. l'archive de salle `St1/r100.das` et ses textures ;
+3. les modeles et leurs listes d'affichage GX.
+
+La methode ne change pas : implementer ce que l'execution reclame, dans l'ordre ou elle le
+reclame, plutot que tout deviner d'avance.

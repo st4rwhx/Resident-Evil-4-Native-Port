@@ -375,16 +375,16 @@ BOOL DVDReadAsyncPrio(DVDFileInfo *fileInfo, void *addr, s32 length, s32 offset,
             ::close(f);
         }
     } else if (g_image >= 0) {
-        // Depuis l image : la position du fichier plus le decalage demande. Ne jamais lire
-        // au-dela de la taille declaree, sinon une lecture deborde sur le fichier suivant et
-        // le jeu recoit des octets plausibles mais faux.
-        s32 n = length;
-        if (offset < 0 || (u32) offset >= en.size)
-            n = 0;
-        else if ((u32) (offset + n) > en.size)
-            n = (s32) (en.size - (u32) offset);
-        if (n > 0) {
-            const ssize_t r = ::pread(g_image, addr, (size_t) n,
+        // Depuis l image : la position du fichier plus le decalage demande.
+        //
+        // **On ne borne pas a la taille declaree du fichier**, et ce n'est pas une negligence.
+        // Le lecteur du GameCube lit des secteurs bruts : une demande de 0x400 octets qui
+        // depasse la fin logique du fichier rend quand meme 0x400 octets, pris sur le
+        // remplissage qui suit. Le jeu compte dessus - `dvdread_callback` traite comme une
+        // **erreur** toute lecture qui rend moins que demande, et le chargement des polices
+        // tournait en boucle sur "DVD: Read Error!!!" tant que la couche rognait.
+        if (offset >= 0) {
+            const ssize_t r = ::pread(g_image, addr, (size_t) length,
                                       (off_t) (en.offset + (u32) offset));
             got = (r > 0) ? (s32) r : 0;
         }
