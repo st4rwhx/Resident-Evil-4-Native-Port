@@ -1,0 +1,12 @@
+GXLoadTexMtxImm
+OSCheckHeap
+OSDestroyHeap
+OSSetCurrentHeap
+VIConfigure
+VIGetNextField
+VIInit
+VISetBlack
+OSInitAlloc
+OSCreateHeap
+OSAllocFromHeap
+OSFreeToHeap
