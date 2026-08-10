@@ -1,0 +1,15 @@
+name: main
+object: sys/main.dol
+hash: 61e0cdacaa48a2de4a935d925feedac968c6bf6f
+object_base: orig/RE4DBG
+extract_objects: false
+
+symbols: config/RE4DBG/symbols.txt
+splits: config/RE4DBG/splits.txt
+
+detect_objects: true
+detect_strings: true
+write_asm: true
+fill_gaps: true
+export_all: true
+globalize_symbols: true

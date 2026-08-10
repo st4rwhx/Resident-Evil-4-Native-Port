@@ -143,6 +143,41 @@ of matching ~10,000 functions has barely begun."
       reproducible from our source so far).
 - [ ] ...
 
+## Whole-DOL reconstruction build (separate from function matching, above)
+
+As of 2026-09-10, `tools/scripts/build.sh` reproducibly rebuilds a **complete,
+booting** `main.dol` from the debug disc's disassembly: `dtk dol split` (all
+10,383 functions, byte-identical raw disassembly — not hand-written C, this
+is a *different* verification axis from the matching work tracked above) →
+real CodeWarrior `mwldeppc` link → `dtk elf2dol`. `--iso` additionally rebuilds
+a full bootable GameCube disc image (own tool, `tools/scripts/build_gc_iso.py`
+— `wit`/Wiimms ISO Tools insists on Wii-style partition wrapping even for a
+plain GC source, which breaks Dolphin's apploader).
+
+This reconstructed build **boots to the real, fully rendered Resident Evil 4
+title menu** in Dolphin (logo, Leon/Ashley artwork, START/LOAD/OPTIONS,
+Capcom 2005 copyright, ~34 FPS) and correctly plays a real FMV cutscene
+(`movie/demo0.sfd`) along the way — i.e. the Nintendo SDK boot sequence, DVD
+filesystem, video decoding, and rendering pipeline are all confirmed working
+end-to-end against our own rebuild. Five real bugs in the split→link→disc
+pipeline had to be found and fixed to get there (mwldeppc mis-computing PC-
+relative branches in the object linked last before a section-kind change;
+dtk's SDK-signature system hardcoding a symbol name that collides with
+mwldeppc's own auto-generated one; a bad hand-added symbol from earlier in
+the project overlapping a real data table; DOL-vs-disc-image; `wit`'s Wii
+wrapping) — see the project memory / commit history for full root-cause
+writeups, and the comment block at the top of `build.sh` for the one known
+*remaining* issue (`_SDA2_BASE_` computed differently than the original,
+~668 small-data loads affected, deferred — doesn't block boot or the menu).
+
+**This does not mean Phase 1 is close to done.** It means the toolchain can
+produce and verify a byte-faithful *whole-binary* rebuild end-to-end, which
+is valuable both as a sanity check on the split/link pipeline itself and as
+the harness incremental function-matching work (above) will keep running
+against. The ~10,375 not-yet-matched functions are still raw disassembly,
+not understood C++ source — that work is unaffected by this milestone and
+still has to happen function by function.
+
 ## Layout
 
 ```
