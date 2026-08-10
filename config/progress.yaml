@@ -38,3 +38,60 @@ functions:
   - name: CameraControl::setMotionBaseMatPtr
     status: equivalent
     bytes: 12
+  - name: cManager_cMap_::setName
+    status: matched
+    bytes: 8
+  - name: cManager_cDmg_::setName
+    status: matched
+    bytes: 8
+  - name: cManager_Event_::setName
+    status: matched
+    bytes: 8
+  - name: cManager_cModelInfo_::setName
+    status: matched
+    bytes: 8
+  - name: cObjGatling::setFire
+    status: matched
+    bytes: 12
+  - name: cObjWep::moveAll
+    status: matched
+    bytes: 4
+  - name: cObjWep::moveReload
+    status: matched
+    bytes: 4
+  - name: cSubChar::ckPlRun
+    status: equivalent
+    bytes: 12
+  - name: cSubChar::setFace
+    status: matched
+    bytes: 4
+  - name: CameraQuasiFPS::LRinfo
+    status: matched
+    bytes: 8
+  - name: CameraQuasiFPS::setBlendRatio
+    status: matched
+    bytes: 8
+  - name: CameraQuasiFPS::getFloorRatio
+    status: matched
+    bytes: 8
+  - name: BulletInfo::roomInit
+    status: matched
+    bytes: 12
+  - name: cEmDoor::setSeCancel
+    status: matched
+    bytes: 12
+  - name: cLightMgr::getLitPPtr
+    status: matched
+    bytes: 8
+  - name: cPlNeck::setMode
+    status: matched
+    bytes: 8
+  - name: cEmObj::setEff
+    status: matched
+    bytes: 8
+  - name: cEmBarred::setEff
+    status: matched
+    bytes: 8
+  - name: Light00_Move
+    status: matched
+    bytes: 12
