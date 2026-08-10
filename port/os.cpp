@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <time.h>
 
 #include <dolphin.h>
 
@@ -45,11 +46,18 @@ void arena_init()
 
 // ---------------------------------------------------------------- tas
 
+// L'en-tete est **complete a 32 octets**, et ce n'est pas cosmetique : le bloc rendu est
+// `base + sizeof(Block)`, donc si l'en-tete ne fait pas un multiple de 32 le pointeur ne l'est
+// pas non plus. GX exige 32 octets pour les listes d'affichage et les textures ; avec un
+// en-tete de 16 (u32 + pointeur + int + u32 en ARM 32 bits) tout tenait quand meme et la
+// corruption ne serait apparue qu'au rendu, sans rapport visible avec l'allocateur.
+// Trouve par port/test_osdvd.cpp sur l'appareil, pas par relecture.
 struct Block {
     u32 size;       // taille utile, hors en-tete
     Block *next;    // chainage de la liste libre, ou nullptr si alloue
     int heap;
     u32 free;
+    u8 pad[32 - (sizeof(u32) + sizeof(void *) + sizeof(int) + sizeof(u32))];
 };
 
 const int MAX_HEAPS = 16;
@@ -92,6 +100,10 @@ void heap_insert_free(Heap &h, Block *b)
 
 } // namespace
 
+// `__OSCurrHeap` est declare par le SDK mais defini dans src/lib/OSAlloc.c, que le portage ne
+// lie pas puisqu'il remplace tout OSAlloc. On le fournit ici.
+volatile OSHeapHandle __OSCurrHeap = -1;
+
 // ---------------------------------------------------------------- API OS
 
 void OSInit(void)
@@ -123,7 +135,8 @@ int OSCreateHeap(void *start, void *end)
     if (g_nheaps >= MAX_HEAPS || !start || !end || end <= start)
         return -1;
     Heap &h = g_heaps[g_nheaps];
-    h.start = (u8 *)start;
+    // Aligner aussi le debut du tas : sinon le premier bloc herite du desalignement de l'arene.
+    h.start = (u8 *)(((unsigned long)start + 31u) & ~31ul);
     h.end = (u8 *)end;
     h.used = true;
     Block *b = (Block *)h.start;
@@ -192,8 +205,11 @@ const u64 TB_HZ = 40500000ull;
 
 static u64 host_ns()
 {
+    // `timespec_get` n'apparait dans la libc d'Android qu'a l'API 29 ; clock_gettime existe
+    // partout et CLOCK_MONOTONIC est ce qu'il faut pour une horloge de jeu (insensible aux
+    // changements d'heure).
     timespec ts;
-    timespec_get(&ts, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &ts);
     return (u64)ts.tv_sec * 1000000000ull + (u64)ts.tv_nsec;
 }
 
@@ -219,8 +235,9 @@ BOOL OSRestoreInterrupts(BOOL level) { int o = g_intr; g_intr = level; return o;
 
 u32 OSGetConsoleType(void) { return 0x10000002u; }   // une Retail 2, ce que le jeu attend
 u32 OSGetConsoleSimulatedMemSize(void) { return ARENA_SIZE; }
-u32 OSGetResetButtonState(void) { return 0; }
-void *OSPhysicalToCached(u32 addr) { arena_init(); return g_arena + (addr & 0x01FFFFFFu); }
+BOOL OSGetResetButtonState(void) { return FALSE; }   // declare BOOL dans os/OSResetSW.h
+// OSPhysicalToCached est aussi une **macro** dans os.h : la definir ici ne sert a rien,
+// la macro reecrirait le nom. On la laisse au SDK.
 
 void OSPanic(const char *file, int line, const char *msg, ...)
 {
