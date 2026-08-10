@@ -95,3 +95,126 @@ functions:
   - name: Light00_Move
     status: matched
     bytes: 12
+  - name: CardID::setAction
+    status: matched
+    bytes: 8
+  - name: cUnit::beginEvent
+    status: matched
+    bytes: 4
+  - name: cUnit::endEvent
+    status: matched
+    bytes: 4
+  - name: Message::WaitEnd
+    status: matched
+    bytes: 12
+  - name: CountDown::initTimeFrame
+    status: matched
+    bytes: 8
+  - name: CountDown::getFrame
+    status: matched
+    bytes: 8
+  - name: cString::c_str
+    status: matched
+    bytes: 8
+  - name: cLog::on
+    status: matched
+    bytes: 12
+  - name: cDvdQueue::fileGetLength
+    status: matched
+    bytes: 8
+  - name: cDataUnit::getCommand
+    status: matched
+    bytes: 8
+  - name: cDataUnit::setCondition
+    status: matched
+    bytes: 8
+  - name: cDataUnit::getCondition
+    status: matched
+    bytes: 8
+  - name: cSatFile::getVertexPtr
+    status: matched
+    bytes: 8
+  - name: cEmBar::setEff
+    status: matched
+    bytes: 8
+  - name: cEmBar::setMotion
+    status: matched
+    bytes: 8
+  - name: cEmWep::setAtNo
+    status: matched
+    bytes: 8
+  - name: cDmgInfo::set_0
+    status: matched
+    bytes: 12
+  - name: cEmBarrel::setEff
+    status: matched
+    bytes: 8
+  - name: cObjLadder::getStatus
+    status: matched
+    bytes: 8
+  - name: cObjLadder::getType
+    status: matched
+    bytes: 8
+  - name: cObjLadder::setClimb
+    status: matched
+    bytes: 12
+  - name: cObjLadder::getLadderNum
+    status: matched
+    bytes: 8
+  - name: cObjLadder::setLadderInfo
+    status: matched
+    bytes: 12
+  - name: cObjLadder::setResetReserve
+    status: matched
+    bytes: 12
+  - name: cObjLadder::setCamera
+    status: matched
+    bytes: 8
+  - name: cObj16::setDieEff
+    status: matched
+    bytes: 12
+  - name: cObjBull::getMoveFrameToLift
+    status: matched
+    bytes: 8
+  - name: cObjBull::getMoveFrameRtn
+    status: matched
+    bytes: 8
+  - name: cObjBull::setBreakTruck
+    status: matched
+    bytes: 12
+  - name: cObjPillar::setMotion
+    status: matched
+    bytes: 8
+  - name: cObjYagura::setMotionVib
+    status: matched
+    bytes: 8
+  - name: cBlock::setOtStart
+    status: matched
+    bytes: 12
+  - name: cItemMgr::saveDataSize
+    status: matched
+    bytes: 8
+  - name: Merchant::sellingItemNum
+    status: matched
+    bytes: 8
+  - name: Merchant::exerciseItemNum
+    status: matched
+    bytes: 8
+  - name: cPlAshley::setFace
+    status: matched
+    bytes: 4
+  - name: cObjGatling::setRide
+    status: matched
+    bytes: 8
+  - name: cObjGatling::stopFire
+    status: matched
+    bytes: 12
+  - name: cObjGatling::setReload
+    status: matched
+    bytes: 12
+  - name: cObjGatling::setMaxRot
+    status: matched
+    bytes: 8
+  - name: cObjGatling::setBreakMode
+    status: matched
+    bytes: 8
