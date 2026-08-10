@@ -218,3 +218,144 @@ functions:
   - name: cObjGatling::setBreakMode
     status: matched
     bytes: 8
+  - name: cObjEgg::waterExplode
+    status: matched
+    bytes: 4
+  - name: CameraLookDownEm::move
+    status: matched
+    bytes: 4
+  - name: IDApplication::init
+    status: matched
+    bytes: 4
+  - name: IDApplication::move
+    status: matched
+    bytes: 4
+  - name: IDApplication::quit
+    status: matched
+    bytes: 4
+  - name: IDApplication::operator_delete
+    status: matched
+    bytes: 4
+  - name: cCamera::operator_delete
+    status: matched
+    bytes: 4
+  - name: cCtrl::move
+    status: matched
+    bytes: 4
+  - name: cCtrl::trans
+    status: matched
+    bytes: 4
+  - name: cEm::move
+    status: matched
+    bytes: 4
+  - name: cEm::checkThrow
+    status: matched
+    bytes: 8
+  - name: cEmRock::beginEvent
+    status: matched
+    bytes: 4
+  - name: cEmTree::beginEvent
+    status: matched
+    bytes: 4
+  - name: cEmTree::setCatch
+    status: matched
+    bytes: 12
+  - name: cEsp::SetFreeWork
+    status: matched
+    bytes: 8
+  - name: cEsp::Destruct
+    status: matched
+    bytes: 4
+  - name: cEmHit::ckStatus
+    status: matched
+    bytes: 8
+  - name: cEmItem::setEff
+    status: matched
+    bytes: 8
+  - name: cEmItem::ckStatus
+    status: matched
+    bytes: 8
+  - name: cEmItem::setRotType
+    status: matched
+    bytes: 8
+  - name: cEmRack::setEff
+    status: matched
+    bytes: 8
+  - name: cEmSwitch::ckSwitch
+    status: matched
+    bytes: 8
+  - name: cEmSwitch::setActButton
+    status: matched
+    bytes: 8
+  - name: cEmSwitch::setOpenOnly
+    status: matched
+    bytes: 12
+  - name: cEmSwitch::setAutoOpen
+    status: matched
+    bytes: 12
+  - name: cEmSwitch::setBarrel
+    status: matched
+    bytes: 12
+  - name: cEmWindow::GetFloor
+    status: matched
+    bytes: 8
+  - name: cCard::firstCheck30
+    status: matched
+    bytes: 12
+  - name: cBlockUnit::setBlockCommand
+    status: matched
+    bytes: 12
+  - name: cDataCtrl::setAramSort
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_BeginEvt
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_SetEm
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_SetList
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_CamPos
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_CamDammy
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_PosPl
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_ParentOn
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_ParentOff
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndPl
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndEm
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndOm
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndParts
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndList
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndEvt
+    status: matched
+    bytes: 8
+  - name: Event::ExePacket_EndPac
+    status: matched
+    bytes: 8
+  - name: Event::EndActBtn
+    status: matched
+    bytes: 12
+  - name: Event::GetActBtnCount
+    status: matched
+    bytes: 8
