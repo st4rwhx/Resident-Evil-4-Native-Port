@@ -16,6 +16,8 @@
 
 #include <dolphin.h>
 
+#include <charPipeline/texPalette.h>
+
 #include "port_log.h"
 
 extern "C" void port_tex_decode(int fmt, const void *data, int w, int h,
@@ -296,4 +298,14 @@ u32 GXGetTexBufferSize(u16 width, u16 height, u32 format, u8 mipmap, u8 max_lod)
 extern "C" unsigned int port_gx_bound_texture(int unit)
 {
     return (unit >= 0 && unit < 8) ? g_bound[unit] : 0;
+}
+
+// Une seule ligne du SDK, mais le jeu ne peut pas s en passer : `TEXGet` rend le descripteur
+// numero `id` d une palette de textures. `calcTplAddr` a deja transforme les decalages du
+// fichier en adresses, donc `descriptorArray` est ici un vrai pointeur.
+extern "C" TEXDescriptorPtr TEXGet(TEXPalettePtr pal, u32 id)
+{
+    if (!pal || id >= pal->numDescriptors)
+        return (TEXDescriptorPtr) 0;
+    return &pal->descriptorArray[id];
 }

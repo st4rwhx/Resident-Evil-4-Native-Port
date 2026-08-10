@@ -121,6 +121,245 @@ bool swap_fnt(const Span &s)
     return swap_tpl(s, tpl_ofs);
 }
 
+// Les convertisseurs du systeme "id", definis plus bas : une archive les propose a chacune
+// de ses entrees, et chacun se reconnait a sa propre signature.
+bool swap_id_tex(const Span &s, u32 at);
+bool swap_id_data(const Span &s, u32 at);
+
+// ---------------------------------------------------------------- archive a table d offsets
+//
+// `etc/core.das` une fois en memoire est un `ArcFile` (include/global.h) : un nombre d entrees,
+// puis autant de **decalages** que le jeu additionne a l adresse de l archive (`ARC_PTR`). Rien
+// d autre - pas de magie, pas de tailles. C est ce que lit `CoreDataRead` a la ligne qui suit
+// la lecture, avant meme d avoir rendu une image.
+//
+//   u32 nombre      (0x00)
+//   u32 x3          (0x04..0x0C, nuls sur le disque)
+//   u32 ofs[nombre] (0x10...)
+//
+// Comme aucun octet ne signe ce format, **on le valide au lieu de le croire** : un nombre
+// plausible, des decalages strictement croissants et contenus dans le fichier. Une archive de
+// salle, dont le premier mot est du texte, echoue a la premiere condition et repart intacte.
+//
+// Les sous-fichiers pointes sont pour beaucoup des TPL (speculaire, illumination globale,
+// textures d interface). `swap_tpl` se reconnait lui-meme a son numero de version : on le
+// propose a chaque entree, il ne touche que celles qui en sont.
+bool swap_arc(const Span &s)
+{
+    if (!s.has(0, 0x10))
+        return false;
+    const u32 n = read_be32(s.base);
+    if (n == 0 || n > 0x400 || !s.has(0x10, n * 4))
+        return false;
+
+    u32 prev = 0;
+    for (u32 i = 0; i < n; ++i) {
+        const u32 o = read_be32(s.base + 0x10 + i * 4);
+        if (o == 0)
+            continue;               // entree vide : le jeu ne la lit pas
+        if (o <= prev || o >= s.size)
+            return false;
+        prev = o;
+    }
+
+    swap_u32(s.base);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = s.base + 0x10 + i * 4;
+        const u32 o = read_be32(e);
+        swap_u32(e);
+        if (!o)
+            continue;
+        // Chaque convertisseur se reconnait a sa propre signature - le numero de version d un
+        // TPL, le 0xB d un paquet de textures, les caracteres "2.00" d une table d unites. On
+        // les propose dans l ordre, aucun ne touche ce qui n est pas a lui.
+        if (swap_tpl(s, o))
+            continue;
+        if (swap_id_tex(s, o))
+            continue;
+        swap_id_data(s, o);
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------- courbe de Hermite
+//
+// `Hermite1` : un compte, puis autant de cles de quatre flottants (temps, valeur, tangente
+// sortante, tangente entrante). Tout y est en mots de quatre octets, sans exception.
+bool swap_hermite(const Span &s, u32 at)
+{
+    if (!s.has(at, 4))
+        return false;
+    const u32 n = read_be32(s.base + at);
+    if (n == 0 || n > 0x4000 || !s.has(at + 4, n * 16))
+        return false;
+    swap_u32(s.base + at);
+    for (u32 i = 0; i < n * 4; ++i)
+        swap_u32(s.base + at + 4 + i * 4);
+    return true;
+}
+
+// ---------------------------------------------------------------- chemin B-spline
+//
+// `FuncPathData` : l ordre de la spline et le nombre de points de controle sont des **octets**
+// (offsets 0x00 et 0x07) - ils traversent l endianness sans y toucher. Seuls les points, trois
+// flottants chacun, doivent etre retournes. Le second pointeur du couple (`path1`) est un
+// tampon de sortie que `FuncPathParametrize` remplit : il ne contient rien a convertir.
+bool swap_funcpath(const Span &s, u32 at)
+{
+    if (!s.has(at, 8))
+        return false;
+    const u8 n = s.base[at + 7];
+    if (n == 0 || !s.has(at + 8, (u32) n * 12))
+        return false;
+    for (u32 i = 0; i < (u32) n * 3; ++i)
+        swap_u32(s.base + at + 8 + i * 4);
+    return true;
+}
+
+// ---------------------------------------------------------------- table d unites "id"
+//
+// Le systeme "id" dessine toute l interface du jeu : logos, menus, compteurs, l ecran-titre.
+// Une table commence par sa version en toutes lettres - "1.00" ou "2.00" - suivie du nombre
+// d unites sur un octet. C est une signature franche : aucune autre donnee du jeu ne commence
+// par ces cinq caracteres.
+//
+// Dans une unite, la majorite des champs sont des octets (identifiants, types de fusion, axes)
+// et ne bougent pas. Ce qui doit etre retourne : la position, les quatre sommets, les deux
+// tailles, la rotation, et les six decalages de fin - deux chemins et quatre courbes - que le
+// jeu transforme en pointeurs. Les deux versions ne different que par la presence d une
+// seconde couleur, qui decale tout ce qui suit de quatre octets.
+bool swap_id_data(const Span &s, u32 at)
+{
+    if (!s.has(at, 8))
+        return false;
+    const u8 *v = s.base + at;
+    const bool v1 = (v[0] == '1' && v[1] == '.' && v[2] == '0' && v[3] == '0' && v[4] == 0);
+    const bool v2 = (v[0] == '2' && v[1] == '.' && v[2] == '0' && v[3] == '0' && v[4] == 0);
+    if (!v1 && !v2)
+        return false;
+
+    const u32 num = v[5];
+    const u32 entry = v1 ? 0x88u : 0x8Cu;      // include/id_sys.h : IdData / IdData2
+    const u32 rot = v1 ? 0x5Cu : 0x60u;
+    const u32 ofs = v1 ? 0x70u : 0x74u;
+    if (num == 0 || !s.has(at + 8, num * entry))
+        return true;                            // en-tete seul : rien a convertir, mais reconnu
+
+    for (u32 i = 0; i < num; ++i) {
+        u8 *e = s.base + at + 8 + i * entry;
+        for (u32 k = 0; k < 3; ++k)             // pos
+            swap_u32(e + 0x14 + k * 4);
+        for (u32 k = 0; k < 12; ++k)            // vtx[4]
+            swap_u32(e + 0x20 + k * 4);
+        swap_u32(e + 0x50);                     // sizeX
+        swap_u32(e + 0x54);                     // sizeY
+        // col0 (et col1 en version 2) sont quatre octets chacun : rien a faire.
+        for (u32 k = 0; k < 3; ++k)             // rot
+            swap_u32(e + rot + k * 4);
+        for (u32 k = 0; k < 6; ++k)
+            swap_u32(e + ofs + k * 4);
+
+        // Les six decalages pointent maintenant dans le bon sens : deux chemins, quatre
+        // courbes. Ils partent du debut de la table, pas du fichier.
+        const u32 path0 = *(const u32 *) (e + ofs);
+        if (path0)
+            swap_funcpath(s, at + path0);
+        // e + ofs + 4 : `path1`, tampon de sortie, laisse tel quel.
+        for (u32 k = 2; k < 6; ++k) {
+            const u32 c = *(const u32 *) (e + ofs + k * 4);
+            if (c)
+                swap_hermite(s, at + c);
+        }
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------- paquet de textures "id"
+//
+// Version 0xB (`IdTexData`, id_tex.cpp) ou 3 (`TexData`, texture.cpp) : trois tables de
+// decalages - les identifiants, les TPL, les animations. Les TPL sont des TPL ordinaires ;
+// une animation est une suite de champs 16 bits (dimensions, nombre de motifs) suivie d une
+// table d octets.
+bool swap_tex_anm(const Span &s, u32 at)
+{
+    if (!s.has(at, 0x10))
+        return false;
+    for (u32 k = 0; k < 5; ++k)                 // largeur, hauteur, w, h, nombre de motifs
+        swap_u16(s.base + at + k * 2);
+    return true;
+}
+
+bool swap_ofs_tbl(const Span &s, u32 at, bool tpl)
+{
+    if (!s.has(at, 4))
+        return false;
+    const u32 n = read_be32(s.base + at);
+    if (n > 0x1000 || !s.has(at + 4, n * 4))
+        return false;
+    swap_u32(s.base + at);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = s.base + at + 4 + i * 4;
+        const u32 o = read_be32(e);
+        swap_u32(e);
+        if (!o)
+            continue;
+        if (tpl)
+            swap_tpl(s, at + o);
+        else
+            swap_tex_anm(s, at + o);
+    }
+    return true;
+}
+
+bool swap_id_tex(const Span &s, u32 at)
+{
+    if (!s.has(at, 0x20))
+        return false;
+    const u32 ver = read_be32(s.base + at);
+    u32 o_id, o_tpl, o_anm;
+    if (ver == 0xB) {
+        o_id = 0x04;
+        o_tpl = 0x18;
+        o_anm = 0x1C;
+    } else if (ver == 3) {
+        o_id = 0x04;
+        o_tpl = 0x08;
+        o_anm = 0x0C;
+    } else {
+        return false;
+    }
+
+    const u32 a_id = read_be32(s.base + at + o_id);
+    const u32 a_tpl = read_be32(s.base + at + o_tpl);
+    const u32 a_anm = read_be32(s.base + at + o_anm);
+    if (!s.has(at + a_id, 4) || !s.has(at + a_tpl, 4) || !s.has(at + a_anm, 4))
+        return false;
+
+    swap_u32(s.base + at);
+    swap_u32(s.base + at + o_id);
+    swap_u32(s.base + at + o_tpl);
+    swap_u32(s.base + at + o_anm);
+
+    // La table des identifiants : un compte, puis des entrees de huit octets dont un u16
+    // d identifiant, un u16 et un u32.
+    {
+        const u32 base = at + a_id;
+        const u32 n = read_be32(s.base + base);
+        if (n <= 0x1000 && s.has(base + 4, n * 8)) {
+            swap_u32(s.base + base);
+            for (u32 i = 0; i < n; ++i) {
+                u8 *e = s.base + base + 4 + i * 8;
+                swap_u16(e);
+                swap_u16(e + 2);
+                swap_u32(e + 4);
+            }
+        }
+    }
+    swap_ofs_tbl(s, at + a_tpl, true);
+    swap_ofs_tbl(s, at + a_anm, false);
+    return true;
+}
+
 bool ends_with(const char *name, const char *suffix)
 {
     const size_t n = std::strlen(name), m = std::strlen(suffix);
@@ -171,6 +410,15 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         if (!swap_fnt(s))
             std::printf("[PORT] endian : %s n a pas la forme attendue d une police\n", name);
         return;
+    }
+    if (ends_with(name, ".das") || ends_with(name, ".dat")) {
+        // La meme table sert a plusieurs extensions : `etc/core.das`, mais aussi les ecrans
+        // `SS/<langue>/title.dat` et `option.dat` (`TitleArc`, qui indexe a partir de zero et
+        // retombe donc sur les memes mots). Les archives de salle, etiquetees par tag, et les
+        // tables simples comme `sizetbl.dat` echouent a la validation et repartent intactes,
+        // vers le journal du reste a faire.
+        if (swap_arc(s))
+            return;
     }
     if (ends_with(name, ".tpl")) {
         if (!swap_tpl(s, 0))

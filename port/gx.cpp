@@ -25,6 +25,7 @@ extern "C" unsigned int port_gx_bound_texture(int unit);
 
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include <EGL/egl.h>
@@ -55,6 +56,8 @@ struct Vertex {
 const int MAX_VERTS = 65536;
 Vertex g_verts[MAX_VERTS];
 int g_nverts = 0;
+long g_draws = 0;      // appels de dessin reellement emis, remis a zero a chaque image
+long g_tris = 0;
 
 Vertex g_cur;              // sommet en cours d'assemblage
 bool g_cur_open = false;   // une position a ete recue depuis le dernier commit
@@ -517,6 +520,8 @@ void port_gx_end(void)
     }
     if (ni == 0)
         return;
+    ++g_draws;
+    g_tris += ni / 3;
 
     float mvp[16];
     mtx_mul(g_proj, g_modelview, mvp);
@@ -615,18 +620,61 @@ void GXSetCopyClear(GXColor clear_clr, u32 clear_z) { (void)clear_z; g_clear = c
 
 // Sur le materiel, l'EFB est resolu vers le XFB. Ici on rend directement dans la surface, donc
 // il n'y a rien a copier ; l'effacement de l'image suivante est ce qui compte.
+// Le portage rend hors ecran : aucun ecran ne montre le resultat, et une execution sans
+// plantage ne prouve rien. `RE4_DUMP_FRAME=<n>` enregistre donc la n-ieme image resolue en PPM
+// binaire - un format qu on ecrit en dix lignes, sans dependance - et le jeu s arrete la.
+// C est le meme principe que les harnais de verification : on relit ce que GLES a produit.
+static void port_dump_frame(void)
+{
+    static long want = -2;
+    static long seen = 0;
+    if (want == -2) {
+        const char *e = std::getenv("RE4_DUMP_FRAME");
+        want = e ? std::strtol(e, nullptr, 10) : -1;
+    }
+    if (want < 0)
+        return;
+    if (seen++ != want)
+        return;
+
+    const int w = (int) g_fb_w, h = (int) g_fb_h;
+    unsigned char *px = (unsigned char *) std::malloc((size_t) w * h * 4);
+    if (!px)
+        return;
+    port_gx_read_pixels(0, 0, w, h, px);
+
+    const char *path = std::getenv("RE4_DUMP_PATH");
+    std::FILE *f = std::fopen(path ? path : "frame.ppm", "wb");
+    if (f) {
+        std::fprintf(f, "P6\n%d %d\n255\n", w, h);
+        // GLES rend l origine en bas ; on reecrit les lignes a l endroit.
+        for (int y = h - 1; y >= 0; --y)
+            for (int x = 0; x < w; ++x)
+                std::fwrite(px + ((size_t) y * w + x) * 4, 1, 3, f);
+        std::fclose(f);
+        std::printf("[PORT] image %ld enregistree (%dx%d), %ld appels de dessin, %ld triangles\n",
+                    want, w, h, g_draws, g_tris);
+    }
+    std::free(px);
+    std::fflush(stdout);
+    std::_Exit(0);
+}
+
 void GXCopyDisp(void *dest, GXBool clear)
 {
     (void)dest;
     if (!g_gl_ready)
         return;
     glFinish();
+    port_dump_frame();
     if (clear) {
         glClearColor(g_clear.r / 255.0f, g_clear.g / 255.0f, g_clear.b / 255.0f, g_clear.a / 255.0f);
         glDepthMask(GL_TRUE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     g_nverts = 0;
+    g_draws = 0;
+    g_tris = 0;
 }
 
 void GXSetNumChans(u8 n) { (void)n; }

@@ -78,16 +78,30 @@ transfere en memoire principale (`readExit`). Ce sont les deux seuls points ou l
 | TPL (toutes les textures du jeu) | **fait** | en-tetes seulement : les pixels restent gros-boutistes, `port/texture.cpp` les lit deja ainsi |
 | `.fnt` (police = deux decalages + un TPL) | **fait** | `cMes.init()` passe, le jeu atteint sa premiere image |
 | banques de son | **contourne** | l'audio est inerte, les morceaux 1 et 2 des archives sont sautes |
-| contenu de `.das` (modeles, tables, listes d'affichage) | **a faire** | c'est la ou le jeu s'arrete aujourd'hui |
+| archive a table de decalages (`core.das`, `title.dat`, `option.dat`) | **fait** | c est la table que `ARC_PTR` additionne ; sans elle le premier sous-fichier etait a l adresse 0x40010000 |
+| paquet de textures "id" (version 0xB / 3) | **fait** | identifiants, TPL et animations de toute l interface |
+| table d unites "id" ("1.00" / "2.00") | **fait** | positions, sommets, tailles, rotations, et les six decalages de fin |
+| chemin B-spline et courbe de Hermite | **fait** | les trajectoires que le systeme "id" fait suivre a ses elements |
+| contenu d une archive de salle (`St1/r100.das`) | a faire | etiquetee par tag, pas par table de decalages |
 
 ## Ordre de travail restant
 
-Le jeu atteint maintenant `cSceSys::scheduler()` - sa boucle de scene - et tombe en lisant le
-contenu de `etc/core.das`. La suite, dans l'ordre ou l'execution la reclame :
+Le jeu ne tombe plus. Il traverse l ecran-titre et **tourne en boucle** sans planter, en
+chargeant ses vraies donnees depuis le disque de l utilisateur. Ce qui l arrete maintenant
+n est plus l endianness :
 
-1. le contenu de `etc/core.das` : tables d'objets, d'interface, textures ;
-2. l'archive de salle `St1/r100.das` et ses textures ;
-3. les modeles et leurs listes d'affichage GX.
+* **rien n est dessine** - zero appel de dessin par image, mesure par `RE4_DUMP_FRAME`. Les
+  unites de l ecran-titre ne se declarent pas (`IDSystem::unitPtr(m[00],c[28]): Not found`) et
+  la table d ordonnancement du rendu ne distribue aucune primitive. C est le prochain chantier,
+  et il est de rendu, pas de conversion ;
+* les fonctions de TEV, de canaux de couleur et de texture indirecte sont encore des bouchons ;
+* le lecteur de films (Sofdec) ne fait rien, donc les logos d ouverture sont sautes.
 
-La methode ne change pas : implementer ce que l'execution reclame, dans l'ordre ou elle le
-reclame, plutot que tout deviner d'avance.
+Cote conversion, il reste, dans l ordre ou l execution le reclamera :
+
+1. l archive de salle `St1/r100.das`, etiquetee par tag et non par table de decalages ;
+2. les modeles et leurs listes d affichage GX ;
+3. les donnees sonores, aujourd hui contournees.
+
+La methode ne change pas : implementer ce que l execution reclame, dans l ordre ou elle le
+reclame, plutot que tout deviner d avance.

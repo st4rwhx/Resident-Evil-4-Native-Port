@@ -150,6 +150,18 @@ int Sp_char_ck(int c)
 void EprintfBufferClear()
 {
     int i;
+
+#ifdef RE4_PORT
+    // Portage : sur le disque de vente `etc/moji8.tpl` n existe pas, donc `EprintfInit` sort
+    // sans allouer ces deux tampons - et `re4_main` appelle quand meme cette fonction a chaque
+    // image. Sur GameCube l ecriture partait a l adresse 0, qui est de la vraie MEM1 : elle
+    // ecrasait le bloc d amorcage sans rien casser de visible. Ici l adresse 0 n est pas
+    // mappee, et la premiere image tombe. On ne touche donc rien tant que le tampon n existe
+    // pas - ce que `eprintf()` lui-meme verifie deja, par `eprintf_init`.
+    if (mess_ptr_buff == NULL) {
+        return;
+    }
+#endif
     for (i = 0; i < MESS_PTR_NUM; i++) {
         *(u32*) (mess_ptr_buff + i * 4) = 0;
     }

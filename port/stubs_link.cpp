@@ -69,7 +69,7 @@ void SYNQuit(void) { PORT_TODO("SYNQuit"); }   // include/dolphin/syn.h
 void SYNQuitSynth(SYNSYNTH* synth) { PORT_TODO("SYNQuitSynth"); }   // include/dolphin/syn.h
 void SYNRunAudioFrame(void) { PORT_TODO("SYNRunAudioFrame"); }   // include/dolphin/syn.h
 void SYNSetMasterVolume(SYNSYNTH* synth, s32 dB) { PORT_TODO("SYNSetMasterVolume"); }   // include/dolphin/syn.h
-TEXDescriptorPtr TEXGet(TEXPalettePtr pal, u32 id) { PORT_TODO("TEXGet"); return (TEXDescriptorPtr) 0; }   // include/charPipeline/texPalette.h
+// TEXGet : implemente dans port/texobj.cpp.
 int mwPlyCalcWorkCprmSfd() { PORT_TODO("mwPlyCalcWorkCprmSfd"); return 0; }   // prototype inconnu
 int mwPlyCreateSofdec() { PORT_TODO("mwPlyCreateSofdec"); return 0; }   // prototype inconnu
 int mwPlyFxCnvFrmARGB8888() { PORT_TODO("mwPlyFxCnvFrmARGB8888"); return 0; }   // prototype inconnu
