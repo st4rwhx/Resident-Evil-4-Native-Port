@@ -1,0 +1,15 @@
+Pl11Init__FP3cEm = .text:0x00000000; // type:function size:0x60 scope:local
+__10cSubAshley = .text:0x00000060; // type:function size:0x8C scope:global
+modelSet__10cSubAshley = .text:0x000000EC; // type:function size:0x160 scope:global
+setFace__10cSubAshleyi = .text:0x0000024C; // type:function size:0xDC scope:global
+setHand__10cSubAshleyi = .text:0x00000328; // type:function size:0x14C scope:global
+_prolog = .text:0x00000474; // type:function size:0x14 scope:global
+_epilog = .text:0x00000488; // type:function size:0x4 scope:global
+_unresolved = .text:0x0000048C; // type:function size:0x4 scope:global
+_._10cSubAshley = .text:0x00000490; // type:function size:0x24 scope:global
+initCloth__10cSubAshley = .text:0x000004B4; // type:function size:0x3C scope:global
+moveCloth__10cSubAshley = .text:0x000004F0; // type:function size:0x38 scope:global
+_ctors = .ctors:0x00000000; // type:label scope:global
+_dtors = .dtors:0x00000000; // type:label scope:global
+lbl_pl11_rodata_54 = .rodata:0x00000054; // type:object size:0xEC scope:local
+lbl_pl11_rodata_140 = .rodata:0x00000140; // type:object size:0x88 scope:global

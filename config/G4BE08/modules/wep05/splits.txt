@@ -1,0 +1,20 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+
+wep05/objCivilian.cpp:
+	.text       start:0x00000000 end:0x0000073C
+	.rodata     start:0x00000000 end:0x00000170 align:4
+
+wep05/pl_handgun.cpp:
+	.text       start:0x0000073C end:0x00001AC8
+	.rodata     start:0x00000170 end:0x00000338 align:4
+	.data       start:0x00000000 end:0x00000058 align:4
+
+wep05/wep05.cpp:
+	.text       start:0x00001AC8 end:0x0000222C
+	.rodata     start:0x00000338 end:0x000004B8 align:4
+	.data       start:0x00000058 end:0x0000005C skip

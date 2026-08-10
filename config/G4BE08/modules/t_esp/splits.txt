@@ -1,0 +1,52 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+t_esp/db_light.cpp:
+	.text       start:0x00000000 end:0x000124F4
+	.rodata     start:0x00000000 end:0x00001640
+	.data       start:0x00000000 end:0x00000500 align:4
+	.bss        start:0x00000000 end:0x000000AC align:4
+	.bss        start:0x00155088 end:0x001550BC align:4 common
+
+t_esp/db_mod.cpp:
+	.text       start:0x000124F4 end:0x0001C5E0
+	.ctors      start:0x00000000 end:0x00000004
+	.rodata     start:0x00001640 end:0x000023D0
+	.data       start:0x00000500 end:0x00000728 align:4
+	.bss        start:0x000000AC end:0x0013AAF0 align:4
+
+t_esp/db_port.cpp:
+	.text       start:0x0001C5E0 end:0x000230F4
+	.rodata     start:0x000023D0 end:0x00002CA8
+	.data       start:0x00000728 end:0x00000780 align:4
+	.bss        start:0x0013AAF0 end:0x0013C544 align:4
+
+t_esp/db_widget.cpp:
+	.text       start:0x000230F4 end:0x00026BD8
+	.rodata     start:0x00002CA8 end:0x00003410
+	.data       start:0x00000780 end:0x00000798 align:4
+
+t_esp/db_window.cpp:
+	.text       start:0x00026BD8 end:0x00029360
+	.rodata     start:0x00003410 end:0x000035E0
+
+t_esp/t_esp.cpp:
+	.text       start:0x00029360 end:0x0003E98C
+	.rodata     start:0x000035E0 end:0x000053B0
+	.data       start:0x00000798 end:0x00001578 align:4
+	.bss        start:0x0013C544 end:0x00154F64 align:4
+
+t_esp/t_util.cpp:
+	.text       start:0x0003E98C end:0x0003F03C
+	.rodata     start:0x000053B0 end:0x000054F0
+	.bss        start:0x00154F64 end:0x00155088 align:4
+
+t_esp/tools.cpp:
+	.text       start:0x0003F03C end:0x0003FE14
+	.rodata     start:0x000054F0 end:0x00005690
+	.data       start:0x00001578 end:0x0000157C skip

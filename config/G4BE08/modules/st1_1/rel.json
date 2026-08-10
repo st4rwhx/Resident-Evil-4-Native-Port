@@ -1,0 +1,26 @@
+{
+  "name": "st1_1",
+  "module_id": 73,
+  "object": "files/Rel/st1_1.rel",
+  "num_sections": 25,
+  "name_offset": 3206,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 3,
+    ".dtors": 4,
+    ".rodata": 5,
+    ".data": 7,
+    ".bss": 9
+  },
+  "links": [
+    "em27",
+    "st1_0",
+    "st1_2",
+    "st1_3"
+  ],
+  "field_overrides": []
+}

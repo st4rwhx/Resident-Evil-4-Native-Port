@@ -1,0 +1,95 @@
+shipped-build-temp-flags.patch -- reconstruction of one behaviour of the compiler build Capcom shipped
+RE4 with, which differs from SN's v1.79 source drop (2003-06) at exactly these six sites of
+gcc/function.c.  Applied by build.sh after linux-host.patch.
+
+What it changes: stock GCC 2.95 `assign_temp` and the five `assign_parms` parameter-slot sites call
+`MEM_SET_IN_STRUCT_P (mem, aggregate)`, whose "not aggregate" branch SETS `MEM_SCALAR_P` on the
+frame slot.  With the flag, alias.c `fixed_scalar_and_varying_struct_p` declares a fixed scalar
+frame slot disjoint from every `MEM_IN_STRUCT_P` store through a varying pointer, so a reload of a
+compiler temporary (or of an address-taken parameter) may be scheduled above such stores.  The
+shipped build does not do that: non-aggregate stack temps and parm slots carry NEITHER flag here,
+so they are ordered against struct stores like any other MEM.
+
+Visible case: the polymorphic copy `*p = *src` of a class with a vptr (cp/class.c sets
+TYPE_NONCOPIED_PARTS = (vtable, vfield), expr.c MODIFY_EXPR runs save_noncopied_parts: vptr saved
+to an `assign_temp` slot, 24-byte block move, vptr restored).  The original binary reloads the vptr
+after the tail stores of the block move (esp0a Esp0a_Trans / SetFreeWork, esp0e Esp0e_Trans); stock
+v1.79 hoists the reload above them.
+
+Evidence (2026-09-11, whole-tree harness: every prodg_cc unit of build.ninja compiled with the
+installed v1.79 cc1plus/cc1 and with the patched pair, masked per-function compare against the split
+objects):
+  * 763 units, 19119 functions identical before; 0 regressions, 0 changed objects with the sources
+    of the tree as they were (every previously affected site carried a source workaround).
+  * esp0a with its four copies written `*base = *esp; *e.p = *base; *base = *this; *p = *base;` is
+    6/6 identical, esp0e with `*p = *esp` is 8/8 identical (4/6 and 7/8 without the patch).
+  * Widening the edit to put_reg_into_stack (function.c 1740) regresses item `combine` (a #17-pinned
+    function) for no gain, so the shipped build differs at assign_temp + assign_parms only.
+  * An earlier run (docs/research/compiler.md "Structural tag hunt (2026-09-11)") listed 7 more newly identical
+    functions (objRobo x3, sce_com SceChapterEnd, t_se_at x3); those did not reproduce against the
+    committed sources with the same edit -- they were concurrent source edits by other agents that
+    landed between that run's base and variant builds, not compiler effects.
+
+diff -ruN a/gcc/function.c b/gcc/function.c
+--- a/gcc/function.c	2026-09-11 06:36:24.585489460 +0200
++++ b/gcc/function.c	2026-09-11 06:36:24.586489474 +0200
+@@ -1169,7 +1169,8 @@
+ 	size = TREE_INT_CST_LOW (TYPE_ARRAY_MAX_SIZE (type));
+ 
+       tmp = assign_stack_temp_for_type (mode, size, keep, type);
+-      MEM_SET_IN_STRUCT_P (tmp, AGGREGATE_TYPE_P (type));
++      if (AGGREGATE_TYPE_P (type))
++	MEM_SET_IN_STRUCT_P (tmp, 1);
+       return tmp;
+     }
+ 
+@@ -4543,7 +4544,8 @@
+ 	  /* If this is a memory ref that contains aggregate components,
+ 	     mark it as such for cse and loop optimize.  Likewise if it
+ 	     is readonly.  */
+-	  MEM_SET_IN_STRUCT_P (stack_parm, aggregate);
++	  if (aggregate)
++	    MEM_SET_IN_STRUCT_P (stack_parm, 1);
+ 	  RTX_UNCHANGING_P (stack_parm) = TREE_READONLY (parm);
+ 	  MEM_ALIAS_SET (stack_parm) = get_alias_set (parm);
+ 	}
+@@ -4685,7 +4687,8 @@
+ 
+ 	  /* If this is a memory ref that contains aggregate components,
+ 	     mark it as such for cse and loop optimize.  */
+-	  MEM_SET_IN_STRUCT_P (stack_parm, aggregate);
++	  if (aggregate)
++	    MEM_SET_IN_STRUCT_P (stack_parm, 1);
+ 	}
+ #endif /* 0 */
+ 
+@@ -4742,7 +4745,8 @@
+ 
+ 		  /* If this is a memory ref that contains aggregate
+ 		     components, mark it as such for cse and loop optimize.  */
+-		  MEM_SET_IN_STRUCT_P (stack_parm, aggregate);
++		  if (aggregate)
++		    MEM_SET_IN_STRUCT_P (stack_parm, 1);
+ 		}
+ 
+ 	      else if (PARM_BOUNDARY % BITS_PER_WORD != 0)
+@@ -4799,7 +4803,8 @@
+ 	    {
+ 	      DECL_RTL (parm)
+ 		= gen_rtx_MEM (TYPE_MODE (TREE_TYPE (passed_type)), parmreg);
+-	      MEM_SET_IN_STRUCT_P (DECL_RTL (parm), aggregate);
++	      if (aggregate)
++		MEM_SET_IN_STRUCT_P (DECL_RTL (parm), 1);
+ 	    }
+ 	  else
+ 	    DECL_RTL (parm) = parmreg;
+@@ -5059,7 +5064,8 @@
+ 					  GET_MODE_SIZE (GET_MODE (entry_parm)), 0);
+ 		  /* If this is a memory ref that contains aggregate components,
+ 		     mark it as such for cse and loop optimize.  */
+-		  MEM_SET_IN_STRUCT_P (stack_parm, aggregate);
++		  if (aggregate)
++		    MEM_SET_IN_STRUCT_P (stack_parm, 1);
+ 		}
+ 
+ 	      if (promoted_mode != nominal_mode)

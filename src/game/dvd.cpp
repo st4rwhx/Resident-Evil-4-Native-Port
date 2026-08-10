@@ -1,0 +1,2012 @@
+// game/dvd: DVD read queue, ARAM DMA queue, disc error screen (D:/Bio4/Prog/dvd.cpp).
+// 54/55 functions byte-identical (LinkQueue/MesSysMessage/ErrCheck: objdiff shows reloc-only rows);
+// every section has the original size and the data sections match. Initialize: no `n = name`
+// local; `name` is used directly after the if/else, so the `&name` copy (`mr r28,r29`) is a gcse
+// PRE copy inserted at the end of the else block, i.e. right after the DVDConvertPathToEntrynum
+// call (C++ EH ends the block at the call); a source-level copy is hoisted above the call.
+//  - ErrCheck: `pMes`/`pStr` (3 refs each, live around the loop, REG_EQUIV-doubled lengths
+//    390/386 -> priority buckets 76/77, the later-declared pStr won r21) share one bucket once the
+//    `flags_54` tests share one `msg = -1; cont = 0` body through a goto: the two duplicated arms
+//    were cross-jumped only in jump2, after global alloc, so they counted 2 extra insns in both
+//    ranges. Still off:
+//  - DiscChange (matching): the `game[4]` template copy loads words 0,8,c,4 because the first
+//    `pSys->region` read goes through a reference (`SysRef`): a MEM without the scalar flag is not
+//    exempt from the preceding stack stores, so all four stores rank equally in sched2 and the
+//    copy keeps its template order (with a plain `pSys` only the word-4 store gated the load via
+//    the r9 anti-dependence and its load ranked first).
+#include "types.h"
+#include "dvd.h"
+
+// The file table is defined before the other headers are included: its strings precede the
+// map_obj.h/light.h/widget.h/card.h/sofdec.h strings in the original .rodata.
+FileTblEntry FileTbl[] = {
+    {"bgm/bio4str.hed", 0},
+    {"bgm/bio4bgm.sbb", 0},
+    {"etc/moji8.tpl", 0},
+    {"etc/core.das", 0},
+    {"em/em1f.das", 0},
+    {"rel/em1f.rel", 0},
+    {"em/pl00.das", 0},
+    {"em/wep01.das", 0},
+    {"rel/wep01.rel", 0},
+    {"em/wep02.das", 0},
+    {"rel/wep02.rel", 0},
+    {"etc/title.das", 0},
+    {"em/em20.das", 0},
+    {"rel/em20.rel", 0},
+    {"em/em21.das", 0},
+    {"rel/em21.rel", 0},
+    {"em/em22.das", 0},
+    {"rel/em22.rel", 0},
+    {"em/em23.das", 0},
+    {"rel/em23.rel", 0},
+    {"em/em24.das", 0},
+    {"rel/em24.rel", 0},
+    {"em/em25.das", 0},
+    {"rel/em25.rel", 0},
+    {"em/em10.das", 0},
+    {"rel/em10.rel", 0},
+    {"rel/pl02.rel", 0},
+    {"em/pl15.das", 0},
+    {"em/em06.das", 0},
+    {"rel/em06.rel", 0},
+    {"em/em11.das", 0},
+    {"rel/em11.rel", 0},
+    {"em/em26.das", 0},
+    {"rel/em26.rel", 0},
+    {"em/pl01.das", 0},
+    {"em/wep14.das", 0},
+    {"rel/wep14.rel", 0},
+    {"em/em27.das", 0},
+    {"rel/em27.rel", 0},
+    {"etc/youdied.tpl", 0},
+    {"etc/thank.tpl", 0},
+    {"em/em28.das", 0},
+    {"rel/em28.rel", 0},
+    {"em/em12.das", 0},
+    {"rel/em12.rel", 0},
+    {"em/wep99.das", 0},
+    {"em/em15.das", 0},
+    {"rel/em15.rel", 0},
+    {"em/em16.das", 0},
+    {"rel/em16.rel", 0},
+    {"em/em17.das", 0},
+    {"rel/em17.rel", 0},
+    {"em/em18.das", 0},
+    {"rel/em18.rel", 0},
+    {"em/em19.das", 0},
+    {"rel/em19.rel", 0},
+    {"em/em13.das", 0},
+    {"em/em14.das", 0},
+    {"em/em1a.das", 0},
+    {"rel/em1a.rel", 0},
+    {"em/em1b.das", 0},
+    {"rel/em1b.rel", 0},
+    {"em/em29.das", 0},
+    {"rel/em29.rel", 0},
+    {"em/em2a.das", 0},
+    {"rel/em2a.rel", 0},
+    {"rel/st0.rel", 0},
+    {"em/em2b.das", 0},
+    {"rel/em2b.rel", 0},
+    {"em/wep07.das", 0},
+    {"rel/wep07.rel", 0},
+    {"em/em2c.das", 0},
+    {"rel/em2c.rel", 0},
+    {"em/pl14.das", 0},
+    {"rel/pl14.rel", 0},
+    {"em/em2d.das", 0},
+    {"rel/em2d.rel", 0},
+    {"em/pl07.das", 0},
+    {"rel/pl07.rel", 0},
+    {"rel/em13.rel", 0},
+    {"rel/em14.rel", 0},
+    {"em/pl03.das", 0},
+    {"rel/pl03.rel", 0},
+    {"em/em2e.das", 0},
+    {"rel/em2e.rel", 0},
+    {"em/em2f.das", 0},
+    {"rel/em2f.rel", 0},
+    {"em/em30.das", 0},
+    {"rel/em30.rel", 0},
+    {"etc/memcard.das", 0},
+    {"em/pl08.das", 0},
+    {"em/pl09.das", 0},
+    {"em/pl0a.das", 0},
+    {"em/pl0f.das", 0},
+    {"rel/pl0f.rel", 0},
+    {"bgm/bio4evt.sbb", 0},
+    {"bgm/bio4midi.hed", 0},
+    {"bgm/bio4midi.dat", 0},
+    {"em/pl11.das", 0},
+    {"rel/pl11.rel", 0},
+    {"em/em34.das", 0},
+    {"rel/em34.rel", 0},
+    {"em/wep19.das", 0},
+    {"rel/wep19.rel", 0},
+    {"bgm/doorse.hed", 0},
+    {"bgm/doorse.dat", 0},
+    {"bgm/bgmtbl.dat", 0},
+    {"em/pl12.das", 0},
+    {"rel/pl12.rel", 0},
+    {"em/wep11.das", 0},
+    {"rel/wep11.rel", 0},
+    {"em/wep10.das", 0},
+    {"rel/wep10.rel", 0},
+    {"em/wep12.das", 0},
+    {"rel/wep12.rel", 0},
+    {"em/wep13.das", 0},
+    {"rel/wep13.rel", 0},
+    {"em/pl0e.das", 0},
+    {"rel/pl0e.rel", 0},
+    {"em/wep16.das", 0},
+    {"rel/wep16.rel", 0},
+    {"em/pl10.das", 0},
+    {"rel/pl10.rel", 0},
+    {"em/em35.das", 0},
+    {"rel/em35.rel", 0},
+    {"em/wep09.das", 0},
+    {"rel/wep09.rel", 0},
+    {"em/em3b.das", 0},
+    {"rel/em3b.rel", 0},
+    {"em/wep03.das", 0},
+    {"em/em39.das", 0},
+    {"rel/em39.rel", 0},
+    {"em/wep15.das", 0},
+    {"rel/wep15.rel", 0},
+    {"em/wep05.das", 0},
+    {"rel/wep05.rel", 0},
+    {"em/wep06.das", 0},
+    {"rel/wep06.rel", 0},
+    {"em/wep04.das", 0},
+    {"rel/wep04.rel", 0},
+    {"em/em3c.das", 0},
+    {"rel/em3c.rel", 0},
+    {"em/wep08.das", 0},
+    {"rel/wep08.rel", 0},
+    {"em/wep17.das", 0},
+    {"rel/wep17.rel", 0},
+    {"rel/st1_0.rel", 0},
+    {"rel/st2_0.rel", 0},
+    {"rel/st3_0.rel", 0},
+    {"rel/st1_1.rel", 0},
+    {"em/em32.das", 0},
+    {"rel/em32.rel", 0},
+    {"rel/st1_2.rel", 0},
+    {"em/em38.das", 0},
+    {"rel/em38.rel", 0},
+    {"em/em3d.das", 0},
+    {"rel/em3d.rel", 0},
+    {"em/em1c.das", 0},
+    {"rel/em1c.rel", 0},
+    {"rel/st2_1.rel", 0},
+    {"rel/st2_2.rel", 0},
+    {"em/wep00.das", 0},
+    {"rel/wep00.rel", 0},
+    {"em/em36.das", 0},
+    {"rel/em36.rel", 0},
+    {"rel/st1_3.rel", 0},
+    {"em/em31.das", 0},
+    {"rel/em31.rel", 0},
+    {"em/pl0b.das", 0},
+    {"rel/pl0b.rel", 0},
+    {"em/em1d.das", 0},
+    {"rel/em1d.rel", 0},
+    {"em/wep18.das", 0},
+    {"em/wep20.das", 0},
+    {"em/wep33.das", 0},
+    {"rel/wep33.rel", 0},
+    {"em/em1e.das", 0},
+    {"rel/em1e.rel", 0},
+    {"em/wep30.das", 0},
+    {"rel/wep30.rel", 0},
+    {"em/pl0c.das", 0},
+    {"rel/pl0c.rel", 0},
+    {"em/em3e.das", 0},
+    {"rel/emmark.rel", 0},
+    {"em/em3a.das", 0},
+    {"rel/em3a.rel", 0},
+    {"rel/st4_0.rel", 0},
+    {"rel/st2_3.rel", 0},
+    {"em/pl06.das", 0},
+    {"rel/pl06.rel", 0},
+    {"em/pl05.das", 0},
+    {"em/wep26.das", 0},
+    {"rel/wep26.rel", 0},
+    {"em/wep27.das", 0},
+    {"rel/wep27.rel", 0},
+    {"em/wep28.das", 0},
+    {"rel/wep28.rel", 0},
+    {"em/pl0a.das", 0},
+    {"rel/pl0a.rel", 0},
+    {"em/pl0d.das", 0},
+    {"rel/pl0d.rel", 0},
+    {"rel/st3_1.rel", 0},
+    {"rel/st3_2.rel", 0},
+    {"rel/st3_3.rel", 0},
+    {"em/wep34.das", 0},
+    {"rel/wep34.rel", 0},
+    {"em/wep35.das", 0},
+    {"rel/wep35.rel", 0},
+    {"em/wep36.das", 0},
+    {"rel/wep36.rel", 0},
+    {"em/wep37.das", 0},
+    {"rel/wep37.rel", 0},
+    {"em/wep38.das", 0},
+    {"rel/wep38.rel", 0},
+    {"em/wep39.das", 0},
+    {"rel/wep39.rel", 0},
+    {"em/wep40.das", 0},
+    {"rel/wep40.rel", 0},
+    {"em/wep29.das", 0},
+    {"rel/wep29.rel", 0},
+    {"em/wep41.das", 0},
+    {"rel/wep41.rel", 0},
+    {"em/wep42.das", 0},
+    {"rel/wep42.rel", 0},
+    {"em/wep43.das", 0},
+    {"rel/wep43.rel", 0},
+    {"em/wep44.das", 0},
+    {"rel/wep44.rel", 0},
+    {"em/em46.das", 0},
+    {"em/em4c.das", 0},
+    {"em/em4d.das", 0},
+    {"em/em4f.das", 0},
+    {"em/em50.das", 0},
+    {"em/em56.das", 0},
+    {"em/em5c.das", 0},
+    {"em/em5d.das", 0},
+    {"em/em5f.das", 0},
+    {"em/em60.das", 0},
+    {"em/em66.das", 0},
+    {"em/em6c.das", 0},
+    {"em/em6d.das", 0},
+    {"em/em6f.das", 0},
+    {"em/em70.das", 0},
+    {"rel/st2_4.rel", 0},
+    {"em/wep21.das", 0},
+    {"em/wep24.das", 0},
+    {"em/wep31.das", 0},
+    {"em/wep32.das", 0},
+    {"em/wep25.das", 0},
+    {"em/wep45.das", 0},
+    {"rel/wep45.rel", 0},
+    {"em/wep46.das", 0},
+    {"em/wep47.das", 0},
+    {"rel/wep47.rel", 0},
+};
+
+#include "global.h"
+#include "map_obj.h"
+#include "light.h"
+#include "widget.h"
+#include "card.h"
+#include "sofdec.h"
+#include "dvd.h"
+#include "main.h"
+#include "main_mem.h"
+#include "main_sub.h"
+#include "scheduler.h"
+#include "mes.h"
+#include "pad.h"
+#include "eprintf.h"
+#include "gx.h"
+
+extern "C" {
+void OSReport(const char* fmt, ...);
+int sprintf(char* buf, const char* fmt, ...);
+void* memcpy(void* dst, const void* src, unsigned int n);
+void DCFlushRange(void* addr, u32 nBytes);
+u32 OSGetTick();
+u32 OSGetConsoleSimulatedMemSize();
+void PADControlMotor(int chan, u32 cmd);
+void GXSetCopyClear(GXColor clear_clr, u32 clear_z);
+void GXCopyDisp(void* dest, u8 clear);
+void ADXGC_SetupDvdFs(int mode);
+u16 OSGetFontEncode();
+int OSInitFont(void* fontData);
+char* OSGetFontTexture(const char* string, void** image, s32* x, s32* y, s32* width);
+void trans2aram_cb(u32 req);
+void dvdread_callback(s32 result, DVDFileInfo* fi);
+void aram_cb(u32 req);
+void readcancel_cb(s32 result, DVDCommandBlock* cb);
+void EprintfFlush();
+}
+
+extern int vsync_cnt;
+extern int eprintf_init;
+
+// Read through a reference: a MEM with neither the struct nor the scalar flag, so the load is
+// not hoisted above the preceding `vsync_cnt = 0` scalar store (ErrCheck).
+static inline s32 IRef(s32& v) { return v; }
+// Same for the first pSys read of DiscChange: without the scalar flag the `lwz r9,pSys` is not
+// exempt from the game[] template stores (fixed_scalar_and_varying_struct_p), so every store
+// ranks 7 in sched2 and the copy issues in template order (0, 8, c, 4) like the original.
+static inline SystemWork* SysRef(SystemWork*& p) { return p; }
+
+// Low memory globals (OSPhysicalToCached(0x00F8) = bus clock); a struct member so the
+// address splits into `lis 0x8000` + displacement.
+struct OSLowMem {
+    u8 pad_0[0xF8];
+    u32 busClock;  // 0xF8
+};
+#define OS_BUS_CLOCK (((OSLowMem*) 0x80000000)->busClock)
+#define OS_TIMER_CLOCK (OS_BUS_CLOCK / 4)
+#define OSTicksToMilliseconds(ticks) ((ticks) / (OS_TIMER_CLOCK / 1000))
+
+#include "snd.h"
+
+// Stream work (snd_ram `Snd_str_work[4]`, 0x14C bytes), only the debug display fields.
+struct DvdSndStrWork {
+    u16 status;   // 0x00
+    s16 no;       // 0x02
+    u8 pad_4[5];
+    s8 state;     // 0x09
+    u8 pad_A[0x20 - 0xA];
+    u32 req;      // 0x20
+    u8 err;       // 0x24
+    u8 cancel;    // 0x25
+    u8 pad_26[0x14C - 0x26];
+};
+extern "C" DvdSndStrWork Snd_str_work[4];
+
+#define ALIGN32(x) (((x) + 0x1F) & ~0x1F)
+#define DVD_BUFF ((void*) 0x80350000)
+#define DVD_BUFF2 ((void*) 0x80360000)
+
+// status field of cDvdQueue::flag
+enum {
+    ST_PUSH = 0,
+    ST_READ = 1,
+    ST_COMPLETE = 2,
+    ST_CANCEL = 3,
+    ST_ERROR = 4
+};
+
+
+DvdReq DvdReqWork;
+cDvd Dvd;
+cAram Aram;
+static u8 header_buff[0x800] __attribute__((aligned(32)));
+u8 header_save[0x800] __attribute__((aligned(32)));
+DvdHeader* pFilehead[2];
+static DvdHeader* pFilehead_save[2];
+
+int DvdRead(int fileNo, void* dst, u32 aram, u32 ofs, u32 length, int mode, const char* file, int line)
+{
+    DvdReq* w = &DvdReqWork;
+
+    memclr_asm(w, sizeof(DvdReq));
+    w->dst = dst;
+    w->fileNo = fileNo;
+    w->aram = aram;
+    w->ofs = ofs;
+    w->length = length;
+    w->prio = 4;
+    w->mode = mode;
+    sprintf(w->file, "%s", file);
+    w->line = line;
+    return Dvd.ReadReq();
+}
+
+int DvdReadN(const char* name, void* dst, int a, int b, int c, int mode, const char* file, int line)
+{
+    DvdReq* w = &DvdReqWork;
+
+    memclr_asm(w, sizeof(DvdReq));
+    sprintf(w->name, "%s", name);
+    w->dst = dst;
+    w->fileNo = 0xFFFF;
+    w->aram = a;
+    w->ofs = b;
+    w->length = c;
+    w->prio = 4;
+    w->mode = mode;
+    sprintf(w->file, "%s", file);
+    w->line = line;
+    return Dvd.ReadReq();
+}
+
+void MemorySwap(void* mram, u32 aram, u32 size)
+{
+    u8* p;
+    u32 q;
+    u32 rest;
+    u32 n;
+
+    if (Dvd.pRead) {
+        while (Dvd.pRead->chk(0x20)) {
+            Dvd.pRead->Read();
+        }
+    }
+    rest = ALIGN32(size);
+    q = aram;
+    OSReport("MemorySwap Mram:%08x Aram:%08x Size:%08x\n", mram, q, size);
+    p = (u8*) mram;
+    DCFlushRange(mram, size);
+    while (rest) {
+        n = rest;
+        if (n > 0x10000) {
+            n = 0x10000;
+        }
+        rest -= n;
+        memcpy(DVD_BUFF, p, n);
+        Aram.DmaTransReq(1, q, (u32) DVD_BUFF2, n, 1);
+        memcpy(p, DVD_BUFF2, n);
+        p += n;
+        Aram.DmaTransReq(0, (u32) DVD_BUFF, q, n, 1);
+        q += n;
+    }
+    DCFlushRange(mram, size);
+}
+
+void cDvdQueue::trans2mram(void* buf, u32 addr, u32 size)
+{
+    memcpy((void*) addr, buf, size);
+    mramSize += size;
+    DCFlushRange((void*) addr, size);
+}
+
+void trans2aram_cb(u32 req)
+{
+    ARQRequest* r = (ARQRequest*) req;
+    cDvdQueue* q = (cDvdQueue*) r->owner;
+
+    q->flag &= ~0x01000000;
+    q->aramSize += r->length;
+}
+
+void cDvdQueue::trans2aram(void* buf, u32 addr, u32 size)
+{
+    u32 n = ALIGN32(size);
+
+    DCFlushRange(buf, n);
+    flag |= 0x01000000;
+    ARQPostRequest(&arq, (u32) this, ARQ_TYPE_MRAM_TO_ARAM, 1, (u32) buf, addr, n, trans2aram_cb);
+}
+
+void dvdread_callback(s32 result, DVDFileInfo* fi)
+{
+    cDvdQueue* q = (cDvdQueue*) fi->cb.userData;
+
+    q->flag &= ~0x02000000;
+    if (result == -3) {
+        q->flag |= 0x100000;
+    } else if (result != ALIGN32(q->readSize)) {
+        q->flag |= 0x200000;
+    }
+}
+
+void cDvdQueue::readInit()
+{
+    u32 size;
+    void* buf;
+    int heap;
+    DvdHeader* h;
+
+    switch (step) {
+    case 0:
+        memclr_asm(header_buff, sizeof(header_buff));
+        if (fileOpen() == 0) {
+            mode = 3;
+            step = 0;
+            flag |= 0x200000;
+            err = -1;
+            OSReport("DVD: File not found : %s\n", name);
+            break;
+        }
+        if (length == 0) {
+            length = fileGetLength();
+        }
+        setStatus(ST_READ);
+        step++;
+    case 1:
+        pFilehead[depth] = (DvdHeader*) &header_buff[depth << 10];
+        if (chk(0x80000000) || depth != 0) {
+            u32* p;
+            flag |= 0x20;
+            hedOfs[depth] = depth ? pFilehead[depth - 1]->ofs : ofs;
+            p = hedOfs;
+            readSize = 0x400;
+            fileReadAsync(&header_buff[depth << 10], 0x400, p[depth]);
+            step++;
+        } else {
+            pFilehead[depth]->type = hedType;
+            pFilehead[depth]->size = length;
+            pFilehead[depth]->ofs = ofs;
+            pFilehead[depth]->sndType = 0;
+            pFilehead[depth]->dest = 0;
+            pFilehead[depth][1].type = 0xFFFFFFFF;
+            if (chk(0x6) && depth == 0) {
+                step = 3;
+            } else {
+                step = 0xA;
+            }
+        }
+        if (depth == 0) {
+            OSReport("DVD: Read File: %s\n", name);
+        }
+        break;
+    case 2:
+        if (chk(0x02000000)) {
+            break;
+        }
+        flag &= ~0x20;
+        if (chk(0x100000)) {
+            step = 0;
+            mode = 3;
+            break;
+        }
+        if (chk(0x6) && depth == 0) {
+            step++;
+        } else {
+            step = 0xA;
+        }
+        break;
+    case 3:
+        if (chk(0x80000000)) {
+            size = 0;
+            for (h = (DvdHeader*) header_buff + 1; h->type != 0xFFFFFFFF; h++) {
+                if (h->type == 0) {
+                    size += ALIGN32(h->size);
+                }
+            }
+        } else {
+            size = length;
+            pFilehead[depth]->type = 0;
+        }
+        if (chk(0x2)) {
+            heap = MemGetCurrentHeap();
+            if (this->heap != heap) {
+                MemSetCurrentHeap(this->heap);
+            }
+            buf = mem_alloc(ALIGN32(size), file, line, 1, 0xD);
+            MemSetCurrentHeap(heap);
+        } else {
+            heap = MemGetCurrentDbgHeap();
+            if (this->heap != heap) {
+                MemSetCurrentDbgHeap(this->heap);
+            }
+            buf = Debug_alloc(ALIGN32(size), 1);
+            MemSetCurrentDbgHeap(this->heap);
+        }
+        if (buf == 0) {
+            OSReport("DVD: Memory allocate failed\n");
+            mode = 3;
+            step = 0;
+            flag |= 0x200000;
+            err = -3;
+            break;
+        }
+        OSReport("DVD: Mem Alloc: %08x Size:%08x\n", buf, size);
+        pBuff = buf;
+        step = 0xA;
+        break;
+    case 0xA:
+        mode = 1;
+        step = 0;
+        if (depth == 0) {
+            if (chk(0x10)) {
+                if (chk(0x80000000)) {
+                    size = 0;
+                    for (h = (DvdHeader*) header_buff + 1; h->type != 0xFFFFFFFF; h++) {
+                        if (h->type == 0) {
+                            size += ALIGN32(h->size);
+                        }
+                    }
+                } else {
+                    size = pFilehead[0]->size;
+                }
+                pBuff = (u8*) pBuff - ALIGN32(size);
+            }
+            mramAddr = (u32) pBuff;
+            aramAddr = aram;
+        }
+        if (chk(0x80000000)) {
+            pFilehead[depth]++;
+        }
+        break;
+    }
+}
+
+void cDvdQueue::readMain()
+{
+    static void (cDvdQueue::*trans_proc_tbl[])(void*, u32, u32) = {
+        &cDvdQueue::trans2mram, &cDvdQueue::trans2mram, &cDvdQueue::trans2aram, &cDvdQueue::trans2aram
+    };
+    static char* blk_tbl[] = {
+        "CORE", "PL", "WEP", "BGM0", "BGM1", "FOOT", "ROOM", "DOOR",
+        "ENEMY0", "ENEMY1", "ENEMY2", "ENEMY3", "ENEMY4", "ENEMY5"
+    };
+    DvdHeader** ph = &pFilehead[depth];
+    int t;
+    int r;
+
+    switch (step) {
+    case 0:
+        switch ((*ph)->type) {
+        case 0xFFFFFFFF:
+            if (depth == 0) {
+                mode = 3;
+                flag |= 0x04000000;
+                step = 0;
+            } else {
+                depth--;
+                ph[-1]++;
+            }
+            break;
+        case 0xFFFFFFFE:
+            (*ph)++;
+            break;
+        case 4:
+            if (depth == 1) {
+                OSReport("DVD: \230A\214\213\203t\203@\203C\203\213\202\314\203l\203X\203g\202\315\202\261\202\352\210\310\217\343\202\305\202\253\202\334\202\271\202\361\n");
+                (*ph)++;
+            } else {
+                depth++;
+                mode = 0;
+                step = 1;
+            }
+            break;
+        case 0:
+        case 3:
+            remain = (*ph)->size;
+            if ((*ph)->dest) {
+                destAddr = (*ph)->dest;
+            } else if ((*ph)->type == 0) {
+                destAddr = mramAddr;
+            } else {
+                destAddr = aramAddr;
+            }
+            addrTbl[depth][cnt[depth]] = destAddr;
+            ofs = hedOfs[depth] + (*ph)->ofs;
+            step++;
+            if ((*ph)->type == 0) {
+                OSReport("DVD: Trans MRAM  addr: %08x size: %08x\n", destAddr, remain);
+            } else {
+                OSReport("DVD: Trans ARAM  addr: %08x size: %08x\n", destAddr, remain);
+            }
+            break;
+        case 1:
+            t = (*ph)->sndType;
+            switch ((*ph)->sndType) {
+            case 8:
+                r = SndEmDataReadCheck((*ph)->sndArg);
+                if (r == -1) {
+                    OSReport("DVD: Snd File not Read!!!\n");
+                    *ph += 2;
+                    return;
+                }
+                (*ph)->sndNo = r;
+                (*ph)[1].sndNo = r;
+                t = r + 8;
+            case 5:
+            case 6:
+                SndMem.blk_mram[t] = Snd.mram_top;
+                Snd.mram_top += ALIGN32((*ph)->size);
+                break;
+            case 3:
+                r = SndBgmDataReadCheck((*ph)->sndArg);
+                if (r == -1) {
+                    OSReport("DVD: Snd File not Read!!!\n");
+                    *ph += 2;
+                    return;
+                }
+                (*ph)->sndNo = r;
+                (*ph)[1].sndNo = r;
+                t = r + 3;
+                Snd.bgm_mram -= ALIGN32((*ph)->size);
+                SndMem.blk_mram[t] = Snd.bgm_mram;
+                break;
+            }
+            destAddr = (u32) SndMem.blk_mram[t];
+            Snd.blk_flag[0] &= ~(1 << t);
+            remain = (*ph)->size;
+            ofs = hedOfs[depth] + (*ph)->ofs;
+            step++;
+            OSReport("DVD: Trans MRAM Snddata  addr: %08x size: %08x %s\n", destAddr, remain, blk_tbl[t]);
+            break;
+        case 2:
+            t = (*ph)->sndType;
+            switch ((*ph)->sndType) {
+            case 8:
+                t = (*ph)->sndNo + 8;
+            case 5:
+            case 6:
+                SndMem.blk_aram[t] = Snd.aram_top;
+                Snd.aram_top += ALIGN32((*ph)->size);
+                break;
+            case 3:
+                t = (*ph)->sndNo + 3;
+                Snd.bgm_aram -= ALIGN32((*ph)->size);
+                SndMem.blk_aram[t] = Snd.bgm_aram;
+                break;
+            case 0:
+                SndMem.blk_aram[0] = 0x4100;
+                break;
+            case 1:
+                SndMem.blk_aram[1] = 0x44100;
+                break;
+            case 2:
+                SndMem.blk_aram[2] = 0x174100;
+                break;
+            case 7:
+                SndMem.blk_aram[7] = 0x1B4100;
+                break;
+            }
+            destAddr = SndMem.blk_aram[t];
+            remain = (*ph)->size;
+            ofs = hedOfs[depth] + (*ph)->ofs;
+            step++;
+            OSReport("DVD: Trans ARAM Snddata  addr: %08x size: %08x %s\n", destAddr, remain, blk_tbl[t]);
+            UseAramSize[t] = (remain + 0x1F) / 0x20 * 0x20;
+            break;
+        }
+        break;
+    case 1:
+        tick = OSGetTick();
+        flag |= 0x20;
+        readSize = remain > 0x20000 ? 0x20000 : remain;
+        fileReadAsync(DVD_BUFF, readSize, ofs);
+        step++;
+        break;
+    case 2:
+        if (chk(0x02000000)) {
+            break;
+        }
+        if (chk(0x100000)) {
+            step = 0;
+            mode = 3;
+            break;
+        }
+        if (chk(0x200000)) {
+            OSReport("DVD: Read Error!!!\n");
+            flag &= ~0x200020;
+            step--;
+            break;
+        }
+        (this->*trans_proc_tbl[(*ph)->type])(DVD_BUFF, destAddr, readSize);
+        step++;
+        flag &= ~0x20;
+        break;
+    case 3:
+        if (chk(0x01000000)) {
+            break;
+        }
+        remain -= readSize;
+        ofs += readSize;
+        destAddr += readSize;
+        if (remain <= 0) {
+            switch ((*ph)->type) {
+            case 2:
+                SndBlkInit((*ph)->sndType, (*ph)->sndArg, (*ph)->sndNo);
+                break;
+            case 0:
+            case 3:
+                if ((*ph)->dest == 0) {
+                    if ((*ph)->type == 0) {
+                        mramAddr += ALIGN32((*ph)->size);
+                    } else {
+                        aramAddr += ALIGN32((*ph)->size);
+                    }
+                }
+                sizeTbl[depth][cnt[depth]] = (*ph)->size;
+                break;
+            }
+            (*ph)++;
+            step = 0;
+            cnt[depth]++;
+        } else {
+            step = 1;
+        }
+        break;
+    }
+}
+
+void cDvdQueue::readCancelWait()
+{
+    if (chk(0x100000)) {
+        mode = 3;
+    }
+}
+
+void cDvdQueue::readExit()
+{
+    fileClose();
+    if (chk(0x04000000)) {
+        setStatus(ST_COMPLETE);
+        OSReport("DVD: Read Ok ");
+    } else if (chk(0x100000)) {
+        setStatus(ST_CANCEL);
+        OSReport("DVD: Read Cancel: %s ", name);
+    } else if (chk(0x200000)) {
+        setStatus(ST_ERROR);
+        OSReport("DVD: Read Error : %s\n", name);
+    }
+    flag |= 0x400000;
+}
+
+int cDvdQueue::Read()
+{
+    static void (cDvdQueue::*func_tbl[])() = {
+        &cDvdQueue::readInit, &cDvdQueue::readMain, &cDvdQueue::readCancelWait, &cDvdQueue::readExit
+    };
+    int ret = 1;
+    int pc = 1;
+
+    if ((pG->flags_54 & 0x20000) == 0) {
+        pc = 0;
+    }
+    if (pcMode) {
+        pG->flags_54 |= 0x20000;
+    } else {
+        pG->flags_54 &= ~0x20000;
+    }
+    (this->*func_tbl[mode])();
+    if (pc) {
+        pG->flags_54 |= 0x20000;
+    } else {
+        pG->flags_54 &= ~0x20000;
+    }
+    if (chk(0x400000)) {
+        ret = 0;
+    } else if (!chk(1)) {
+        ret = 0;
+    }
+    return ret;
+}
+
+void cDvdQueue::Initialize()
+{
+    DvdReq* w = &DvdReqWork;
+    char buf[0x40];
+    int hed;
+    int pc;
+
+    if (w->fileNo != 0xFFFF) {
+        entrynum = FileTbl[w->fileNo].entrynum;
+        sprintf(name, "%s", FileTbl[w->fileNo].name);
+    } else {
+        entrynum = DVDConvertPathToEntrynum(w->name);
+        sprintf(name, "%s", w->name);
+    }
+    if (pG->flags_54 & 0x20000) {
+        sprintf(buf, "d:\\bio4/data/%s", name);
+        sprintf(name, "%s", buf);
+    }
+    fileNo = w->fileNo;
+    pBuff = w->dst;
+    aram = w->aram;
+    ofs = w->ofs;
+    length = w->length;
+    prio = w->prio;
+    hed = w->mode & 0x8;
+    if (hed) {
+        hed = 3;
+    }
+    hedType = hed;
+    if (w->mode & 0x1) {
+        flag |= 0x40000000;
+    } else if (w->mode & 0x100) {
+        flag |= 0x100;
+    }
+    if (w->mode & 0x8000) {
+        flag |= 0x80000000;
+    }
+    if (w->mode & 0x4) {
+        heap = MemGetCurrentHeap();
+        flag |= 0x2;
+    } else if (w->mode & 0x2) {
+        heap = MemGetCurrentDbgHeap();
+        flag |= 0x4;
+    }
+    if (w->mode & 0x20) {
+        flag |= 0x10;
+    }
+    if (w->mode & 0x40) {
+        flag |= 0x20000000;
+    }
+    sprintf(file, "%s", w->file);
+    line = w->line;
+    pc = 1;
+    if ((pGS->flags_54 & 0x20000) == 0) {
+        pc = 0;
+    }
+    pcMode = pc;
+}
+
+int cDvdQueue::LinkQueue()
+{
+    cDvdQueue* p;
+    cDvdQueue* n;
+
+    if (Dvd.pList == 0) {
+        Dvd.pList = this;
+        next = 0;
+    } else {
+        p = Dvd.pList;
+        for (;;) {
+            if (p == Dvd.pList) {
+                if (prio < p->prio) {
+                    next = p;
+                    Dvd.pList = this;
+                    break;
+                }
+            }
+            n = p->next;
+            if (n == 0) {
+                p->next = this;
+                next = 0;
+                break;
+            }
+            if (prio < n->prio) {
+                next = n;
+                p->next = this;
+                break;
+            }
+            p = n;
+        }
+    }
+    setStatus(ST_PUSH);
+    return no;
+}
+
+void cDvdQueue::PushQueue()
+{
+    flag &= ~1;
+}
+
+void cDvdQueue::ErrMemFree()
+{
+    if (chk(0x6)) {
+        void* p = pBuff;
+        if (p) {
+            if (chk(0x2)) {
+                MemFree(p);
+            } else {
+                Debug_free(p);
+            }
+        }
+    }
+}
+
+int cDvdQueue::fileOpen()
+{
+    int ret = 1;
+
+    if (entrynum == -1) {
+        ret = 0;
+    } else {
+        DVDFastOpen(entrynum, &fileInfo);
+    }
+    return ret;
+}
+
+int cDvdQueue::fileGetLength()
+{
+    return fileInfo.length;
+}
+
+int cDvdQueue::fileReadAsync(void* buf, u32 size, u32 ofs)
+{
+    fileInfo.cb.userData = this;
+    flag |= 0x02000000;
+    return DVDReadAsyncPrio(&fileInfo, buf, ALIGN32(size), ofs, dvdread_callback, 2);
+}
+
+int cDvdQueue::fileClose()
+{
+    int ret = 0;
+
+    if (entrynum != -1) {
+        DVDClose(&fileInfo);
+        ret = 1;
+    }
+    return ret;
+}
+
+int cAram::DmaTransReq(int type, u32 src, u32 dst, u32 len, int wait)
+{
+    int no;
+    AramReq* r;
+    AramReq* p;
+
+    r = pullAramQueue(&no);
+    if (r == 0) {
+        OSReport("No ARAM Queue\n");
+        return -1;
+    }
+    r->type = type;
+    r->src = src;
+    r->dst = dst;
+    r->len = len;
+    if (wait) {
+        pCur = r;
+        DmaTrans(r, 1);
+    } else {
+        if (pList == 0) {
+            pList = r;
+            r->next = 0;
+        } else {
+            for (p = pList; p->next; p = p->next) {}
+            p->next = r;
+            r->next = 0;
+        }
+    }
+    return no;
+}
+
+AramReq* cAram::pullAramQueue(int* no)
+{
+    int i;
+    AramReq* r;
+
+    for (i = 0; i < 16; i++) {
+        if (queue[i].flag == 0) {
+            r = &queue[i];
+            memclr_asm(r, sizeof(AramReq));
+            r->flag |= 1;
+            *no = i;
+            return r;
+        }
+    }
+    return 0;
+}
+
+void aram_cb(u32 req)
+{
+    AramReq* r = (AramReq*) ((ARQRequest*) req)->owner;
+
+    r->flag |= 0x04000000;
+    Aram.pCur = 0;
+}
+
+void cAram::DmaTrans(AramReq* r, int wait)
+{
+    r->len = ALIGN32(r->len);
+    DCFlushRange((void*) (r->type == 0 ? r->src : r->dst), r->len);
+    ARQPostRequest(&arq, (u32) r, r->type, 1, r->src, r->dst, r->len, aram_cb);
+    if (wait & 1) {
+        while (r->chk(0x04000000) == 0) {}
+        r->flag = 0;
+    }
+}
+
+int cAram::TransCheck(int no)
+{
+    AramReq* r = &queue[no];
+
+    if (r->flag == 0 || r->chk(0x04000000) == 1) {
+        r->flag = 0;
+        return 1;
+    }
+    return 0;
+}
+
+int cAram::DmaCancel(int no)
+{
+    AramReq* p;
+    int ret = 0;
+
+    if (pCur == &queue[no]) {
+        while (TransCheck(no) == 0) {}
+        return 1;
+    }
+    if (pList) {
+        for (p = pList; p->next; p = p->next) {
+            if (p->next == &queue[no]) {
+                p->next = p->next->next;
+                (&queue[no])->clear();
+                ret = 1;
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+void cAram::DmaCancelAll()
+{
+    int i;
+
+    if (pCur) {
+        for (i = 0; i < 16; i++) {
+            if (pCur == &queue[i]) {
+                while (TransCheck(i) == 0) {}
+                break;
+            }
+        }
+    }
+    while (pList) {
+        pList->flag = 0;
+        pList = pList->next;
+    }
+    ARQFlushQueue();
+}
+
+void cDvd::Init()
+{
+    u32 size;
+    u32 fst;
+
+    ADXGC_SetupDvdFs(0);
+    FileTblExistCheck();
+    memclr_asm(this, sizeof(cDvd));
+    memclr_asm(&Aram, sizeof(cAram));
+    reqNo = 1;
+    OSReport("FST Address = 0x%8x\n", DVDGetFSTLocation());
+    size = OSGetConsoleSimulatedMemSize();
+    fst = (u32) DVDGetFSTLocation() - 0x80000000;
+    freeSize = size - fst;
+}
+
+#define DVD_READ_N(name, dst, a, b, c, mode) DvdReadN(name, dst, a, b, c, mode, __FILE__, __LINE__)
+
+#line 98 "D:/Bio4/Prog/dvd.cpp"
+void cDvd::SizeTableRead()
+{
+    int req = DVD_READ_N("etc/sizetbl.dat", 0, 0, 0, 0, 5);
+    int r = Dvd.ReadCheck(req, 0, 0, &pSizeTbl);
+
+    if (req < 0 || r < 0) {
+        pSizeTbl = 0;
+    }
+}
+
+void DvdReadProc()
+{
+    Dvd.ReadProc();
+}
+
+void cDvd::ReadProc()
+{
+    cDvdQueue* q = pRead;
+    int sync = 1;
+    int intr = 1;
+
+    q->startTick = OSGetTick();
+    readProcMain(q);
+    pRead = 0;
+    sync = q->chk(0x40000000);
+    intr = q->chk(0x100);
+    OSReport(" %d\n", OSTicksToMilliseconds(OSGetTick() - q->startTick));
+    if (q->chk(0x20000000) == 1) {
+        q->PushQueue();
+    } else {
+        q->flag |= 0x800;
+    }
+    if (sync == 0) {
+        if (intr == 1) {
+            iTaskExit();
+        } else {
+            TaskExit();
+        }
+    }
+}
+
+void cDvd::readProcMain(cDvdQueue* q)
+{
+    while (q->Read() == 1) {
+        if (!q->chk(0x40000000)) {
+            if (!q->chk(0x100)) {
+                TaskSleep(1);
+            }
+        } else {
+            ErrCheck(-1, 0);
+        }
+    }
+}
+
+void cDvd::ReadNblk2Blk(int no)
+{
+    cDvdQueue* q = getQueuePtr(no);
+    cDvdQueue* p;
+
+    if (q == 0) {
+        return;
+    }
+    switch (q->getStatus()) {
+    case ST_READ:
+        q->flag |= 0x40000000;
+        if (q->chk(0x100) == 1) {
+            iTaskKill();
+        } else {
+            TaskKill(3);
+        }
+        readProcMain(q);
+        q->flag |= 0x800;
+        pRead = 0;
+        OSReport(" %d\n", OSTicksToMilliseconds(OSGetTick() - q->startTick));
+        break;
+    case ST_PUSH:
+        q->flag |= 0x40000000;
+        if (q == pRead) {
+            pRead = 0;
+            if (q->chk(0x100) == 1) {
+                iTaskKill();
+            } else {
+                TaskKill(3);
+            }
+        } else if (q == pList) {
+            pList = q->next;
+        } else {
+            for (p = pList; p->next != q; p = p->next) {}
+            p->next = q->next;
+        }
+        blockRead(q);
+        break;
+    }
+}
+
+void cDvd::FileTblExistCheck()
+{
+    int i;
+
+    for (i = 0; i < sizeof(FileTbl) / sizeof(FileTbl[0]); i++) {
+        FileTbl[i].entrynum = DVDConvertPathToEntrynum(FileTbl[i].name);
+    }
+}
+
+int cDvd::FileExistCheck(const char* name, u32* pLength)
+{
+    DVDFileInfo fi;
+    int ret;
+
+    if (pG->flags_54 & 0x20000) {
+        ret = -1;
+    } else {
+        ret = DVDConvertPathToEntrynum(name);
+        if (pLength && ret != -1) {
+            DVDFastOpen(ret, &fi);
+            *pLength = fi.length;
+            DVDClose(&fi);
+        }
+    }
+    return ret;
+}
+
+int cDvd::ReadReq()
+{
+    cDvdQueue* q = pullReadQueue();
+    u8 no;
+
+    if (q == 0) {
+        return -2;
+    }
+    q->Initialize();
+    if (q->chk(0x40000000) == 1) {
+        no = q->no;
+        blockRead(q);
+        return no;
+    }
+    return q->LinkQueue();
+}
+
+void cDvd::blockRead(cDvdQueue* q)
+{
+    cDvdQueue* save = 0;
+
+    if (pRead) {
+        while (pRead->chk(0x20) == 1) {
+            pRead->Read();
+        }
+        save = pRead;
+        memcpy(header_save, header_buff, sizeof(header_buff));
+        memcpy(pFilehead_save, pFilehead, sizeof(pFilehead));
+    }
+    pRead = q;
+    ReadProc();
+    if (save) {
+        pRead = save;
+        memcpy(header_buff, header_save, sizeof(header_buff));
+        memcpy(pFilehead, pFilehead_save, sizeof(pFilehead));
+    }
+}
+
+void cDvd::Watcher()
+{
+    if (pRead == 0 && pList) {
+        bool ok;
+        if (pList->chk(0x100) == 1) {
+            ok = iTaskExec(DvdReadProc);
+        } else {
+            ok = TaskExec(3, DvdReadProc, 0);
+        }
+        if (ok) {
+            pRead = pList;
+            pList = pList->next;
+        }
+    }
+    if (Aram.pCur == 0 && Aram.pList) {
+        AramReq* r = Aram.pList;
+        Aram.pCur = r;
+        Aram.pList = r->next;
+        Aram.DmaTrans(r, 0);
+    }
+    ErrCheck(-1, 0);
+    queueStatusDisp();
+    DiscReadInfo();
+}
+
+void readcancel_cb(s32 result, DVDCommandBlock* cb)
+{
+    cDvdQueue* q = (cDvdQueue*) cb->userData;
+
+    q->flag |= 0x100000;
+}
+
+int cDvd::ReadCancel(int no, int mode)
+{
+    cDvdQueue* q;
+    cDvdQueue* p;
+    char* n;
+    int ret = 0;
+
+    q = getQueuePtr(no);
+    if (q == 0) {
+        ret = -2;
+    } else if ((q->flag & 0x70000) == 0) {
+        if (q == pRead) {
+            q->flag |= 0x100000;
+            if (mode == 0x40) {
+                q->flag |= 0x20000000;
+            }
+            q->mode = 3;
+            n = q->name;
+        } else {
+            if (q == pList) {
+                pList = q->next;
+                n = q->name;
+            } else {
+                n = q->name;
+                for (p = pList; p->next != q; p = p->next) {}
+                p->next = q->next;
+            }
+            if (mode == 0x40) {
+                q->PushQueue();
+            } else {
+                q->setStatus(ST_CANCEL);
+            }
+        }
+        OSReport("DVD: Read Cancel: %s\n", n);
+        ret = 0;
+    } else if (q->getStatus() == ST_READ) {
+        q->fileInfo.cb.userData = q;
+        DVDCancelAsync(&q->fileInfo.cb, readcancel_cb);
+        if (mode == 0x40) {
+            q->flag |= 0x20000000;
+        }
+        q->mode = 2;
+    } else {
+        ret = -1;
+    }
+    return ret;
+}
+
+void cDvd::ReadCancelAll()
+{
+    if (pRead) {
+        DVDCancelAll();
+        if (pRead->chk(0x100) == 1) {
+            iTaskKill();
+        } else {
+            TaskKill(3);
+        }
+    }
+    memclr_asm(queue, sizeof(queue));
+    pRead = 0;
+    pList = 0;
+}
+
+cDvdQueue* cDvd::pullReadQueue()
+{
+    int i;
+    cDvdQueue* q;
+
+    for (i = 0; i < 16; i++) {
+        q = &queue[i];
+        if (q->chk(1) == 0) {
+            memclr_asm(q, sizeof(cDvdQueue));
+            q->flag |= 1;
+            q->no = reqNo++;
+            if (reqNo == 0) {
+                reqNo = 1;
+            }
+            return q;
+        }
+    }
+    return 0;
+}
+
+int cDvd::ReadCheck(int req, int* result, int* size, void** addr)
+{
+    DvdReadInfo info;
+
+    if (readCheckMain(req, &info) == 1) {
+        if (result) {
+            *result = info.mramSize;
+        }
+        if (size) {
+            *size = info.aramSize;
+        }
+        if (addr) {
+            *addr = (void*) info.addr[0][0];
+        }
+    }
+}
+
+int cDvd::ReadCheck(int req)
+{
+    DvdReadInfo* info;
+
+    return readCheckMain(req, info);
+}
+
+int cDvd::readCheckMain(int req, DvdReadInfo* info)
+{
+    cDvdQueue* q;
+    int ret = 0;
+
+    if (req >= 0) {
+        q = getQueuePtr(req);
+        if (q != 0) {
+            switch (q->getStatus()) {
+            case ST_READ:
+                break;
+            case ST_COMPLETE:
+                if (q->chk(0x800) == 1) {
+                    if (info) {
+                        memcpy(info->addr, q->addrTbl, sizeof(info->addr));
+                        memcpy(info->size, q->sizeTbl, sizeof(info->size));
+                        info->mramSize = q->mramSize;
+                        info->aramSize = q->aramSize;
+                    }
+                    ret = 1;
+                    q->PushQueue();
+                }
+                break;
+            case ST_CANCEL:
+                if (q->chk(0x800) == 1) {
+                    ret = -4;
+                    q->ErrMemFree();
+                    q->PushQueue();
+                }
+                break;
+            case ST_ERROR:
+                if (q->chk(0x800) == 1) {
+                    ret = q->err;
+                    q->ErrMemFree();
+                    q->PushQueue();
+                }
+                break;
+            }
+        } else {
+            ret = -5;
+        }
+    } else {
+        ret = req;
+    }
+    return ret;
+}
+
+cDvdQueue* cDvd::getQueuePtr(u8 no)
+{
+    int i;
+
+    for (i = 0; i < 16; i++) {
+        if (queue[i].no == no) {
+            return &queue[i];
+        }
+    }
+    return 0;
+}
+
+static const GXColor BkBlack = {0, 0, 0, 0};
+
+int cDvd::ErrCheck(int disc, int flag)
+{
+    int cont = 1;
+    int discNo = GetDiscNo();
+    int shown = 0;
+    u8** pMes = MesData.ptr;
+    SndPlayWork* pStr = Snd.str_work;
+    int paused = 0;
+    int msg;
+    int stat;
+    SndPlayWork* str;
+
+    do {
+        stat = DVDGetDriveStatus();
+        msg = -1;
+        driveStatus = stat;
+        switch (stat) {
+        case DVD_STATE_BUSY:
+            if (flag == 0) {
+                cont = 0;
+            } else {
+                msg = 0;
+            }
+            break;
+        case DVD_STATE_END:
+            if (discChanged == 1) {
+                discChanged = stat;
+            }
+            cont = 0;
+            break;
+        case DVD_STATE_FATAL_ERROR:
+            msg = 1;
+            break;
+        case DVD_STATE_COVER_OPEN:
+            msg = 2;
+            break;
+        case DVD_STATE_NO_DISK:
+            msg = 3;
+            break;
+        case DVD_STATE_WRONG_DISK:
+            msg = 4;
+            break;
+        case DVD_STATE_RETRY:
+            msg = 5;
+            break;
+        case DVD_STATE_MOTOR_STOPPED:
+            msg = 6;
+            break;
+        case DVD_STATE_PAUSING:
+            break;
+        }
+        // One shared body (goto) instead of two identical arms: the duplicated `li r30,-1;
+        // li r27,0` that jump2 would cross-jump later still counts at global-alloc time and
+        // puts pMes/pStr (3 refs each, live around the loop) into different priority buckets.
+        if (pG->flags_54 & 0x8000) {
+            goto stop;
+        } else if (pG->flags_54 & 0x200) {
+        stop:
+            msg = -1;
+            cont = 0;
+        }
+        if (msg != -1) {
+            BitOff(pG->flags_54, 0x400);
+            if (shown == 0) {
+                if (pG->flags_54 & 0x40000) {
+                    paused = 1;
+                }
+                PADControlMotor(0, 2);
+                if (Sofdec.isPlay()) {
+                    Sofdec.PlayPause(1);
+                }
+                if (pG->x1C == 1) {
+                    pMes[4] = (u8*) (pG->pArc->ofs_6C + (u32) pG->pArc);
+                    cMes.setLayout(0xF, 5);
+                }
+                systemVISetBlack(0);
+                GXSetCopyClear(BkBlack, 0xFFFFFF);
+                GXCopyDisp(pCurrent_buff, 1);
+                ScreenReSize(0x200, 0x1C0);
+                str = pStr;
+                do {
+                    if (str->used == 1 && str->blk == 1) {
+                        if (SndStrStatusCk(str->id, 0x10)) {
+                            SndStrReq(str->id, 8, 0, 0);
+                        }
+                    }
+                } while (++str <= &pStr[3]);
+                shown = 1;
+            }
+            Render_before();
+            PadRead();
+            DiscReadInfo();
+            if (msg != 0) {
+                if (pG->x1C == 1) {
+                    MesSysMessage(msg, discNo);
+                } else {
+                    RomFontMessage(msg, discNo);
+                }
+            }
+            if (Sofdec.isPlay()) {
+                ADXM_ExecMain();
+            }
+            if (eprintf_init == 1) {
+                EprintfFlush();
+            }
+            Render_done();
+            Render_swap();
+            while (vsync_cnt < (int) GetSystemVcnt()) {}
+            vsync_cnt = 0;
+            if (IRef(driveStatus) != -1) {
+                systemResetCheck();
+            }
+        }
+    } while (cont);
+    if (shown) {
+        if (paused == 1) {
+            systemVISetBlack(1);
+        }
+        Render_before();
+        Render_done();
+        Render_swap();
+        while (vsync_cnt < (int) GetSystemVcnt()) {}
+        vsync_cnt = 0;
+        if (Sofdec.isPlay()) {
+            Sofdec.PlayPause(0);
+        }
+    }
+    return 1;
+}
+
+static u16 mes_pos[8][9][2] = {
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x32, 0xAA}, {0x37, 0x8C}, {0x32, 0x64}, {0x3C, 0x8C}, {0x3C, 0x78}},
+    {{0, 0}, {0x32, 0x78}, {0x50, 0x78}, {0x32, 0xAA}, {0x32, 0xAA}, {0x28, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x32, 0xAA}, {0x37, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x64, 0x64}, {0x37, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x64, 0x64}, {0x37, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x64, 0x64}, {0x37, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x64, 0x64}, {0x37, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+    {{0, 0}, {0x3C, 0x78}, {0x32, 0x78}, {0x32, 0xAA}, {0x64, 0x64}, {0x37, 0x8C}, {0x32, 0x64}, {0, 0}, {0, 0}},
+};
+
+void MesSysMessage(int msg, int disc)
+{
+    int f = 1;
+
+    if ((pG->flags_58 & 0x800) == 0) {
+        f = 0;
+    }
+    u16* pos = mes_pos[pSys->language][0];
+    u16 mes_no[12] = {0, 0, 1, 3, 3, 6, 7, 8, 2, 4, 9, 9};
+    u16 no = msg;
+
+    if (msg == 3 || msg == 4) {
+        msg += disc * 7;
+    } else if (msg == 6) {
+        msg = disc + 6;
+    }
+    pos += no * 2;
+    cMes.MesSet(mes_no[msg], pos[0], pos[1], 0x01020090, 0xF, 0, 1);
+    pG->flags_58 &= ~0x800;
+    cMes.Move();
+    cMes.Trans();
+    if (f == 1) {
+        pG->flags_58 |= 0x800;
+    }
+}
+
+void RomFontPrint(int x, int y, const char* str)
+{
+    RomFont* font = new RomFont(pG->pFont);
+    void* image;
+    s32 cx;
+    s32 cy;
+    s32 w;
+
+    while (*str) {
+        str = OSGetFontTexture(str, &image, &cx, &cy, &w);
+        font->setup(image);
+        font->draw(x, y, cx, cy);
+        x += w;
+    }
+    delete font;
+}
+
+void RomFontMessage(u32 msg, int disc)
+{
+    switch (msg) {
+    case 1:
+        switch (pSys->language) {
+        case 0:
+            RomFontPrint(0x46, 0x78, "\203G\203\211\201[\202\252\224\255\220\266\202\265\202\334\202\265\202\275\201B");
+            RomFontPrint(0x46, 0xA0, "\226{\221\314\202\314\203p\203\217\201[\203{\203^\203\223\202\360\211\237\202\265\202\304\223d\214\271\202\360");
+            RomFontPrint(0x46, 0xC8, "\202n\202e\202e\202\311\202\265\201A\226{\221\314\202\314\216\346\210\265\220\340\226\276\217\221\202\314\216w\216\246\202\311");
+            RomFontPrint(0x46, 0xF0, "\217]\202\301\202\304\202\255\202\276\202\263\202\242\201B");
+            break;
+        case 3:
+            RomFontPrint(0x32, 0x64, "Ein Fehler ist aufgetreten.");
+            RomFontPrint(0x32, 0x8C, "Bitte schalten Sie den");
+            RomFontPrint(0x32, 0xB4, "Nintendo GameCube aus und lesen");
+            RomFontPrint(0x32, 0xDC, "Sie die Bedienungsanleitung,");
+            RomFontPrint(0x32, 0x104, "um weitere Informationen zu erhalten.");
+            break;
+        case 4:
+            RomFontPrint(0x3C, 0x64, "Une erreur est survenue.");
+            RomFontPrint(0x3C, 0x8C, "Eteignez la console et r\351f\351rez-vous");
+            RomFontPrint(0x3C, 0xB4, "au manuel d'instructions");
+            RomFontPrint(0x3C, 0xDC, "Nintendo GameCube pour de plus");
+            RomFontPrint(0x3C, 0x104, "amples informations.");
+            break;
+        case 5:
+            RomFontPrint(0x46, 0x64, "Se ha producido un error.");
+            RomFontPrint(0x46, 0x8C, "Apaga la consola y consulta el");
+            RomFontPrint(0x46, 0xB4, "manual de instrucciones de");
+            RomFontPrint(0x46, 0xDC, "Nintendo GameCube para obtener");
+            RomFontPrint(0x46, 0x104, "m\341s informaci\363n.");
+            break;
+        case 6:
+            RomFontPrint(0x32, 0x78, "Si \350 verificato un errore.");
+            RomFontPrint(0x32, 0xA0, "Spegni e consulta il manuale");
+            RomFontPrint(0x32, 0xC8, "di istruzioni del Nintendo GameCube");
+            RomFontPrint(0x32, 0xF0, "per ulteriori indicazioni.");
+            break;
+        case 1:
+        case 2:
+        case 7:
+            RomFontPrint(0x32, 0x78, "An error has occurred.");
+            RomFontPrint(0x32, 0xA0, "Turn the power off and refer to");
+            RomFontPrint(0x32, 0xC8, "the Nintendo GameCube Instruction");
+            RomFontPrint(0x32, 0xF0, "Booklet for further instructions.");
+            break;
+        }
+        break;
+    case 2:
+        switch (pSys->language) {
+        case 0:
+            RomFontPrint(0x32, 0x8C, "\203f\203B\203X\203N\203J\203o\201[\202\252\212J\202\242\202\304\202\242\202\334\202\267\201B");
+            RomFontPrint(0x32, 0xB4, "\203Q\201[\203\200\202\360\221\261\202\257\202\351\217\352\215\207\202\315\201A\203f\203B\203X\203N\203J\203o\201[\202\360");
+            RomFontPrint(0x32, 0xDC, "\225\302\202\337\202\304\202\255\202\276\202\263\202\242\201B");
+            break;
+        case 3:
+            RomFontPrint(0x46, 0x8C, "Der Disc-Deckel ist ge\366ffnet.");
+            RomFontPrint(0x46, 0xB4, "Bitte den Disc-Deckel schlie\337en,");
+            RomFontPrint(0x46, 0xDC, "um mit dem Spiel fortzufahren.");
+            break;
+        case 4:
+            RomFontPrint(0x5A, 0x8C, "Le couvercle est ouvert.");
+            RomFontPrint(0x5A, 0xB4, "Pour continuer \340 jouer,");
+            RomFontPrint(0x5A, 0xDC, "veuillez fermer le couvercle.");
+            break;
+        case 5:
+            RomFontPrint(0x6E, 0x8C, "La tapa est\341 abierta.");
+            RomFontPrint(0x6E, 0xB4, "Si quieres seguir jugando,");
+            RomFontPrint(0x6E, 0xDC, "debes cerrar la tapa.");
+            break;
+        case 6:
+            RomFontPrint(0x46, 0x8C, "Il coperchio del disco \350 aperto.");
+            RomFontPrint(0x46, 0xB4, "Se vuoi proseguire nel gioco,");
+            RomFontPrint(0x46, 0xDC, "chiudi il coperchio del disco.");
+            break;
+        case 1:
+        case 2:
+        case 7:
+            RomFontPrint(0x46, 0x8C, "The Disc Cover is open.");
+            RomFontPrint(0x46, 0xB4, "If you want to continue the game,");
+            RomFontPrint(0x46, 0xDC, "please close the Disc Cover.");
+            break;
+        }
+        break;
+    case 3:
+    case 4:
+        switch (pSys->language) {
+        case 0:
+            if (disc == 0) {
+                RomFontPrint(0x46, 0xA0, "\202\202\202\211\202\217\202\210\202\201\202\232\202\201\202\222\202\204\202S\202\314\203f\203B\203X\203N\202P\202\360");
+            } else {
+                RomFontPrint(0x46, 0xA0, "\202\202\202\211\202\217\202\210\202\201\202\232\202\201\202\222\202\204\202S\202\314\203f\203B\203X\203N\202Q\202\360");
+            }
+            RomFontPrint(0x46, 0xC8, "\203Z\203b\203g\202\265\202\304\202\255\202\276\202\263\202\242\201B");
+            break;
+        case 3:
+            RomFontPrint(0x46, 0xA0, "Bitte legen Sie die resident evil 4");
+            if (disc == 0) {
+                RomFontPrint(0x46, 0xC8, "Disc 1 ein.");
+            } else {
+                RomFontPrint(0x46, 0xC8, "Disc 2 ein.");
+            }
+            break;
+        case 4:
+            RomFontPrint(0x46, 0xA0, "Veuillez ins\351rer le disque de jeu");
+            if (disc == 0) {
+                RomFontPrint(0x46, 0xC8, "1 de resident evil 4");
+            } else {
+                RomFontPrint(0x46, 0xC8, "2 de resident evil 4");
+            }
+            break;
+        case 5:
+            if (disc == 0) {
+                RomFontPrint(0x32, 0xA0, "Coloca el disco 1 de resident evil 4");
+            } else {
+                RomFontPrint(0x32, 0xA0, "Coloca el disco 2 de resident evil 4");
+            }
+            break;
+        case 6:
+            if (disc == 0) {
+                RomFontPrint(0x5A, 0xA0, "Inserisci il disco di gioco 1 di");
+            } else {
+                RomFontPrint(0x5A, 0xA0, "Inserisci il disco di gioco 2 di");
+            }
+            RomFontPrint(0x5A, 0xC8, "resident evil 4");
+            break;
+        case 1:
+        case 2:
+        case 7:
+            RomFontPrint(0x5A, 0xA0, "Please insert the resident evil 4");
+            if (disc == 0) {
+                RomFontPrint(0x5A, 0xC8, "Game Disc 1.");
+            } else {
+                RomFontPrint(0x5A, 0xC8, "Game Disc 2.");
+            }
+            break;
+        }
+        break;
+    case 5:
+        switch (pSys->language) {
+        case 0:
+            RomFontPrint(0x3C, 0x8C, "\203f\203B\203X\203N\202\360\223\307\202\337\202\334\202\271\202\361\202\305\202\265\202\275\201B");
+            RomFontPrint(0x3C, 0xB4, "\202\255\202\355\202\265\202\255\202\315\201A\226{\221\314\202\314\216\346\210\265\220\340\226\276\217\221\202\360\202\250\223\307\202\335");
+            RomFontPrint(0x3C, 0xDC, "\202\255\202\276\202\263\202\242\201B");
+            break;
+        case 3:
+            RomFontPrint(0x1E, 0x64, "Diese Game Disc kann nicht gelesen");
+            RomFontPrint(0x1E, 0x8C, "werden.");
+            RomFontPrint(0x1E, 0xB4, "Bitte lesen Sie die Bedienungsanleitung");
+            RomFontPrint(0x1E, 0xDC, "des Nintendo GameCube, um weitere");
+            RomFontPrint(0x1E, 0x104, "Informationen zu erhalten.");
+            break;
+        case 4:
+            RomFontPrint(0x46, 0x78, "La lecture du disque a \351chou\351.");
+            RomFontPrint(0x46, 0xA0, "Veuillez vous r\351f\351rer au manuel");
+            RomFontPrint(0x4C, 0xC8, "d'instructions Nintendo GameCube");
+            RomFontPrint(0x46, 0xF0, "pour de plus amples informations.");
+            break;
+        case 5:
+            RomFontPrint(0x32, 0x78, "No se puede leer el disco.");
+            RomFontPrint(0x32, 0xA0, "Consulta el manual de instrucciones");
+            RomFontPrint(0x32, 0xC8, "de Nintendo GameCube para obtener");
+            RomFontPrint(0x32, 0xF0, "m\341s informaci\363n.");
+            break;
+        case 6:
+            RomFontPrint(0x32, 0x78, "Impossibile leggere il disco di gioco.");
+            RomFontPrint(0x32, 0xA0, "Per ulteriori indicazioni consulta il");
+            RomFontPrint(0x32, 0xC8, "manuale di istruzioni del");
+            RomFontPrint(0x32, 0xF0, "Nintendo GameCube.");
+            break;
+        case 1:
+        case 2:
+        case 7:
+            RomFontPrint(0x32, 0x78, "The Game Disc could not be read.");
+            RomFontPrint(0x32, 0xA0, "Please read the Nintendo GameCube");
+            RomFontPrint(0x32, 0xC8, "Instruction Booklet for more");
+            RomFontPrint(0x32, 0xF0, "information.");
+            break;
+        }
+        break;
+    }
+}
+
+// European region codes share one disc id. The tests are inline calls: a `||` chain on the same
+// lvalue is range-folded (`subi; cmplwi`), separate `if`s make the last test a setcc; a chain of
+// CALL_EXPRs (side effects) is never merged by fold and gives the five compares to one `li 1`.
+static inline int SysRegionIs(int r)
+{
+    return pSys->region == r;
+}
+
+static inline int SysIsEurope()
+{
+    if (SysRegionIs(2) || SysRegionIs(3) || SysRegionIs(4) || SysRegionIs(5) || SysRegionIs(6)) {
+        return 1;
+    }
+    return 0;
+}
+
+int cDvd::DiscChange(int disc)
+{
+    DVDDiskID id;
+    DVDCommandBlock cb;
+    int region = 0;
+    char company[] = "08";
+    const char* game[] = {"G4BJ", "G4BE", "G4BJ", "G4BJ"};
+
+    if (SysRef(pSys)->region == 1) {
+        region = 1;
+    } else if (SysIsEurope() == 1) {
+        region = 2;
+    } else if (pSys->region == 7) {
+        region = 3;
+    }
+    DVDGenerateDiskID(&id, game[region], company, (u8) disc, 0xFF);
+    if (DVDCompareDiskID(DVDGetCurrentDiskID(), &id) == 1) {
+        return 0;
+    }
+    discChanged = 1;
+    DVDChangeDiskAsync(&cb, &id, 0);
+    ErrCheck(disc, 1);
+    FileTblExistCheck();
+    return 1;
+}
+
+int cDvd::GetDiscNo()
+{
+    int no = DVDGetCurrentDiskID()->diskNumber;
+
+    if (discChanged) {
+        no ^= 1;
+    }
+    return no;
+}
+
+void RomFontSetting()
+{
+    if (OSGetFontEncode() == 1) {
+        pG->pFont = (void*) 0x816D3100;
+    } else {
+        pG->pFont = (void*) 0x817D3EE0;
+    }
+    OSInitFont(pG->pFont);
+}
+
+char* queue_stat[] = {"PUSH", "READ", "COMPLETE", "CANCEL", "ERROR"};
+
+void cDvd::queueStatusDisp()
+{
+    cDvdQueue* p;
+    int i;
+    int y = 0x40;
+    int y2;
+    int x;
+
+    for (i = 0; i < 16; y += 0x10, i++) {
+        eprintf(0x20, y, 0, 0x15, "[%2d]", i);
+        p = &Dvd.queue[i];
+        if (Dvd.queue[i].chk(1) == 1) {
+            eprintf(0x48, y, 0, 0x15, "%s %s", queue_stat[Dvd.queue[i].getStatus()], p->name);
+        }
+    }
+    y += 0x10;
+    if (Dvd.pRead) {
+        i = 0;
+        y2 = y + 0x10;
+        for (; i < 16; i++) {
+            if (Dvd.pRead == &Dvd.queue[i]) {
+                eprintf(0x20, y, 0, 0x15, "READ : [%2d]", i);
+            }
+        }
+    } else {
+        eprintf(0x20, y, 0, 0x15, "READ :");
+        y2 = y + 0x10;
+    }
+    if (Dvd.pList) {
+        eprintf(0x20, y2, 0, 0x15, "LIST : ");
+        x = 0x58;
+        for (p = Dvd.pList; p; p = p->next) {
+            for (i = 0; i < 16; i++) {
+                if (p == &Dvd.queue[i]) {
+                    if (p->next == 0) {
+                        eprintf(x, y2, 0, 0x15, "[%2d]", i);
+                    } else {
+                        eprintf(x, y2, 0, 0x15, "[%2d]-", i);
+                    }
+                    x += 0x28;
+                }
+            }
+        }
+    } else {
+        eprintf(0x20, y2, 0, 0x15, "LIST :");
+    }
+}
+
+void cDvd::DiscReadInfo()
+{
+    cDvdQueue* q = pRead;
+    DVDFileInfo* fi = &q->fileInfo;
+    DvdSndStrWork* s;
+    int y;
+
+    if (eprintf_init == 0) {
+        return;
+    }
+    if (q) {
+        eprintf2(0xA, 0x10, 0x20, 0x140, 0, 0, "%2d  %s", driveStatus, q->name);
+        eprintf2(0xA, 0x10, 0x20, 0x150, 0, 0, "%08x %06x", fi->startAddr, fi->length);
+        eprintf2(0xA, 0x10, 0x20, 0x160, 0, 0, "%08x %06x %06x", fi->cb.offset, fi->cb.length, pRead->remain);
+        eprintf2(0xA, 0x10, 0x20, 0x170, 0, 0, "%08x %06x %06x", fi->cb.currTransferSize, fi->cb.transferredSize, DVDGetTransferredSize(fi));
+    }
+    s = Snd_str_work;
+    y = 0x1AA;
+    do {
+        if (s->status & 1) {
+            eprintf2(0xA, 0x10, 0xF0, y, 0, 0, "%d %04x %04x %02x %02x %02x", s->no, s->status, s->req, s->err, s->cancel, s->state);
+            y -= 0x10;
+        }
+    } while (++s <= &Snd_str_work[3]);
+}
+
+// The original's .rodata is 8-aligned (0x1D98: 4 bytes of end padding after the last pool).
+asm(".section .rodata; .balign 8");

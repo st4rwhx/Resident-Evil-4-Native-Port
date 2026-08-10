@@ -1,0 +1,26 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+wep02/objMauser.cpp:
+	.text       start:0x00000000 end:0x00000D88
+	.rodata     start:0x00000000 end:0x000001D0 align:4
+	.bss        start:0x00000000 end:0x00000008 align:4
+
+wep02/objRuger.cpp:
+	.text       start:0x00000D88 end:0x00001768
+	.rodata     start:0x000001D0 end:0x00000360 align:4
+
+wep02/pl_handgun.cpp:
+	.text       start:0x00001768 end:0x00002AF4
+	.rodata     start:0x00000360 end:0x00000528 align:4
+	.data       start:0x00000000 end:0x00000058 align:4
+
+wep02/wep02.cpp:
+	.text       start:0x00002AF4 end:0x00003284
+	.rodata     start:0x00000528 end:0x000006A8 align:4
+	.data       start:0x00000058 end:0x0000005C skip

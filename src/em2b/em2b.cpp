@@ -1,0 +1,6440 @@
+// em2b module (D:/Bio4/Prog/em2b.cpp): the giant. Walks after the player, stamps, punches, kicks and
+// charges, tears trees / rocks out of the ground and throws them, breaks the village houses and
+// scroll objects, catches and strangles the player, and exposes its parasite after enough damage.
+
+#include "atari.h"
+#include "map_obj.h"
+#include "light.h"
+#include "widget.h"
+#include "dmg.h"
+#include "ctrl.h"
+#include "em2b.h"
+#include "emhit.h"
+#include "emtree.h"
+#include "emrock.h"
+#include "objYagura.h"
+#include "TexRender.h"
+#include "foot_shadow.h"
+#include "obj.h"
+#include "main.h"
+#include "em_set.h"
+#include "em_sub.h"
+#include "at_mod.h"
+#include "atari_init.h"
+#include "esp.h"
+#include "est.h"
+#include "motion.h"
+#include "route_ck.h"
+#include "act_btn.h"
+#include "game.h"
+#include "snd.h"
+#include "pad.h"
+#include "joy.h"
+#include "pl_cloth.h"
+#include "player.h"
+#include "pl_npc.h"
+#include "pl_sub.h"
+#include "rnd.h"
+#include "global.h"
+#include "math_sub.h"
+#include "db_log.h"
+#include "eprintf.h"
+#include "camera.h"
+#include "cam_ctrl.h"
+#include "quake.h"
+
+extern "C" void OSReport(const char* fmt, ...);
+int GetWepDmVal(cEm* em, u32 a, int b);   // em10.h (not included: it pulls emwep.h's global plemBackjump)
+extern void (*EmInitFunc)(cEm* em);   // game/em.cpp
+extern FootShadowTbl Em2b_fs_tbl;     // game/foot_shadow_tbl.cpp
+
+// The module's 0x34-byte COMMON block: uninitialised template statics of the original object,
+// merged into .bss by the REL link.
+asm(".comm common_em2b,52,4");
+
+// game/obj20.cpp
+extern "C" cObj* SetObaModel(cObj* parent, int partsNo, Vec* ofs, f32 rad, u8 type, f32 h);
+// COMPILER-DIFF #1: floats-first view for the call site whose `fmr f2` precedes `li r6` (Die_Event).
+extern "C" cObj* SetObaModelF(cObj* parent, int partsNo, Vec* ofs, f32 rad, f32 h, u8 type) asm("SetObaModel");
+// wep_mod.h idiom: the volatile scalar access keeps the following `lwz pSUB` below the `sth` and the
+// info address in a register (`addi rX, pl, 0x2b4; lhz/sth 0x1a(rX)`), plem2bDashEscape.
+static inline void AtariFlagsOrV(cAtariInfo* at, u16 mask) { *(volatile u16*) &at->flags |= mask; }
+static inline void AtariFlagsAndV(cAtariInfo* at, u16 mask) { *(volatile u16*) &at->flags &= mask; }
+// game/obj16.cpp (obj16.h includes em10.h, which this module cannot).
+extern "C" cObj* SetObj16(void* bin, void* tpl, cModel* target, cModel* body, int partsNo, u8 type, Vec* pos, Vec* rot);
+extern "C" void MotSetObj16(cObj* obj, void* mot, int a, int b);
+
+// motion.h declares the one-argument form; the enemies pass a second argument.
+u16 MotionMoveF(cModel* m, int flag) asm("MotionMove");
+// em_set.h declares EmSetDieCnt without arguments; this module passes the enemy.
+void EmSetDieCntE(cEm* em) asm("EmSetDieCnt");
+// COMPILER-DIFF #4: the original passes the int work field to the u16 parameter without the
+// truncation ours emits (`lwz` instead of `lhz`); int-view declaration of the blend setter.
+void em2bBlendMotSetI(cEm2b* em, void* m0, void* m1, void* m2, int a, int b, int c, int d) asm("em2bBlendMotSet__FP5cEm2bPvN21iiiUs");
+
+static void em2b_R0_Init(cEm2b* em);
+static void em2b_R0_Move(cEm2b* em);
+static void em2b_R1_Wait(cEm2b* em);
+static void em2b_R1_FromEvent(cEm2b* em);
+static void em2b_R1_R11E_Appear(cEm2b* em);
+static void em2b_R1_R224_CageWait(cEm2b* em);
+static void em2b_R1_Walk(cEm2b* em);
+static void em2b_R1_Turn180(cEm2b* em);
+static void em2b_R1_Threat(cEm2b* em);
+static void em2b_R1_Stamp(cEm2b* em);
+static void em2b_R1_Punch(cEm2b* em);
+static void em2b_R1_Hook(cEm2b* em);
+static void em2b_R1_UpperCut(cEm2b* em);
+static void em2b_R1_Kick(cEm2b* em);
+static void em2b_R1_DashAtk(cEm2b* em);
+static void em2b_R1_HouseBreak(cEm2b* em);
+static void em2b_R1_ScrollBreak(cEm2b* em);
+static void em2b_R1_GetTree(cEm2b* em);
+static void em2b_R1_TreeAtk(cEm2b* em);
+static void em2b_R1_GetRock(cEm2b* em);
+static void em2b_R1_ThrowRock(cEm2b* em);
+static void em2b_R1_Catch(cEm2b* em);
+static void em2b_R1_Strangle(cEm2b* em);
+static void plem2b_CatchHand(cPlayer* pl);
+static void plem2b_Strangle(cPlayer* pl);
+static void em2b_R1_SubCatch(cEm2b* em);
+static void subem2b_CatchHand(cSubChar* sub);
+static void subem2b_Catch(cSubChar* sub);
+static void subem2b_CatchEnd(cSubChar* sub);
+static void em2b_R1_BaseAtk(cEm2b* em);
+static void em2b_R1_HoleAtk(cEm2b* em);
+static void plem2bDmFall(cPlayer* pl);
+static void em2b_R0_Damage(cEm2b* em);
+static void em2b_R1_Dm_Face(cEm2b* em);
+static void em2b_R1_Dm_Tree(cEm2b* em);
+static void em2bSetActAtkParasite(cEm2b* em);
+static void em2b_R1_Dm_Parasite(cEm2b* em);
+static void em2b_R1_Dm_Parasite2(cEm2b* em);
+static void plem2b_AtkParasite(cPlayer* pl);
+static void em2b_R1_Dm_Rock(cEm2b* em);
+static void em2b_R1_Dm_Flash(cEm2b* em);
+static void em2b_R1_Dm_Bomb(cEm2b* em);
+static void em2b_R0_Die(cEm2b* em);
+static void em2b_R1_Die_Normal(cEm2b* em);
+static void em2b_R1_Die_Lost(cEm2b* em);
+static void em2b_R1_Die_Event(cEm2b* em);
+static void em2b_R1_Die_R224Drop(cEm2b* em);
+static void plem2b_dm_Stamp(cPlayer* pl);
+static void subem2b_dm_Stamp(cSubChar* sub);
+static void plem2b_dm_BlowKick(cPlayer* pl);
+static void em2bDashEscapeAction(cEm2b* em);
+static void plem2bDashEscape(cPlayer* pl);
+static void em2bEscapeAction(cEm2b* em);
+static void plem2bEscapeTree(cPlayer* pl);
+static void plem2bDmBlow(cPlayer* pl);
+
+#define ARC(no) PL_ARC_PTR(em->subArc, no)
+#define PL_ARC(no) PL_ARC_PTR(pl->subArc, no)
+
+// Routine word test: xFC / xFD as the upper half of cModel::stat.
+#define EM_RTN(em, fc, fd) (((em)->stat & 0xFFFF0000) == (u32) (((fc) << 24) | ((fd) << 16)))
+
+// The enemy a player damage callback belongs to (pl_sub SetPlDamage's first argument).
+#define PL_EM(pl) ((cEm2b*) (pl)->dmgType)
+
+// Struct-member views of the player / partner pointers (cam_ctrl.cpp PlayerPtr).
+struct PlayerPtr {
+    cPlayer* p;
+};
+#define pPLS (((PlayerPtr*) &pPL)->p)
+#define pSUBS (((PlayerPtr*) &pSUB)->p)
+
+// Routine bytes written through an int inline (player.cpp PlRoutineSet).
+static inline void EmRoutineSet(cEm* em, int r0, int r1, int r2, int r3)
+{
+    em->xFC = r0;
+    em->xFD = r1;
+    em->xFE = r2;
+    em->xFF = r3;
+}
+
+// Scalar reference stores: pG / the player pointer are reloaded after them (st_room.h).
+static inline void IntSet(int& d, int v) { d = v; }
+static inline void S16Set(s16& d, s16 v) { d = v; }
+static inline void U8Set(u8& d, u8 v) { d = v; }
+static inline void U32Or(u32& d, u32 v) { d |= v; }
+
+// Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
+static inline int em2bDeadCk(cEm* em)
+{
+    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+}
+
+// The motion flip argument of the two model variants.
+static inline int em2bFlip(Em2bWork* w, int a, int b)
+{
+    switch (w->variant) {
+    case 0:
+    default:
+        return a;
+    case 1:
+        return b;
+    }
+}
+
+// Variant-dependent motion (blend pair per variant).
+static inline void em2bVariantMot(cEm2b* em, Em2bWork* w, int a0, int a1, int b0, int b1, int blend, int flip)
+{
+    void* m0;
+    void* m1;
+
+    switch (w->variant) {
+    case 0:
+    default:
+        m0 = ARC(a0);
+        m1 = ARC(a1);
+        break;
+    case 1:
+        m0 = ARC(b0);
+        m1 = ARC(b1);
+        break;
+    }
+    MotionSetCore(em, &em->mot, m0, (int) m1, blend, flip, 0);
+}
+
+static inline void em2bVariantEst(cEm2b* em, Em2bWork* w, int a0, int a1, int b0, int b1)
+{
+    switch (w->variant) {
+    case 0:
+    default:
+        if (em->motFlags & 0x40) {
+            EstSet((int) em, -1, 0, 0, w->espKind2, a0, 0, 0, (u32) em, 0);
+        } else {
+            EstSet((int) em, -1, 0, 0, w->espKind2, a1, 0, 0, (u32) em, 0);
+        }
+        return;
+    case 1:
+        if (em->motFlags & 0x40) {
+            EstSet((int) em, -1, 0, 0, w->espKind2, b0, 0, 0, (u32) em, 0);
+        } else {
+            EstSet((int) em, -1, 0, 0, w->espKind2, b1, 0, 0, (u32) em, 0);
+        }
+        return;
+    }
+}
+
+// End of an attack routine: the friend (dog) fight sets the guard, a hit goes into the threat.
+static inline void em2bAtkEndSet(cEm2b* em, Em2bWork* w)
+{
+    // COMPILER-DIFF: #13 -- the original never allocates the single-use `w->x63C` load (a REG_EQUIV
+    // mem pseudo): reload materialises it in r11, so the global `flags`/`atkHit` pseudos take r0/r9;
+    // ours local-allocates the load to r0 first.
+    register int x63c asm("r11");
+
+    if (w->pFriend && w->atkHit) {
+        w->flags |= 0x80;
+        w->dmGuard = 900;
+        w->x63C = 0;
+        em2bNextRtnSet(em);
+    } else if (w->pFriend && !(w->flags & 0x80) && (x63c = w->x63C, x63c == 0)) {
+        int k = 900;
+        u32 f = w->flags | 0x80;
+
+        w->flags = f;
+        w->dmGuard = k;
+        // COMPILER-DIFF: #13 -- the original's `ori` result and 900 (REG_EQUIV constants) do not die at
+        // their stores, so sched1 issues `mr r3,em` (em dies there: weight 0) before them.
+        asm("" : "=m"(w->x63C) : "r"(f), "r"(k));
+        em2bNextRtnSet(em);
+    } else if (w->atkHit) {
+        w->timer61C = 150;
+        EmRoutineSet(em, 1, 4, 0, 0);
+    } else {
+        em2bNextRtnSet(em);
+    }
+}
+
+// The same for a caller that reads `em` after it (DashAtk): `em` does not die at the `mr r3,em`, so
+// arm 2 needs the tied copy below (with only the keep-alive the stores are issued first and jump2
+// cross-jumps the arms' tails: 35 words; the plain form swaps the `mr`/`stw` pair: 2 words).
+static inline void em2bAtkEndSetL(cEm2b* em, Em2bWork* w)
+{
+    register int x63c asm("r11"); // COMPILER-DIFF: #13 (see em2bAtkEndSet)
+
+    if (w->pFriend && w->atkHit) {
+        w->flags |= 0x80;
+        w->dmGuard = 900;
+        w->x63C = 0;
+        em2bNextRtnSet(em);
+    } else if (w->pFriend && !(w->flags & 0x80) && (x63c = w->x63C, x63c == 0)) {
+        int k = 900;
+        u32 f = w->flags | 0x80;
+        cEm2b* e;
+
+        // COMPILER-DIFF: #13 -- the target issues `mr r3,em` before the two stores although `em` is
+        // live after the switch: a codeless tied copy of `em` declared before the stores gives the
+        // argument move the earlier LUID, and the keep-alive below makes the stores non-dying like
+        // the original's (weights equal, LUID order decides; without it the dying stores go first).
+        asm("" : "=r"(e) : "0"(em));
+        w->flags = f;
+        w->dmGuard = k;
+        asm("" : "=m"(w->x63C) : "r"(f), "r"(k));
+        em2bNextRtnSet(e);
+    } else if (w->atkHit) {
+        w->timer61C = 150;
+        EmRoutineSet(em, 1, 4, 0, 0);
+    } else {
+        em2bNextRtnSet(em);
+    }
+}
+
+// Drops the parasite head object with its effects.
+static inline void em2bParasiteDelete(Em2bWork* w)
+{
+    if (w->pParasite) {
+        EffectEspDelete(0, w->espKind, (u32) w->pParasite, 0);
+        EffectEspgenDelete(0, w->espKind, (int) w->pParasite);
+        EffectEfmDelete(0, w->espKind, (int) w->pParasite);
+        w->pParasite->clearLostWait();
+        w->pParasite = 0;
+    }
+}
+
+// Stamp / punch landing: dust, quake, SE and the stagger check at the parts' world position.
+static inline void em2bLandingSet(cEm2b* em, Em2bWork* w, int parts, int se)
+{
+    Vec* pos = &em->getPartsPtr(parts)->worldPos;
+
+    EstSet(0, -1, pos, 0, w->espKind2, 5, 0, 0, 0, 0);
+    em2bQuakeSet(pos);
+    SndCall(8, se, pos, em->id, 0, em);
+    em2bStaggerCk(em, pos);
+}
+
+Em2bFunc Em2b_R0_move_tbl[4] = {
+    em2b_R0_Init,
+    em2b_R0_Move,
+    em2b_R0_Damage,
+    em2b_R0_Die,
+};
+
+static Em2bFunc Em2b_R1_move_tbl[24] = {
+    em2b_R1_Wait,           // 0x00
+    em2b_R1_FromEvent,      // 0x01
+    em2b_R1_Walk,           // 0x02
+    em2b_R1_Turn180,        // 0x03
+    em2b_R1_Threat,         // 0x04
+    em2b_R1_Stamp,          // 0x05
+    em2b_R1_Punch,          // 0x06
+    em2b_R1_Hook,           // 0x07
+    em2b_R1_UpperCut,       // 0x08
+    em2b_R1_Kick,           // 0x09
+    em2b_R1_DashAtk,        // 0x0A
+    em2b_R1_HouseBreak,     // 0x0B
+    em2b_R1_ScrollBreak,    // 0x0C
+    em2b_R1_GetTree,        // 0x0D
+    em2b_R1_TreeAtk,        // 0x0E
+    em2b_R1_GetRock,        // 0x0F
+    em2b_R1_ThrowRock,      // 0x10
+    em2b_R1_Catch,          // 0x11
+    em2b_R1_Strangle,       // 0x12
+    em2b_R1_SubCatch,       // 0x13
+    em2b_R1_R11E_Appear,    // 0x14
+    em2b_R1_BaseAtk,        // 0x15
+    em2b_R1_HoleAtk,        // 0x16
+    em2b_R1_R224_CageWait,  // 0x17
+};
+
+static Em2bFunc Em2b_R1_dm_tbl[7] = {
+    em2b_R1_Dm_Face,
+    em2b_R1_Dm_Tree,
+    em2b_R1_Dm_Parasite,
+    em2b_R1_Dm_Parasite2,
+    em2b_R1_Dm_Rock,
+    em2b_R1_Dm_Flash,
+    em2b_R1_Dm_Bomb,
+};
+
+static Em2bFunc Em2b_R1_die_tbl[4] = {
+    em2b_R1_Die_Normal,
+    em2b_R1_Die_Lost,
+    em2b_R1_Die_Event,
+    em2b_R1_Die_R224Drop,
+};
+
+// Motion parts flip table (cModel::motFlip): the mirrored parts index per parts.
+static u16 em2b_xflip_tbl[90] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x05, 0x06, 0x07, 0x08, 0x09,
+    0x0A, 0x11, 0x16, 0x17, 0x18, 0x19, 0x12, 0x13, 0x14, 0x15, 0x1A, 0x25, 0x26, 0x27, 0x28, 0x29,
+    0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x2F,
+    0x30, 0x32, 0x31, 0x33, 0x34, 0x36, 0x35, 0x38, 0x37, 0x3A, 0x39, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
+    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F,
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59,
+};
+
+// Attack parameters per attack number (em2bAtkCk).
+static EmAtkInfo em2b_atk_info[7] = {
+    { 1000.0f, 8, 800, 0, 10, 0 },
+    { 1100.0f, 8, 800, 0, 10, 0 },
+    { 1500.0f, 8, 800, 0, 10, 0 },
+    { 1500.0f, 8, 800, 0, 10, 0 },
+    { 1000.0f, 8, 400, 0, 10, 0 },
+    { 2000.0f, 8, 800, 0, 10, 0 },
+    { 1000.0f, 8, 800, 0, 10, 0 },
+};
+
+Vec em2b_r11e_pos = { -4390.0f, 0.0f, -480.0f };
+// Hand object the strangled player hangs on (plem2b_Strangle). A one-member struct so that every
+// store through the object reloads it.
+static struct {
+    cObj* p;
+} em2bCatchObj = { 0 };
+
+// Chain cloth tables (em2bClothSet): parts, up / down / side neighbours, swing limits and damping.
+static u8 em2b_cloth_parts[12] = { 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0, 0 };
+static u8 em2b_cloth_up[12] = { 0xFF, 0x40, 0xFF, 0x42, 0xFF, 0x44, 0xFF, 0x46, 0xFF, 0x48, 0, 0 };
+static u8 em2b_cloth_down[12] = { 0x41, 0xFF, 0x43, 0xFF, 0x45, 0xFF, 0x47, 0xFF, 0x49, 0xFF, 0, 0 };
+static u8 em2b_cloth_side[12] = { 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0xFF, 0xFF, 0, 0 };
+static f32 em2b_cloth_max[10] = { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
+static f32 em2b_cloth_rate[10] = { 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f };
+
+// Collision volumes of the chain cloth (pl_cloth.h PlClothAt: parts pair, radius, offsets).
+PlClothAt em2b_cloth_at[2] = {
+    { 0, 4, 4, 1.0f, 300.0f, { 0.0f, -200.0f, 210.0f }, { 0.0f, 0.0f, 0.0f } },
+    { 0, 4, 4, 1.0f, 300.0f, { 0.0f, -300.0f, 250.0f }, { 0.0f, 0.0f, 0.0f } },
+};
+
+// Short rope (type 0) and chain (type 3) tables (em2bShortRopeSet / em2bChainSet).
+static u8 em2b_rope_parts[8] = { 1, 2, 3, 4, 5, 0, 0, 0 };
+static u8 em2b_rope_up[8] = { 0xFF, 1, 2, 3, 4, 0, 0, 0 };
+static u8 em2b_rope_down[8] = { 2, 3, 4, 5, 0xFF, 0, 0, 0 };
+PlClothAt em2b_rope_at[5] = {
+    { 0, 3, 3, 1.0f, 650.0f, { -70.0f, 0.0f, 0.0f }, { -70.0f, 0.0f, 0.0f } },
+    { 0, 2, 3, 0.5f, 750.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+    { 0, 2, 2, 1.0f, 900.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+    { 0, 5, 5, 1.0f, 700.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+    { 0, 0xB, 0xB, 1.0f, 700.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+};
+static u8 em2b_chain_parts[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+static u8 em2b_chain_up[8] = { 0xFF, 1, 2, 3, 4, 5, 6, 7 };
+static u8 em2b_chain_down[8] = { 2, 3, 4, 5, 6, 7, 8, 0xFF };
+PlClothAt em2b_chain_at[5] = {
+    { 0, 3, 3, 1.0f, 650.0f, { -70.0f, 0.0f, 0.0f }, { -70.0f, 0.0f, 0.0f } },
+    { 0, 2, 3, 0.5f, 750.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+    { 0, 2, 2, 1.0f, 900.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+    { 0, 5, 5, 1.0f, 700.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+    { 0, 0xB, 0xB, 1.0f, 700.0f, { 70.0f, 0.0f, 0.0f }, { 70.0f, 0.0f, 0.0f } },
+};
+PlClothAt em2b_chain_at2[5] = {
+    { 0, 2, 3, 0.5f, 900.0f, { 0.0f, 0.0f, 150.0f }, { 0.0f, 0.0f, 150.0f } },
+    { 0, 2, 2, 1.0f, 900.0f, { 0.0f, 0.0f, 150.0f }, { 0.0f, 0.0f, 150.0f } },
+    { 0, 1, 1, 1.0f, 850.0f, { 0.0f, 0.0f, 150.0f }, { 0.0f, 0.0f, 150.0f } },
+    { 0, 0x12, 0x12, 1.0f, 650.0f, { 0.0f, 0.0f, 150.0f }, { 0.0f, 0.0f, 150.0f } },
+    { 0, 0x16, 0x16, 1.0f, 650.0f, { 0.0f, 0.0f, 150.0f }, { 0.0f, 0.0f, 150.0f } },
+};
+asm(".section .data\n\t.balign 8\n\t.text");
+
+extern "C" void _prolog()
+{
+    OSReport("em2b prolog Ok\n");
+    EmInitFunc = Em2bInit;
+}
+
+extern "C" void _epilog()
+{
+}
+
+extern "C" void _unresolved()
+{
+}
+
+void Em2bInit(cEm* em)
+{
+    new (em) cEm2b();
+}
+
+cEm2b::~cEm2b()
+{
+    Em2bWork* w = EM2B_WK(this);
+    u32 i;
+
+    if (w->pParasite && w->pParasite->isAlive()) {
+        ObjMgr.destroy(w->pParasite);
+    }
+    for (i = 0; i < 10; i++) {
+        if (w->pTentacle[i]) {
+            ObjMgr.destroy(w->pTentacle[i]);
+        }
+    }
+    if (w->pObj4C4 && w->pObj4C4->isAlive()) {
+        ObjMgr.destroy(w->pObj4C4);
+    }
+    if (w->pObj4C8 && w->pObj4C8->isAlive()) {
+        ObjMgr.destroy(w->pObj4C8);
+    }
+    if (w->pObj4CC && w->pObj4CC->isAlive()) {
+        ObjMgr.destroy(w->pObj4CC);
+    }
+}
+
+// Suspend / resume the giant and every object hanging on it.
+void cEm2b::setNoSuspend(int on)
+{
+    Em2bWork* w = EM2B_WK(this);
+    u32 i;
+
+    if (on) {
+        be_flag |= 0x800;
+    } else {
+        be_flag &= ~0x800;
+    }
+    if (w->pParasite) {
+        if (w->pParasite->isAlive()) {
+            w->pParasite->setNoSuspend(on);
+        } else {
+            w->pParasite = 0;
+        }
+    }
+    for (i = 0; i < 10; i++) {
+        if (w->pTentacle[i]) {
+            if (w->pTentacle[i]->isAlive()) {
+                w->pTentacle[i]->setNoSuspend(on);
+            } else {
+                w->pTentacle[i] = 0;
+            }
+        }
+    }
+    if (w->pObj4C4) {
+        if (w->pObj4C4->isAlive()) {
+            w->pObj4C4->setNoSuspend(on);
+        } else {
+            w->pObj4C4 = 0;
+        }
+    }
+    if (w->pObj4C8) {
+        if (w->pObj4C8->isAlive()) {
+            w->pObj4C8->setNoSuspend(on);
+        } else {
+            w->pObj4C8 = 0;
+        }
+    }
+    if (w->pObj4CC) {
+        if (w->pObj4CC->isAlive()) {
+            w->pObj4CC->setNoSuspend(on);
+        } else {
+            w->pObj4CC = 0;
+        }
+    }
+}
+
+// Damage reaction after a hit (em2bDmCk): blood by weapon, then the routine change.
+void em2bDmCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    EmHitInfo* part;
+    int near;
+    int dmg;
+
+    if (em->dmHit == 0) {
+        return;
+    }
+    em->dmHit = 0;
+    if (em->dmWep == 0x14) {
+        return;
+    }
+    if (w->dmGuard > 30) {
+        w->dmGuard -= 30;
+    } else {
+        w->dmGuard = 0;
+        w->flags &= ~0x80;
+        if (w->x63C == 0) {
+            w->x63C = 600;
+        }
+    }
+    em->dmType = 1;
+    if (em->dmWep == 0x10) {
+        em->dmType = 0x11;
+    }
+    part = em->dmPart;
+    near = 0;
+    if (part->rad < 64000000.0f) {
+        near = 1;
+    }
+    dmg = em2bSetDmVal(em);
+    w->paraHp -= dmg;
+    switch (em->dmWep) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 9:
+    case 0xA:
+    case 0xE:
+    case 0x10:
+    case 0x11:
+    case 0x14:
+    case 0x15:
+    case 0x26:
+    case 0x28:
+    case 0x2B:
+        if (part->partsNo == 0x3F) {
+            EmDmBloodSet2(em, w->espKind2, 0x25, 0, 0, 0);
+        } else {
+            EmDmBloodSet2(em, w->espKind2, 0, 0, 0, 0);
+        }
+        break;
+    case 0xB:
+    case 0xC:
+    case 0x1B:
+    case 0x1D:
+    case 0x27:
+        if (part->partsNo == 0x3F) {
+            EmDmBloodSet2(em, w->espKind2, 0x25, 0, 0, 0);
+        } else {
+            EmDmBloodSet2(em, w->espKind2, 1, 0, 0, 0);
+        }
+        break;
+    case 7:
+    case 8:
+    case 0x21:
+        if (part->partsNo == 0x3F) {
+            if (near) {
+                EmDmBloodSet2(em, w->espKind2, 0x26, 0, 0, 0);
+            } else {
+                EmDmBloodSet2(em, w->espKind2, 0x25, 0, 0, 0);
+            }
+        } else if (near == 0) {
+            EmDmBloodSet2(em, w->espKind2, 0, 0, 0, 0);
+        } else {
+            EmDmBloodSet2(em, w->espKind2, 2, 0, 0, 0);
+            EmDmBloodSet2(em, w->espKind2, 0, 1, 0, 0);
+        }
+        break;
+    case 5:
+    case 6:
+    case 0xF:
+    case 0x12:
+    case 0x13:
+    case 0x29:
+    case 0x2C:
+    case 0x2D:
+    default:
+        if (part->partsNo == 0x3F) {
+            EmDmBloodSet2(em, w->espKind2, 0x26, 0, 0, 0);
+        } else {
+            EmDmBloodSet2(em, w->espKind2, 2, 0, 0, 0);
+            EmDmBloodSet2(em, w->espKind2, 0, 1, 0, 0);
+        }
+        break;
+    case 0x17:
+    case 0x2A:
+        break;
+    case 0xD:
+        if (part->partsNo == 0x3F) {
+            EmDmBloodSet2(em, w->espKind2, 0x26, 0, 0, 0);
+        } else {
+            EmDmBloodSet2(em, w->espKind2, 2, 0, 0, 0);
+            EmDmBloodSet2(em, w->espKind2, 0, 1, 0, 0);
+        }
+        em->hp = 0;
+        break;
+    }
+    if (part->partsNo == 0x3F) {
+        SndCall(8, 0x2F, &em->pos, em->id, 0, em);
+        SndCall(8, 0x2D, &em->pos, em->id, 0, em);
+    } else {
+        SndCall(8, 8, &em->pos, em->id, 0, em);
+    }
+    if (part->partsNo == 0x3F) {
+        if (em->dmWep != 0x17 && em->dmWep != 0x2A) {
+            em->hp -= dmg * 2;
+        }
+        if (w->flags & 0x2000) {
+            if (em->hp > 0) {
+                EmRoutineSet(em, 2, 3, 0, 0);
+                return;
+            }
+        } else {
+            if (em->hp > 0) {
+                return;
+            }
+        }
+    }
+    if (em->hp <= 0) {
+        EmSetDie(em);
+        EmReserveDropItem(em);
+        EmSetDieCntE(em);
+        em->clearStatus(5);
+        EmRoutineSet(em, 3, 0, 0, 0);
+        return;
+    }
+    if (em->flags_3C8 & 8) {
+        return;
+    }
+    if (w->flags & 8) {
+        return;
+    }
+    if (!(w->flags & 0x400) && (em->dmWep == 0x17 || em->dmWep == 0x2A)) {
+        EmRoutineSet(em, 2, 5, 0, 0);
+        return;
+    }
+    w->dmgTotal += dmg;
+    if (w->dmgTotal <= 999) {
+        switch (em->dmWep) {
+        case 0xD:
+        case 0x12:
+        case 0x13:
+        case 0x2D:
+            EmRoutineSet(em, 2, 6, 0, 0);
+            return;
+        }
+        return;
+    }
+    w->dmgTotal = 0;
+    switch (em->dmWep) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 7:
+    case 8:
+    case 0x10:
+    case 0x11:
+    case 0x14:
+    case 0x15:
+    case 0x1B:
+    case 0x1D:
+    case 0x21:
+    case 0x26:
+    case 0x27:
+    case 0x28:
+    case 0x2B:
+        if (w->pTree) {
+            EmRoutineSet(em, 2, 1, 0, 0);
+        } else {
+            EmRoutineSet(em, 2, 0, 0, 0);
+        }
+        return;
+    case 9:
+    case 0xA:
+    case 0xB:
+    case 0xC:
+        if (w->pTree) {
+            EmRoutineSet(em, 2, 1, 0, 0);
+        } else {
+            EmRoutineSet(em, 2, 0, 0, 0);
+        }
+        return;
+    case 5:
+    case 6:
+    case 0xD:
+    case 0xE:
+    case 0xF:
+    case 0x12:
+    case 0x13:
+    case 0x29:
+    case 0x2C:
+    case 0x2D:
+    default:
+        if (w->pTree) {
+            EmRoutineSet(em, 2, 1, 0, 0);
+        } else {
+            EmRoutineSet(em, 2, 0, 0, 0);
+        }
+        return;
+    }
+}
+
+void cEm2b::move()
+{
+    Em2bWork* w = EM2B_WK(this);
+    cModel* p;
+    f32 fl;
+    f32 spd;
+    f32 moved;
+
+    if (xFC) {
+        em2bDmCk(this);
+    }
+    flags_3C8 &= ~0x10;
+    w->flags &= ~0x6D5B;
+    if (w->timer614) {
+        w->timer614--;
+    }
+    if (w->timer618) {
+        w->timer618--;
+    }
+    if (w->timer61C) {
+        w->timer61C--;
+    }
+    if (w->timer620) {
+        w->timer620--;
+    }
+    if (w->timer624) {
+        w->timer624--;
+    }
+    if (w->dmGuard) {
+        w->dmGuard--;
+        if (w->dmGuard == 0) {
+            w->flags &= ~0x80;
+            if (w->x63C == 0) {
+                w->x63C = 600;
+            }
+        }
+    }
+    if (w->x63C) {
+        w->x63C--;
+    }
+    if (w->timer62C) {
+        w->timer62C--;
+    }
+    flags_3C8 &= ~0xC;
+    if (w->pFriend && !w->pFriend->isAlive()) {
+        w->pFriend = 0;
+    }
+    em2bRouteCk(this);
+    Em2b_R0_move_tbl[xFC](this);
+    if (xFC == 0xFF) {
+        EmMgr.destroy(this);
+        return;
+    }
+    em2bNeckMove(this);
+    partsWorldCalc();
+    em2bScaleCompress(this);
+    p = getPartsPtr(0);
+    fl = pos.y + 2500.0f;
+    if (p->worldPos.y < fl) {
+        atari.pos.y = pos.y;
+    } else {
+        atari.pos.y = 2500.0f;
+    }
+    spd = SQRTF((oldPos.x - pos.x) * (oldPos.x - pos.x) + (oldPos.z - pos.z) * (oldPos.z - pos.z));
+    em2bObaHitCk(this);
+    EmAtCheck(this);
+    atari.move();
+    SatMgr.check(this, 0);
+    moved = SQRTF((pos.x - oldPos.x) * (pos.x - oldPos.x) + (pos.z - oldPos.z) * (pos.z - oldPos.z));
+    if (moved < spd * 0.5f) {
+        w->stuckCnt++;
+    } else {
+        if (w->stuckCnt > 45) {
+            w->stuckCnt = 45;
+        }
+        if (w->stuckCnt) {
+            w->stuckCnt--;
+        }
+    }
+    em2bFootSe(this);
+    em2bFtChgCk(this);
+    em2bClothMove(this);
+    em2bSearchDog(this);
+    if (pG->debug_mode == 7) {
+        if ((Joy[0].on & 0x40) && (Joy[0].trg & 0x200)) {
+            w->debugAtk++;
+            if (w->debugAtk > 6) {
+                w->debugAtk = 0;
+            }
+        }
+        switch (w->debugAtk) {
+        case 0:
+            break;
+        case 1:
+            eprintf(0x20, 0x50, 0, 7, "EM2B:Catch only");
+            break;
+        case 2:
+            eprintf(0x20, 0x50, 0, 7, "EM2B:Upper only");
+            break;
+        case 3:
+            eprintf(0x20, 0x50, 0, 7, "EM2B:Punch only");
+            break;
+        case 4:
+            eprintf(0x20, 0x50, 0, 7, "EM2B:Stamp only");
+            break;
+        case 5:
+            eprintf(0x20, 0x50, 0, 7, "EM2B:Dash only");
+            break;
+        case 6:
+            eprintf(0x20, 0x50, 0, 7, "EM2B:Kick only");
+            break;
+        }
+    }
+    if (w->pTree) {
+        w->x640 = 90;
+    }
+    if (w->pRock) {
+        w->x640 = 90;
+    }
+    if (w->x640) {
+        w->x640--;
+        flags_3C8 |= 0x10;
+    }
+    if (w->pParasite && hp > 0) {
+        w->hit[9].flags |= 1;
+    } else {
+        w->hit[9].flags &= ~1;
+    }
+    if (w->pTreeLost) {
+        if (w->timer628) {
+            w->timer628--;
+        } else {
+            if (w->flags & 0x200) {
+                EstSet((int) w->pTreeLost, -1, 0, 0, 1, 0xE, 0, 0, (u32) w->pTreeLost, 0);
+            } else {
+                EstSet((int) w->pTreeLost, -1, 0, 0, 1, 0xD, 0, 0, (u32) w->pTreeLost, 0);
+            }
+            w->pTreeLost->setLost();
+            w->pTreeLost = 0;
+        }
+    }
+}
+
+static void em2b_R0_Init(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cAtariInfo* at;
+    MotionWork* mot;
+    int zero;
+    int t35;
+    f32 one;
+    // COMPILER-DIFF: #13 -- the 900/0x23/1.0 init constants are reload-materialised in the original
+    // (never allocated), so the 25-store block is issued in pure source order; here the three
+    // pseudos are kept alive past the block by a dead asm whose output lives in r7 (any pseudo
+    // output lands in r8 and perturbs the init2 argument order; r11 is the original's spill reg).
+    register int r11c asm("r11");
+    register int dmy7 asm("r7");
+    Vec v;
+
+    switch (em->type) {
+    case 0:
+    default:
+        if (em->modelInit(ARC(5), ARC(7)) == 0) {
+            pLog->err(0, 0, "em2b() TYPE_A ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        w->pInfo = ModInfoMgr.create(ARC(6), ARC(7));
+        if (w->pInfo) {
+            em->addModel(w->pInfo);
+        }
+        break;
+    case 1:
+        if (em->modelInit(ARC(8), ARC(0xA)) == 0) {
+            pLog->err(0, 0, "em2b() TYPE_B ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        w->pInfo = ModInfoMgr.create(ARC(9), ARC(0xA));
+        if (w->pInfo) {
+            em->addModel(w->pInfo);
+        }
+        break;
+    case 2:
+        if (em->modelInit(ARC(0xB), ARC(0xD)) == 0) {
+            pLog->err(0, 0, "em2b() TYPE_C ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        w->pInfo = ModInfoMgr.create(ARC(0xC), ARC(0xD));
+        if (w->pInfo) {
+            em->addModel(w->pInfo);
+        }
+        break;
+    case 3:
+        if (em->modelInit(ARC(0xE), ARC(0x10)) == 0) {
+            pLog->err(0, 0, "em2b() TYPE_C ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        w->pInfo = ModInfoMgr.create(ARC(0xF), ARC(0x10));
+        if (w->pInfo) {
+            em->addModel(w->pInfo);
+        }
+        break;
+    }
+    w->pCtrl12 = GetCtrlCtrl12();
+    at = &em->atari;
+    em2bTexrenderInit(em);
+    em->pFootShadowTbl = &Em2b_fs_tbl;
+    em->motFlip = em2b_xflip_tbl;
+    ((cParts*) em->getPartsPtr(0x12))->motParts.flags |= 0x1000;
+    ((cParts*) em->getPartsPtr(0x16))->motParts.flags |= 0x1000;
+    em2bClothSet(em);
+    em->lightInfo.init2(0, 1, &((Vec) { 0.0f, 0.0f, 0.0f }), &((Vec) { 10000.0f, 10000.0f, 10000.0f }), 2);
+    atariInitF(at, 0.0f, 0.0f, 0.0f, 1700.0f, 1500.0f, 1500.0f, 3000.0f, 1, 0x2000, 0xA);
+    at->setPriority(1);
+    YarareInit(em, 0.0f, -200.0f, 0.0f, 500.0f, 400.0f, 5, 1);
+    YarareAdd(em, &w->hit[0], 0.0f, -100.0f, 0.0f, 900.0f, 1300.0f, 2, 1);
+    YarareAdd(em, &w->hit[1], -80.0f, -1600.0f, 0.0f, 500.0f, 1600.0f, 0x14, 1);
+    YarareAdd(em, &w->hit[2], 80.0f, -1600.0f, 0.0f, 500.0f, 1600.0f, 0x18, 1);
+    YarareAdd(em, &w->hit[3], -1200.0f, 0.0f, 0.0f, 400.0f, 1600.0f, 9, 3);
+    YarareAdd(em, &w->hit[4], 0.0f, 0.0f, 0.0f, 400.0f, 1600.0f, 0xF, 3);
+    YarareAdd(em, &w->hit[5], -80.0f, -1200.0f, 0.0f, 550.0f, 1200.0f, 0x13, 1);
+    YarareAdd(em, &w->hit[6], 80.0f, -1200.0f, 0.0f, 550.0f, 1200.0f, 0x17, 1);
+    YarareAdd(em, &w->hit[7], -1200.0f, 0.0f, 0.0f, 480.0f, 1200.0f, 8, 3);
+    YarareAdd(em, &w->hit[8], 0.0f, 0.0f, 0.0f, 480.0f, 1200.0f, 0xE, 3);
+    YarareAdd(em, &w->hit[9], 0.0f, 0.0f, 0.0f, 300.0f, 800.0f, 0x3F, 0);
+    zero = 0;
+    em->lockParts = zero;
+    em->lockOfs.x = 0.0f;
+    em->lockOfs.y = 0.0f;
+    em->lockOfs.z = 0.0f;
+    EspDataLoad((u32) ARC(4), 0x23, 0);
+    w->espKind = EspPullCoreKind();
+    r11c = 900;
+    t35 = 0x23;
+    one = 1.0f;
+    w->neckAng = 0.0f;
+    w->timer624 = r11c;
+    w->scaleRate = one;
+    w->espKind2 = t35;
+    w->flags = zero;
+    w->variant = zero;
+    w->pHouse = 0;
+    w->pTree = 0;
+    w->pTreeLost = 0;
+    w->timer628 = zero;
+    w->pTarget508 = 0;
+    w->pRock = 0;
+    w->pGoto = 0;
+    w->dmgTotal = zero;
+    w->timer614 = zero;
+    w->timer618 = zero;
+    w->pFriend = 0;
+    w->timer61C = zero;
+    w->timer620 = r11c;
+    w->dmGuard = zero;
+    w->x63C = zero;
+    w->x640 = zero;
+    w->pYagura = 0;
+    w->timer62C = zero;
+    asm("" : "=r"(dmy7) : "r"(t35), "f"(one), "r"(r11c)); // COMPILER-DIFF: #13
+    if (pGS->room_id == 0x224) {
+        w->espKind2 = 1;
+    }
+    asm volatile("" : : "r"(dmy7)); // COMPILER-DIFF: #13
+    w->pParasite = (cObj16*) zero;
+    mot = &em->mot;
+    {
+        u32 i;
+        for (i = 0; i < 10; i++) {
+            w->pTentacle[i] = 0;
+        }
+    }
+    w->pObj4C4 = 0;
+    w->pObj4C8 = 0;
+    w->pObj4CC = 0;
+    if (em->type == 0) {
+        em2bShortRopeSet(em);
+    }
+    if (em->type == 3) {
+        em2bChainSet(em);
+    }
+    v.x = 0.0f;
+    v.y = 0.0f;
+    v.z = 0.0f;
+    SetObaModel((cObj*) em, 0x13, &v, 700.0f, 0, 1000.0f);
+    SetObaModel((cObj*) em, 0x14, &v, 600.0f, 0, 1000.0f);
+    SetObaModel((cObj*) em, 0x15, &v, 500.0f, 0, 1000.0f);
+    SetObaModel((cObj*) em, 0x17, &v, 700.0f, 0, 1000.0f);
+    SetObaModel((cObj*) em, 0x18, &v, 600.0f, 0, 1000.0f);
+    SetObaModel((cObj*) em, 0x19, &v, 500.0f, 0, 1000.0f);
+    em->setStatus(9);
+    em->setStatus(5);
+    {
+        int st = em->x38D;
+        switch (st) {
+        case 0:
+        default:
+            MotionSetCore(em, mot, ARC(0x19), 0, 0, 1, 0);
+            EmRoutineSet(em, 1, 0, 0, 0);
+            break;
+        case 1:
+            MotionSetCore(em, mot, ARC(0x53), 0, 0, 1, 0);
+            EmRoutineSet(em, st, st, 0, 0);
+            break;
+        case 2:
+            MotionSetCore(em, mot, ARC(0x59), 0, 0, 1, 0);
+            EmRoutineSet(em, 1, 0x14, 0, 0);
+            break;
+        case 3:
+            MotionSetCore(em, mot, ARC(0x59), 0, 0, 1, 0);
+            EmRoutineSet(em, 1, 0x17, 0, 0);
+            break;
+        }
+    }
+    MotionMoveF(em, 0);
+    EstSet((int) em, -1, 0, 0, w->espKind2, 3, 0, 0, (u32) em, 0);
+    em2b_R0_Move(em);
+}
+
+static void em2b_R0_Move(cEm2b* em)
+{
+    Em2b_R1_move_tbl[em->xFD](em);
+}
+
+// Standing: the idle motion (with the tree when held), then the next action.
+static void em2b_R1_Wait(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0:
+        if (w->pTree) {
+            em2bVariantMot(em, w, 0x31, 0x78, 0x27, 0x6E, 30, 5);
+        } else {
+            int flip = em2bFlip(w, 5, 0x45);
+
+            MotionSetCore(em, &em->mot, ARC(0x19), (int) ARC(0x62), 30, flip, 0);
+        }
+        em->xFE++;
+    case 1:
+        MotionMoveF(em, 0);
+        if (em2bDeadCk(em) && em2bStayCk(em)) {
+            EmRoutineSet(em, 1, 2, 0, 0xA);
+            return;
+        }
+        if ((pG->flags_5010 & 0x8000) || em2bDeadCk(pPL) || (s16) pG->pl_life <= 0) {
+            w->timer61C = 30;
+        }
+        if (em->plDist2 > 25000000.0f) {
+            w->timer61C = 0;
+        }
+        if (w->timer61C == 0 && em2bStayCk(em)) {
+            em2bNextRtnSet(em);
+            return;
+        }
+        if (w->targetAngAbs > 2.35619449f) {
+            EmRoutineSet(em, 1, 3, 0, 0);
+        }
+        break;
+    }
+}
+
+// Set from an event: the appear motion with its roar.
+static void em2b_R1_FromEvent(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0x53), 0, 0, 1, 0);
+        SndCall(8, 0x2B, &em->pos, em->id, 0, em);
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        } else if (em->seFlags28B & 4) {
+            em2bAtkRtnCk(em);
+        }
+        break;
+    }
+}
+
+// r11e: breaks through the wall.
+static void em2b_R1_R11E_Appear(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int step = em->xFE;
+
+    switch (step) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0x59), 0, 0, 1, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0x1C, 1, 0, (u32) em, (void*) step);
+        em->xFE++;
+    case 1:
+        MotionMoveF(em, 0);
+        break;
+    }
+}
+
+// r224: waits in the cage until the event releases it.
+static void em2b_R1_R224_CageWait(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 5, 0x45);
+
+        MotionSetCore(em, &em->mot, ARC(0x19), (int) ARC(0x62), 30, flip, 0);
+        em->xFE++;
+    }
+    case 1:
+        MotionMoveF(em, 0);
+        if (em->flags_3C8 & 1) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Walking after the target: the walk blend by distance / difficulty (or with the tree).
+static void em2b_R1_Walk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int atk;
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int zero = 0;
+        u32 spd;
+
+        w->mode = zero;
+        spd = 0;
+        if (em->plDist2 > 64000000.0f) {
+            spd = 1;
+        }
+        if (em->plDist2 > 225000000.0f) {
+            spd = 2;
+        }
+        if (pG->x4F88 <= 1) {
+            spd = 0;
+        }
+        if (w->pTree) {
+            spd = 3;
+        }
+        switch (spd) {
+        case 0:
+            switch (w->variant) {
+            case 0:
+            default:
+                w->blendM0 = ARC(0x3D);
+                w->blendM1 = ARC(0x3F);
+                w->blendM2 = ARC(0x40);
+                w->blendA = (int) ARC(0x7F);
+                w->blendB = (int) ARC(0x85);
+                w->blendC = (int) ARC(0x88);
+                w->blendD = 1;
+                w->mode = zero;
+                break;
+            case 1:
+                w->blendM0 = ARC(0x3E);
+                w->blendM1 = ARC(0x41);
+                w->blendM2 = ARC(0x42);
+                w->blendA = (int) ARC(0x82);
+                w->blendB = (int) ARC(0x8B);
+                w->blendC = (int) ARC(0x8E);
+                w->blendD = 1;
+                w->mode = 1;
+                break;
+            }
+            break;
+        case 1:
+            // COMPILER-DIFF: #12 (cse re-walk): the variant-1 body's `1`s must not fold to `spd`, only to the variant byte
+            asm("" : "+r"(spd));
+            switch (w->variant) {
+            case 0:
+            default:
+                w->blendM0 = ARC(0x3D);
+                w->blendM1 = ARC(0x3F);
+                w->blendM2 = ARC(0x40);
+                w->blendA = (int) ARC(0x81);
+                w->blendB = (int) ARC(0x87);
+                w->blendC = (int) ARC(0x8A);
+                w->blendD = spd;
+                w->mode = zero;
+                break;
+            case 1:
+                w->blendM0 = ARC(0x3E);
+                w->blendM1 = ARC(0x41);
+                w->blendM2 = ARC(0x42);
+                w->blendA = (int) ARC(0x84);
+                w->blendB = (int) ARC(0x8D);
+                w->blendC = (int) ARC(0x90);
+                w->blendD = 1;
+                w->mode = 1;
+                break;
+            }
+            break;
+        case 2:
+            switch (w->variant) {
+            case 0:
+            default:
+                w->blendM0 = ARC(0x3D);
+                w->blendM1 = ARC(0x3F);
+                w->blendM2 = ARC(0x40);
+                w->blendA = (int) ARC(0x80);
+                w->blendB = (int) ARC(0x86);
+                w->blendC = (int) ARC(0x89);
+                w->blendD = 1;
+                w->mode = zero;
+                break;
+            case 1:
+                w->blendM0 = ARC(0x3E);
+                w->blendM1 = ARC(0x41);
+                w->blendM2 = ARC(0x42);
+                w->blendA = (int) ARC(0x83);
+                w->blendB = (int) ARC(0x8C);
+                w->blendC = (int) ARC(0x8F);
+                w->blendD = 1;
+                w->mode = 1;
+                break;
+            }
+            break;
+        case 3:
+            // COMPILER-DIFF: #12 (cse re-walk): the variant-1 body's zeros are a fresh `li`, the variant-0 body's are `zero`
+            asm("" : "+r"(zero));
+            switch (w->variant) {
+            case 0:
+            default:
+                w->blendM0 = ARC(0x32);
+                w->blendM1 = ARC(0x34);
+                w->blendM2 = ARC(0x35);
+                w->blendA = (int) ARC(0x79);
+                w->blendB = zero;
+                w->blendC = zero;
+                w->blendD = 1;
+                w->mode = zero;
+                break;
+            case 1:
+                w->blendM0 = ARC(0x33);
+                w->blendM1 = ARC(0x36);
+                w->blendM2 = ARC(0x37);
+                w->blendA = (int) ARC(0x7A);
+                w->blendB = 0;
+                w->blendC = 0;
+                w->blendD = 1;
+                w->mode = 1;
+                break;
+            }
+            break;
+        }
+        em2bParasiteDelete(w);
+        em2bSetTentacle(em, 0);
+        atk = 0;
+        w->blendCnt = em->xFF;
+        w->blendSeq = atk;
+        w->blendVal = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f) * -162.338043f;
+        if (w->blendVal > 255.0f) {
+            w->blendVal = 255.0f;
+        }
+        if (w->blendVal < -255.0f) {
+            w->blendVal = -255.0f;
+        }
+        w->atkHit = atk;
+        em->xFE++;
+    }
+    case 1:
+        em2bBlendMotSetI(em, w->blendM0, w->blendM1, w->blendM2, w->blendA, w->blendB, w->blendC, w->blendD);
+        if (MotionMoveF(em, 0)) {
+            em2bSearchRockCk(em);
+            if (em2bGetRockCk(em)) {
+                break;
+            }
+            em2bSearchTree(em);
+            if (em2bGetTreeCk(em)) {
+                break;
+            }
+            atk = em2bAtkRtnCk(em);
+            if (atk) {
+                break;
+            }
+            if (w->targetAngAbs > 2.35619449f) {
+                if (w->targetDist < 9000000.0f && em2bFriendCk(em) == 0) {
+                    if (pG->debug_mode == 7 && w->debugAtk) {
+                        em->xFC = 1;
+                        em->xFD = 3;
+                        em->xFE = atk;
+                        em->xFF = atk;
+                        break;
+                    }
+                    if ((Rnd() & 1) || pSUB) {
+                        EmRoutineSet(em, 1, 0x11, 0, 0);
+                    } else {
+                        EmRoutineSet(em, 1, 8, 0, 0);
+                    }
+                } else {
+                    EmRoutineSet(em, 1, 3, 0, 0);
+                }
+            } else if (em2bStayCk(em) == 0) {
+                EmRoutineSet(em, 1, atk, atk, atk);
+            } else {
+                em->xFE = atk;
+                em->xFF = atk;
+            }
+        } else if (em->seFlags28B & 4) {
+            em2bAtkRtnCk(em);
+        }
+        break;
+    }
+    em2bR11eScrBrkCk(em);
+}
+
+static void em2b_R1_Turn180(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        if (w->pTree) {
+            switch (w->variant) {
+            case 0:
+            default:
+                MotionSetCore(em, &em->mot, ARC(0x51), (int) ARC(0x9F), 10, 1, 0);
+                break;
+            case 1:
+                MotionSetCore(em, &em->mot, ARC(0x52), (int) ARC(0xA0), 10, 1, 0);
+                break;
+            }
+        } else {
+            int flip = em2bFlip(w, 1, 0x41);
+
+            MotionSetCore(em, &em->mot, ARC(0x4C), (int) ARC(0x9A), 10, flip, 0);
+        }
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        } else if (em->seFlags28B & 4) {
+            em2bAtkRtnCk(em);
+        }
+        break;
+    }
+}
+
+static void em2b_R1_Threat(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 1, 0x41);
+
+        MotionSetCore(em, &em->mot, ARC(0x55), (int) ARC(0xA2), 10, flip, 0);
+        em->xFE++;
+    }
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        } else if (em->seFlags28B & 4) {
+            em2bAtkRtnCk(em);
+        }
+        break;
+    }
+}
+
+// Stamp: turns towards the target, stamps with the right or left foot (motion flag bit6), then
+// the follow-up stamp when the player is still near.
+static void em2b_R1_Stamp(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int step = em->xFE;
+
+    w->flags |= 0x10;
+    switch (step) {
+    case 0:
+        w->blendM0 = ARC(0x20);
+        w->blendM1 = ARC(0x21);
+        w->blendM2 = ARC(0x22);
+        w->blendA = (int) ARC(0x69);
+        w->blendB = step;
+        w->blendC = step;
+        switch (w->variant) {
+        case 0:
+        default:
+            w->blendD = 0x41;
+            break;
+        case 1:
+            w->blendD = 1;
+            break;
+        }
+        w->blendCnt = 10;
+        w->blendSeq = 0;
+        w->blendVal = Muku(&em->pos, &w->targetPos, em->rot.y, 1.57079637f) * -162.338043f;
+        if (w->blendVal > 255.0f) {
+            w->blendVal = 255.0f;
+        }
+        if (w->blendVal < -255.0f) {
+            w->blendVal = -255.0f;
+        }
+        w->atkHit = 0;
+        w->timer = 60;
+        em->xFE++;
+    case 1:
+        if (w->timer) {
+            w->timer--;
+            w->blendVal = w->blendVal * 0.899999976f + Muku(&em->pos, &w->targetPos, em->rot.y, 1.57079637f) * -162.338043f * 0.100000001f;
+            if (w->blendVal > 255.0f) {
+                w->blendVal = 255.0f;
+            }
+            if (w->blendVal < -255.0f) {
+                w->blendVal = -255.0f;
+            }
+        }
+        em2bBlendMotSetI(em, w->blendM0, w->blendM1, w->blendM2, w->blendA, w->blendB, w->blendC, w->blendD);
+        if (em->seFlags28B & 1) {
+            if (em->motFlags & 0x40) {
+                cModel* p = em->getPartsPtr(0x14);
+                em2bAtkCk(em, &p->worldPos, &p->x88, 0);
+                p = em->getPartsPtr(0x15);
+                em2bAtkCk(em, &p->worldPos, &p->x88, 0);
+                em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+            } else {
+                cModel* p = em->getPartsPtr(0x18);
+                em2bAtkCk(em, &p->worldPos, &p->x88, 0);
+                p = em->getPartsPtr(0x19);
+                em2bAtkCk(em, &p->worldPos, &p->x88, 0);
+                em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+            }
+        }
+        if (em->seFlags28B & 2) {
+            if (em->motFlags & 0x40) {
+                em2bLandingSet(em, w, 0x15, 5);
+            } else {
+                em2bLandingSet(em, w, 0x19, 5);
+            }
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        } else if ((em->seFlags28B & 0x20) && w->atkHit) {
+            em->xFE++;
+        } else if ((em->seFlags28B & 4) && w->atkHit == 0) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    case 2: {
+        int flip = em2bFlip(w, 1, 0x41);
+
+        MotionSetCore(em, &em->mot, ARC(0x2C), (int) ARC(0x73), 30, flip, 0);
+        em->xFE++;
+    }
+    case 3:
+        if (MotionMoveF(em, 0)) {
+            em2bAtkEndSet(em, w);
+        }
+        break;
+    }
+}
+
+static void em2b_R1_Punch(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x23), (int) ARC(0x6A), 10, flip, 0);
+        w->atkHit = 0;
+        w->timer624 = 1800;
+        em->xFE++;
+    }
+    case 1:
+        if (em->seFlags28B & 1) {
+            cModel* p;
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x10);
+            } else {
+                p = em->getPartsPtr(0xA);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+            em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+        }
+        if (em->seFlags28B & 2) {
+            if (em->motFlags & 0x40) {
+                em2bLandingSet(em, w, 0x10, 7);
+            } else {
+                em2bLandingSet(em, w, 0xA, 7);
+            }
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bAtkEndSet(em, w);
+        } else if ((em->seFlags28B & 4) && w->atkHit == 0) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+static void em2b_R1_Hook(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int flip = 1;
+        if (w->routeAng < 0.0f) {
+            flip = 0x41;
+        }
+        em2bVariantMot(em, w, 0x45, 0x93, 0x46, 0x94, 10, flip);
+        em2bVariantEst(em, w, 0x19, 0x15, 0x1A, 0x16);
+        w->atkHit = 0;
+        em->xFE++;
+    }
+    case 1:
+        if (em->seFlags28B & 1) {
+            cModel* p;
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x10);
+            } else {
+                p = em->getPartsPtr(0xA);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 2);
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0xF);
+            } else {
+                p = em->getPartsPtr(9);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 2);
+            em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bAtkEndSet(em, w);
+        } else if ((em->seFlags28B & 4) && w->atkHit == 0) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+static void em2b_R1_UpperCut(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int flip = 1;
+        if (w->routeAng < 0.0f) {
+            flip = 0x41;
+        }
+        em2bVariantMot(em, w, 0x43, 0x91, 0x44, 0x92, 10, flip);
+        em2bVariantEst(em, w, 0x17, 0x13, 0x18, 0x14);
+        w->atkHit = 0;
+        em->xFE++;
+    }
+    case 1:
+        if (em->seFlags28B & 1) {
+            cModel* p;
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x10);
+            } else {
+                p = em->getPartsPtr(0xA);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 2);
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0xF);
+            } else {
+                p = em->getPartsPtr(9);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 2);
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0xE);
+            } else {
+                p = em->getPartsPtr(8);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 2);
+            em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bAtkEndSet(em, w);
+        } else if ((em->seFlags28B & 4) && w->atkHit == 0) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Kick: the kick, then (near and by chance) a second one turning after the target.
+static inline void em2bKickStart(cEm2b* em, Em2bWork* w, int step)
+{
+    if (w->targetAng < 0.0f) {
+        switch (w->variant) {
+        case 0:
+        default:
+            em->xFF = step;
+            MotionSetCore(em, &em->mot, ARC(0x2A), (int) ARC(0x71), 10, 1, 0);
+            break;
+        case 1:
+            em->xFF = 1;
+            MotionSetCore(em, &em->mot, ARC(0x2A), (int) ARC(0x9B), 10, 0x41, 0);
+            break;
+        }
+    } else {
+        switch (w->variant) {
+        case 0:
+        default:
+            MotionSetCore(em, &em->mot, ARC(0x2A), (int) ARC(0x71), 10, 0x41, 0);
+            break;
+        case 1:
+            MotionSetCore(em, &em->mot, ARC(0x2A), (int) ARC(0x9B), 10, 1, 0);
+            break;
+        }
+    }
+}
+
+static void em2b_R1_Kick(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int step = em->xFE;
+
+    w->flags |= 0x10;
+    switch (step) {
+    case 0:
+        em2bKickStart(em, w, step);
+        w->atkHit = 0;
+        em->xFE++;
+    case 1:
+        if (em->seFlags28B & 1) {
+            cModel* p;
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x18);
+            } else {
+                p = em->getPartsPtr(0x14);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 4);
+            em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+        }
+        if (MotionMoveF(em, 0)) {
+            if (w->atkHit) {
+                w->timer61C = 150;
+                EmRoutineSet(em, 1, 4, 0, 0);
+            } else {
+                em2bNextRtnSet(em);
+            }
+        } else if ((em->seFlags28B & 0x20) && w->atkHit && em->plDist2 > 16000000.0f && (Rnd() & 1)) {
+            em->xFE++;
+        } else if ((em->seFlags28B & 4) && w->atkHit == 0) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    case 2: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        if (em->xFF) {
+            MotionSetCore(em, &em->mot, ARC(0x2B), (int) ARC(0x72), 10, flip, 0);
+        } else {
+            MotionSetCore(em, &em->mot, ARC(0x58), (int) ARC(0xA5), 10, flip, 0);
+        }
+        w->atkHit = 0;
+        w->timer = 15;
+        em->xFE++;
+    }
+    case 3:
+        if (w->timer) {
+            w->timer--;
+            em->rot.y += Muku(&em->pos, &w->targetPos, em->rot.y, 0.0245436933f);
+            em->rot.y = LIMIT_ANGLE(em->rot.y);
+        }
+        if (em->seFlags28B & 1) {
+            cModel* p;
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0xA);
+            } else {
+                p = em->getPartsPtr(0x10);
+            }
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+            em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+        }
+        if (em->seFlags28B & 2) {
+            if (em->motFlags & 0x40) {
+                em2bLandingSet(em, w, 0xA, 7);
+            } else {
+                em2bLandingSet(em, w, 0x10, 7);
+            }
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bAtkEndSet(em, w);
+        }
+        break;
+    }
+}
+
+// Charge: turns onto the target, runs until it hits the scenario three times ahead of itself.
+static void em2b_R1_DashAtk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x47), (int) ARC(0x95), 10, flip, 0);
+        w->atkHit = 0;
+        w->timer620 = 1800;
+        w->timer = 15;
+        em->xFE++;
+    }
+    case 1: {
+        int end;
+
+        w->flags |= 0x100;
+        if (w->timer) {
+            w->timer--;
+            em->rot.y += Muku(&em->pos, &w->targetPos, em->rot.y, 0.0245436933f);
+            em->rot.y = LIMIT_ANGLE(em->rot.y);
+        }
+        end = MotionMoveF(em, 0);
+        if (em->seFlags28B & 1) {
+            Vec a = em->pos;
+            Vec b = em->oldPos;
+            a.y += 500.0f;
+            b.y += 500.0f;
+            em2bAtkCk(em, &a, &b, 5);
+            em2bDashScrCk(em, &em->pos, 3500.0f);
+        }
+        if (end) {
+            em->xFE++;
+        }
+        break;
+    }
+    case 2: {
+        int flip = em2bFlip(w, 0x45, 5);
+
+        MotionSetCore(em, &em->mot, ARC(0x48), (int) ARC(0x96), 10, flip, 0);
+        w->stuckCnt = 0;
+        em->xFE++;
+    }
+    case 3:
+        w->flags |= 0x100;
+        MotionMoveF(em, 0);
+        if (em->seFlags28B & 1) {
+            Vec a = em->pos;
+            Vec b = em->oldPos;
+            a.y += 500.0f;
+            b.y += 500.0f;
+            em2bAtkCk(em, &a, &b, 5);
+            em2bDashScrCk(em, &em->pos, 3500.0f);
+        }
+        if (w->stuckCnt > 2) {
+            em->xFE++;
+        } else {
+            Vec a;
+            Vec b;
+
+            a.x = 0.0f;
+            a.y = 500.0f;
+            a.z = 0.0f;
+            b.x = 0.0f;
+            b.y = 500.0f;
+            b.z = 3000.0f;
+            PSMTXMultVec(em->mat, &a, &a);
+            PSMTXMultVec(em->mat, &b, &b);
+            if (SatMgr.hitCheck(&a, &b, 0, 0, 0, 0)) {
+                em->xFE++;
+            } else {
+                a.x = 1000.0f;
+                a.y = 500.0f;
+                a.z = 0.0f;
+                b.x = 1000.0f;
+                b.y = 500.0f;
+                b.z = 3000.0f;
+                PSMTXMultVec(em->mat, &a, &a);
+                PSMTXMultVec(em->mat, &b, &b);
+                if (SatMgr.hitCheck(&a, &b, 0, 0, 0, 0)) {
+                    em->xFE++;
+                } else {
+                    a.x = -1000.0f;
+                    a.y = 500.0f;
+                    a.z = 0.0f;
+                    b.x = -1000.0f;
+                    b.y = 500.0f;
+                    b.z = 3000.0f;
+                    PSMTXMultVec(em->mat, &a, &a);
+                    PSMTXMultVec(em->mat, &b, &b);
+                    if (SatMgr.hitCheck(&a, &b, 0, 0, 0, 0)) {
+                        em->xFE++;
+                    }
+                }
+            }
+        }
+        break;
+    case 4: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x49), (int) ARC(0x97), 10, flip, 0);
+        w->atkHit = 0;
+        w->stuckCnt = 0;
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0xE, 0, 0, (u32) em, 0);
+        em->xFE++;
+    }
+    case 5:
+        if (MotionMoveF(em, 0)) {
+            em2bAtkEndSetL(em, w);
+        }
+        break;
+    }
+    if (em2bPlDashEscapeCk(em)) {
+        ActBtn.set(0x25, 0xB, (int) em2bDashEscapeAction, (int) em, 1, 3, 0, 0);
+    }
+}
+
+// Room 119 house break flags (pG->flags_174): the upper bits per house, the second set while intact.
+static inline void em2bHouseFlagSet(Em2bEmi* h)
+{
+    if (h->state == 0) {
+        switch (h->no) {
+        case 0:
+            U32Or(pG->flags_174, 0x80000000);
+            U32Or(pG->flags_174, 0x10000000);
+            break;
+        case 1:
+            U32Or(pG->flags_174, 0x40000000);
+            U32Or(pG->flags_174, 0x08000000);
+            break;
+        case 2:
+            U32Or(pG->flags_174, 0x20000000);
+            U32Or(pG->flags_174, 0x04000000);
+            break;
+        }
+    } else {
+        switch (h->no) {
+        case 0:
+            U32Or(pG->flags_174, 0x80000000);
+            break;
+        case 1:
+            U32Or(pG->flags_174, 0x40000000);
+            break;
+        case 2:
+            U32Or(pG->flags_174, 0x20000000);
+            break;
+        }
+    }
+}
+
+static inline void em2bHouseBreakSet(Em2bWork* w)
+{
+    Em2bEmi* h = w->pHouse;
+
+    if (h) {
+        if ((pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+            em2bHouseFlagSet(h);
+        }
+        w->pHouse->state = 3;
+        w->pHouse = 0;
+    }
+}
+
+// Hand landing without dust: quake, SE and the stagger check at the parts' world position.
+static inline cModel* em2bHandLanding(cEm2b* em, int parts)
+{
+    cModel* p = em->getPartsPtr(parts);
+    Vec* pos = &p->worldPos;
+
+    em2bQuakeSet(pos);
+    SndCall(8, 7, pos, em->id, 0, em);
+    em2bStaggerCk(em, pos);
+    return p;
+}
+
+// em2bHandLanding on a parts pointer the caller already holds (em2b_R1_HouseBreak: one function-scope `p` for
+// every hand, allocated before `em` -- r31 -- because its live length is short and it crosses the calls here).
+static inline void em2bHandLandingP(cEm2b* em, cModel* p)
+{
+    Vec* pos = &p->worldPos;
+
+    em2bQuakeSet(pos);
+    SndCall(8, 7, pos, em->id, 0, em);
+    em2bStaggerCk(em, pos);
+}
+
+// The player inside 6000 of the landing hand is knocked down.
+static inline void em2bHandLandingPlCk(cModel* p)
+{
+    if ((s16) pG->pl_life > 0 && !em2bDeadCk(pPLS)) {
+        f32 dx = pPLS->pos.x - p->worldPos.x;
+        f32 dy = pPLS->pos.y - p->worldPos.y;
+        f32 dz = pPLS->pos.z - p->worldPos.z;
+        if (dx * dx + dy * dy + dz * dz < 36000000.0f) {
+            PlSetDamage(9, 0, 0);
+        }
+    }
+}
+
+// `Vec* hp = em2bWorldPosOf(p)` (em2b_R1_Catch): the inline's return pseudo is the call argument of the following
+// em2bR11eScrBrkCk2 (`addi r4,p,0x70`) and `hp` its copy (`mr r27,r4`); a plain `&p->worldPos` makes hp the argument.
+static inline Vec* em2bWorldPosOf(cModel* p)
+{
+    return &p->worldPos;
+}
+
+// Both hands slam into the house: the first blow marks it hit, the second breaks it.
+static void em2b_R1_HouseBreak(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cModel* p;
+
+    if (em->xFE == 0 && !(w->flags & 0x20)) {
+        w->flags |= 0x20;
+        em->xFE = 2;
+    }
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x25), (int) ARC(0x6C), 10, flip, 0);
+        w->atkHit = 0;
+        em->xFE++;
+    }
+    case 1:
+        if (w->timer) {
+            w->timer--;
+            if (w->pHouse) {
+                em->rot.y += Muku(&em->pos, &w->pHouse->pos, em->rot.y, 0.0981747732f);
+            }
+        }
+        if (em->seFlags28B & 1) {
+            p = em->getPartsPtr(0x10);
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+            p = em->getPartsPtr(0xA);
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+        }
+        if (em->seFlags28B & 2) {
+            em2bHouseBreakSet(w);
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x10);
+                em2bHandLandingP(em, p);
+            } else {
+                p = em->getPartsPtr(0xA);
+                em2bHandLandingP(em, p);
+            }
+            em2bHandLandingPlCk(p);
+        }
+        if (em->frame > 72.7f && em->frame < 73.3f) {
+            EstSet((int) em, -1, 0, 0, w->espKind2, 0x1B, 0, 0, (u32) em, 0);
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    case 2: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x5B), (int) ARC(0xA8), 10, flip, 0);
+        w->atkHit = 0;
+        w->timer = 10;
+        em->xFE++;
+    }
+    case 3: {
+        int end;
+
+        if (w->timer) {
+            w->timer--;
+            if (w->pHouse) {
+                em->rot.y += Muku(&em->pos, &w->pHouse->pos, em->rot.y, 0.0981747732f);
+            }
+        }
+        if (em->seFlags28B & 1) {
+            p = em->getPartsPtr(0x10);
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+            p = em->getPartsPtr(0xA);
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+        }
+        if (em->seFlags28B & 2) {
+            EstSet((int) em, -1, 0, 0, w->espKind2, 0x1B, 0, 0, (u32) em, 0);
+            em2bHouseBreakSet(w);
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x10);
+                em2bHandLandingP(em, p);
+            } else {
+                p = em->getPartsPtr(0xA);
+                em2bHandLandingP(em, p);
+            }
+            em2bHandLandingPlCk(p);
+        }
+        if (em->seFlags28B & 0x10) {
+            if (w->pHouse) {
+                switch (w->pHouse->no) {
+                case 0:
+                    U32Or(pG->flags_174, 0x10000000);
+                    break;
+                case 1:
+                    U32Or(pG->flags_174, 0x08000000);
+                    break;
+                case 2:
+                    U32Or(pG->flags_174, 0x04000000);
+                    break;
+                }
+                w->pHouse->state = 1;
+            }
+            if (em->motFlags & 0x40) {
+                em2bHandLanding(em, 0x10);
+            } else {
+                em2bHandLanding(em, 0xA);
+            }
+        }
+        end = MotionMoveF(em, 0);
+        if (end) {
+            if (w->pHouse) {
+                f32 dx = pPLS->pos.x - w->pHouse->pos.x;
+                f32 dz = pPLS->pos.z - w->pHouse->pos.z;
+                if (dx * dx + dz * dz < 2250000.0f) {
+                    em->xFE = 0;
+                    break;
+                }
+                w->pHouse = 0;
+            }
+            em2bNextRtnSet(em);
+        } else if ((em->seFlags28B & 4) && w->pHouse) {
+            f32 dx = pPLS->pos.x - w->pHouse->pos.x;
+            f32 dz = pPLS->pos.z - w->pHouse->pos.z;
+            if (dx * dx + dz * dz < 2250000.0f) {
+                em->xFE = end;
+            }
+        }
+        break;
+    }
+    }
+}
+
+// Both hands slam onto a scroll object (em2bDashScrCk breaks it).
+static void em2b_R1_ScrollBreak(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cModel* p;
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x25), (int) ARC(0x6C), 10, flip, 0);
+        w->atkHit = 0;
+        em->xFE++;
+    }
+    case 1:
+        if (w->timer) {
+            w->timer--;
+            if (w->pHouse) {
+                em->rot.y += Muku(&em->pos, &w->pHouse->pos, em->rot.y, 0.0981747732f);
+            }
+        }
+        if (em->seFlags28B & 1) {
+            p = em->getPartsPtr(0x10);
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+            p = em->getPartsPtr(0xA);
+            em2bAtkCk(em, &p->worldPos, &p->x88, 1);
+        }
+        if (em->seFlags28B & 2) {
+            em2bDashScrCk(em, &em->getPartsPtr(0xA)->worldPos, 1000.0f);
+            em2bDashScrCk(em, &em->getPartsPtr(0x10)->worldPos, 1000.0f);
+            if (em->motFlags & 0x40) {
+                em2bHandLanding(em, 0x10);
+            } else {
+                em2bHandLanding(em, 0xA);
+            }
+        }
+        if (em->frame > 72.7f && em->frame < 73.3f) {
+            EstSet((int) em, -1, 0, 0, w->espKind2, 0x1B, 0, 0, (u32) em, 0);
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Tears the searched tree out: turns to it, hangs the tree on the hand when the motion ends.
+static void em2b_R1_GetTree(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cEmTree* tree = w->pTree;
+    Vec dv;
+    Mtx m; // function scope: its slot stays in use, so case 1's `s` reuses v's 16-byte slot (frame 80) instead of a merged m+v slot
+
+    switch (em->xFE) {
+    case 0: {
+        cModel* p;
+        f32 d;
+
+        w->pTree = (cEmTree*) w->pTarget508;
+        w->pTarget508 = 0;
+        tree = w->pTree;
+        em->rot.y = GetXZAngle(&em->pos, &tree->pos);
+        p = tree->getPartsPtr(1);
+        d = Muku2(tree->rot.y, em->rot.y, 3.14159274f);
+        tree->rot.y += d;
+        p->rot.y -= d;
+        PSMTXRotRad(m, 'y', tree->rot.y);
+        TransMatrix(m, &tree->pos);
+        {
+            Vec v;
+
+            v.x = 534.859985f;
+            v.y = 0.0f;
+            v.z = -2875.87988f;
+            PSMTXMultVec(m, &v, &v);
+            PSVECSubtract(&v, &em->pos, &w->moveVec);
+        }
+        tree->atari.flags &= ~0x200;
+        MotionSetCore(tree, &tree->mot, ARC(0xAE), 0, 0, 1, 0);
+        tree->setCatch();
+        MotionSetCore(em, &em->mot, ARC(0x26), (int) ARC(0x6D), 10, 1, 0);
+        w->variant = 0;
+        EstSet((int) tree, -1, 0, 0, 1, 6, 0, 0, (u32) tree, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 9, 0, 0, (u32) em, 0);
+        w->flags &= ~0x200;
+        w->posSave = em->pos;
+        em->xFE++;
+    }
+    case 1: {
+        Vec s;
+
+        if (tree) {
+            PSVECSubtract(&em->pos, &w->posSave, &dv);
+            dv.y = 0.0f;
+            PSVECAdd(&tree->pos, &dv, &tree->pos);
+        }
+        PSVECScale(&w->moveVec, &s, 0.1f);
+        PSVECAdd(&em->pos, &s, &em->pos);
+        PSVECSubtract(&w->moveVec, &s, &w->moveVec);
+        if (MotionMoveF(em, 0)) {
+            MotionSetCore(tree, &tree->mot, ARC(0xAF), 0, 0, 1, 0);
+            tree->pos.x = 0.0f;
+            tree->pos.y = 0.0f;
+            tree->pos.z = 0.0f;
+            tree->rot.x = 0.0f;
+            tree->rot.y = 0.0f;
+            tree->rot.z = 0.0f; // last: the dying store is issued first
+            tree->setParent(em, 0x10, 0);
+            em2bNextRtnSet(em);
+        } else {
+            w->posSave = em->pos;
+        }
+        break;
+    }
+    }
+}
+
+// Swings the held tree; the tree breaks on a hit and is dropped when its timer runs out.
+static void em2b_R1_TreeAtk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cEmTree* tree = w->pTree;
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0:
+        if (w->targetAngAbs > 1.57079637f) {
+            MotionSetCore(tree, &tree->mot, ARC(0xB2), 0, 0, 0, 0);
+            MotionSetCore(em, &em->mot, ARC(0x57), (int) ARC(0xA4), 10, 1, 0);
+            EstSet((int) em, -1, 0, 0, w->espKind2, 0xD, 0, 0, (u32) em, 0);
+        } else {
+            MotionSetCore(tree, &tree->mot, ARC(0xB1), 0, 0, 0, 0);
+            MotionSetCore(em, &em->mot, ARC(0x56), (int) ARC(0xA3), 10, 1, 0);
+            EstSet((int) em, -1, 0, 0, w->espKind2, 7, 0, 0, (u32) em, 0);
+        }
+        w->atkHit = 0;
+        w->timer = 126;
+        em->xFE++;
+    case 1: {
+        int end = MotionMoveF(em, 0);
+
+        if (end) {
+            em2bNextRtnSet(em);
+            break;
+        }
+        if (em->seFlags28B & 1) {
+            int hit = em2bTreeAtkCk(em);
+            int scr = em2bTreeAtkScrCk(em);
+            if ((hit || scr) && tree->hp > 1) {
+                cModel* p;
+                tree->hp = 1;
+                p = w->pTree->getPartsPtr(2);
+                p->scale.x = 0.0f;
+                p->scale.y = 0.0f;
+                p->scale.z = 0.0f;
+                EstSet((int) tree, -1, 0, 0, 1, 0xA, 0, 0, (u32) tree, 0);
+                w->flags |= 0x200;
+            }
+            em->flags_3C8 |= 4;
+        }
+        if (em->seFlags28B & 4) {
+            ActBtn.set(0x13, 0xB, (int) em2bEscapeAction, (int) em, 1, 3, 0, 0);
+        }
+        if (w->timer) {
+            w->timer--;
+            if (w->timer == 0) {
+                if (w->flags & 0x200) {
+                    EstSet((int) tree, -1, 0, 0, 1, 0xE, 0, 0, (u32) tree, 0);
+                } else {
+                    EstSet((int) tree, -1, 0, 0, 1, 0xD, 0, 0, (u32) tree, 0);
+                }
+                SndCall(8, 0x31, &tree->pos, em->id, 0, tree);
+                tree->setLost();
+                w->pTree = 0;
+            }
+        }
+        if ((em->seFlags28B & 2) && tree) {
+            Vec v = tree->getPartsPtr(0)->worldPos;
+            v.y = em->pos.y;
+            tree->clearParent();
+            tree->pos = v;
+            tree->rot.y = em->rot.y;
+            MotionSetCore(tree, &tree->mot, ARC(0xB3), 0, 0, 1, 0);
+        }
+        break;
+    }
+    }
+}
+
+// Tears a rock out of the ground and hangs it on the hand.
+static void em2b_R1_GetRock(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0x28), (int) ARC(0x6F), 10, 1, 0);
+        w->pGoto = 0;
+        EstSet((int) em, -1, 0, 0, w->espKind2, 8, 0, 0, (u32) em, 0);
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        } else if (em->seFlags28B & 1) {
+            Vec pos;
+            Vec rot;
+
+            pos.x = -317.329987f;
+            pos.y = -10.7299995f;
+            pos.z = 627.23999f;
+            rot.x = 0.0f;
+            rot.y = 0.0f;
+            rot.z = 0.0f;
+            w->pRock = SetRock(ARC(0x15), ARC(0x16), &pos, &rot, 0);
+            if (w->pRock) {
+                w->pRock->setParent(em, 0xA, 0);
+            }
+        }
+        break;
+    }
+}
+
+// Throws the held rock at the target (the friend when fighting it).
+static void em2b_R1_ThrowRock(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0x54), (int) ARC(0xA1), 10, 1, 0);
+        w->atkHit = 0;
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        } else if (em->seFlags28B & 1) {
+            em->flags_3C8 |= 4;
+            if (w->pRock) {
+                cModel* p = em->getPartsPtr(0xA);
+                Mtx m;
+                Vec spd;
+                f32 ang;
+                EmAtkInfo* atk;
+
+                if ((w->flags & 4) && w->pFriend) {
+                    ang = GetXZAngle(&p->worldPos, &w->pFriend->pos);
+                } else {
+                    ang = GetXZAngle(&p->worldPos, &pPLS->pos);
+                }
+                ang = Muku2(em->rot.y, ang, 0.785398185f);
+                PSMTXRotRad(m, 'y', LIMIT_ANGLE(ang + em->rot.y));
+                spd.x = 0.0f;
+                spd.y = 100.0f;
+                spd.z = 400.0f;
+                PSMTXMultVecSR(m, &spd, &spd);
+                atk = &em2b_atk_info[6];
+                if ((s16) pG->pl_life > 1) {
+                    atk->x0A |= 4;
+                } else {
+                    atk->x0A &= ~4;
+                }
+                w->pRock->setThrow(&spd, atk);
+                w->pRock->setSeFall(8, 0xA, em->id);
+                w->pRock->setEffFall(1, 7);
+                w->pRock = 0;
+            }
+        }
+        break;
+    }
+}
+
+// Grab: the hand that reaches the player (or the partner) starts the strangle.
+static void em2b_R1_Catch(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    f32 d;
+
+    w->flags |= 0x10;
+    switch (em->xFE) {
+    case 0: {
+        int one = 1;
+
+        asm("" : "+r"(one)); // COMPILER-DIFF: candidate (gcse cprop): the 2nd/3rd arms pass the `li r30,1` register, the 1st a fresh `li r8,1`
+        w->variant = 1;
+        if (em2bPlRunCk(em) && w->targetDist < 16000000.0f) {
+            MotionSetCore(em, &em->mot, ARC(0x50), (int) ARC(0x9E), 10, 1, 0);
+        } else if (w->targetAngAbs < 1.57079637f) {
+            MotionSetCore(em, &em->mot, ARC(0x38), (int) ARC(0x7B), 10, one, 0);
+        } else {
+            MotionSetCore(em, &em->mot, ARC(0x50), (int) ARC(0x9E), 10, one, 0);
+        }
+        w->atkHit = 0;
+        em->xFE++;
+    }
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+            break;
+        }
+        em->partsWorldCalc();
+        if (em->seFlags28B & 1) {
+            cModel* p;
+            Vec v;
+
+            em->flags_3C8 |= 4;
+            if (em->motFlags & 0x40) {
+                p = em->getPartsPtr(0x10);
+            } else {
+                p = em->getPartsPtr(0xA);
+            }
+            em2bR11eScrBrkCk2(em, &p->worldPos, 3000.0f);
+            if (w->atkHit == 0) {
+                v = pPLS->pos;
+                v.y += 1000.0f;
+                d = (p->worldPos.x - v.x) * (p->worldPos.x - v.x) + (p->worldPos.y - v.y) * (p->worldPos.y - v.y)
+                    + (p->worldPos.z - v.z) * (p->worldPos.z - v.z);
+                if (d < 4000000.0f && !em2bDeadCk(pPLS)) {
+                    pPLS->dmType = 2;
+                    SetPlDamage((int) em, plem2b_CatchHand);
+                    SndCall(8, 0x24, &p->worldPos, em->id, 0, em);
+                    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+                    w->atkHit = 1;
+                }
+            }
+            if (w->atkHit == 0 && pSUB) {
+                v = pSUBS->pos;
+                v.y += 1000.0f;
+                d = (p->worldPos.x - v.x) * (p->worldPos.x - v.x) + (p->worldPos.y - v.y) * (p->worldPos.y - v.y)
+                    + (p->worldPos.z - v.z) * (p->worldPos.z - v.z);
+                if (d < 4000000.0f) {
+                    SetSubDamage((int) em, (void*) subem2b_CatchHand);
+                    LifeDownSet2(pSUBS, 300, 0, 1);
+                    SndCall(8, 0x24, &p->worldPos, em->id, 0, em);
+                    w->atkHit = 2;
+                }
+            }
+        }
+        if ((em->seFlags28B & 0x20) && w->atkHit == 1) {
+            EmRoutineSet(em, 1, 0x12, 0, 0);
+        } else if ((em->seFlags28B & 0x20) && w->atkHit == 2) {
+            EmRoutineSet(em, 1, 0x13, 0, 0);
+        } else if ((em->seFlags28B & 4) && w->atkHit == 0) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+    if (w->atkHit) {
+        em->flags_3C8 |= 8;
+    }
+}
+
+// Strangles the caught player: the button mash escape or the death by squeezing.
+static void em2b_R1_Strangle(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        em->atari.throughOn();
+        em2bCatchPosSet(em);
+        {
+            int flip = em2bFlip(w, 0x41, 1);
+
+            MotionSetCore(em, &em->mot, ARC(0x39), (int) ARC(0x7C), 0, flip, 0);
+        }
+        SetPlDamage((int) em, plem2b_Strangle);
+        PlGachaInit();
+        w->timer = 70;
+        w->timer8 = 0;
+        pGS->flags_5010 |= 0x10000000;
+        pPLS->setNoSuspend(1);
+        em->setNoSuspend(1);
+        pG->flags_5014 |= 0x02000000;
+        GameAddPoint(2);
+        em->xFE++;
+    case 1:
+        em->flags_3C8 |= 8;
+        if (w->timer) {
+            w->timer--;
+        } else {
+            if (w->timer8) {
+                w->timer8--;
+            } else {
+                w->timer8 = 4;
+                EstSet((int) em, -1, 0, 0, w->espKind2, 0x12, 0, 0, (u32) em, 0);
+            }
+            LifeDownSet2(pPLS, 15, 0, 1);
+            if ((s16) pG->pl_life > 1) {
+                PlGachaMove();
+            }
+            if ((s16) pG->pl_life <= 1) {
+                pG->pl_life = 0;
+                em->xFE = 4;
+                MotionMoveF(em, 0);
+                break;
+            }
+        }
+        if (MotionMoveF(em, 0)) {
+            AtariFlagsOrV(&em->atari, 0x300); // throughOff(): the volatile view keeps the following `lwz pG` below the sth
+            if ((s16) pG->pl_life <= 1) {
+                pG->pl_life = 0;
+                em->xFE = 4;
+                break;
+            }
+            em->xFE = 2;
+        } else if ((u32) PlGachaGet() > 30) {
+            em->xFE = 2;
+        }
+        break;
+    case 2: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x3A), (int) ARC(0x7D), 10, flip, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0x10, 0, 0, (u32) em, 0);
+        w->dmgTotal += 200;
+        pGS->flags_5010 &= ~0x10000000;
+        pPLS->setNoSuspend(0);
+        em->setNoSuspend(0);
+        pG->flags_5014 &= ~0x02000000;
+        AtariFlagsOrV(&em->atari, 0x300); // throughOff(): the volatile view keeps the following `lwz pG` below the sth
+        w->timer = 60;
+        em->xFE++;
+    }
+    case 3:
+        if (w->timer) {
+            w->timer--;
+            em->flags_3C8 |= 8;
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    case 4: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x3B), (int) ARC(0x7E), 10, flip, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0x23, 0, 0, (u32) em, 0);
+        AtariFlagsOrV(&em->atari, 0x300); // throughOff(): the volatile view keeps the following `lwz pG` below the sth
+        pG->flags_5010 &= ~0x10000000;
+        pPLS->setNoSuspend(0);
+        em->setNoSuspend(0);
+        pG->flags_5014 &= ~0x02000000;
+        em->xFE++;
+    }
+    case 5:
+        em->flags_3C8 |= 8;
+        MotionMoveF(em, 0);
+        break;
+    }
+}
+
+// Player caught by the hand: hangs on the hand parts' matrix until the strangle starts.
+static void plem2b_CatchHand(cPlayer* pl)
+{
+    pl->subArc = PL_EM(pl)->subArc;
+    pGS->flags_5010 |= 0x8000;
+    pl->dmType = 2;
+    switch (pl->xFE) {
+    case 0:
+        pl->atari.throughOn();
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xBE), 0, 0, 0, 0);
+        PlSetFace(1);
+        pl->be_flag &= ~0x10;
+        PlSetDamageSe(9);
+        pl->xFE++;
+    case 1: {
+        cModel* p = PL_EM(pl)->getPartsPtr(0xA);
+        Vec pos;
+        Vec rot;
+
+        rot.x = -0.05022185f;
+        rot.y = 1.9358388f;
+        rot.z = -0.4252966f;
+        pos.x = -356.279999f;
+        pos.y = 162.869995f;
+        pos.z = 543.849976f;
+        RotMatrix(pl->mat, &rot);
+        TransMatrix(pl->mat, &pos);
+        ScaleMatrix(pl->mat, &pl->scale);
+        PSMTXConcat(p->mat, pl->mat, pl->mat);
+        pl->pos.x = pl->mat[0][3];
+        pl->pos.y = pl->mat[1][3];
+        pl->pos.z = pl->mat[2][3];
+        pl->motFlags2 |= 0x40000000;
+        PSMTXMultVec(p->mat, &pos, &pl->pos);
+        PSVECSubtract(&pl->pos, &PL_EM(pl)->pos, &pos);
+        pl->rot.x = 0.0f;
+        pl->rot.y = atan2f(pos.x, pos.z);
+        pl->rot.z = 0.0f;
+        MotionMoveF(pl, 0);
+        break;
+    }
+    }
+    pl->partsWorldCalc();
+    em2bBlowCamMove(PL_EM(pl), 1.0f);
+    pl->subArc = pl->subArc2;
+}
+
+// Strangled player: follows the giant's step (xFE), the button mash blends the struggle motion.
+static void plem2b_Strangle(cPlayer* pl)
+{
+    pG->flags_5010 |= 0x8000;
+    pl->subArc = PL_EM(pl)->subArc;
+    pl->dmType = 2;
+    switch (pl->xFE) {
+    case 0: {
+        Vec v;
+
+        pl->motFlags2 &= ~0x40000000;
+        v.x = 1436.07996f;
+        v.y = 0.0f;
+        v.z = 89.5199966f;
+        pl->rot.x = 0.0f;
+        pl->rot.y = PL_EM(pl)->rot.y + 3.14159274f;
+        pl->rot.z = 0.0f;
+        LIMIT_ANGLE(pl->rot.y);
+        PSMTXMultVec(PL_EM(pl)->mat, &v, &pl->pos);
+        PlSetFace(1);
+        pl->pWep->setTrans(0, 0);
+        em2bCatchObj.p = ObjMgr.create(0xB);
+        if (em2bCatchObj.p) {
+            em2bCatchObj.p->modelInit(PL_ARC(0x18), PL_ARC(0x17));
+            em2bCatchObj.p->atari.flags &= 0xFCFF;
+            em2bCatchObj.p->pParts->pParent = pPLS->getPartsPtr(0xA);
+            em2bCatchObj.p->lightInfo.init2(1, 1, &((Vec) { 0.0f, 0.0f, 0.0f }), &((Vec) { 500.0f, 0.0f, 0.0f }), 1);
+            em2bCatchObj.p->wep.parent = pPLS;
+            em2bCatchObj.p->setNoSuspend(1);
+            em2bCatchObj.p->getPartsPtr(1)->rot.y = 3.14159274f;
+        }
+        pl->atari.throughOn();
+        pl->x4FD = 0;
+        pl->x4FC = 0;
+        pl->blendRate500 = 0.0f;
+        pl->xFE++;
+    }
+    case 1:
+        pl->blendRate500 = (f32) (u32) PlGachaGet() * 0.0333333351f * 255.0f;
+        if (pl->blendRate500 > 255.0f) {
+            pl->blendRate500 = 255.0f;
+        }
+        plBlendMotSet(pl, PL_ARC(0xBA), PL_ARC(0xBD), 0, 0);
+        MotionMoveF(pl, 0);
+        pl->xFE = PL_EM(pPLS)->xFE;
+        if (pl->frame > 77.6999969f && pl->frame < 78.3000031f) {
+            pl->x3E0 = SndCall(8, 0x28, &pl->getPartsPtr(0)->worldPos, PL_EM(pl)->id, 0, pl);
+            VibSetData((VibDataTbl*) (pGS->pArc->ofs_1C + (u32) pGS->pArc), 0xC, 1);
+        }
+        break;
+    case 2: {
+        Vec v;
+
+        v.x = -297.160004f;
+        v.y = 0.0f;
+        v.z = 1962.04004f;
+        pl->rot.x = 0.0f;
+        pl->rot.y = PL_EM(pl)->rot.y + 3.14159274f;
+        pl->rot.z = 0.0f;
+        LIMIT_ANGLE(pl->rot.y);
+        PSMTXMultVec(PL_EM(pl)->mat, &v, &pl->pos);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xBB), 0, 0, 1, 0);
+        VibSetClearType(1);
+        SndStop(pl->x3E0, 0);
+        PlSetDamageSe(0x10);
+        pl->xFE++;
+    }
+    case 3:
+        if (MotionMoveF(pl, 0)) {
+            if (em2bCatchObj.p) {
+                ObjMgr.destroy(em2bCatchObj.p);
+                em2bCatchObj.p = 0;
+            }
+            pl->pWep->setTrans(1, 0);
+            pl->be_flag |= 0x10;
+            EndPlDamage();
+        }
+        break;
+    case 4: {
+        Vec v;
+
+        v.x = -205.490005f;
+        v.y = 0.0f;
+        v.z = 2179.71997f;
+        pl->rot.x = 0.0f;
+        pl->rot.y = PL_EM(pl)->rot.y + 3.14159274f;
+        pl->rot.z = 0.0f;
+        LIMIT_ANGLE(pl->rot.y);
+        PSMTXMultVec(PL_EM(pl)->mat, &v, &pl->pos);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xBC), 0, 0, 1, 0);
+        pG->pl_life = 0;
+        PlSetDamageSe(0xA);
+        VibSetClearType(1);
+        pl->xFE++;
+    }
+    case 5:
+        MotionMoveF(pl, 0);
+        if (pl->frame > 63.7000008f && pl->frame < 64.3000031f) {
+            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+// Partner caught: squeezed until her life runs out or the parasite timer ends, then dropped.
+static void em2b_R1_SubCatch(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x4A), (int) ARC(0x98), 0, flip, 0);
+        SetSubDamage((int) em, (void*) subem2b_Catch);
+        GameAddPoint(2);
+        w->paraHp = 100;
+        em->xFE++;
+    }
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em->xFE = 4;
+            break;
+        }
+        if ((s16) pG->sub_life <= 1) {
+            em->flags_3C8 |= 8;
+        }
+        if (em->seFlags28B & 1) {
+            LifeDownSet2(pSUBS, 15, 0, 1);
+            if ((s16) pG->sub_life <= 1) {
+                em->flags_3C8 |= 8;
+                em->xFE++;
+                break;
+            }
+        }
+        if (!(em->flags_3C8 & 8) && (s16) pG->sub_life > 1 && w->paraHp <= 0) {
+            em->xFE = 4;
+        }
+        break;
+    case 2: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x5C), (int) ARC(0xA9), 0, flip, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0x24, 0, 0, (u32) em, 0);
+        em->xFE++;
+    }
+    case 3:
+        em->flags_3C8 |= 8;
+        if (MotionMoveF(em, 0)) {
+            EmRoutineSet(em, 1, 0, 0, 0);
+        }
+        break;
+    case 4: {
+        int flip = em2bFlip(w, 0x41, 1);
+
+        MotionSetCore(em, &em->mot, ARC(0x4B), (int) ARC(0x99), 10, flip, 0);
+        SetSubDamage((int) em, (void*) subem2b_CatchEnd);
+        w->timer62C = 450;
+        em->xFE++;
+    }
+    case 5:
+        if (MotionMoveF(em, 0)) {
+            EmRoutineSet(em, 1, 4, 0, 0);
+        }
+        break;
+    }
+}
+
+// Partner caught by the hand: hangs on the hand parts' matrix.
+static void subem2b_CatchHand(cSubChar* sub)
+{
+    cSubChar* s = pSUB;
+
+    s->subArc = PL_EM(s)->subArc;
+    s->dmType = 2;
+    pGS->flags_5014 |= 0x20000000;
+    switch (s->xFE) {
+    case 0:
+        s->atari.flags &= 0xFCFF;
+        MotionSetCore(s, &s->mot, PL_ARC_PTR(s->subArc, 0xD1), 0, 0, 0, 0);
+        SubCharSetFace(1);
+        s->be_flag &= ~0x10;
+        s->xFE++;
+    case 1: {
+        cModel* p = PL_EM(s)->getPartsPtr(0xA);
+        Vec pos;
+        Vec rot;
+
+        rot.x = -0.05022185f;
+        rot.y = 1.9358388f;
+        rot.z = -0.4252966f;
+        pos.x = -356.279999f;
+        pos.y = 162.869995f;
+        pos.z = 543.849976f;
+        RotMatrix(s->mat, &rot);
+        TransMatrix(s->mat, &pos);
+        ScaleMatrix(s->mat, &s->scale);
+        PSMTXConcat(p->mat, s->mat, s->mat);
+        s->motFlags2 |= 0x40000000;
+        PSMTXMultVec(p->mat, &pos, &s->pos);
+        PSVECSubtract(&s->pos, &PL_EM(s)->pos, &pos);
+        s->rot.x = 0.0f;
+        s->rot.y = atan2f(pos.x, pos.z);
+        s->rot.z = 0.0f;
+        MotionMoveF(s, 0);
+        if (PL_EM(s)->hp <= 0) {
+            SetSubDamage((int) PL_EM(s), (void*) subem2b_CatchEnd);
+        }
+        break;
+    }
+    }
+    s->subArc = s->subArc2;
+}
+
+// Partner squeezed: follows the giant's step; her life is emptied when the timer ends.
+static void subem2b_Catch(cSubChar* sub)
+{
+    cSubChar* s = pSUB;
+
+    pG->flags_5014 |= 0x20000000;
+    s->subArc = PL_EM(s)->subArc;
+    s->dmType = 2;
+    switch (s->xFE) {
+    case 0: {
+        Vec v;
+
+        s->motFlags2 &= ~0x40000000;
+        v.x = 1271.0f;
+        v.y = 0.0f;
+        v.z = 478.769989f;
+        s->rot.x = 0.0f;
+        s->rot.y = PL_EM(s)->rot.y + 3.14159274f;
+        s->rot.z = 0.0f;
+        LIMIT_ANGLE(s->rot.y);
+        PSMTXMultVec(PL_EM(s)->mat, &v, &s->pos);
+        MotionSetCore(s, &s->mot, PL_ARC_PTR(s->subArc, 0xD2), 0, 0, 1, 0);
+        SubCharSetFace(1);
+        s->xFE++;
+    }
+    case 1:
+        MotionMoveF(s, 0);
+        s->xFE = PL_EM(s)->xFE;
+        if (PL_EM(s)->xFC != 1 && PL_EM(s)->xFD != 0x13) {
+            SetSubDamage((int) PL_EM(s), (void*) subem2b_CatchEnd);
+        }
+        break;
+    case 2:
+        MotionSetCore(s, &s->mot, PL_ARC_PTR(s->subArc, 0xD4), 0, 0, 1, 0);
+        s->subHideMode = 67;
+        s->xFE++;
+    case 3:
+        MotionMoveF(s, 0);
+        if (s->subHideMode) {
+            s->subHideMode--;
+            if (s->subHideMode == 0) {
+                pG->sub_life = 0;
+            }
+        }
+        if ((s16) pG->sub_life > 0 && (PL_EM(s)->xFC != 1 && PL_EM(s)->xFD != 0x13)) {
+            SetSubDamage((int) PL_EM(s), (void*) subem2b_CatchEnd);
+        }
+        break;
+    }
+    s->subArc = s->subArc2;
+}
+
+// Partner dropped: falls in front of the giant.
+static void subem2b_CatchEnd(cSubChar* sub)
+{
+    cSubChar* s = pSUB;
+
+    s->subArc = PL_EM(s)->subArc;
+    pGS->flags_5014 |= 0x20000000;
+    switch (s->xFE) {
+    case 0: {
+        Vec v;
+
+        s->motFlags2 &= ~0x40000000;
+        v.x = -284.0f;
+        v.y = 0.0f;
+        v.z = 2067.51001f;
+        s->rot.x = 0.0f;
+        s->rot.y = PL_EM(s)->rot.y + 3.14159274f;
+        s->rot.z = 0.0f;
+        LIMIT_ANGLE(s->rot.y);
+        PSMTXMultVec(PL_EM(s)->mat, &v, &s->pos);
+        s->dmType = 0x1E;
+        MotionSetCore(s, &s->mot, PL_ARC_PTR(s->subArc, 0xD3), 0, 0, 1, 0);
+        SubCharSetFace(1);
+        s->xFE++;
+    }
+    case 1:
+        if (MotionMoveF(s, 0)) {
+            s->be_flag |= 0x10;
+            EndSubDamage();
+        }
+        break;
+    }
+    s->subArc = s->subArc2;
+}
+
+// Stamps the ground next to the tower (room 224): shakes it and drops the player standing on it.
+static void em2b_R1_BaseAtk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        em2bYaguraSearch(em);
+        {
+            int flip = em2bFlip(w, 0x41, 1);
+
+            MotionSetCore(em, &em->mot, ARC(0xE5), 0, 10, flip, 0);
+        }
+        w->atkHit = 0;
+        w->timer = 15;
+        em->xFE++;
+    case 1:
+        if (w->timer) {
+            w->timer--;
+            em->rot.y += Muku(&em->pos, &pPLS->pos, em->rot.y, 0.0981747732f);
+            em->rot.y = LIMIT_ANGLE(em->rot.y);
+        }
+        if (em->frame > 44.7000008f && em->frame < 45.2999992f) {
+            em2bPlFallCK(em);
+            if (w->pYagura) {
+                w->pYagura->setVib();
+            }
+            SndCall(6, 0xC, &em->getPartsPtr(0)->worldPos, 0, 0, em);
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Room 224 hole: climbs out at the fixed position, grabs the player who comes near the hole.
+static void em2b_R1_HoleAtk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cModel* p = em->getPartsPtr(0);
+    f32 d;
+
+    switch (em->xFE) {
+    case 0:
+        em->pos = em2b_r11e_pos;
+        if (pG->room_id == 0x224) {
+            void* tbl = w->texBlend;
+
+            if (w->pTex) {
+                em->pInfo->setTexBlendTbl(tbl);
+                em->pInfo->setBlendRatio(0xFF);
+                em->pInfo->setBlendType(2);
+                if (w->pInfo) {
+                    w->pInfo->setTexBlendTbl(tbl);
+                    w->pInfo->setBlendRatio(0xFF);
+                    w->pInfo->setBlendType(2);
+                }
+            }
+        }
+        em->xFE++;
+    case 1:
+        em->rot.y += Muku(&em->pos, &pPLS->pos, em->rot.y, 3.14159274f);
+        em->rot.y = LIMIT_ANGLE(em->rot.y);
+        MotionSetCore(em, &em->mot, ARC(0xE6), (int) ARC(0xE7), 0, 1, 0);
+        MotionMoveF(em, 0);
+        if ((s32) pG->flags_174 >= 0) {
+            em->xFE = 4;
+            break;
+        }
+        if ((s16) pG->pl_life > 0 && !em2bDeadCk(pPLS)) {
+            f32 dx = pPLS->pos.x - em2b_r11e_pos.x;
+            f32 dz = pPLS->pos.z - em2b_r11e_pos.z;
+            d = dx * dx + dz * dz;
+            if (d < 64000000.0f) {
+                em->xFE++;
+            }
+        }
+        break;
+    case 2:
+        MotionSetCore(em, &em->mot, ARC(0xE6), (int) ARC(0xE7), 0, 1, 0);
+        w->atkHit = 0;
+        EstSet((int) em, -1, 0, 0, 1, 0x1D, 0, 0, (u32) em, 0);
+        em->xFE++;
+    case 3:
+        if (MotionMoveF(em, 0)) {
+            em->xFE++;
+            break;
+        }
+        if (em->seFlags28B & 4) {
+            SndCall(6, 0xD, &p->worldPos, 0, 0, em);
+        }
+        if (em->seFlags28B & 2) {
+            SndCall(6, 0xE, &p->worldPos, 0, 0, em);
+        }
+        if ((s16) pG->pl_life > 0 && !em2bDeadCk(pPLS) && (em->seFlags28B & 1) && w->atkHit == 0) {
+            Vec v;
+            f32 dx;
+            f32 dz;
+
+            cModel* hp = em->getPartsPtr(0xA);
+            v = pPLS->pos;
+            dz = hp->worldPos.z - v.z;
+            dx = hp->worldPos.x - v.x;
+            d = dx * dx + dz * dz;
+            if (d < 2250000.0f && !em2bDeadCk(pPLS)) {
+                pPLS->dmType = 0x80;
+                pG->pl_life = 0;
+                SetPlDamage((int) em, plem2b_CatchHand);
+                SndCall(8, 0x24, &hp->worldPos, em->id, 0, em);
+                VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+                w->atkHit = 1;
+            }
+        }
+        break;
+    case 4:
+        break;
+    }
+}
+
+// The player standing higher than the giant's feet + 2000 (on the tower) falls off.
+void em2bPlFallCK(cEm2b* em)
+{
+    if (em2bDeadCk(pPLS)) {
+        return;
+    }
+    if ((s16) pG->pl_life <= 0) {
+        return;
+    }
+    if (pPLS->pos.y < em->pos.y + 2000.0f) {
+        return;
+    }
+    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    pPLS->rot.y = GetXZAngle(&pPLS->pos, &em->pos);
+    SetPlDamage((int) em, plem2bDmFall);
+}
+
+// Player knocked off the tower: falls until the floor, then lands and gets up.
+static void plem2bDmFall(cPlayer* pl)
+{
+    pl->subArc = PL_EM(pl)->subArc;
+    pl->dmType = 2;
+    switch (pl->xFE) {
+    case 0:
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xEA), 0, 3, 0x201, 0);
+        pl->atari.throughOn();
+        if ((s16) pGS->pl_life > 0) {
+            PlSetDamageSe(0);
+        } else {
+            PlSetDamageSe(0xD);
+        }
+        pl->x3E0 = 62;
+        pl->x3E4 = 40;
+        pl->xFE++;
+    case 1:
+        pl->rot.y += Muku2(pl->rot.y, -2.18000007f, 0.196349546f);
+        pl->rot.y = LIMIT_ANGLE(pl->rot.y);
+        if (pl->x3E4) {
+            pl->x3E4--;
+            pGS->flags_174 |= 0x20000000;
+        }
+        if (pl->x3E0) {
+            pl->x3E0--;
+        } else {
+            f32 y = SatMgr.getFloor(&pl->pos, pl->oldPos.y - pl->pos.y + 2000.0f, 100000.0f, 0, 0);
+            if (pl->pos.y < y) {
+                pl->pos.y = y;
+                if (pl->frame > 63.7000008f && pl->frame < 64.3000031f) {
+                    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+                }
+                MotionSetCore(pl, &pl->mot, PL_ARC(0xE9), 0, 3, 1, 0);
+                MotionMoveF(pl, 0);
+                pl->xFE++;
+                break;
+            }
+        }
+        MotionMoveF(pl, 0);
+        break;
+    case 2:
+        LifeDownSet(pPLS, 500, 0);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xE9), 0, 3, 1, 0);
+        pl->xFE++;
+    case 3:
+        if (MotionMoveF(pl, 0) && (s16) pG->pl_life > 0) {
+            pl->atari.throughOff();
+            EmRoutineSet(pPLS, 1, 0, 0xA, 0);
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+static void em2b_R0_Damage(cEm2b* em)
+{
+    EM2B_WK(em)->flags |= 8;
+    Em2b_R1_dm_tbl[em->xFD](em);
+}
+
+// Creates the parasite head object on the neck parts (0x3E) with its idle motion and effect.
+static inline void em2bParasiteSet(cEm2b* em, Em2bWork* w, int hokan)
+{
+    w->pParasite = (cObj16*) SetObj16(ARC(0xD6), ARC(0xD7), em, em, 0x3E, 8, 0, 0);
+    if (w->pParasite) {
+        MotSetObj16(w->pParasite, ARC(0xDA), 0, hokan);
+        EstSet((int) w->pParasite, -1, 0, 0, w->espKind2, 0x1E, 0, w->espKind, (u32) w->pParasite, 0);
+    }
+}
+
+// Face damage: kneels, the parasite comes out of the neck and can be attacked while it is out.
+static void em2b_R1_Dm_Face(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x4000;
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 5, 0x45);
+
+        if (!(w->flags & 0x1000) && (pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+            MotionSetCore(em, &em->mot, ARC(0x2D), (int) ARC(0x74), 30, flip, 100);
+        } else {
+            MotionSetCore(em, &em->mot, ARC(0x2D), (int) ARC(0x74), 30, flip, 0);
+        }
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0xA, 0, 0, (u32) em, 0);
+        if (w->pRock) {
+            EmAtkInfo* atk = &em2b_atk_info[6];
+
+            if ((s16) pG->pl_life > 1) {
+                atk->x0A |= 4;
+            } else {
+                atk->x0A &= ~4;
+            }
+            w->pRock->setFall(atk);
+            w->pRock->setSeFall(8, 0xA, em->id);
+            w->pRock->setEffFall(1, 7);
+            w->pRock = 0;
+        }
+        em2bParasiteDelete(w);
+        em2bSetTentacle(em, 0);
+        w->pParasite = (cObj16*) SetObj16(ARC(0xD6), ARC(0xD7), em, em, 0x3E, 8, 0, 0);
+        if (w->pParasite) {
+            if (!(w->flags & 0x1000) && (pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+                MotSetObj16(w->pParasite, ARC(0xDA), 0, 100);
+            } else {
+                MotSetObj16(w->pParasite, ARC(0xDA), 0, 0);
+            }
+            EstSet((int) w->pParasite, -1, 0, 0, w->espKind2, 0x1E, 0, w->espKind, (u32) w->pParasite, 0);
+        }
+        em2bSetTentacle(em, 1);
+        w->flags |= 0x1000;
+        em->xFE++;
+    }
+    case 1:
+        em->flags_3C8 |= 8;
+        if (MotionMoveF(em, 0)) {
+            em->xFE++;
+        }
+        break;
+    case 2: {
+        int flip = em2bFlip(w, 5, 0x45);
+
+        MotionSetCore(em, &em->mot, ARC(0x2E), (int) ARC(0x75), 30, flip, 0);
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xD8), 4, 0);
+        }
+        em->xFE++;
+    }
+    case 3: {
+        int end;
+
+        em->flags_3C8 |= 8;
+        w->flags |= 0x2000;
+        end = MotionMoveF(em, 0);
+        if (end) {
+            em->xFE++;
+        } else if (em->plDist2 < 25000000.0f) {
+            ActBtn.set(0x19, 0xB, (int) em2bSetActAtkParasite, (int) em, 0, 1, 0, end);
+        }
+        break;
+    }
+    case 4: {
+        int flip = em2bFlip(w, 5, 0x45);
+
+        MotionSetCore(em, &em->mot, ARC(0x2F), (int) ARC(0x76), 30, flip, 0);
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xDB), 0, 0);
+        }
+        w->dmgTotal = 0;
+        w->timer = 15;
+        em->xFE++;
+    }
+    case 5:
+        w->flags |= 0x10;
+        w->flags &= ~8;
+        if (MotionMoveF(em, 0)) {
+            em2bParasiteDelete(w);
+            em2bSetTentacle(em, 0);
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Damage while holding the tree: drops the tree and the parasite comes out.
+static void em2b_R1_Dm_Tree(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cEmTree* tree = w->pTree;
+
+    w->flags |= 0x4000;
+    switch (em->xFE) {
+    case 0: {
+        Vec v;
+
+        tree->clearParent();
+        v.x = 2494.25f;
+        v.y = 0.0f;
+        v.z = 1835.70996f;
+        PSMTXMultVec(em->mat, &v, &tree->pos);
+        tree->rot.y = em->rot.y;
+        MotionSetCore(tree, &tree->mot, ARC(0xB0), 0, 0, 1, 0);
+        w->pTreeLost = tree;
+        w->timer628 = 15;
+        w->pTree = 0;
+        MotionSetCore(em, &em->mot, ARC(0x4E), (int) ARC(0x9C), 10, 1, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0xA, 0, 0, (u32) em, 0);
+        em2bParasiteDelete(w);
+        em2bSetTentacle(em, 0);
+        em2bParasiteSet(em, w, 0);
+        em2bSetTentacle(em, 1);
+        em->xFE++;
+    }
+    case 1:
+        em->flags_3C8 |= 8;
+        if (MotionMoveF(em, 0)) {
+            EmRoutineSet(em, 2, 0, 2, 0);
+        }
+        break;
+    }
+}
+
+// Action button on the exposed parasite: both go into the parasite attack routine.
+static void em2bSetActAtkParasite(cEm2b* em)
+{
+    EmRoutineSet(em, 2, 2, 0, 0);
+    em->dmg.set(0, 30);
+    pPLS->dmg.set(0, 30);
+}
+
+// Killed through the parasite: the death with the dead-body collision off.
+static inline void em2bParasiteDieSet(cEm2b* em)
+{
+    em->hp = 0;
+    EmSetDie(em);
+    EmReserveDropItem(em);
+    EmSetDieCntE(em);
+    em->clearStatus(5);
+    em->atari.flags &= ~0x100;
+    EmRoutineSet(em, 3, 0, 0, 0);
+}
+
+// Action button prompt of the parasite attack (the button is chosen at random above rank 1).
+static inline void em2bParasiteBtnSet(Em2bWork* w)
+{
+    if (w->atkBtn) {
+        ActBtn.set(0x29, 0xB, 0, 0, 2, 0xD, 0, 0);
+    } else {
+        ActBtn.set(0x29, 0xB, 0, 0, 2, 2, 0, 0);
+    }
+}
+
+// Parasite attack: the player climbs the back and slashes the parasite while the button is mashed.
+static void em2b_R1_Dm_Parasite(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0: {
+        int side = 0;
+
+        if (w->routeAngAbs < 1.57079637f) {
+            side = 1;
+        }
+        em->atari.throughOn();
+        em2bCatchPosSet(em);
+        MotionSetCore(em, &em->mot, ARC(0x30), (int) ARC(0x77), 0, 1, 0);
+        SetPlDamage((int) em, plem2b_AtkParasite);
+        pPLS->xFF = side;
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xD9), 0, 0);
+        }
+        w->mode = 0;
+        w->timer = 45;
+        if (pGS->x4F88 <= 1) {
+            w->timer = 30;
+        }
+        if (pG->x4F88 <= 3) {
+            w->timer = 40;
+        }
+        if (pG->x4F88 > 6) {
+            w->timer = 50;
+        }
+        if (pG->x4F88 > 9) {
+            w->timer = 55;
+        }
+        w->atkBtn = Rnd() & 1;
+        if (pG->x4F88 <= 1) {
+            w->atkBtn = 0;
+        }
+        pGS->flags_5010 |= 0x10000000;
+        pPLS->setNoSuspend(1);
+        em->setNoSuspend(1);
+        pG->flags_5014 |= 0x02000000;
+        em->xFE++;
+    }
+    case 1:
+        em->flags_3C8 |= 8;
+        if (w->timer) {
+            w->timer--;
+        } else if (w->atkBtn) {
+            if (Key.trg & 0x40000) {
+                w->mode++;
+            }
+            ActBtn.set(0x29, 0xB, 0, 0, 2, 0xD, 0, 0);
+        } else {
+            if (Key.trg & 0x80000) {
+                w->mode++;
+            }
+            ActBtn.set(0x29, 0xB, 0, 0, 2, 2, 0, 0);
+        }
+        if (MotionMoveF(em, 0)) {
+            em->atari.throughOff();
+            if (w->mode == 0) {
+                em->xFE = 8;
+            } else {
+                em->xFE++;
+            }
+        }
+        break;
+    case 2:
+        em->xFE++;
+    case 3:
+        em->xFE++;
+    case 4:
+        MotionSetCore(em, &em->mot, ARC(0x2E), 0, 0, 1, 0);
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xD8), 0, 0);
+        }
+        w->timer = 114;
+        em->xFE++;
+    case 5:
+        em->flags_3C8 |= 8;
+        em2bParasiteBtnSet(w);
+        MotionMoveF(em, 0);
+        if (w->timer) {
+            w->timer--;
+        } else {
+            em->xFE++;
+        }
+        break;
+    case 6:
+        MotionSetCore(em, &em->mot, ARC(0x5E), (int) ARC(0xAA), 0, 1, 0);
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xDD), 0, 0);
+        }
+        w->timer = 15;
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0xB, 0, 0, (u32) em, 0);
+        w->mode = 0;
+        pGS->flags_5010 &= ~0x10000000;
+        pPLS->setNoSuspend(0);
+        em->setNoSuspend(0);
+        pG->flags_5014 &= ~0x02000000;
+        em->xFE++;
+    case 7:
+        if (w->timer) {
+            w->timer--;
+            if (w->timer == 0) {
+                em2bSetTentacle(em, 0);
+            }
+        }
+        if (MotionMoveF(em, 0)) {
+            em2bParasiteDelete(w);
+            em2bSetTentacle(em, 0);
+            if (em->hp <= 0) {
+                em2bParasiteDieSet(em);
+            } else {
+                em2bNextRtnSet(em);
+            }
+        } else {
+            if (em->frame > 74.6999969f && em->frame < 75.3000031f) {
+                em2bParasiteDelete(w);
+                em2bSetTentacle(em, 0);
+                if (em->hp <= 0) {
+                    em2bParasiteDieSet(em);
+                    if (em2bCatchObj.p) {
+                        ObjMgr.destroy(em2bCatchObj.p);
+                        em2bCatchObj.p = 0;
+                    }
+                    pPLS->pWep->setTrans(1, 0);
+                    break;
+                }
+                w->mode = 1;
+            }
+            if (w->mode) {
+                w->flags &= ~8;
+            }
+        }
+        break;
+    case 8:
+        MotionSetCore(em, &em->mot, ARC(0x5F), (int) ARC(0xAB), 0, 1, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0x22, 0, 0, (u32) em, 0);
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xDE), 0, 0);
+        }
+        w->dmgTotal = 0;
+        pGS->flags_5010 &= ~0x10000000;
+        pPLS->setNoSuspend(0);
+        em->setNoSuspend(0);
+        pG->flags_5014 &= ~0x02000000;
+        em->xFE++;
+    case 9:
+        if (MotionMoveF(em, 0)) {
+            em2bParasiteDelete(w);
+            em2bSetTentacle(em, 0);
+            w->timer61C = 150;
+            EmRoutineSet(em, 1, 4, 0, 0);
+        }
+        break;
+    }
+}
+
+// Parasite killed from outside: the parasite dies on the back and the giant collapses.
+static void em2b_R1_Dm_Parasite2(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 0x4800;
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0x5E), (int) ARC(0xAA), 120, 1, 0);
+        if (w->pParasite) {
+            MotSetObj16(w->pParasite, ARC(0xDD), 0, 0);
+        }
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bParasiteDelete(w);
+            em2bSetTentacle(em, 0);
+            if (em->hp <= 0) {
+                em2bParasiteDieSet(em);
+            } else {
+                em2bNextRtnSet(em);
+            }
+        } else if ((em->seFlags28B & 4) && em->hp <= 0) {
+            em2bParasiteDieSet(em);
+        }
+        break;
+    }
+}
+
+// The parasite attack button of the giant the player is on (Key.trg bit per em2bWork::atkBtn).
+// A macro: the inline's `return 1; return 0;` is materialised (`li r0,1; b; li r0,0; cmpwi`) at both users.
+#define em2bParasiteBtnCk(w) (((w)->atkBtn == 0 && (Key.trg & 0x80000)) || ((w)->atkBtn == 1 && (Key.trg & 0x40000)))
+
+// Puts the player at `v` in the giant's frame with its rotation.
+static inline void em2bPlOnEmSet(cPlayer* pl, f32 x, f32 y, f32 z)
+{
+    Vec v;
+
+    v.x = x;
+    v.y = y;
+    v.z = z;
+    pl->rot.y = PL_EM(pl)->rot.y;
+    PSMTXMultVec(PL_EM(pl)->mat, &v, &pl->pos);
+}
+
+// Same, facing the other way (the Vec temp shares the frame slot of em2bPlOnEmSet's; a caller `Vec v` in the
+// other arm pushes the inline's temp to a second slot and its address into a pseudo).
+static inline void em2bPlOnEmSetRev(cPlayer* pl, f32 x, f32 y, f32 z)
+{
+    Vec v;
+
+    v.x = x;
+    v.y = y;
+    v.z = z;
+    pl->rot.y = LIMIT_ANGLE(pl->rot.y = PL_EM(pl)->rot.y + 3.14159274f);
+    PSMTXMultVec(PL_EM(pl)->mat, &v, &pl->pos);
+}
+
+// Player attacking the parasite: climbs the back, slashes it while the button is mashed, is thrown off.
+static void plem2b_AtkParasite(cPlayer* pl)
+{
+    Em2bWork* w = EM2B_WK(PL_EM(pPLS));
+
+    pl->subArc = PL_EM(pl)->subArc;
+    pl->dmType = 2;
+    switch (pl->xFE) {
+    case 0:
+        if (pl->xFF) {
+            em2bPlOnEmSetRev(pl, 1634.15002f, 0.0f, 6410.41016f);
+            MotionSetCore(pl, &pl->mot, PL_ARC(0xC6), 0, 0, 1, 0);
+        } else {
+            em2bPlOnEmSet(pl, -93.6600037f, 0.0f, -4031.65991f);
+            MotionSetCore(pl, &pl->mot, PL_ARC(0xB9), 0, 0, 1, 0);
+        }
+        pl->pWep->setTrans(0, 0);
+        em2bCatchObj.p = ObjMgr.create(0xB);
+        if (em2bCatchObj.p) {
+            em2bCatchObj.p->modelInit(PL_ARC(0x18), PL_ARC(0x17));
+            em2bCatchObj.p->atari.flags &= 0xFCFF;
+            em2bCatchObj.p->pParts->pParent = pPLS->getPartsPtr(0xA);
+            em2bCatchObj.p->lightInfo.init2(1, 1, &((Vec) { 0.0f, 0.0f, 0.0f }), &((Vec) { 500.0f, 0.0f, 0.0f }), 1);
+            em2bCatchObj.p->wep.parent = pPLS;
+            em2bCatchObj.p->setNoSuspend(1);
+        }
+        pl->atari.flags &= 0xFCFF; // throughOn(): the inline's `this` pseudo gives `addi r9,pl,692` and keeps the xFE load below the store
+        pl->xFE++;
+    case 1:
+        MotionMoveF(pl, 0);
+        pl->xFE = PL_EM(pl)->xFE;
+        if (pl->frame > 14.6999998f && pl->frame < 15.3000002f) {
+            SndCall(5, 2, &pl->pos, 0, 0, pl);
+        }
+        if (pl->frame > 23.7000008f && pl->frame < 24.2999992f) {
+            SndCall(5, 3, &pl->pos, 0, 0, pl);
+        }
+        if ((pl->frame > 31.7000008f && pl->frame < 32.2999992f) || (pl->frame > 41.7000008f && pl->frame < 42.2999992f)
+            || (pl->frame > 55.7000008f && pl->frame < 56.2999992f) || (pl->frame > 73.6999969f && pl->frame < 74.3000031f)) {
+            SndCall(8, 0x2C, &pl->pos, PL_EM(pl)->id, 0, pl);
+        }
+        break;
+    case 2:
+        em2bPlOnEmSet(pl, -214.699997f, 0.0f, 807.640015f);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xC7), 0, 0, 1, 0);
+        pl->x3E0 = 0;
+        pl->xFE++;
+    case 3:
+        em2bParasiteAtkCamMove(PL_EM(pl));
+        if (em2bParasiteBtnCk(w)) {
+            pl->x3E0++;
+        }
+        if (MotionMoveF(pl, 0)) {
+            pl->xFE++;
+        }
+        break;
+    case 4:
+        pl->x3E0 *= 100;
+        pl->x3E4 = 0;
+        pl->x3E8 = 0;
+        pl->x3F8 = 0;
+        pl->x3FC = 0;
+        SndCall(1, 0x10, &pl->pos, 0, 0, pl);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xC8), (int) PL_ARC(0xC9), 3, 5, 0);
+        pl->xFE++;
+    case 5: {
+        int lvl;
+
+        em2bParasiteAtkCamMove(PL_EM(pl));
+        if (em2bParasiteBtnCk(w)) {
+            lvl = 8;
+            if (pG->x4F88 <= 1) {
+                lvl = 12;
+            }
+            if (pG->x4F88 <= 3) {
+                lvl = 10;
+            }
+            if (pG->x4F88 > 6) {
+                lvl = 6;
+            }
+            if (pG->x4F88 > 9) {
+                lvl = 4;
+            }
+            pl->x3E0 += lvl;
+        }
+        lvl = ((int) pl->x3E0 + 90) / 100;
+        if (lvl > 7) {
+            lvl = 7;
+        }
+        if (lvl < 0) {
+            lvl = 0;
+        }
+        if (lvl != pl->x3E4) {
+            void* mot;
+            u32 len;
+            u32 n;
+
+            pl->x3E4 = lvl;
+            switch (lvl) {
+            case 0:
+            default:
+                mot = PL_ARC(0xC9);
+                break;
+            case 1:
+                mot = PL_ARC(0xCA);
+                break;
+            case 2:
+                mot = PL_ARC(0xCB);
+                break;
+            case 3:
+                mot = PL_ARC(0xCC);
+                break;
+            case 4:
+                mot = PL_ARC(0xCD);
+                break;
+            case 5:
+                mot = PL_ARC(0xCE);
+                break;
+            case 6:
+                mot = PL_ARC(0xCF);
+                break;
+            case 7:
+                mot = PL_ARC(0xD0);
+                break;
+            }
+            f32 ratio = pl->frame / (f32) pl->frameMax; // the u16 psq_l division before the u32 double trick (r225 rule)
+            len = ((MotionData*) mot)->maxFrame;
+            n = (u32) ((f32) len * ratio) + 1;
+            if (n >= len) {
+                n = 0;
+            }
+            MotionSetCore(pl, &pl->mot, PL_ARC(0xC8), (int) mot, pl->x29D, 5, (u16) n);
+        }
+        MotionMoveF(pl, 0);
+        if ((pl->mot.frame >= 10.0f && pl->mot.frame <= 15.0f) || (pl->mot.frame >= 44.0f && pl->mot.frame <= 49.0f)) {
+            if (pl->x3F8 == 0) {
+                SndCall(8, 0x30, &pl->pos, PL_EM(pl)->id, 0, pl);
+            }
+            pl->x3F8 = 1;
+        } else {
+            pl->x3F8 = 0;
+        }
+        if ((pl->mot.frame >= 50.0f && pl->mot.frame <= 55.0f) || (pl->mot.frame >= 13.0f && pl->mot.frame <= 18.0f)) {
+            if (pl->x3FC == 0) {
+                SndCall(8, 0x2F, &pl->pos, PL_EM(pl)->id, 0, pl);
+                SndCall(8, 0x2D, &pl->pos, PL_EM(pl)->id, 0, pl);
+                if (w->pParasite) {
+                    MotSetObj16(w->pParasite, PL_ARC(0xD8), 0, 3);
+                    EstSet((int) w->pParasite, -1, 0, 0, w->espKind2, 0x1F, 0, 0, (u32) w->pParasite, 0);
+                }
+                EstSet((int) pl, -1, 0, 0, w->espKind2, 0x20, 0, 0, (u32) pl, 0);
+                PL_EM(pl)->hp -= 70;
+            }
+            pl->x3FC = 1;
+        } else {
+            pl->x3FC = 0;
+        }
+        pl->xFE = PL_EM(pl)->xFE;
+        break;
+    }
+    case 6:
+        em2bPlOnEmSet(pl, -107.860001f, 0.0f, 898.02002f);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xC4), 0, 0, 1, 0);
+        pl->xFE++;
+    case 7:
+        if (MotionMoveF(pl, 0)) {
+            if (em2bCatchObj.p) {
+                ObjMgr.destroy(em2bCatchObj.p);
+                em2bCatchObj.p = 0;
+            }
+            pl->pWep->setTrans(1, 0);
+            EndPlDamage();
+        } else {
+            if (pl->frame > 31.7000008f && pl->frame < 32.2999992f) {
+                SndCall(1, 0x4E, &pl->pos, 0, 0, pl);
+            }
+            if (pl->frame > 37.7000008f && pl->frame < 38.2999992f) {
+                SndCall(5, 0x14, &pl->pos, 0, 0, pl);
+            }
+            if ((pl->frame > 52.7000008f && pl->frame < 53.2999992f) || (pl->frame > 65.6999969f && pl->frame < 66.3000031f)) {
+                SndCall(5, 0, &pl->pos, 0, 0, pl);
+                SndCall(5, 1, &pl->pos, 0, 0, pl);
+            }
+        }
+        break;
+    case 8:
+        em2bPlOnEmSet(pl, -60.8300018f, 0.0f, 1075.98999f);
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xC5), 0, 0, 1, 0);
+        pl->xFE++;
+    case 9:
+        if (pl->frame > 86.6999969f && pl->frame < 87.3000031f) {
+            LifeDownSet(pPLS, 800, 0);
+            if ((s16) pG->pl_life <= 0) {
+                PlSetDamageSe(0xD);
+            } else {
+                PlSetDamageSe(0xA);
+            }
+            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+        }
+        if (MotionMoveF(pl, 0) && (s16) pG->pl_life > 0) {
+            if (em2bCatchObj.p) {
+                ObjMgr.destroy(em2bCatchObj.p);
+                em2bCatchObj.p = 0;
+            }
+            pl->pWep->setTrans(1, 0);
+            pl->atari.throughOff();
+            EmRoutineSet(pPLS, 1, 0, 0xA, 0);
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+// Camera of the parasite attack: a fixed offset in the player's frame, lifted to the head parts.
+void em2bParasiteAtkCamMove(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cModel* p;
+    Vec pos;
+    Vec at;
+
+    w->cam.param.fovy = 50.0f;
+    p = pPLS->getPartsPtr(0);
+    at.x = 0.0f;
+    at.y = 0.0f;
+    at.z = 1000.0f;
+    pos.x = -3000.0f;
+    pos.y = 0.0f;
+    pos.z = 1000.0f;
+    PSMTXMultVec(pPL->mat, &pos, &pos);
+    PSMTXMultVec(pPL->mat, &at, &at);
+    pos.y += p->worldPos.y - pPL->pos.y;
+    at.y += p->worldPos.y - pPL->pos.y;
+    w->cam.param.pos = pos;
+    w->cam.param.at = at;
+    w->cam.up.x = 0.0f;
+    w->cam.up.y = 1.0f;
+    w->cam.up.z = 0.0f;
+    w->cam.dist = SQRTF((w->cam.param.pos.x - w->cam.param.at.x) * (w->cam.param.pos.x - w->cam.param.at.x) +
+                        (w->cam.param.pos.y - w->cam.param.at.y) * (w->cam.param.pos.y - w->cam.param.at.y) +
+                        (w->cam.param.pos.z - w->cam.param.at.z) * (w->cam.param.pos.z - w->cam.param.at.z));
+    CameraSetOrientationUp(&w->cam);
+    CamCtrl.x250 = (s32) &w->cam;
+}
+
+// Hit by the thrown-back rock.
+static void em2b_R1_Dm_Rock(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0: {
+        int flip = em2bFlip(w, 5, 0x45);
+
+        MotionSetCore(em, &em->mot, ARC(0x5A), (int) ARC(0xA7), 30, flip, 0);
+        em2bParasiteDelete(w);
+        em2bSetTentacle(em, 0);
+        em->xFE++;
+    }
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Drops the held tree to the ground next to the foot (flash / bomb damage).
+static inline void em2bTreeDrop(cEm2b* em, Em2bWork* w)
+{
+    cEmTree* tree = w->pTree;
+
+    if (tree) {
+        Vec v;
+
+        tree->clearParent();
+        v.x = 2494.25f;
+        v.y = 0.0f;
+        v.z = 1835.70996f;
+        PSMTXMultVec(em->mat, &v, &tree->pos);
+        tree->rot.y = em->rot.y;
+        MotionSetCore(tree, &tree->mot, ARC(0xB0), 0, 0, 1, 0);
+        w->pTreeLost = tree;
+        w->timer628 = 15;
+        w->pTree = 0;
+    }
+}
+
+// Flash grenade damage.
+static void em2b_R1_Dm_Flash(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int rtn = em->xFE;
+
+    w->flags |= 0x400;
+    w->flags &= ~8;
+    switch (rtn) {
+    case 0:
+        em2bTreeDrop(em, w);
+        {
+            int flip = em2bFlip(w, 5, 0x45);
+
+            MotionSetCore(em, &em->mot, ARC(0x60), (int) ARC(0xAC), 15, flip, 0);
+        }
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+// Explosion damage.
+static void em2b_R1_Dm_Bomb(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int rtn = em->xFE;
+
+    w->flags |= 0x400;
+    w->flags &= ~8;
+    switch (rtn) {
+    case 0:
+        em2bTreeDrop(em, w);
+        {
+            int flip = em2bFlip(w, 5, 0x45);
+
+            MotionSetCore(em, &em->mot, ARC(0x61), (int) ARC(0xAD), 15, flip, 0);
+        }
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em2bNextRtnSet(em);
+        }
+        break;
+    }
+}
+
+static void em2b_R0_Die(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    w->flags |= 8;
+    Em2b_R1_die_tbl[em->xFD](em);
+}
+
+// Normal death: falls forward; while falling the feet crush and the player can dash out from under.
+static void em2b_R1_Die_Normal(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0x4F), (int) ARC(0x9D), 3, 1, 0);
+        em2bParasiteDelete(w);
+        em2bSetTentacle(em, 0);
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0x11, 0, 0, (u32) em, 0);
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em->clearStatus(5);
+            em->setStatus(8);
+            EmSetDropItem(em);
+            w->scaleRate = 1.0f;
+            EmRoutineSet(em, 3, 1, 0, 0);
+        } else {
+            if (em->seFlags28B & 1) {
+                em2bPressPlCk(em);
+                em2bPressSubCk(em);
+            }
+            if (em->seFlags28B & 4) {
+                Mtx inv;
+                Vec v;
+
+                PSMTXInverse(em->mat, inv);
+                PSMTXMultVec(inv, &pPL->pos, &v);
+                if (v.x > -3000.0f && v.x < 3000.0f && v.y > -2000.0f && v.y < 2000.0f && v.z > 0.0f && v.z < 12000.0f) {
+                    ActBtn.set(0x25, 0xB, (int) em2bDashEscapeAction, (int) em, 1, 3, 0, 0);
+                }
+            }
+        }
+        break;
+    }
+}
+
+// Lost: sinks into the ground shrinking, then fades out with the rope / chain objects.
+static void em2b_R1_Die_Lost(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        em->atari.throughOn();
+        w->timer = 30;
+        w->timer8 = 150;
+        SndCall(8, 0x34, &em->pos, em->id, 0, em);
+        w->scaleRate = 1.0f;
+        em->xFE++;
+    case 1:
+        if (w->timer) {
+            w->timer--;
+        } else {
+            w->scaleRate -= 0.00300000003f;
+            if (w->scaleRate < 0.100000001f) {
+                w->scaleRate = 0.100000001f;
+            }
+            em->pos.y -= 6.0f;
+        }
+        TransMatrix(em->mat, &em->pos);
+        if (w->timer8) {
+            w->timer8--;
+            break;
+        }
+        em->alpha -= 0.100000001f;
+        if (w->pObj4C4) {
+            w->pObj4C4->alpha = em->alpha;
+        }
+        if (w->pObj4C8) {
+            w->pObj4C8->alpha = em->alpha;
+        }
+        if (w->pObj4C8) {
+            w->pObj4CC->alpha = em->alpha;
+        }
+        if (em->alpha <= 0.0f) {
+            em->alpha = 0.0f;
+            em->be_flag &= ~2;
+            em->be_flag |= 0x4000;
+            if (w->pObj4C4) {
+                w->pObj4C4->be_flag &= ~2;
+            }
+            if (w->pObj4C8) {
+                w->pObj4C8->be_flag &= ~2;
+            }
+            if (w->pObj4CC) {
+                w->pObj4CC->be_flag &= ~2;
+            }
+            em->xFE++;
+        }
+        break;
+    }
+}
+
+// Event death (room 119): lies down at a fixed spot facing the player, the trees are lost.
+static void em2b_R1_Die_Event(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int rtn = em->xFE;
+
+    switch (rtn) {
+    case 0: {
+        Vec v;
+
+        em->pos.x = 114638.0f;
+        em->pos.y = 2100.0f;
+        em->pos.z = 5681.25f;
+        em->rot.y = GetXZAngle(&em->pos, &pPLS->pos);
+        MotionSetCore(em, &em->mot, ARC(0x3C), 0, 0, 1, 0);
+        em->clearStatus(5);
+        em->setStatus(8);
+        em->atari.setFlag200();
+        v.x = 0.0f;
+        v.y = 0.0f;
+        v.z = 0.0f;
+        SetObaModel((cObj*) em, 3, &v, 1000.0f, 0, 1000.0f);
+        SetObaModel((cObj*) em, 7, &v, 1000.0f, 0, 1000.0f);
+        SetObaModelF((cObj*) em, 0xD, &v, 1000.0f, 1000.0f, 0);
+        if (w->pTree) {
+            w->pTree->setLost();
+            w->pTree->be_flag &= ~2;
+            w->pTree = 0;
+        }
+        if (w->pTreeLost) {
+            w->pTreeLost->setLost();
+            w->pTreeLost->be_flag &= ~2;
+            w->pTreeLost = 0;
+        }
+        em->xFE++;
+    }
+    case 1:
+        MotionMoveF(em, 0);
+        break;
+    }
+}
+
+// Room 224: dropped from the cage into the lava.
+static void em2b_R1_Die_R224Drop(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cModel* p = em->getPartsPtr(0);
+
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, &em->mot, ARC(0xE3), (int) ARC(0xE4), 3, 1, 0);
+        em2bParasiteDelete(w);
+        em2bSetTentacle(em, 0);
+        EstSet((int) em, -1, 0, 0, 1, 0x1C, 1, 0, (u32) em, 0);
+        em->xFE++;
+    case 1:
+        if (em->seFlags28B & 2) {
+            SndCall(6, 0xD, &p->worldPos, 0, 0, em);
+        }
+        if (em->seFlags28B & 1) {
+            SndCall(6, 0xE, &p->worldPos, 0, 0, em);
+        }
+        if (MotionMoveF(em, 0)) {
+            em->clearStatus(5);
+            em->setStatus(8);
+            EmRoutineSet(em, 1, 0x16, 0, 0);
+        }
+        break;
+    }
+}
+
+// Route / target update: the player route (with a far look-ahead point when the player is far and
+// behind), then the current target (dog target, goto point, friend, partner) and its angle / distance.
+void em2bRouteCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    Vec v;
+    Vec a;
+    Vec plPos;
+    Vec d;
+    f32 dist;
+
+    if (em->hp <= 0) {
+        return;
+    }
+    if (pG->stage_no == 1 && pG->room_no == 0x19) {
+        w->routePos = pPL->pos;
+    } else {
+        if ((int) em->flags_3C8 < 0 && !((dist = SQRTF(em->plDist2)) < 8000.0f)) {
+            if (dist > 25000.0f) {
+                dist = 25000.0f;
+            }
+            dist *= 3.99999990e-05f;
+            v.x = dist * -15000.0f;
+            v.y = 500.0f;
+            v.z = 0.0f;
+            PSMTXMultVec(pPL->mat, &v, &v);
+            plPos = pPL->pos;
+            plPos.y += 500.0f;
+            if (SatMgr.hitCheck(&plPos, &v, &a, 0, 0, 0)) {
+                PSVECSubtract(&plPos, &a, &d);
+#line 6032 "D:/Bio4/Prog/em2b.cpp"
+                VECNormalize(&d, &d);
+                PSVECScale(&d, &d, 350.0f);
+                PSVECAdd(&a, &d, &v);
+            }
+            plPos = v;
+        } else {
+            plPos = pPL->pos;
+        }
+        if (pPL->pos.y > em->pos.y + 2000.0f && em->plDist2 < 36000000.0f) {
+            w->routePos = plPos;
+            w->flags |= 1;
+        } else if (RouteCkToPos(em, &plPos, &w->routePos, 0, 0)) {
+            w->flags |= 1;
+        }
+    }
+    w->routeAng = Muku(&em->pos, &w->routePos, em->rot.y, 3.14159274f);
+    w->routeAngAbs = fabsf(w->routeAng);
+    if (em->xFC == 0) {
+        w->routeAng = 0.0f;
+        w->routeAngAbs = 0.0f;
+        em->plDist2 = 100000000.0f;
+    }
+    w->targetPos = w->routePos;
+    w->targetAng = w->routeAng;
+    w->targetAngAbs = w->routeAngAbs;
+    w->targetDist = em->plDist2;
+    w->pTarget = pPLS;
+    if (w->pTarget508) {
+        RouteCkToPos(em, &w->pTarget508->pos, &w->targetPos, 0, 0);
+        w->targetAng = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f);
+        w->targetAngAbs = fabsf(w->targetAng);
+        w->targetDist = (em->pos.x - w->pTarget508->pos.x) * (em->pos.x - w->pTarget508->pos.x) +
+                        (em->pos.z - w->pTarget508->pos.z) * (em->pos.z - w->pTarget508->pos.z);
+        w->pTarget = w->pTarget508;
+    } else if (w->pGoto) {
+        w->targetPos = w->pGoto->pos;
+        w->targetAng = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f);
+        w->targetAngAbs = fabsf(w->targetAng);
+        w->targetDist = (em->pos.x - w->pGoto->pos.x) * (em->pos.x - w->pGoto->pos.x) +
+                        (em->pos.z - w->pGoto->pos.z) * (em->pos.z - w->pGoto->pos.z);
+        w->pTarget = w->pTarget508;
+    } else if ((w->flags & 0x80) && w->pFriend) {
+        w->targetPos = w->pFriend->pos;
+        w->targetAng = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f);
+        w->targetAngAbs = fabsf(w->targetAng);
+        w->targetDist = (em->pos.x - w->pFriend->pos.x) * (em->pos.x - w->pFriend->pos.x) +
+                        (em->pos.z - w->pFriend->pos.z) * (em->pos.z - w->pFriend->pos.z);
+        w->pTarget = w->pFriend;
+    } else if (pSUB && w->timer62C == 0) {
+        f32 dist = sqrtf((em->pos.x - pSUB->pos.x) * (em->pos.x - pSUB->pos.x) +
+                         (em->pos.z - pSUB->pos.z) * (em->pos.z - pSUB->pos.z)) + 3000.0f;
+
+        if (dist * dist < em->plDist2) {
+            RouteCkToPos(em, &pSUB->pos, &w->targetPos, 0, 0);
+            w->targetAng = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f);
+            w->targetAngAbs = fabsf(w->targetAng);
+            w->targetDist = (em->pos.x - pSUB->pos.x) * (em->pos.x - pSUB->pos.x) +
+                            (em->pos.z - pSUB->pos.z) * (em->pos.z - pSUB->pos.z);
+            w->pTarget = *(cPlayer* volatile*) &pSUB; // reloaded: the tail must not cross-jump with the pFriend arm's
+        }
+    }
+}
+
+// Turns the head towards the current target's head (damped) while a routine runs.
+void em2bNeckMove(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cModel* t;
+    cParts* p;
+    Vec v;
+
+    if ((w->flags & 0x80) && w->pFriend) {
+        t = w->pFriend->getPartsPtr(0);
+    } else if ((w->flags & 4) && pSUB) {
+        t = pSUB->getPartsPtr(4);
+    } else {
+        t = pPL->getPartsPtr(4);
+    }
+    p = (cParts*) em->getPartsPtr(4);
+    v.x = 0.0f;
+    v.y = 250.0f;
+    v.z = 0.0f;
+    PSMTXMultVec(t->mat, &v, &v);
+    if (w->flags & 0x10) {
+        w->neckAng = w->neckAng * 0.899999976f + Muku(&em->pos, &t->worldPos, em->rot.y, 1.04719758f) * 0.100000001f;
+    } else {
+        w->neckAng = w->neckAng * 0.899999976f;
+    }
+    p = (cParts*) em->getPartsPtr(3);
+    p->motParts.flags |= 0x40000000;
+    p->addRot.x = 0.0f;
+    p->addRot.y = w->neckAng;
+    p->addRot.z = 0.0f;
+}
+
+void em2bBlendMotSet(cEm2b* em, void* m0, void* m1, void* m2, int a, int b, int c, u16 d)
+{
+    Em2bWork* w = EM2B_WK(em);
+    MotionWork* bm;
+    int ai, dd;
+    asm("" : "=r"(ai) : "0"((int) a)); // COMPILER-DIFF: #2 (u16 argument masked at the calls)
+    asm("" : "=r"(dd) : "0"((int) d)); // COMPILER-DIFF: #2
+    f32 val = fabsf(w->blendVal);
+    void* m;
+    int arg;
+
+    MotionSetCore(em, &em->mot, m0, ai, (u8) w->blendCnt, (u16) dd, (u16) w->blendSeq);
+    if (w->blendVal < 0.0f) {
+        m = m1;
+        arg = b;
+    } else {
+        m = m2;
+        arg = c;
+    }
+    bm = EM2B_BLEND_MOT(w);
+    MotionSetCore(em, bm, m, arg, (u8) w->blendCnt, (u16) dd, (u16) w->blendSeq);
+    em->motBlend = bm;
+    bm->blendRate = val * 0.00390625f;
+    if (w->blendCnt) {
+        w->blendCnt--;
+    }
+    w->blendSeq++;
+    if ((u32) w->blendSeq >= em->frameMax) {
+        w->blendSeq = 0;
+    }
+}
+
+// Chain cloth of the type 1 giant (the chain on the arm).
+void em2bClothSet(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    if (em->type == 1) {
+        int zero;
+        int num;
+        const u8* parts;
+        const u8* side;
+        const u8* up;
+        const u8* down;
+        const f32* max;
+        PlClothAt* at;
+        const f32* rate;
+        int two;
+        f32 g20;
+        f32 g08;
+        int four;
+        f32 g005;
+        f32 zf;
+        int flags;
+        // Store order = the original's LUID order: its constants are reload-materialised and no store
+        // carries a death (COMPILER-DIFF: #13); ours must keep every constant alive past the
+        // block (the two "=m" keep-alives name fields the block does not store), else the dying stores
+        // are issued first. The 0.0 is expanded after 0.8 for the pool order.
+        zero = 0;
+        w->cloth.x54 = (cModel**) zero;
+        num = 10;
+        w->cloth.num = num;
+        parts = em2b_cloth_parts;
+        w->cloth.pParts = parts;
+        side = em2b_cloth_side;
+        w->cloth.x08 = side;
+        up = em2b_cloth_up;
+        w->cloth.pUp = up;
+        down = em2b_cloth_down;
+        w->cloth.pDown = down;
+        max = em2b_cloth_max;
+        w->cloth.pMax = max;
+        at = em2b_cloth_at;
+        w->cloth.x34 = at;
+        rate = em2b_cloth_rate;
+        w->cloth.x24 = rate;
+        two = 2;
+        w->cloth.x38 = two;
+        g20 = 20.0f;
+        w->cloth.x3C = g20;
+        g08 = 0.800000012f;
+        w->cloth.x40 = g08;
+        zf = 0.0f;
+        four = 4;
+        w->cloth.x44 = four;
+        g005 = 0.0500000007f;
+        w->cloth.x4C = g005;
+        w->cloth.x50 = zf;
+        flags = 0x100;
+        w->cloth.flags = flags;
+        w->cloth.x0C = (const u8*) zero;
+        w->cloth.x10 = (const u8*) zero;
+        w->cloth.x14 = (const u8*) zero;
+        w->cloth.x2C = (const f32*) zero;
+        w->cloth.x30 = (const f32*) zero;
+        w->cloth.x20 = (const f32*) zero;
+        w->cloth.x58 = em;
+        w->cloth.x48 = zf;
+        asm("" : "=m"(w->x63C) : "r"(zero), "r"(num), "r"(parts), "r"(side), "r"(up), "r"(down), "r"(max), "r"(at)); // COMPILER-DIFF: #13
+        asm("" : "=m"(w->x640) : "r"(rate), "r"(two), "f"(g20), "f"(g08), "r"(four), "f"(g005), "f"(zf), "r"(flags)); // COMPILER-DIFF: #13
+        PenClothSet(em, &w->cloth, 100.0f);
+    }
+}
+
+void em2bClothMove(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    if (em->type == 1) {
+        PenClothMove3(em, &w->cloth);
+    }
+}
+
+// Attack hit check of attack `no` between the two positions: the player gets the matching damage
+// callback, a hit shakes the camera and the pad.
+int em2bAtkCk(cEm2b* em, Vec* a, Vec* b, int no)
+{
+    Em2bWork* w = EM2B_WK(em);
+    EmAtkInfo* atk;
+    int hit;
+
+    em->flags_3C8 |= 4;
+    if (w->atkHit == 0) {
+        atk = &em2b_atk_info[no];
+        if ((s16) pG->pl_life > 1) {
+            atk->x0A |= 4;
+        } else {
+            atk->x0A &= ~4;
+        }
+        hit = EmAtkHitCk(atk, a, b, 0);
+        if (hit) {
+            if (hit & 1) {
+                w->atkHit = 1;
+                switch ((u32) no) {
+                case 0:
+                case 1:
+                    FSet(pPL->pos.x, a->x);
+                    FSet(pPL->pos.z, a->z);
+                    SetPlDamage((int) em, plem2b_dm_Stamp);
+                    break;
+                case 2:
+                case 3:
+                    FSet(pPL->rot.y, GetXZAngle(a, b));
+                    SetPlDamage((int) em, plem2bDmBlow);
+                    break;
+                case 5:
+                    FSet(pPL->rot.y, GetXZAngle(&pPL->pos, b));
+                    SetPlDamage((int) em, plem2bDmBlow);
+                    break;
+                case 4:
+                    pPLS->rot.y = em->rot.y + 3.14159274f;
+                    FSet(pPL->rot.y, LIMIT_ANGLE(pPLS->rot.y));
+                    SetPlDamage((int) em, plem2b_dm_BlowKick);
+                    break;
+                }
+                QuakeExec(0, 0, 5, 22.0f, 2);
+                SndCall(8, 0x32, &em->pos, em->id, 0, em);
+                VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+                return 1;
+            }
+            if (hit & 2) {
+                w->atkHit = 1;
+                QuakeExec(0, 0, 5, 22.0f, 2);
+                SndCall(8, 0x32, &em->pos, em->id, 0, em);
+                VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+// Stamped flat.
+static void plem2b_dm_Stamp(cPlayer* pl)
+{
+    pl->subArc = PL_EM(pl)->subArc;
+    switch (pl->xFE) {
+    case 0:
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xB8), 0, 3, 1, 0);
+        PlSetFace(1);
+        pl->atari.flags &= ~0x200;
+        PlSetDamageSe(0);
+        pl->xFE++;
+    case 1:
+        em2bStampCamMove(PL_EM(pl));
+        if (MotionMoveF(pl, 0) || (pl->frame > 49.7000008f && pl->frame < 50.2999992f)) {
+            if ((s16) pG->pl_life > 0) {
+                pl->atari.throughOff();
+                EmRoutineSet(pPLS, 1, 0, 0xA, 0);
+            }
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+static void subem2b_dm_Stamp(cSubChar* sub)
+{
+    cSubChar* s = pSUB;
+
+    s->subArc = PL_EM(s)->subArc;
+    pGS->flags_5014 |= 0x20000000;
+    switch (s->xFE) {
+    case 0:
+        MotionSetCore(s, &s->mot, PL_ARC_PTR(s->subArc, 0xD5), 0, 0, 1, 0);
+        s->xFE++;
+    case 1:
+        MotionMoveF(s, 0);
+        break;
+    }
+    s->subArc = s->subArc2;
+}
+
+// Kicked away (the kick attack).
+static void plem2b_dm_BlowKick(cPlayer* pl)
+{
+    int rtn = pl->xFE;
+
+    pl->subArc = PL_EM(pl)->subArc;
+    switch (rtn) {
+    case 0:
+        MotionSetCore(pl, &pl->mot, PL_ARC_PTR(pG->pPlArc, 0x51), 0, 3, 1, 0);
+        PlSetFace(1);
+        PlSetDamageSe(0);
+        pl->dmType = 0xA;
+        EstSet((int) pl, -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 6 : 5, 0, 0, (u32) pl, 0);
+        pl->xFE++;
+    case 1:
+        if (pl->frame > 16.7000008f && pl->frame < 17.2999992f) {
+            SndCall(5, 5, &pPL->pos, pPL->id, 0, pPL);
+        }
+        if (MotionMoveF(pl, 0) && (s16) pG->pl_life > 0) {
+            pl->atari.throughOff();
+            EmRoutineSet(pPLS, 1, 0, 0xA, 0);
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+// Action button under the falling giant: dash out.
+static void em2bDashEscapeAction(cEm2b* em)
+{
+    SetPlDamage((int) em, plem2bDashEscape);
+    GameAddPoint(9);
+}
+
+// Dash out from under the falling giant.
+static void plem2bDashEscape(cPlayer* pl)
+{
+    pl->subArc = PL_EM(pl)->subArc;
+    pl->dmType = 2;
+    if (pSUB) {
+        pSUB->dmType = 2;
+    }
+    switch (pl->xFE) {
+    case 0:
+        if (Muku(&pl->pos, &PL_EM(pl)->pos, pl->rot.y, 3.14159274f) < 0.0f) {
+            MotionSetCore(pl, &pl->mot, PL_ARC(0xC1), (int) PL_ARC(0xC2), 3, 1, 0);
+        } else {
+            MotionSetCore(pl, &pl->mot, PL_ARC(0xC1), (int) PL_ARC(0xC2), 3, 0x41, 0);
+        }
+        AtariFlagsAndV(&pl->atari, 0xFDFF);
+        if (pSUB) {
+            AtariFlagsAndV(&pSUB->atari, 0xFDFF);
+        }
+        GameAddPoint(0xB);
+        if (pSUB) {
+            pSUB->be_flag &= ~2;
+        }
+        SndCall(1, 0x48, &pl->pos, 0, 0, pl);
+        SndCall(1, 0x11, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
+        pl->x3E0 = 50;
+        pl->x3E4 = 15;
+        pl->xFE++;
+    case 1:
+        em2bEscapeCamMove(PL_EM(pl));
+        if (pl->x3E4) {
+            pl->rot.y += Muku(&pl->pos, &PL_EM(pl)->pos, pl->rot.y, 0.196349546f);
+            pl->rot.y = LIMIT_ANGLE(pl->rot.y);
+        }
+        MotionMoveF(pl, 0);
+        if (pl->frame > 11.6999998f && pl->frame < 12.3000002f) {
+            EstSet(0, -1, &pl->pos, 0, 3, 0x13, 0, 0, 0, 0);
+            SndCall(5, 5, &pl->pos, 0, 0, pl);
+        }
+        if (pl->x3E0) {
+            pl->x3E0--;
+        } else {
+            AtariFlagsOrV(&pl->atari, 0x200);
+            if (pSUB) {
+                AtariFlagsOrV(&pSUB->atari, 0x200);
+            }
+            EndPlDamage();
+            if (pSUB) {
+                pSUB->be_flag |= 2;
+            }
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+// Event camera of the escape scenes: behind the player, pulled in to the scenario hit.
+void em2bEscapeCamMove(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    GlobalWork* g = pG;
+    Vec a;
+    Vec b;
+    Vec c;
+
+    w->cam.param.fovy = g->Cam.param.fovy;
+    a.x = -376.0f;
+    a.y = 575.0f;
+    a.z = -1831.0f;
+    b.x = -244.0f;
+    b.y = 809.0f;
+    b.z = 52.5999985f;
+    PSMTXMultVec(pPLS->mat, &a, &a);
+    PSMTXMultVec(pPL->mat, &b, &b);
+    PosToPos(&g->Cam.param.at, &b, &w->cam.param.at, 1.0f);
+    PosToPos(&g->Cam.param.pos, &a, &w->cam.param.pos, 1.0f);
+    if (EatMgr.hitCheck(&w->cam.param.at, &w->cam.param.pos, &c, 0, 0x8000, 0)) {
+        Vec d;
+        f32 len;
+
+        PSVECSubtract(&c, &w->cam.param.at, &d);
+        len = SQRTF(d.x * d.x + d.y * d.y + d.z * d.z) - 250.0f;
+#line 6834 "D:/Bio4/Prog/em2b.cpp"
+        VECNormalize(&d, &d);
+        PSVECScale(&d, &d, len);
+        PSVECAdd(&w->cam.param.at, &d, &w->cam.param.pos);
+    }
+    w->cam.up.x = 0.0f;
+    w->cam.up.y = 1.0f;
+    w->cam.up.z = 0.0f;
+    w->cam.dist = SQRTF((w->cam.param.pos.x - w->cam.param.at.x) * (w->cam.param.pos.x - w->cam.param.at.x) +
+                        (w->cam.param.pos.y - w->cam.param.at.y) * (w->cam.param.pos.y - w->cam.param.at.y) +
+                        (w->cam.param.pos.z - w->cam.param.at.z) * (w->cam.param.pos.z - w->cam.param.at.z));
+    CameraSetOrientationUp(&w->cam);
+    CamCtrl.x250 = (s32) &w->cam;
+}
+
+// Foot landing of the walk: quake, step SE, dust; the chain giant rattles.
+void em2bFootSe(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    u32 no;
+    cModel* p = 0;
+    Vec* pos;
+
+    if (em->seNo == 0) {
+        return;
+    }
+    no = em->seNo - 1;
+    if (no > 1) {
+        return;
+    }
+    em->seNo = 0;
+    if (em->motFlags & 0x40) {
+        switch (no) {
+        case 0:
+            no = 1;
+            break;
+        case 1:
+            no = 0;
+            break;
+        }
+    }
+    switch (no) {
+    case 0:
+        p = em->getPartsPtr(0x15);
+        break;
+    case 1:
+        p = em->getPartsPtr(0x19);
+        break;
+    }
+    pos = &p->worldPos;
+    em2bQuakeSet(pos);
+    SndCall(8, no, pos, em->id, 0, em);
+    EstSet(0, -1, pos, 0, w->espKind2, 4, 0, 0, 0, 0);
+    if (w->flags & 0x100) {
+        EstSet((int) em, -1, 0, 0, w->espKind2, 0xF, 0, 0, (u32) em, 0);
+    }
+    if (em->type == 3 && w->pObj4C4) {
+        SndCall(6, 0x11, &em->getPartsPtr(0)->worldPos, em->id, 0, em);
+    }
+}
+
+// Motion key bit7: swap the model variant (the foot / hand side tables).
+void em2bFtChgCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    if (em->seFlags28B & 0x80) {
+        switch (w->variant) {
+        case 0:
+            w->variant = 1;
+            break;
+        case 1:
+            w->variant = 0;
+            break;
+        }
+    }
+}
+
+// Camera quake scaled by the distance of the position from the camera.
+void em2bQuakeSet(Vec* pos)
+{
+    Camera* cam = &pG->Cam;
+    f32 d = (pos->x - cam->param.pos.x) * (pos->x - cam->param.pos.x) + (pos->y - cam->param.pos.y) * (pos->y - cam->param.pos.y) +
+            (pos->z - cam->param.pos.z) * (pos->z - cam->param.pos.z);
+
+    if (d < 400000000.0f) {
+        f32 power = 10.0f;
+
+        if (d > 25000000.0f) {
+            power = 8.0f;
+        }
+        if (d > 100000000.0f) {
+            power = 6.0f;
+        }
+        if (d > 225000000.0f) {
+            power = 4.0f;
+        }
+        QuakeExec(0, 0, 5, power, 2);
+    }
+}
+
+// Type 0: the short rope hanging between the neck parts.
+void em2bShortRopeSet(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cObjChain* chain;
+    Vec pos;
+    Vec b;
+    Vec rot;
+    // COMPILER-DIFF: 13 -- the original issues the 25-store block in pure source order (no store carries a
+    // register death); ours needs every constant kept alive past its store.  The three keep-alives are
+    // placed where their sched2 slots are free: C reads x50 (ready after the first store, only r0/f31
+    // inputs so it ranks below `mr r3,r5`/`addi r4`), A writes a u16 view of x58 (output dependence:
+    // ready after the second store; a different mode keeps flow from deleting the real store), B a u32
+    // view of x48 (ready after the third).  Operand duplicates set the local-alloc ranks (refs):
+    // parts x3 > up/down/at x2 > k100 x2 > five > chain.
+    const u8* parts;
+    const u8* up;
+    const u8* down;
+    PlClothAt* at;
+    int five;
+    f32 g20;
+    f32 g08;
+    int k100;
+    f32 g01;
+    int zero;
+    f32 zf;
+
+    zf = 0.0f;
+    pos.x = zf;
+    pos.y = zf;
+    pos.z = zf;
+    rot.x = zf;
+    rot.y = zf;
+    rot.z = zf;
+    chain = SetChain(ARC(0x11), ARC(0x12), &pos, &rot);
+    w->rope[1].x50 = zf;
+    w->rope[1].x58 = em;
+    w->rope[1].x48 = zf;
+    parts = em2b_rope_parts;
+    w->rope[1].pParts = parts;
+    up = em2b_rope_up;
+    w->rope[1].pUp = up;
+    down = em2b_rope_down;
+    w->rope[1].pDown = down;
+    at = em2b_rope_at;
+    w->rope[1].x34 = at;
+    five = 5;
+    w->rope[1].x38 = five;
+    g20 = 20.0f;
+    w->rope[1].x3C = g20;
+    g08 = 0.800000012f;
+    w->rope[1].x40 = g08;
+    k100 = 100;
+    w->rope[1].x44 = k100;
+    g01 = 0.100000001f;
+    w->rope[1].x4C = g01;
+    w->pObj4C4 = (cObj*) chain;
+    w->rope[1].num = five;
+    zero = 0;
+    w->rope[1].x54 = (cModel**) zero;
+    w->rope[1].x08 = (const u8*) zero;
+    w->rope[1].x0C = (const u8*) zero;
+    w->rope[1].x10 = (const u8*) zero;
+    w->rope[1].x14 = (const u8*) zero;
+    w->rope[1].pMax = (const f32*) zero;
+    w->rope[1].x2C = (const f32*) zero;
+    w->rope[1].x30 = (const f32*) zero;
+    w->rope[1].x20 = (const f32*) zero;
+    w->rope[1].x24 = (const f32*) zero;
+    w->rope[1].flags = zero;
+    asm("" : "=m"(w->x63C) : "r"(zero), "f"(zf), "m"(w->rope[1].x50));                                              // COMPILER-DIFF: 13
+    asm("" : "=m"(*(u16*) &w->rope[1].x58) : "r"(chain), "r"(parts), "r"(parts), "r"(parts), "r"(up), "r"(up), "r"(down), "r"(down)); // COMPILER-DIFF: 13
+    asm("" : "=m"(*(u32*) &w->rope[1].x48) : "r"(at), "r"(at), "r"(k100), "r"(k100), "r"(five), "f"(g20), "f"(g08), "f"(g01)); // COMPILER-DIFF: 13
+    chain->setChain(&w->rope[1]);
+    pos.x = -290.0f;
+    pos.y = -162.949997f;
+    pos.z = 655.0f;
+    b.x = -290.0f;
+    b.y = -412.320007f;
+    b.z = 39.1500015f;
+    ((cObjChain*) w->pObj4C4)->setParent2(em, 3, &pos, 4, &b, 0);
+}
+
+// Type 3: the three chains on the arms.
+void em2bChainSet(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    PenCloth* c = &w->rope[1];
+    cObjChain* chain;
+    Vec pos;
+    Vec rot;
+
+    w->rope[0].num = 8;
+    w->rope[0].pParts = em2b_chain_parts;
+    w->rope[0].x08 = 0;
+    w->rope[0].x0C = 0;
+    w->rope[0].x10 = 0;
+    w->rope[0].x14 = 0;
+    w->rope[0].pUp = em2b_chain_up;
+    w->rope[0].pDown = em2b_chain_down;
+    w->rope[0].pMax = 0;
+    w->rope[0].x2C = 0;
+    w->rope[0].x30 = 0;
+    w->rope[0].x34 = em2b_chain_at;
+    w->rope[0].x20 = 0;
+    w->rope[0].x24 = 0;
+    w->rope[0].x38 = 5;
+    w->rope[0].x58 = em;
+    w->rope[0].x3C = 30.0f;
+    w->rope[0].x40 = 0.800000012f;
+    w->rope[0].x44 = 0;
+    w->rope[0].x48 = 0.0f;
+    w->rope[0].x50 = 0.0f;
+    w->rope[0].x4C = 1.0f;
+    w->rope[0].flags = 0;
+    w->rope[0].x54 = 0;
+    pos.x = 0.0f;
+    pos.y = 0.0f;
+    pos.z = 0.0f;
+    rot.x = 0.0f;
+    rot.y = 0.0f;
+    rot.z = 0.0f;
+    chain = SetChain(ARC(0x13), ARC(0x14), &pos, &rot);
+    w->pObj4C4 = (cObj*) chain;
+    chain->setChain(&w->rope[0]);
+    pos.x = 0.0f;
+    pos.y = 0.0f;
+    pos.z = 0.0f;
+    ((cObjChain*) w->pObj4C4)->setParent(em, 0x3B, &pos, 0);
+
+    w->rope[1].num = 8;
+    w->rope[1].pParts = em2b_chain_parts;
+    w->rope[1].x08 = 0;
+    w->rope[1].x0C = 0;
+    w->rope[1].x10 = 0;
+    w->rope[1].x14 = 0;
+    w->rope[1].pUp = em2b_chain_up;
+    w->rope[1].pDown = em2b_chain_down;
+    w->rope[1].pMax = 0;
+    w->rope[1].x2C = 0;
+    w->rope[1].x30 = 0;
+    w->rope[1].x34 = 0;
+    w->rope[1].x20 = 0;
+    w->rope[1].x24 = 0;
+    w->rope[1].x38 = 0;
+    w->rope[1].x58 = em;
+    w->rope[1].x3C = 30.0f;
+    w->rope[1].x40 = 0.800000012f;
+    w->rope[1].x44 = 0;
+    w->rope[1].x48 = 0.0f;
+    w->rope[1].x50 = 0.0f;
+    w->rope[1].x4C = 1.0f;
+    w->rope[1].flags = 0;
+    w->rope[1].x54 = 0;
+    pos.x = 0.0f;
+    pos.y = 0.0f;
+    pos.z = 0.0f;
+    rot.x = 0.0f;
+    rot.y = 0.0f;
+    rot.z = 0.0f;
+    chain = SetChain(ARC(0x13), ARC(0x14), &pos, &rot);
+    w->pObj4C8 = (cObj*) chain;
+    chain->setChain(c);
+    pos.x = 0.0f;
+    pos.y = 0.0f;
+    pos.z = 0.0f;
+    ((cObjChain*) w->pObj4C8)->setParent(em, 0x40, &pos, 0);
+
+    w->rope[1].num = 8;
+    w->rope[1].pParts = em2b_chain_parts;
+    w->rope[1].x08 = 0;
+    w->rope[1].x0C = 0;
+    w->rope[1].x10 = 0;
+    w->rope[1].x14 = 0;
+    w->rope[1].pUp = em2b_chain_up;
+    w->rope[1].pDown = em2b_chain_down;
+    w->rope[1].pMax = 0;
+    w->rope[1].x2C = 0;
+    w->rope[1].x30 = 0;
+    w->rope[1].x34 = em2b_chain_at2;
+    w->rope[1].x20 = 0;
+    w->rope[1].x24 = 0;
+    w->rope[1].x38 = 5;
+    w->rope[1].x58 = em;
+    w->rope[1].x3C = 30.0f;
+    w->rope[1].x40 = 0.800000012f;
+    w->rope[1].x44 = 0;
+    w->rope[1].x48 = 0.0f;
+    w->rope[1].x50 = 0.0f;
+    w->rope[1].x4C = 1.0f;
+    w->rope[1].flags = 0;
+    w->rope[1].x54 = 0;
+    pos.x = 0.0f;
+    pos.y = 0.0f;
+    pos.z = 0.0f;
+    rot.x = 0.0f;
+    rot.y = 0.0f;
+    rot.z = 0.0f;
+    chain = SetChain(ARC(0x13), ARC(0x14), &pos, &rot);
+    w->pObj4CC = (cObj*) chain;
+    chain->setChain(c);
+    pos.x = 0.0f;
+    pos.y = 0.0f;
+    pos.z = 0.0f;
+    ((cObjChain*) w->pObj4CC)->setParent(em, 0x41, &pos, 0);
+}
+
+// Room 119: is the player inside an intact house near enough to break?
+int em2bPlInHouseCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    Em2bEmiTbl* tbl;
+    int i;
+
+    if ((pG->room_id32 & 0xFFFF0000) != 0x01190000) {
+        return 0;
+    }
+    tbl = (Em2bEmiTbl*) pG->pRoomEmi;
+    if (tbl == 0) {
+        return 0;
+    }
+    if (w->flags & 0x80) {
+        return 0;
+    }
+    for (i = 0; i < tbl->num; i++) {
+        Em2bEmi* h = &tbl->e[i];
+
+        if (h->kind != 3) {
+            continue;
+        }
+        if (h->state == 3) {
+            continue;
+        }
+        if ((pPL->pos.x - h->pos.x) * (pPL->pos.x - h->pos.x) + (pPL->pos.z - h->pos.z) * (pPL->pos.z - h->pos.z) > 2250000.0f) {
+            continue;
+        }
+        w->pHouse = h;
+        return 1;
+    }
+    return 0;
+}
+
+// Looks for a tree to tear out in front of the giant; it becomes the target.
+int em2bSearchTree(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    u32 i;
+
+    if (w->pTree || w->pTarget508 || w->pRock || w->pGoto || w->pHouse || w->timer614 || (w->flags & 0x80)) {
+        return 0;
+    }
+    if (w->flags & 4) {
+        return 0;
+    }
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEmTree* e = (cEmTree*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+
+        if ((e->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (e->id != 0x49) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        if (!e->ckCatch()) {
+            continue;
+        }
+        if ((em->pos.x - e->pos.x) * (em->pos.x - e->pos.x) + (em->pos.y - e->pos.y) * (em->pos.y - e->pos.y) +
+                (em->pos.z - e->pos.z) * (em->pos.z - e->pos.z) >
+            36000000.0f) {
+            continue;
+        }
+        if (fabsf(Muku(&em->pos, &e->pos, em->rot.y, 3.14159274f)) > 0.785398185f) {
+            continue;
+        }
+        w->pTarget508 = e;
+        RouteCkToPos(em, &e->pos, &w->targetPos, 0, 0);
+        w->targetAng = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f);
+        w->targetAngAbs = fabsf(w->targetAng);
+        w->targetDist = (em->pos.x - w->pTarget508->pos.x) * (em->pos.x - w->pTarget508->pos.x) +
+                        (em->pos.z - w->pTarget508->pos.z) * (em->pos.z - w->pTarget508->pos.z);
+        return 1;
+    }
+    return 0;
+}
+
+// Near enough to the target tree and facing it: go and get it.
+int em2bGetTreeCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cEm* t = w->pTarget508;
+
+    if (t == 0) {
+        return 0;
+    }
+    if ((em->pos.x - t->pos.x) * (em->pos.x - t->pos.x) + (em->pos.y - t->pos.y) * (em->pos.y - t->pos.y) +
+            (em->pos.z - t->pos.z) * (em->pos.z - t->pos.z) >
+        12250000.0f) {
+        return 0;
+    }
+    if (fabsf(Muku(&em->pos, &t->pos, em->rot.y, 3.14159274f)) > 0.785398185f) {
+        return 0;
+    }
+    w->timer618 = Rnd() % 1800 + 1800;
+    EmRoutineSet(em, 1, 0xD, 0, 0);
+    return 1;
+}
+
+// Looks for a rock spot (EMI kind 4) in front of the giant; it becomes the goto target.
+int em2bSearchRockCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int i;
+
+    if (pG->pRoomEmi == 0) {
+        return 0;
+    }
+    if (w->pTree || w->pTarget508 || w->pRock || w->pGoto || w->pHouse || w->timer618 || (w->flags & 0x80)) {
+        return 0;
+    }
+    if (w->flags & 4) {
+        return 0;
+    }
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* e = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+
+        if (e->kind != 4) {
+            continue;
+        }
+        if ((em->pos.x - e->pos.x) * (em->pos.x - e->pos.x) + (em->pos.y - e->pos.y) * (em->pos.y - e->pos.y) +
+                (em->pos.z - e->pos.z) * (em->pos.z - e->pos.z) >
+            144000000.0f) {
+            continue;
+        }
+        if (fabsf(Muku(&em->pos, &e->pos, em->rot.y, 3.14159274f)) > 0.785398185f) {
+            continue;
+        }
+        w->pGoto = e;
+        w->targetPos = e->pos;
+        w->targetAng = Muku(&em->pos, &w->targetPos, em->rot.y, 3.14159274f);
+        w->targetAngAbs = fabsf(w->targetAng);
+        w->targetDist = (em->pos.x - w->pGoto->pos.x) * (em->pos.x - w->pGoto->pos.x) +
+                        (em->pos.z - w->pGoto->pos.z) * (em->pos.z - w->pGoto->pos.z);
+        return 1;
+    }
+    return 0;
+}
+
+// Near enough to the rock spot and facing it: tear out the rock.
+int em2bGetRockCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    Em2bEmi* e = w->pGoto;
+
+    if (e == 0) {
+        return 0;
+    }
+    if ((em->pos.x - e->pos.x) * (em->pos.x - e->pos.x) + (em->pos.y - e->pos.y) * (em->pos.y - e->pos.y) +
+            (em->pos.z - e->pos.z) * (em->pos.z - e->pos.z) >
+        20250000.0f) {
+        return 0;
+    }
+    if (fabsf(Muku(&em->pos, &e->pos, em->rot.y, 3.14159274f)) > 0.785398185f) {
+        return 0;
+    }
+    w->timer618 = Rnd() % 1800 + 1800;
+    EmRoutineSet(em, 1, 0xF, 0, 0);
+    return 1;
+}
+
+// Tree swing hit check: the player within the swept sector in front of the tree gets blown away.
+int em2bTreeAtkCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cEmTree* tree = w->pTree;
+    cModel* p;
+    Vec a;
+    Vec b;
+    f32 ang;
+    f32 aang;
+
+    if (tree == 0) {
+        return 0;
+    }
+    if (w->atkHit) {
+        return 0;
+    }
+    if (em2bDeadCk(pPL)) {
+        return 0;
+    }
+    if ((s16) pG->pl_life <= 0) {
+        return 0;
+    }
+    p = tree->getPartsPtr(0);
+    a.x = 0.0f;
+    a.y = 0.0f;
+    a.z = 0.0f;
+    b.x = 0.0f;
+    b.y = 15000.0f;
+    b.z = 0.0f;
+    PSMTXMultVec(p->mat, &a, &a);
+    PSMTXMultVec(p->mat, &b, &b);
+    ang = GetXZAngle(&a, &b);
+    ang = Muku(&a, &pPL->pos, ang, 3.14159274f);
+    aang = fabsf(ang);
+    if ((a.x - pPL->pos.x) * (a.x - pPL->pos.x) + (a.y - pPL->pos.y) * (a.y - pPL->pos.y) + (a.z - pPL->pos.z) * (a.z - pPL->pos.z) >
+        225000000.0f) {
+        return 0;
+    }
+    if (ang > 0.261799395f) {
+        return 0;
+    }
+    if (aang > 0.523598790f) {
+        return 0;
+    }
+    w->atkHit = 1;
+    if ((s16) pG->pl_life > 1) {
+        LifeDownSet2(pPL, 800, 0, 1);
+    } else {
+        LifeDownSet(pPL, 800, 0);
+    }
+    em->rot.y = ang + 1.57079637f;
+    FSet(em->rot.y, LIMIT_ANGLE(em->rot.y));
+    SndCall(8, 0xF, &pPL->pos, em->id, 0, pPL);
+    SndCall(8, 0x32, &pPL->pos, em->id, 0, pPL);
+    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+    SetPlDamage((int) em, plem2bDmBlow);
+    return 1;
+}
+
+// Tree swing against the scenery: the houses within the tree's reach in front of it break.
+int em2bTreeAtkScrCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    cEmTree* tree = w->pTree;
+    Vec a;
+    Vec b;
+    f32 d;
+    f32 ang;
+    int hit;
+    int i;
+
+    if (tree == 0) {
+        return 0;
+    }
+    a.x = 0.0f;
+    a.y = 0.0f;
+    a.z = 0.0f;
+    b.x = 0.0f;
+    b.y = 8000.0f;
+    b.z = 0.0f;
+    PSMTXMultVec(tree->mat, &a, &a);
+    PSMTXMultVec(tree->mat, &b, &b);
+    d = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
+    if (d < 10000.0f) {
+        return 0;
+    }
+    ang = GetXZAngle(&a, &b);
+    hit = 0;
+    if (pG->pRoomEmi == 0) {
+        return 0;
+    }
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* h = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+
+        if (h->kind != 3) {
+            continue;
+        }
+        if (h->state == 3) {
+            continue;
+        }
+        if (d < (h->pos.x - a.x) * (h->pos.x - a.x) + (h->pos.z - a.z) * (h->pos.z - a.z)) {
+            continue;
+        }
+        if (fabsf(Muku(&a, &h->pos, ang, 3.14159274f)) > 0.392699093f) {
+            continue;
+        }
+        if ((pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+            em2bHouseFlagSet(h);
+        }
+        h->state = 3;
+        hit = 1;
+    }
+    if (hit) {
+        return 1;
+    }
+    return 0;
+}
+
+// Dash against the scenery: the houses and the type 3 rocks within `rad` of the position break.
+void em2bDashScrCk(cEm2b* em, Vec* pos, f32 rad)
+{
+    int i;
+    f32 d; // one variable for both loops' distances (the fmadds result is tied to it: f13 in both)
+
+    if (pG->pRoomEmi == 0) {
+        return;
+    }
+    // em2bHouseBrkCk written out: one `i` for both loops (callee-saved r30 in the house loop too).
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* h = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+
+        if (h->kind != 3) {
+            continue;
+        }
+        if (h->state == 3) {
+            continue;
+        }
+        d = (h->pos.x - pos->x) * (h->pos.x - pos->x) + (h->pos.z - pos->z) * (h->pos.z - pos->z);
+        if (d > (rad + 3000.0f) * (rad + 3000.0f)) {
+            continue;
+        }
+        if ((pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+            em2bHouseFlagSet(h);
+            h->state = 3;
+        }
+        if ((pG->room_id32 & 0xFFFF0000) == 0x011E0000 && h->state == 0) {
+            switch (h->no) {
+            case 0:
+                U32Or(pG->flags_174, 0x20000000);
+                h->state = 3;
+                break;
+            case 1:
+                U32Or(pG->flags_174, 0x10000000);
+                h->state = 3;
+                break;
+            case 2:
+                U32Or(pG->flags_174, 0x80000000);
+                h->state = 3;
+                break;
+            case 3:
+                U32Or(pG->flags_174, 0x40000000);
+                h->state = 3;
+                break;
+            }
+        }
+    }
+    for (i = 0; i < (int) EmMgr.nArray; i++) {
+        cEmRock* e = (cEmRock*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+        cModel* p;
+
+        if ((e->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (e->id != 0x4A) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        if ((cEm*) e == em) {
+            continue;
+        }
+        if (e->type != 3) {
+            continue;
+        }
+        p = e->getPartsPtr(0);
+        {
+            EmRockWork* rw = EMROCK_WK(e);
+            f32 r = rw->radius + rad;
+
+            d = (p->worldPos.x - pos->x) * (p->worldPos.x - pos->x) + (p->worldPos.y - pos->y) * (p->worldPos.y - pos->y) +
+                (p->worldPos.z - pos->z) * (p->worldPos.z - pos->z);
+            if (d < r * r) {
+                // Dead test (flow deletes the store, jump2 the compare): a second non-zero-offset use of
+                // `rw` keeps combine from folding the pointer into the radius load (`addi r9,e,992;
+                // lfs 16(r9)` like the target); placed before the call so rw is not callee-saved.
+                if (rw->timer == 0) {
+                    d = 0.0f;
+                }
+                e->setBreakR11E();
+            }
+        }
+    }
+}
+
+// Room 11E: a house in the way of the walk (ahead, towards the target, the giant stuck) breaks.
+void em2bR11eScrBrkCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    int i;
+
+    if (pG->pRoomEmi == 0) {
+        return;
+    }
+    if ((pG->room_id32 & 0xFFFF0000) != 0x011E0000) {
+        return;
+    }
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* h = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+
+        if (h->kind != 3) {
+            continue;
+        }
+        if (h->state == 3) {
+            continue;
+        }
+        if ((h->pos.x - em->pos.x) * (h->pos.x - em->pos.x) + (h->pos.z - em->pos.z) * (h->pos.z - em->pos.z) > 30250000.0f) {
+            continue;
+        }
+        if (fabsf(Muku2(GetXZAngle(&em->pos, &h->pos), GetXZAngle(&em->pos, &w->targetPos), 3.14159274f)) > 0.785398185f) {
+            continue;
+        }
+        if (w->targetDist < 64000000.0f) {
+            continue;
+        }
+        if (h->state != 0) {
+            continue;
+        }
+        switch (h->no) {
+        case 0:
+            if (w->stuckCnt > 2) {
+                U32Or(pG->flags_174, 0x20000000);
+                h->state = 3;
+            }
+            break;
+        case 1:
+            if (w->stuckCnt > 2) {
+                U32Or(pG->flags_174, 0x10000000);
+                h->state = 3;
+            }
+            break;
+        case 2:
+            U32Or(pG->flags_174, 0x80000000);
+            h->state = 3;
+            break;
+        case 3:
+            U32Or(pG->flags_174, 0x40000000);
+            h->state = 3;
+            break;
+        }
+    }
+}
+
+// Room 11E: the houses 2 / 3 within `rad` of the position break (hand landings).
+void em2bR11eScrBrkCk2(cEm2b* em, Vec* pos, f32 rad)
+{
+    int i;
+
+    if (pG->pRoomEmi == 0) {
+        return;
+    }
+    if ((pG->room_id32 & 0xFFFF0000) != 0x011E0000) {
+        return;
+    }
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* h = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+
+        if (h->kind != 3) {
+            continue;
+        }
+        if (h->state == 3) {
+            continue;
+        }
+        if ((h->pos.x - pos->x) * (h->pos.x - pos->x) + (h->pos.z - pos->z) * (h->pos.z - pos->z) > rad * rad) {
+            continue;
+        }
+        if (h->state != 0) {
+            continue;
+        }
+        switch (h->no) {
+        case 1:
+            break;
+        case 2:
+            U32Or(pG->flags_174, 0x80000000);
+            h->state = 3;
+            break;
+        case 3:
+            U32Or(pG->flags_174, 0x40000000);
+            h->state = 3;
+            break;
+        }
+    }
+}
+
+// The blown-away player breaks the houses he flies into.
+void em2bPlBlowAtkScrCk(cPlayer* pl)
+{
+    int i;
+
+    if (pG->pRoomEmi == 0) {
+        return;
+    }
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* h = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+
+        if (h->kind != 3) {
+            continue;
+        }
+        if (h->state == 3) {
+            continue;
+        }
+        if ((h->pos.x - pl->pos.x) * (h->pos.x - pl->pos.x) + (h->pos.z - pl->pos.z) * (h->pos.z - pl->pos.z) > 9000000.0f) {
+            continue;
+        }
+        if ((pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+            em2bHouseFlagSet(h);
+            h->state = 3;
+        }
+        if ((pG->room_id32 & 0xFFFF0000) == 0x011E0000 && h->state == 0) {
+            switch (h->no) {
+            case 0:
+                U32Or(pG->flags_174, 0x20000000);
+                h->state = 3;
+                break;
+            case 1:
+                U32Or(pG->flags_174, 0x10000000);
+                h->state = 3;
+                break;
+            case 2:
+                U32Or(pG->flags_174, 0x80000000);
+                h->state = 3;
+                break;
+            case 3:
+                U32Or(pG->flags_174, 0x40000000);
+                h->state = 3;
+                break;
+            }
+        }
+    }
+}
+
+// Action button of the tree swing: the player ducks under the tree.
+static void em2bEscapeAction(cEm2b* em)
+{
+    SetPlDamage((int) em, plem2bEscapeTree);
+    GameAddPoint(9);
+}
+
+// Ducks under the swung tree.
+static void plem2bEscapeTree(cPlayer* pl)
+{
+    pl->subArc = PL_EM(pl)->subArc;
+    pl->dmg.set(0, 30);
+    switch (pl->xFE) {
+    case 0:
+        MotionSetCore(pl, &pl->mot, pl->pMotTbl[0], (int) pl->pMotTbl[1], 5, 5, 0);
+        pl->x3E0 = 15;
+        pl->xFE++;
+        break;
+    case 1:
+        if (!MotionMoveF(pl, 0) && !(PL_EM(pl)->flags_3C8 & 4) && pl->x3E0 != 0) {
+            pl->x3E0--;
+        } else {
+            pl->xFE++;
+        }
+        break;
+    case 2:
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xBF), 0, 3, 1, 0);
+        GameAddPoint(0xB);
+        pl->xFE++;
+    case 3:
+        if (MotionMoveF(pl, 0)) {
+            EndPlDamage();
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+// Blown away by a swing / the tree: flies until a wall stops him, lands, gets up.
+static void plem2bDmBlow(cPlayer* pl)
+{
+    Em2bWork* w = EM2B_WK(PL_EM(pl));
+
+    pl->subArc = PL_EM(pl)->subArc;
+    pl->dmg.set(0, 30);
+    switch (pl->xFE) {
+    case 0:
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xB4), 0, 5, 1, 0);
+        PlSetFace(1);
+        pl->x3E0 = 1;
+        pl->xFE++;
+    case 1:
+        em2bBlowCamMove(PL_EM(pl), 0.300000012f);
+        if (MotionMoveF(pl, 0)) {
+            pl->xFE++;
+        } else {
+            em2bPlBlowAtkScrCk(pl);
+            if (pl->x3E0) {
+                pl->x3E0--;
+            } else if (pl->wallNrm.x != 0.0f || pl->wallNrm.y != 0.0f || pl->wallNrm.z != 0.0f) {
+                pl->xFE++;
+            }
+        }
+        break;
+    case 2:
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xB5), 0, 5, 1, 0);
+        EstSet((int) pl, -1, 0, 0, w->espKind2, 6, 0, 0, (u32) pl, 0);
+        SndCall(8, 0x1A, &pl->pos, PL_EM(pl)->id, 0, pl);
+        SndCall(1, 9, &pl->pos, 0, 0, pl);
+        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+        pl->xFE++;
+    case 3:
+        em2bBlowCamMove(PL_EM(pl), 0.300000012f);
+        if (MotionMoveF(pl, 0) && (s16) pG->pl_life > 0) {
+            pl->xFE++;
+        }
+        break;
+    case 4:
+        MotionSetCore(pl, &pl->mot, PL_ARC(0xB6), (int) PL_ARC(0xB7), 5, 1, 0);
+        SndCall(1, 0x29, &pl->getPartsPtr(0)->worldPos, 0, 0, pPL);
+        SndCall(1, 4, &pl->getPartsPtr(0)->worldPos, 0, 0, pPL);
+        pl->xFE++;
+    case 5:
+        if (MotionMoveF(pl, 0)) {
+            EndPlDamage();
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+// Camera of the blow: the game camera position, the target pulled towards the player.
+void em2bBlowCamMove(cEm2b* em, f32 rate)
+{
+    Em2bWork* w = EM2B_WK(em);
+    GlobalWork* g = pG;
+
+    cModel* p;
+
+    w->cam.param.fovy = g->Cam.param.fovy;
+    w->cam.param.pos = g->Cam.param.pos;
+    p = pPLS->getPartsPtr(0);
+    PosToPos(&g->Cam.param.at, &p->worldPos, &w->cam.param.at, rate);
+    w->cam.up.x = 0.0f;
+    w->cam.up.y = 1.0f;
+    w->cam.up.z = 0.0f;
+    w->cam.dist = SQRTF((w->cam.param.pos.x - w->cam.param.at.x) * (w->cam.param.pos.x - w->cam.param.at.x) +
+                        (w->cam.param.pos.y - w->cam.param.at.y) * (w->cam.param.pos.y - w->cam.param.at.y) +
+                        (w->cam.param.pos.z - w->cam.param.at.z) * (w->cam.param.pos.z - w->cam.param.at.z));
+    CameraSetOrientationUp(&w->cam);
+    CamCtrl.x250 = (s32) &w->cam;
+}
+
+// Camera of the stamp: pulled behind and above the player.
+void em2bStampCamMove(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    GlobalWork* g = pG;
+    Vec v;
+    cModel* p;
+
+    w->cam.param.fovy = g->Cam.param.fovy;
+    v.x = 0.0f;
+    v.y = 3000.0f;
+    v.z = -3000.0f;
+    PSMTXMultVec(pPLS->mat, &v, &v);
+    PosToPos(&g->Cam.param.pos, &v, &w->cam.param.pos, 0.100000001f);
+    p = pPL->getPartsPtr(0);
+    PosToPos(&g->Cam.param.at, &p->worldPos, &w->cam.param.at, 0.300000012f);
+    w->cam.up.x = 0.0f;
+    w->cam.up.y = 1.0f;
+    w->cam.up.z = 0.0f;
+    w->cam.dist = SQRTF((w->cam.param.pos.x - w->cam.param.at.x) * (w->cam.param.pos.x - w->cam.param.at.x) +
+                        (w->cam.param.pos.y - w->cam.param.at.y) * (w->cam.param.pos.y - w->cam.param.at.y) +
+                        (w->cam.param.pos.z - w->cam.param.at.z) * (w->cam.param.pos.z - w->cam.param.at.z));
+    CameraSetOrientationUp(&w->cam);
+    CamCtrl.x250 = (s32) &w->cam;
+}
+
+// Event placement: position / angle and the wait pose.
+void cEm2b::setPos(Vec* p, f32 ang)
+{
+    Em2bWork* w = EM2B_WK(this);
+    cEm2b* em = this;
+
+    if (p) {
+        pos = *p;
+        oldPos = pos;
+        rot.y = ang;
+        if (w->pTree) {
+            em2bVariantMot(this, w, 0x31, 0x78, 0x27, 0x6E, 0, 5);
+        } else {
+            int flip = em2bFlip(w, 5, 0x45);
+
+            MotionSetCore(this, &mot, ARC(0x19), (int) ARC(0x62), 0, flip, 0);
+        }
+        MotionMoveF(this, 0);
+        partsWorldCalc();
+        EmRoutineSet(this, 1, 2, 0, 0xA);
+    }
+}
+
+// Player blend motion (the strangle): the neck work is the second motion, the rate from 0x500.
+void plBlendMotSet(cPlayer* pl, void* m0, void* m1, int a, int b)
+{
+    MotionWork* bm;
+    f32 val = fabsf(pl->blendRate500);
+
+    MotionSetCore(pl, &pl->mot, m0, a, pl->x4FD, 1, pl->x4FC);
+    bm = (MotionWork*) &pl->neckMot;
+    MotionSetCore(pl, bm, m1, b, pl->x4FD, 1, pl->x4FC);
+    pl->motBlend = bm;
+    bm->blendRate = val * 0.00390625f;
+    if (pl->x4FD) {
+        pl->x4FD--;
+    }
+    pl->x4FC++;
+    if (pl->x4FC >= pl->frameMax) {
+        pl->x4FC = 0;
+    }
+}
+
+// Event death: the trees are lost, the die routine runs.
+void cEm2b::setEventDie()
+{
+    Em2bWork* w = EM2B_WK(this);
+
+    if (w->pTree) {
+        w->pTree->setLost();
+        w->pTree->be_flag &= ~2;
+        w->pTree = 0;
+    }
+    if (w->pTreeLost) {
+        w->pTreeLost->setLost();
+        w->pTreeLost->be_flag &= ~2;
+        w->pTreeLost = 0;
+    }
+    EmRoutineSet(this, 3, 2, 0, 0);
+}
+
+int em2bStaggerCk(cEm2b* em, Vec* pos)
+{
+    return 0;
+}
+
+// The first living dog becomes the friend the giant fights.
+int em2bSearchDog(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    u32 i;
+
+    if (w->pFriend) {
+        return 0;
+    }
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEm* e = (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+
+        if ((e->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (e->id != 0x21) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        w->pFriend = e;
+        w->dmGuard = 900;
+        w->x63C = 0;
+        w->flags |= 0x80;
+        return 1;
+    }
+    return 0;
+}
+
+// Goes into the threat for half a second.
+static inline void em2bThreatSet(cEm2b* em, Em2bWork* w)
+{
+    w->timer61C = 30;
+    EmRoutineSet(em, 1, 0, 0, 0);
+}
+
+// The routine selecting rock throw / dash: coin flips guarded by the partner and the held rock.
+static inline void em2bRockOrKickSet(cEm2b* em, Em2bWork* w)
+{
+    if (((Rnd() & 7) || pSUB) && w->pRock == 0) {
+        EmRoutineSet(em, 1, 0x11, 0, 0);
+    } else {
+        EmRoutineSet(em, 1, 7, 0, 0);
+    }
+}
+
+// Attack routine selection at the end of the wait / walk. 1 = a routine was set.
+// The `return 1` after each if/else region is shared (one labelled `li r3,1; b END` per region):
+// jump2 merges those copies into the Debug test's copy through a NEW label, and jumps to a new
+// label never cross-jump again -- that is what keeps the identical EmRoutineSet(1, 0x11/7/9) arms
+// apart in the target (COMPILER-DIFF #6 mechanism, no tag needed).
+int em2bAtkRtnCk(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    if ((pG->flags_5010 & 0x8000) || em2bDeadCk(pPL) || (s16) pG->pl_life <= 0) {
+        if (em->plDist2 < 49000000.0f) {
+            em2bThreatSet(em, w);
+            return 1;
+        }
+    }
+    if (w->pTree) {
+        if (w->targetDist < 49000000.0f) {
+            EmRoutineSet(em, 1, 0xE, 0, 0);
+            return 1;
+        }
+        return 0;
+    }
+    if (w->timer61C) {
+        return 0;
+    }
+    if (w->pTarget508) {
+        return 0;
+    }
+    if (w->pGoto) {
+        return 0;
+    }
+    if (pG->debug_mode == 7) {
+        if (em2bAtkRtnCkDebug(em)) {
+            return 1;
+        }
+        if (w->debugAtk) {
+            return 0;
+        }
+    }
+    if (pPL->pos.y > em->pos.y + 2000.0f) {
+        if (w->routeAngAbs < 0.785398185f && em->plDist2 < 16000000.0f) {
+            EmRoutineSet(em, 1, 0x15, 0, 0);
+            return 1;
+        }
+        return 0;
+    }
+    if (em2bPlInHouseCk(em)) {
+        if (w->targetAngAbs < 0.785398185f && w->targetDist < 25000000.0f) {
+            EmRoutineSet(em, 1, 0xB, 0, 0);
+            return 1;
+        }
+        return 0;
+    }
+    if (w->pRock && w->targetAngAbs < 0.785398185f && w->targetDist > 36000000.0f) {
+        EmRoutineSet(em, 1, 0x10, 0, 0);
+        return 1;
+    }
+    if (w->targetAngAbs < 0.174532920f && w->targetDist > 36000000.0f) {
+        int dash = w->timer620 == 0;
+
+        if (w->flags & 0x80) {
+            dash = 0;
+        }
+        if (w->pRock) {
+            dash = 0;
+        }
+        if (em2bFriendCk(em)) {
+            dash = 0;
+        }
+        if (pSUB) {
+            dash = 0;
+        }
+        if (pG->room_id == 0x224 && !(pG->flags_174 & 0x10000000)) {
+            dash = 0;
+        }
+        if (dash && em2bInScreenCk(em)) {
+            EmRoutineSet(em, 1, 0xA, 0, 0);
+            return 1;
+        }
+    }
+    if (w->stuckCnt > 3 && w->targetAngAbs < 0.523598790f) {
+        w->stuckCnt = 0;
+        EmRoutineSet(em, 1, 0xC, 0, 0);
+        return 1;
+    }
+    if (pSUB == 0) {
+        if (w->timer624 && w->targetAngAbs < 0.392699093f && w->targetDist > 30250000.0f && w->targetDist < 42250000.0f) {
+            if (pG->x4F88 <= 1 && !EM_RTN(em, 1, 0) && Rnd() % 10 > 4) {
+                em2bThreatSet(em, w);
+                return 1;
+            }
+            if (em2bPlRunCk(em)) {
+                if ((Rnd() & 1) && w->pRock == 0) {
+                    EmRoutineSet(em, 1, 0x11, 0, 0);
+                } else {
+                    EmRoutineSet(em, 1, 9, 0, 0);
+                }
+            } else {
+                EmRoutineSet(em, 1, 6, 0, 0);
+            }
+            return 1;
+        }
+        if (pSUB == 0 && w->targetAngAbs > 1.22173047f && w->targetDist < 16000000.0f && pG->x4F88 > 1) {
+            EmRoutineSet(em, 1, 8, 0, 0);
+            return 1;
+        }
+    }
+    if (w->targetAngAbs < 0.392699093f && w->targetDist > 6250000.0f && w->targetDist < 12250000.0f) {
+        if (pG->x4F88 <= 1 && !EM_RTN(em, 1, 0) && Rnd() % 10 > 4) {
+            em2bThreatSet(em, w);
+            return 1;
+        }
+        if (em2bPlRunCk(em) && w->pRock == 0) {
+            EmRoutineSet(em, 1, 0x11, 0, 0);
+            return 1;
+        }
+        if ((Rnd() & 1) && pSUB == 0) {
+            EmRoutineSet(em, 1, 5, 0, 0);
+        } else if (!em2bFriendCk(em)) {
+            em2bRockOrKickSet(em, w);
+        }
+        return 1;
+    }
+    if (w->targetAngAbs < 0.698131680f && w->targetDist < 9000000.0f) {
+        if (pG->x4F88 <= 1 && !EM_RTN(em, 1, 0) && Rnd() % 10 > 4) {
+            em2bThreatSet(em, w);
+            return 1;
+        }
+        if ((Rnd() & 3) && pSUB == 0) {
+            EmRoutineSet(em, 1, 9, 0, 0);
+        } else if (!em2bFriendCk(em)) {
+            em2bRockOrKickSet(em, w);
+        }
+        return 1;
+    }
+    if (w->targetAngAbs > 2.09439516f && w->targetDist < 9000000.0f && pG->x4F88 > 1 && !em2bFriendCk(em)) {
+        em2bRockOrKickSet(em, w);
+        return 1;
+    }
+    if (em2bPlRunCk(em) && pSUB == 0 && !(w->flags & 0x80) && pG->x4F88 > 1) {
+        if (w->targetAngAbs < 0.628318548f && w->targetDist < 25000000.0f) {
+            EmRoutineSet(em, 1, 9, 0, 0);
+            return 1;
+        }
+        if (w->targetDist < 25000000.0f && w->pRock == 0) {
+            EmRoutineSet(em, 1, 0x11, 0, 0);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Debug page 7: the attack forced by Em2bWork::debugAtk when the target is in its range.
+int em2bAtkRtnCkDebug(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    switch (w->debugAtk) {
+    case 1:
+        if (w->targetAngAbs < 0.392699093f && w->targetDist > 6250000.0f && w->targetDist < 12250000.0f) {
+            if (em2bPlRunCk(em)) {
+                EmRoutineSet(em, 1, 0x11, 0, 0);
+                return 1;
+            } else {
+                EmRoutineSet(em, 1, 0x11, 0, 0);
+                return 1;
+            }
+        }
+        if (w->targetAngAbs < 0.628318548f && w->targetDist < 9000000.0f) {
+            EmRoutineSet(em, 1, 0x11, 0, 0);
+            return 1;
+        }
+        if (w->targetAngAbs < 2.09439516f && w->targetDist < 9000000.0f) {
+            EmRoutineSet(em, 1, 0x11, 0, 0);
+            return 1;
+        }
+        if (em2bPlRunCk(em) && w->targetDist < 25000000.0f) {
+            EmRoutineSet(em, 1, 0x11, 0, 0);
+            return 1;
+        }
+        break;
+    case 2:
+        if (w->targetAngAbs < 0.392699093f && w->targetDist > 6250000.0f && w->targetDist < 12250000.0f) {
+            EmRoutineSet(em, 1, 7, 0, 0);
+            return 1;
+        }
+        if (w->targetAngAbs < 0.628318548f && w->targetDist < 9000000.0f) {
+            EmRoutineSet(em, 1, 7, 0, 0);
+            return 1;
+        }
+        if (w->targetAngAbs > 1.22173047f && w->targetDist < 16000000.0f) {
+            EmRoutineSet(em, 1, 8, 0, 0);
+            return 1;
+        }
+        if (w->targetAngAbs < 2.09439516f && w->targetDist < 9000000.0f) {
+            EmRoutineSet(em, 1, 7, 0, 0);
+            return 1;
+        }
+        break;
+    case 3:
+        if (w->targetAngAbs < 0.392699093f && w->targetDist > 30250000.0f && w->targetDist < 42250000.0f) {
+            EmRoutineSet(em, 1, 6, 0, 0);
+            return 1;
+        }
+        break;
+    case 4:
+        if (w->targetAngAbs < 0.392699093f && w->targetDist > 6250000.0f && w->targetDist < 12250000.0f) {
+            EmRoutineSet(em, 1, 5, 0, 0);
+            return 1;
+        }
+        break;
+    case 5:
+        if (w->targetAngAbs < 0.174532920f && w->targetDist > 36000000.0f && em2bInScreenCk(em)) {
+            EmRoutineSet(em, 1, 0xA, 0, 0);
+            return 1;
+        }
+        break;
+    case 6:
+        if (w->targetAngAbs < 0.628318548f && w->targetDist < 9000000.0f) {
+            EmRoutineSet(em, 1, 9, 0, 0);
+            return 1;
+        }
+        if (em2bPlRunCk(em) && w->targetAngAbs < 0.628318548f && w->targetDist < 25000000.0f) {
+            EmRoutineSet(em, 1, 9, 0, 0);
+            return 1;
+        }
+        break;
+    case 0:
+    default:
+        break;
+    }
+    return 0;
+}
+
+// The routine after an attack: rock / tree pickup, an attack, else turn or walk.
+void em2bNextRtnSet(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+
+    em2bSearchRockCk(em);
+    if (em2bGetRockCk(em)) {
+        return;
+    }
+    em2bSearchTree(em);
+    if (em2bGetTreeCk(em)) {
+        return;
+    }
+    if (em2bAtkRtnCk(em)) {
+        return;
+    }
+    if (w->targetAngAbs > 2.35619450f) {
+        if (w->targetDist < 9000000.0f && !em2bFriendCk(em)) {
+            if (pG->debug_mode == 7 && w->debugAtk) {
+                EmRoutineSet(em, 1, 3, 0, 0);
+                return;
+            }
+            if ((Rnd() & 1) || pSUB) {
+                EmRoutineSet(em, 1, 0x11, 0, 0);
+            } else {
+                EmRoutineSet(em, 1, 8, 0, 0);
+            }
+            return;
+        }
+        EmRoutineSet(em, 1, 3, 0, 0);
+    } else {
+        EmRoutineSet(em, 1, 2, 0, 0xA);
+    }
+}
+
+// Is the root parts on screen?
+int em2bInScreenCk(cEm2b* em)
+{
+    Vec scr;
+    Vec pos = em->getPartsPtr(0)->worldPos;
+
+    GetScreenPos(&pos, &scr);
+    if (scr.z > 1.0f) {
+        return 0;
+    }
+    if (scr.x < -300.0f || scr.x > 812.0f) {
+        return 0;
+    }
+    if (scr.y < -300.0f) {
+        return 0;
+    }
+    if (scr.y > 748.0f) {
+        return 0;
+    }
+    return 1;
+}
+
+// Motion key bit2 and the player near / in the box in front: the dash escape button shows.
+int em2bPlDashEscapeCk(cEm2b* em)
+{
+    Mtx inv;
+    Vec v;
+
+    if (!(em->seFlags28B & 4)) {
+        return 0;
+    }
+    if (em->plDist2 < 9000000.0f) {
+        return 1;
+    }
+    PSMTXInverse(em->mat, inv);
+    PSMTXMultVec(inv, &pPL->pos, &v);
+    if (v.x > 2500.0f) {
+        return 0;
+    }
+    if (v.x < -2500.0f) {
+        return 0;
+    }
+    if (v.z > 7000.0f) {
+        return 0;
+    }
+    if (v.z < -2500.0f) {
+        return 0;
+    }
+    return 1;
+}
+
+// Is the player running (routine 0/3) in front of the giant, within a 7000 wide lane?
+int em2bPlRunCk(cEm2b* em)
+{
+    Mtx inv;
+    Vec v;
+
+    if (pPL->xFC != 0) {
+        return 0;
+    }
+    if (pPL->xFD != 3) {
+        return 0;
+    }
+    if (pG->x4F88 <= 3) {
+        return 0;
+    }
+    if (em2bFriendCk(em)) {
+        return 0;
+    }
+    if (fabsf(Muku(&em->pos, &pPL->pos, em->rot.y, 3.14159274f)) > 1.57079637f) {
+        return 0;
+    }
+    PSMTXInverse(pPL->mat, inv);
+    PSMTXMultVec(inv, &em->pos, &v);
+    if (v.x > 3500.0f) {
+        return 0;
+    }
+    if (v.x < -3500.0f) {
+        return 0;
+    }
+    return 1;
+}
+
+// Falling giant: the player under one of the body parts is crushed.
+int em2bPressPlCk(cEm2b* em)
+{
+    int parts[5] = { 3, 2, 0, 0x12, 0x16 };
+    Vec pos;
+    u32 i;
+
+    if (em2bDeadCk(pPL)) {
+        return 0;
+    }
+    pos = pPL->pos;
+    pos.y += 1500.0f;
+    for (i = 0; i < 5; i++) {
+        cModel* m = em->getPartsPtr(parts[i]);
+
+        if ((pos.x - m->worldPos.x) * (pos.x - m->worldPos.x) + (pos.y - m->worldPos.y) * (pos.y - m->worldPos.y) +
+                (pos.z - m->worldPos.z) * (pos.z - m->worldPos.z) <
+            9000000.0f) {
+            LifeDownSet(pPL, 9999, 0);
+            SetPlDamage((int) em, plem2b_dm_Stamp);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int em2bPressSubCk(cEm2b* em)
+{
+    int parts[5] = { 3, 2, 0, 0x12, 0x16 };
+    Vec pos;
+    u32 i;
+
+    if (pSUB == 0) {
+        return 0;
+    }
+    if (em2bDeadCk(pSUB)) {
+        return 0;
+    }
+    pos = pSUB->pos;
+    pos.y += 1500.0f;
+    for (i = 0; i < 5; i++) {
+        cModel* m = em->getPartsPtr(parts[i]);
+
+        if ((pos.x - m->worldPos.x) * (pos.x - m->worldPos.x) + (pos.y - m->worldPos.y) * (pos.y - m->worldPos.y) +
+                (pos.z - m->worldPos.z) * (pos.z - m->worldPos.z) <
+            9000000.0f) {
+            pG->sub_life = 0;
+            SetSubDamage((int) em, (void*) subem2b_dm_Stamp);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Moves the giant to the catch spot (EMI kind 0xD) nearest to the player, facing its angle.
+void em2bCatchPosSet(cEm2b* em)
+{
+    Vec pos;
+    f32 best;
+    f32 ang;
+    int i;
+
+    if ((pG->room_id32 & 0xFFFF0000) == 0x01190000) {
+        em->pos.x = 114800.0f;
+        em->pos.y = 2230.0f;
+        em->pos.z = 8000.0f;
+        return;
+    }
+    if (pG->pRoomEmi == 0) {
+        return;
+    }
+    pos = em->pos;
+    best = 1.0e16f;
+    ang = em->rot.y;
+    for (i = 0; i < ((Em2bEmiTbl*) pG->pRoomEmi)->num; i++) {
+        Em2bEmi* e = &((Em2bEmiTbl*) pG->pRoomEmi)->e[i];
+        f32 d;
+
+        if (e->kind != 0xD) {
+            continue;
+        }
+        d = (pPL->pos.x - e->pos.x) * (pPL->pos.x - e->pos.x) + (pPL->pos.z - e->pos.z) * (pPL->pos.z - e->pos.z);
+        if (d > best) {
+            continue;
+        }
+        best = d;
+        ang = e->rot;
+        if (e->no == 1) {
+            pos = e->pos;
+        }
+    }
+    if (fabsf(Muku2(em->rot.y, ang, 3.14159274f)) < 1.57079637f) {
+        em->rot.y = ang;
+    } else {
+        em->rot.y = ang + 3.14159274f;
+    }
+    em->rot.y = LIMIT_ANGLE(em->rot.y);
+    em->pos = pos;
+}
+
+// Deletes the parasite's tentacles; with set != 0 creates the six of them (slots 1, 3, 4, 7 unused),
+// each a tenth of the motion further in.
+void em2bSetTentacle(cEm2b* em, int set)
+{
+    Em2bWork* w = EM2B_WK(em);
+    u16 step = (((MotionData*) ARC(0xE2))->maxFrame & 0x3FFF) / 10u;
+    u32 i;
+
+    for (i = 0; i <= 9; i++) {
+        if (w->pTentacle[i]) {
+            w->pTentacle[i]->clearLostWait();
+            w->pTentacle[i] = 0;
+        }
+    }
+    if (set == 0) {
+        return;
+    }
+    for (i = 0; i <= 9; i++) {
+        Vec pos;
+        Vec rot;
+        Vec scale;
+
+        if (i == 1 || i == 3 || i == 4 || i == 7) {
+            continue;
+        }
+        switch (i) {
+        case 0:
+        default:
+            pos.x = -474.64f;
+            pos.y = 1089.79f;
+            pos.z = -718.95f;
+            break;
+        case 1:
+            pos.x = 690.68f;
+            pos.y = 909.27f;
+            pos.z = -592.16f;
+            break;
+        case 2:
+            pos.x = -193.15f;
+            pos.y = 750.07f;
+            pos.z = -833.08f;
+            break;
+        case 3:
+            pos.x = 60.29f;
+            pos.y = 695.31f;
+            pos.z = -703.91f;
+            break;
+        case 4:
+            pos.x = 684.77f;
+            pos.y = 1087.43f;
+            pos.z = -437.2f;
+            break;
+        case 5:
+            pos.x = -190.33f;
+            pos.y = 1285.31f;
+            pos.z = -590.69f;
+            break;
+        case 6:
+            pos.x = 578.94f;
+            pos.y = 1367.31f;
+            pos.z = -413.35f;
+            break;
+        case 7:
+            pos.x = 46.9f;
+            pos.y = 1166.25f;
+            pos.z = -573.56f;
+            break;
+        case 8:
+            pos.x = -88.42f;
+            pos.y = 1504.13f;
+            pos.z = -523.64f;
+            break;
+        case 9:
+            pos.x = 176.79f;
+            pos.y = 1178.84f;
+            pos.z = -605.74f;
+            break;
+        }
+        switch (i) {
+        case 0:
+        default:
+            rot.x = -1.2217305f;
+            rot.y = 0.0f;
+            rot.z = 0.0f;
+            break;
+        case 1:
+            rot.x = -1.5707964f;
+            rot.y = 0.2617994f;
+            rot.z = 0.0f;
+            break;
+        case 2:
+            rot.x = -1.4824479f;
+            rot.y = 0.0f;
+            rot.z = 0.0f;
+            break;
+        case 3:
+            rot.x = -1.9198623f;
+            rot.y = -0.5235988f;
+            rot.z = 0.0f;
+            break;
+        case 4:
+            rot.x = -1.5707964f;
+            rot.y = 0.0f;
+            rot.z = 0.0f;
+            break;
+        case 5:
+            rot.x = -1.7453293f;
+            rot.y = 1.3962634f;
+            rot.z = 0.34906584f;
+            break;
+        case 6:
+            rot.x = -1.3089969f;
+            rot.y = 0.0f;
+            rot.z = 0.0f;
+            break;
+        case 7:
+            rot.x = -2.0943952f;
+            rot.y = 0.0f;
+            rot.z = 0.34906584f;
+            break;
+        case 8:
+            rot.x = -1.2217305f;
+            rot.y = 0.0f;
+            rot.z = 0.5235988f;
+            break;
+        case 9:
+            rot.x = -0.69813174f;
+            rot.y = 0.0f;
+            rot.z = 0.0f;
+            break;
+        }
+        switch (i) {
+        case 0:
+        default:
+            scale.x = 1.5f;
+            scale.y = 1.5f;
+            scale.z = 1.5f;
+            break;
+        case 1:
+            scale.x = 1.5f;
+            scale.y = 1.2f;
+            scale.z = 1.5f;
+            break;
+        case 2:
+            scale.x = 1.5f;
+            scale.y = 0.8f;
+            scale.z = 1.5f;
+            break;
+        case 3:
+            scale.x = 1.5f;
+            scale.y = 1.3f;
+            scale.z = 1.5f;
+            break;
+        case 4:
+            scale.x = 1.5f;
+            scale.y = 2.0f;
+            scale.z = 1.5f;
+            break;
+        case 5:
+            scale.x = 1.5f;
+            scale.y = 1.3f;
+            scale.z = 1.5f;
+            break;
+        case 6:
+            scale.x = 1.5f;
+            scale.y = 0.9f;
+            scale.z = 1.5f;
+            break;
+        case 7:
+            scale.x = 1.5f;
+            scale.y = 1.5f;
+            scale.z = 1.5f;
+            break;
+        case 8:
+            scale.x = 1.5f;
+            scale.y = 1.0f;
+            scale.z = 1.5f;
+            break;
+        case 9:
+            scale.x = 1.5f;
+            scale.y = 1.0f;
+            scale.z = 1.5f;
+            break;
+        }
+        w->pTentacle[i] = (cObj16*) SetObj16(ARC(0xE0), ARC(0xE1), em, em, 2, 9, &pos, &rot);
+        if (w->pTentacle[i]) {
+            MotSetObj16(w->pTentacle[i], ARC(0xE2), 4, step * i);
+            w->pTentacle[i]->setScale(&scale);
+        }
+    }
+}
+
+// Damage of the weapon that hit: half more on the head (parts 5), a quarter on the armoured variants.
+int em2bSetDmVal(cEm2b* em)
+{
+    EmHitInfo* part = em->dmPart;
+    int near = 0;
+    int dmg;
+
+    if (part->rad < 64000000.0f) {
+        near = 1;
+    }
+    dmg = 10;
+    if (em->dmWep <= 0x2D) {
+        dmg = GetWepDmVal(em, em->dmWep, near);
+    }
+    if (part->partsNo == 5) {
+        dmg += dmg / 2;
+    }
+    switch (em->type) {
+    case 1:
+    case 3:
+        dmg = dmg / 4 + 1;
+        break;
+    case 0:
+    case 2:
+        break;
+    }
+    return dmg;
+}
+
+// Another giant in battle is nearer to the player: wait (except far away, or at the room 224 drop).
+int em2bStayCk(cEm2b* em)
+{
+    int cnt = 0;
+    u32 i;
+
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEm* e = (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+
+        if ((e->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (e->id != 0x2B) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        if (e == em) {
+            continue;
+        }
+        if (!e->checkStatus(5)) {
+            continue;
+        }
+        if (e->plDist2 < em->plDist2) {
+            cnt++;
+        }
+    }
+    if (cnt == 0 || em->plDist2 > 144000000.0f) {
+        return 1;
+    }
+    if (pG->room_id == 0x224) {
+        if ((em2b_r11e_pos.x - em->pos.x) * (em2b_r11e_pos.x - em->pos.x) +
+                (em2b_r11e_pos.z - em->pos.z) * (em2b_r11e_pos.z - em->pos.z) <
+            16000000.0f) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Pushes this giant 3000 away from any other giant in battle it overlaps.
+void em2bObaHitCk(cEm2b* em)
+{
+    u32 i;
+
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEm* e = (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+        Vec d;
+
+        if ((e->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (e->id != 0x2B) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        if (e == em) {
+            continue;
+        }
+        if (!e->checkStatus(5)) {
+            continue;
+        }
+        PSVECSubtract(&em->pos, &e->pos, &d);
+        d.y = 0.0f;
+        if (d.x * d.x + d.z * d.z > 9000000.0f) {
+            continue;
+        }
+        // VECNormalize written out with `pLog.p->err`: the inline `operator->` adds two block notes
+        // between the `lis pLog@ha` and its use, which lets loop.c hoist the high (life 3 * 71 >= 89
+        // insns); the original keeps it in the error arm (life 1).
+        if (0.0f == d.x && 0.0f == d.y && 0.0f == d.z) {
+#line 9308 "D:/Bio4/Prog/em2b.cpp"
+            pLog.p->err(0, 0, "VECNormalize:[%s/%d]", __FILE__, __LINE__);
+            d.x = d.y = d.z = 0.0f;
+        } else {
+            PSVECNormalize(&d, &d);
+        }
+        PSVECScale(&d, &d, 3000.0f);
+        PSVECAdd(&e->pos, &d, &em->pos);
+        PartsWorldPosCalc(em);
+    }
+}
+
+int cEm2b::ckParasite()
+{
+    Em2bWork* w = EM2B_WK(this);
+
+    if (w->pParasite) {
+        return 1;
+    }
+    return 0;
+}
+
+// Die routine 1 (lost): squashes every parts by the y scale rate, keeping the world positions.
+void em2bScaleCompress(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    Mtx m;
+    Vec s;
+    cParts* p;
+
+    if (em->xFC != 3) {
+        return;
+    }
+    if (em->xFD != 1) {
+        return;
+    }
+    PSMTXIdentity(m);
+    s.y = w->scaleRate;
+    s.z = s.x = 1.0f;
+    ScaleMatrix(m, &s);
+    for (p = (cParts*) em->pParts; p; p = p->pNext) {
+        PSMTXConcat(m, p->mat, p->mat);
+        p->mat[0][3] = p->worldPos.x;
+        p->mat[1][3] = p->worldPos.y;
+        p->mat[2][3] = p->worldPos.z;
+    }
+}
+
+// Another living giant in battle exists.
+int em2bFriendCk(cEm2b* em)
+{
+    u32 i;
+
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEm* e = (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+
+        if ((e->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (e->id != 0x2B) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        if (e == em) {
+            continue;
+        }
+        if (!e->checkStatus(5)) {
+            continue;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+// Room 224: the giant near the opened floor hatch falls to its death; further out it is pulled
+// 8000 from the hatch centre.
+int cEm2b::ckR224Drop()
+{
+    Vec d;
+    f32 dist;
+
+    if (hp <= 0) {
+        return 0;
+    }
+    if (pG->room_id != 0x224) {
+        return 0;
+    }
+    dist = (pos.x - em2b_r11e_pos.x) * (pos.x - em2b_r11e_pos.x) + (pos.z - em2b_r11e_pos.z) * (pos.z - em2b_r11e_pos.z);
+    if (dist > 64000000.0f) {
+        return 0;
+    }
+    if ((int) pG->flags_174 >= 0) {
+        return 0;
+    }
+    if (dist > 25000000.0f) {
+        PSVECSubtract(&pos, &em2b_r11e_pos, &d);
+#line 9432 "D:/Bio4/Prog/em2b.cpp"
+        VECNormalize(&d, &d);
+        d.y = 0.0f;
+        PSVECScale(&d, &d, 8000.0f);
+        PSVECAdd(&em2b_r11e_pos, &d, &d);
+        d.y = 0.0f;
+        cModel::setPos(&d);
+        return 0;
+    }
+    S16Set(hp, 0);
+    EmSetDie(this);
+    EmReserveDropItem(this);
+    EmSetDieCntE(this);
+    atari.throughOn();
+    EmRoutineSet(this, 3, 3, 0, 0);
+    return 1;
+}
+
+// The tower (obj 0x39) within 8000 of the giant, for the base attack.
+void em2bYaguraSearch(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    u32 i;
+
+    w->pYagura = 0;
+    for (i = 0; i < ObjMgr.nArray; i++) {
+        cObj* o = (cObj*) ((u8*) ObjMgr.pArray + ObjMgr.size * i);
+
+        if ((o->be_flag & 0x201) != 1) {
+            continue;
+        }
+        if (o->id != 0x39) {
+            continue;
+        }
+        if ((em->pos.x - o->pos.x) * (em->pos.x - o->pos.x) + (em->pos.y - o->pos.y) * (em->pos.y - o->pos.y) +
+                (em->pos.z - o->pos.z) * (em->pos.z - o->pos.z) >
+            64000000.0f) {
+            continue;
+        }
+        w->pYagura = (cObjYagura*) o;
+        return;
+    }
+}
+
+// Room 224: the texture render manager of the hole attack's freeze effect.
+void em2bTexrenderInit(cEm2b* em)
+{
+    Em2bWork* w = EM2B_WK(em);
+    u8* tbl = w->texBlend;
+
+    if (pG->room_id != 0x224) {
+        return;
+    }
+    w->pTex = Ctrl12GetTexRenderEm2b(w->pCtrl12);
+    if (w->pTex == 0) {
+        pLog->err(0, 0, "em2bTexrenderInit:: Manager alloc failed!!");
+        return;
+    }
+    tbl[0] = 1;
+    tbl[1] = 0;
+    tbl[4] = 0xF7;
+    tbl[5] = w->pTex->texId;
+    w->pTex->repType = 1;
+    w->pTex->sy = w->pTex->sx = 0x40;
+}
+
+int cEm2b::ckSit()
+{
+    Em2bWork* w = EM2B_WK(this);
+
+    if (w->flags & 0x4000) {
+        return 1;
+    }
+    return 0;
+}
+

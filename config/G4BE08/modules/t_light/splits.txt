@@ -1,0 +1,34 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+t_light/db_light.cpp:
+	.text       start:0x00000000 end:0x00012408
+	.rodata     start:0x00000000 end:0x00001640
+	.data       start:0x00000000 end:0x00000500 align:4
+	.bss        start:0x00000000 end:0x000000AC align:4
+	.bss        start:0x000006F8 end:0x0000072C align:4 common
+
+t_light/t_light.cpp:
+	.text       start:0x00012408 end:0x00012968
+	.rodata     start:0x00001640 end:0x0000174C
+
+t_light/t_scroll.cpp:
+	.text       start:0x00012968 end:0x00017FA0
+	.rodata     start:0x0000174C end:0x00001EE0 align:4
+	.data       start:0x00000500 end:0x000006C0 align:4
+	.bss        start:0x000000AC end:0x000005D4 align:4
+
+t_light/t_util.cpp:
+	.text       start:0x00017FA0 end:0x00018650
+	.rodata     start:0x00001EE0 end:0x00002020
+	.bss        start:0x000005D4 end:0x000006F8 align:4
+
+t_light/tools.cpp:
+	.text       start:0x00018650 end:0x00018CF0
+	.rodata     start:0x00002020 end:0x000021C0
+	.data       start:0x000006C0 end:0x000006C4 skip

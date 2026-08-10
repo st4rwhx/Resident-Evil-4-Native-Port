@@ -1,31 +1,26 @@
-# NEVER commit the original game data. This repo must only ever contain
-# tooling + reconstructed source, never Capcom's copyrighted assets/binary.
-*.iso
-*.gcm
-*.gcz
-*.rvz
-*.dol
-*.rel
-*.lfs
-*.udas
-*.das
-/orig/
-/baserom*/
-/assets/
+build/
+build.ninja
+.ninja_deps
+.ninja_log
+objdiff.json
+compile_commands.json
+orig/*/*
+!orig/*/.gitkeep
+__pycache__/
+*.pyc
 
-# Build artifacts
-/build/*
-!/build/.gitkeep
-/native/build/
+# ProDG compiler temp files
+*.TMP.*
+build.ninja.*.tmp
+objdiff.json.*.tmp
+.ninja_lock
 
-# Toolchain downloads (Ghidra, wibo, CodeWarrior, decomp-toolkit binaries,
-# cloned extension repos) - but keep our own hand-written scripts
-/tools/*
-!/tools/.gitkeep
-!/tools/scripts/
-/tools/scripts/*.txt
+# native SN GCC build (tools/sn-gcc/build.sh)
+tools/sn-gcc/src/
+tools/sn-gcc/obj/
+tools/sn-gcc/cc1
+tools/sn-gcc/cc1plus
 
-# OS / editor cruft
-.DS_Store
-Thumbs.db
-*.swp
+# external checkouts used by tools/research/mwccdbg (see its README)
+tools/research/mwccdbg/mwcc-debugger
+tools/research/mwccdbg/retrowin32

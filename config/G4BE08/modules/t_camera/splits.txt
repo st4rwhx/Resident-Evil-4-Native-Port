@@ -1,0 +1,49 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:32
+
+t_camera/db_light.cpp:
+	.text       start:0x00000000 end:0x00012408
+	.rodata     start:0x00000000 end:0x00001640 align:4
+	.data       start:0x00000000 end:0x00000500 align:4
+	.bss        start:0x00000000 end:0x000000AC align:32
+	.bss        start:0x000163E4 end:0x00016418 align:4 common
+
+t_camera/t_camera.cpp:
+	.text       start:0x00012408 end:0x0001A67C
+	.rodata     start:0x00001640 end:0x00002090 align:4
+	.data       start:0x00000500 end:0x00000710 align:4
+	.bss        start:0x000000AC end:0x00016078 align:4
+
+t_camera/t_camera_data.cpp:
+	.text       start:0x0001A67C end:0x0001BC7C
+	.rodata     start:0x00002090 end:0x00002298 align:4
+	.data       start:0x00000710 end:0x00000718 align:4
+	.bss        start:0x00016078 end:0x00016170
+
+t_camera/t_camera_draw.cpp:
+	.text       start:0x0001BC7C end:0x0001C6F4
+	.rodata     start:0x00002298 end:0x000023A0 align:4
+	.data       start:0x00000718 end:0x00000720 align:4
+	.bss        start:0x00016170 end:0x00016180 align:16
+
+t_camera/t_prim.cpp:
+	.text       start:0x0001C6F4 end:0x0001C954
+	.rodata     start:0x000023A0 end:0x00002400 align:4
+	.data       start:0x00000720 end:0x0000076C align:4
+	.bss        start:0x00016180 end:0x000162C0 align:32
+
+t_camera/t_util.cpp:
+	.text       start:0x0001C954 end:0x0001CD0C
+	.rodata     start:0x00002400 end:0x00002540 align:4
+	.data       start:0x0000076C end:0x00000778 align:4
+	.bss        start:0x000162C0 end:0x000163E4 align:32
+
+t_camera/tools.cpp:
+	.text       start:0x0001CD0C end:0x0001D3AC
+	.rodata     start:0x00002540 end:0x000026E0 align:4
+	.data       start:0x00000778 end:0x0000077C skip

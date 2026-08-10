@@ -1,0 +1,42 @@
+{
+  "name": "t_id",
+  "module_id": 37,
+  "object": "files/Rel/t_id.rel",
+  "num_sections": 27,
+  "name_offset": 1595,
+  "name_size": 44,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 14,
+    ".dtors": 16,
+    ".rodata": 18,
+    ".data": 20,
+    ".bss": 22
+  },
+  "links": [
+    "Tools",
+    "t_camera",
+    "t_emlist",
+    "t_event",
+    "t_sce",
+    "t_light",
+    "t_esp"
+  ],
+  "field_overrides": [
+    {
+      "section": ".text",
+      "offset": 55738,
+      "kind": 6,
+      "value": 21
+    },
+    {
+      "section": ".text",
+      "offset": 55742,
+      "kind": 4,
+      "value": 56004
+    }
+  ]
+}

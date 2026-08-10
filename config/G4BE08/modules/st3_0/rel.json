@@ -1,0 +1,25 @@
+{
+  "name": "st3_0",
+  "module_id": 76,
+  "object": "files/Rel/st3_0.rel",
+  "num_sections": 25,
+  "name_offset": 3341,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 3,
+    ".dtors": 4,
+    ".rodata": 5,
+    ".data": 7,
+    ".bss": 9
+  },
+  "links": [
+    "st3_1",
+    "st3_2",
+    "st3_3"
+  ],
+  "field_overrides": []
+}

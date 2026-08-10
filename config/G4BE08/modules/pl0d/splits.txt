@@ -1,0 +1,23 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+pl0d/objRuger.cpp:
+	.text       start:0x00000000 end:0x000009A8
+	.rodata     start:0x00000000 end:0x00000190 align:4
+
+pl0d/wep02.cpp:
+	.text       start:0x000009A8 end:0x00001CE8
+	.rodata     start:0x00000190 end:0x00000358 align:4
+	.data       start:0x00000000 end:0x00000058 align:4
+
+pl0d/pl_wesker.cpp:
+	.text       start:0x00001CE8 end:0x00002BAC
+	.rodata     start:0x00000358 end:0x00000608 align:4
+	.data       start:0x00000058 end:0x000002B0 align:4
+	.data       start:0x000002B0 end:0x000002B4 skip
+	.bss        start:0x00000000 end:0x00000004 align:4

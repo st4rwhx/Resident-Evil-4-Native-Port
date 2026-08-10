@@ -1,0 +1,21 @@
+{
+  "name": "wep06",
+  "module_id": 50,
+  "object": "files/em/wep06.rel",
+  "num_sections": 25,
+  "name_offset": 2179,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 0,
+  "sections": {
+    ".text": 1,
+    ".ctors": 3,
+    ".dtors": 4,
+    ".rodata": 5,
+    ".data": 7,
+    ".bss": 9
+  },
+  "links": [],
+  "field_overrides": []
+}

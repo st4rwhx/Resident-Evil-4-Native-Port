@@ -1,0 +1,16 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:8
+
+wep13/pl_rocket.cpp:
+	.text       start:0x00000000 end:0x00001674
+	.rodata     start:0x00000000 end:0x000001BC align:4
+	.data       start:0x00000000 end:0x00000060
+
+wep13/wep13.cpp:
+	.text       start:0x00001674 end:0x00001DB8
+	.rodata     start:0x000001BC end:0x00000340 align:4
+	.data       start:0x00000060 end:0x00000064 skip

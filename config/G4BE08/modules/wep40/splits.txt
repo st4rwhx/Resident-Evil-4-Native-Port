@@ -1,0 +1,16 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+
+wep40/pl_rifle.cpp:
+	.text       start:0x00000000 end:0x000014A4
+	.rodata     start:0x00000000 end:0x000001A8 align:4
+	.data       start:0x00000000 end:0x00000040 align:4
+
+wep40/wep40.cpp:
+	.text       start:0x000014A4 end:0x00002294
+	.rodata     start:0x000001A8 end:0x00000488 align:4
+	.data       start:0x00000040 end:0x00000044 skip

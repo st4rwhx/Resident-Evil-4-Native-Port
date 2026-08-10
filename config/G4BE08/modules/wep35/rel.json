@@ -1,0 +1,21 @@
+{
+  "name": "wep35",
+  "module_id": 103,
+  "object": "files/em/wep35.rel",
+  "num_sections": 25,
+  "name_offset": 4546,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 0,
+  "sections": {
+    ".text": 1,
+    ".ctors": 3,
+    ".dtors": 4,
+    ".rodata": 5,
+    ".data": 7,
+    ".bss": 9
+  },
+  "links": [],
+  "field_overrides": []
+}

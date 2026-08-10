@@ -1,0 +1,66 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+st2_0/em_wrap.cpp:
+	.text       start:0x00000000 end:0x00000DC8
+	.rodata     start:0x00000000 end:0x00000AE8 align:4
+
+st2_0/cSceObj.cpp:
+	.text       start:0x00000DC8 end:0x00003144
+	.rodata     start:0x00000AE8 end:0x00000B80 align:4
+
+st2_0/r200.cpp:
+	.text       start:0x00003144 end:0x00004588
+	.rodata     start:0x00000B80 end:0x00000CF8 align:4
+	.bss        start:0x00000000 end:0x00000004 align:4
+
+st2_0/r201.cpp:
+	.text       start:0x00004588 end:0x00007720
+	.rodata     start:0x00000CF8 end:0x00000F60 align:4
+	.bss        start:0x00000004 end:0x00000008 align:4
+	.bss        start:0x00000040 end:0x00000074 align:4 common
+
+st2_0/r202.cpp:
+	.text       start:0x00007720 end:0x0000A9B8
+	.rodata     start:0x00000F60 end:0x00001248 align:4
+	.bss        start:0x00000008 end:0x0000000C align:4
+
+st2_0/r203.cpp:
+	.text       start:0x0000A9B8 end:0x0000BB20
+	.rodata     start:0x00001248 end:0x00001508 align:4
+	.data       start:0x00000000 end:0x00000028 align:4
+	.bss        start:0x0000000C end:0x00000010 align:4
+
+st2_0/r207.cpp:
+	.text       start:0x0000BB20 end:0x0000DF38
+	.rodata     start:0x00001508 end:0x000016E0 align:4
+	.data       start:0x00000028 end:0x00000098 align:4
+	.bss        start:0x00000010 end:0x00000014 align:4
+
+st2_0/r208.cpp:
+	.text       start:0x0000DF38 end:0x00013348
+	.rodata     start:0x000016E0 end:0x00001B28 align:4
+	.data       start:0x00000098 end:0x000002B8 align:4
+	.bss        start:0x00000014 end:0x00000038 align:4
+
+st2_0/r210.cpp:
+	.text       start:0x00013348 end:0x00014B30
+	.rodata     start:0x00001B28 end:0x00001C40 align:4
+	.data       start:0x000002B8 end:0x00000300 align:4
+	.bss        start:0x00000038 end:0x0000003C align:4
+
+st2_0/r222.cpp:
+	.text       start:0x00014B30 end:0x00017D94
+	.rodata     start:0x00001C40 end:0x00001E68 align:4
+	.data       start:0x00000300 end:0x00000330 align:4
+	.bss        start:0x0000003C end:0x00000040 align:4
+
+st2_0/st2.cpp:
+	.text       start:0x00017D94 end:0x000182DC
+	.rodata     start:0x00001E68 end:0x00001EB8 align:4
+	.data       start:0x00000330 end:0x00000334 skip

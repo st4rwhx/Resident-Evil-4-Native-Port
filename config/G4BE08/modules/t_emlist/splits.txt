@@ -1,0 +1,30 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:8
+	.bss        type:bss align:32
+
+t_emlist/t_emlist.cpp:
+	.text       start:0x00000000 end:0x00006388
+	.rodata     start:0x00000000 end:0x00001480 align:4
+	.data       start:0x00000000 end:0x000029B0
+	.bss        start:0x00000264 end:0x00000298 align:4 common
+
+t_emlist/t_prim.cpp:
+	.text       start:0x00006388 end:0x00006B2C
+	.rodata     start:0x00001480 end:0x000014E0 align:4
+	.data       start:0x000029B0 end:0x000029FC
+	.bss        start:0x00000000 end:0x00000140 align:32
+
+t_emlist/t_util.cpp:
+	.text       start:0x00006B2C end:0x00007330
+	.rodata     start:0x000014E0 end:0x00001620 align:4
+	.data       start:0x000029FC end:0x00002A08 align:4
+	.bss        start:0x00000140 end:0x00000264 align:32
+
+t_emlist/tools.cpp:
+	.text       start:0x00007330 end:0x000079D0
+	.rodata     start:0x00001620 end:0x000017C0 align:4
+	.data       start:0x00002A08 end:0x00002A0C skip

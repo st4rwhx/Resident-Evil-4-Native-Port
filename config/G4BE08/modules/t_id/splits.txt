@@ -1,0 +1,38 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+t_id/db_path.cpp:
+	.text       start:0x00000000 end:0x00001368
+	.rodata     start:0x00000000 end:0x000000F0 align:4
+	.data       start:0x00000000 end:0x00000030 align:4
+	.bss        start:0x00000000 end:0x0000000C align:4
+
+t_id/db_sctrl.cpp:
+	.text       start:0x00001368 end:0x000040B4
+	.rodata     start:0x000000F0 end:0x00000328 align:4
+	.data       start:0x00000030 end:0x00000058 align:4
+
+t_id/t_id.cpp:
+	.text       start:0x000040B4 end:0x0000DBA0
+	.ctors      start:0x00000000 end:0x00000004
+	.dtors      start:0x00000000 end:0x00000004
+	.rodata     start:0x00000328 end:0x00000E48 align:4
+	.data       start:0x00000058 end:0x00000298 align:4
+	.bss        start:0x0000000C end:0x0014DE34 align:4
+	.bss        start:0x0014DF58 end:0x0014DF8C align:4 common
+
+t_id/t_util.cpp:
+	.text       start:0x0000DBA0 end:0x0000DF58
+	.rodata     start:0x00000E48 end:0x00000F88 align:4
+	.data       start:0x00000298 end:0x000002A0 align:4
+	.bss        start:0x0014DE34 end:0x0014DF58 align:4
+
+t_id/tools.cpp:
+	.text       start:0x0000DF58 end:0x0000ECEC
+	.rodata     start:0x00000F88 end:0x00001128 align:4
+	.data       start:0x000002A0 end:0x000002A4 skip

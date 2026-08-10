@@ -1,0 +1,89 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:8
+	.bss        type:bss align:4
+
+st1_3/em_wrap.cpp:
+	.text       start:0x00000000 end:0x00000D40
+	.rodata     start:0x00000000 end:0x00000AE8 align:4
+
+st1_3/r102.cpp:
+	.text       start:0x00000D40 end:0x00001478
+	.rodata     start:0x00000AE8 end:0x00000CC8 align:4
+	.bss        start:0x00000000 end:0x00000004 align:4
+	.bss        start:0x00000048 end:0x0000007C align:4 common
+
+st1_3/r103.cpp:
+	.text       start:0x00001478 end:0x00002920
+	.rodata     start:0x00000CC8 end:0x00000E10 align:4
+	.data       start:0x00000000 end:0x00000028
+	.bss        start:0x00000004 end:0x00000008 align:4
+
+st1_3/r108.cpp:
+	.text       start:0x00002920 end:0x00003D20
+	.rodata     start:0x00000E10 end:0x00001020 align:4
+	.data       start:0x00000028 end:0x00000048
+	.bss        start:0x00000008 end:0x0000001C align:4
+
+st1_3/r10f.cpp:
+	.text       start:0x00003D20 end:0x00005934
+	.rodata     start:0x00001020 end:0x000012AC align:4
+	.bss        start:0x0000001C end:0x00000020 align:4
+
+st1_3/r111.cpp:
+	.text       start:0x00005934 end:0x000061A0
+	.rodata     start:0x000012AC end:0x0000144C align:4
+	.bss        start:0x00000020 end:0x00000024 align:4
+
+st1_3/r112.cpp:
+	.text       start:0x000061A0 end:0x000066B0
+	.rodata     start:0x0000144C end:0x000015AC align:4
+	.bss        start:0x00000024 end:0x00000028 align:4
+
+st1_3/r113.cpp:
+	.text       start:0x000066B0 end:0x0000750C
+	.rodata     start:0x000015AC end:0x00001798 align:4
+	.data       start:0x00000048 end:0x00000070
+	.bss        start:0x00000028 end:0x0000002C align:4
+
+st1_3/r117.cpp:
+	.text       start:0x0000750C end:0x0000AD60
+	.rodata     start:0x00001798 end:0x00001B24 align:4
+	.data       start:0x00000070 end:0x00000078
+	.bss        start:0x0000002C end:0x00000030 align:4
+
+st1_3/r118.cpp:
+	.text       start:0x0000AD60 end:0x0000BBB8
+	.rodata     start:0x00001B24 end:0x00001CC8 align:4
+	.bss        start:0x00000030 end:0x00000034 align:4
+
+st1_3/r11c.cpp:
+	.text       start:0x0000BBB8 end:0x0000FA88
+	.rodata     start:0x00001CC8 end:0x000020C8 align:4
+	.bss        start:0x00000034 end:0x00000038 align:4
+
+st1_3/r11d.cpp:
+	.text       start:0x0000FA88 end:0x00011684
+	.rodata     start:0x000020C8 end:0x000022E0 align:4
+	.data       start:0x00000078 end:0x00000080
+	.bss        start:0x00000038 end:0x0000003C align:4
+
+st1_3/r11e.cpp:
+	.text       start:0x00011684 end:0x00013160
+	.rodata     start:0x000022E0 end:0x00002540 align:4
+	.data       start:0x00000080 end:0x00000138
+	.bss        start:0x0000003C end:0x00000040 align:4
+
+st1_3/r11f.cpp:
+	.text       start:0x00013160 end:0x00014E24
+	.rodata     start:0x00002540 end:0x00002884 align:4
+	.data       start:0x00000138 end:0x00000140
+	.bss        start:0x00000040 end:0x00000048 align:4
+
+st1_3/st1.cpp:
+	.text       start:0x00014E24 end:0x00015234
+	.rodata     start:0x00002884 end:0x000028D4 align:4
+	.data       start:0x00000140 end:0x00000144 skip

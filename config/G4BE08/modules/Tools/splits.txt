@@ -1,0 +1,125 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:32
+
+Tools/db_light.cpp:
+	.text       start:0x00000000 end:0x000124B8
+	.rodata     start:0x00000000 end:0x00001640 align:4
+	.data       start:0x00000000 end:0x00000500 align:4
+	.bss        start:0x00000000 end:0x000000AC align:32
+	.bss        start:0x0013DDA0 end:0x0013DDD4 align:4 common
+
+Tools/db_mod.cpp:
+	.text       start:0x000124B8 end:0x0001BE30
+	.ctors      start:0x00000000 end:0x00000004
+	.rodata     start:0x00001640 end:0x000023D0 align:4
+	.data       start:0x00000500 end:0x00000728 align:4
+	.bss        start:0x000000AC end:0x0013AAF0 align:4
+
+Tools/db_toolbase.cpp:
+	.text       start:0x0001BE30 end:0x0001C890
+	.rodata     start:0x000023D0 end:0x00002578 align:4
+
+Tools/t_atari.cpp:
+	.text       start:0x0001C890 end:0x0001E0F4
+	.ctors      start:0x00000004 end:0x00000008
+	.dtors      start:0x00000000 end:0x00000004
+	.rodata     start:0x00002578 end:0x000029C8 align:4
+	.data       start:0x00000728 end:0x000007F8 align:4
+	.bss        start:0x0013AAF0 end:0x0013BF4C align:16
+
+Tools/t_cons.cpp:
+	.text       start:0x0001E0F4 end:0x0001F354
+	.rodata     start:0x000029C8 end:0x00002D6C align:4
+	.data       start:0x000007F8 end:0x00000CD8 align:4
+	.bss        start:0x0013BF4C end:0x0013C7B0 align:4
+
+Tools/t_dr.cpp:
+	.text       start:0x0001F354 end:0x00020D54
+	.rodata     start:0x00002D6C end:0x00003088 align:4
+	.data       start:0x00000CD8 end:0x00000DB0 align:4
+	.bss        start:0x0013C7B0 end:0x0013C7B4 align:16
+
+Tools/t_eminfo.cpp:
+	.text       start:0x00020D54 end:0x0002428C
+	.rodata     start:0x00003088 end:0x00003468 align:4
+	.data       start:0x00000DB0 end:0x00001E18 align:4
+	.bss        start:0x0013C7B4 end:0x0013C7BC align:4
+
+Tools/t_esp_area.cpp:
+	.text       start:0x0002428C end:0x000287B0
+	.rodata     start:0x00003468 end:0x00003A88 align:4
+	.data       start:0x00001E18 end:0x00001E38 align:4
+	.bss        start:0x0013C7BC end:0x0013DABC align:4
+
+Tools/t_flr_at.cpp:
+	.text       start:0x000287B0 end:0x0002C5F4
+	.rodata     start:0x00003A88 end:0x00003FF8 align:4
+	.data       start:0x00001E38 end:0x00002150 align:4
+	.bss        start:0x0013DABC end:0x0013DAC8 align:4
+
+Tools/t_lightarea.cpp:
+	.text       start:0x0002C5F4 end:0x0003120C
+	.rodata     start:0x00003FF8 end:0x00004680 align:4
+	.data       start:0x00002150 end:0x00002170 align:4
+	.bss        start:0x0013DAC8 end:0x0013DAD0
+
+Tools/t_mes.cpp:
+	.text       start:0x0003120C end:0x000320F4
+	.rodata     start:0x00004680 end:0x00004860 align:4
+	.data       start:0x00002170 end:0x000021E8 align:4
+
+Tools/t_motseq.cpp:
+	.text       start:0x000320F4 end:0x00035354
+	.rodata     start:0x00004860 end:0x00004E10 align:4
+	.data       start:0x000021E8 end:0x00002260 align:4
+
+Tools/t_mv.cpp:
+	.text       start:0x00035354 end:0x00035C7C
+	.rodata     start:0x00004E10 end:0x00004FA0 align:4
+	.data       start:0x00002260 end:0x00002278 align:4
+	.bss        start:0x0013DAD0 end:0x0013DB00 align:16
+
+Tools/t_prim.cpp:
+	.text       start:0x00035C7C end:0x000367B8
+	.rodata     start:0x00004FA0 end:0x00005000 align:4
+	.data       start:0x00002278 end:0x000022C8 align:4
+	.bss        start:0x0013DB00 end:0x0013DC40 align:32
+
+Tools/t_rck.cpp:
+	.text       start:0x000367B8 end:0x00039C68
+	.rodata     start:0x00005000 end:0x000053B8 align:4
+	.data       start:0x000022C8 end:0x00002350 align:4
+	.bss        start:0x0013DC40 end:0x0013DC48 align:32
+
+Tools/t_sce_at.cpp:
+	.text       start:0x00039C68 end:0x00042510
+	.rodata     start:0x000053B8 end:0x000061B8 align:4
+	.data       start:0x00002350 end:0x00002EC0 align:4
+	.bss        start:0x0013DC48 end:0x0013DC50
+
+Tools/t_tplview.cpp:
+	.text       start:0x00042510 end:0x00043218
+	.rodata     start:0x000061B8 end:0x00006370 align:4
+	.data       start:0x00002EC0 end:0x00002EC8 align:4
+	.bss        start:0x0013DC50 end:0x0013DC7C align:16
+
+Tools/t_util.cpp:
+	.text       start:0x00043218 end:0x000440B8
+	.rodata     start:0x00006370 end:0x000064B0 align:4
+	.data       start:0x00002EC8 end:0x00002ED0 align:4
+	.bss        start:0x0013DC7C end:0x0013DDA0 align:4
+
+Tools/t_vib.cpp:
+	.text       start:0x000440B8 end:0x00047754
+	.rodata     start:0x000064B0 end:0x00006818 align:4
+	.data       start:0x00002ED0 end:0x00002F58 align:4
+
+Tools/tools.cpp:
+	.text       start:0x00047754 end:0x000484E8
+	.rodata     start:0x00006818 end:0x000069B8 align:4
+	.data       start:0x00002F58 end:0x00002F5C skip

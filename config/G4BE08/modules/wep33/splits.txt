@@ -1,0 +1,16 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+
+wep33/pl_shotgun.cpp:
+	.text       start:0x00000000 end:0x00001724
+	.rodata     start:0x00000000 end:0x000001F8
+	.data       start:0x00000000 end:0x00000040 align:4
+
+wep33/wep33.cpp:
+	.text       start:0x00001724 end:0x000027D8
+	.rodata     start:0x000001F8 end:0x000004D8
+	.data       start:0x00000040 end:0x00000044 skip

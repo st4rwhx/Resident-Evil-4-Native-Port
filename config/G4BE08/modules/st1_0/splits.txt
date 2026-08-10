@@ -1,0 +1,27 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:8
+	.bss        type:bss align:4
+
+st1_0/em_wrap.cpp:
+	.rodata     start:0x00000000 end:0x00000AE8
+
+st1_0/r100.cpp:
+	.text       start:0x00000000 end:0x000040B0
+	.rodata     start:0x00000AE8 end:0x000010F0
+	.data       start:0x00000000 end:0x00000038
+	.bss        start:0x00000000 end:0x00000024 align:4
+	.bss        start:0x00000028 end:0x0000005C align:4 common
+
+st1_0/r120.cpp:
+	.text       start:0x000040B0 end:0x00005D28
+	.rodata     start:0x000010F0 end:0x000013B4
+	.bss        start:0x00000024 end:0x00000028 align:4
+
+st1_0/st1.cpp:
+	.text       start:0x00005D28 end:0x00006138
+	.rodata     start:0x000013B4 end:0x00001404 align:4
+	.data       start:0x00000038 end:0x0000003C skip

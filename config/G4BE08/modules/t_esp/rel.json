@@ -1,0 +1,29 @@
+{
+  "name": "t_esp",
+  "module_id": 46,
+  "object": "files/Rel/t_esp.rel",
+  "num_sections": 26,
+  "name_offset": 1999,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 14,
+    ".dtors": 16,
+    ".rodata": 17,
+    ".data": 19,
+    ".bss": 21
+  },
+  "links": [
+    "Tools",
+    "t_camera",
+    "t_emlist",
+    "t_id",
+    "t_event",
+    "t_sce",
+    "t_light"
+  ],
+  "field_overrides": []
+}

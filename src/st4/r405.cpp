@@ -1,0 +1,306 @@
+#include "types.h"
+#include "main_mem.h"
+#include "st_room.h"
+#include "atari.h"
+#include "event.h"
+#include "map_obj.h"
+#include "light.h"
+#include "widget.h"
+#include "flag_rsf.h"
+#include "global.h"
+#include "game.h"
+#include "sce.h"
+#include "sce_sys.h"
+#include "sce_at.h"
+#include "scroll.h"
+#include "obj.h"
+#include "em.h"
+#include "em_set.h"
+#include "em_wrap.h"
+#include "player.h"
+#include "pl_sub.h"
+#include "cam_ctrl.h"
+#include "mes.h"
+#include "esp.h"
+#include "snd.h"
+#include "TexRender.h"
+#include "db_log.h"
+
+// Room 4-05 (D:/Bio4/Prog/r405.cpp): the Ada mine chapter start (s00 event), its enemy waves and
+// the two water render targets.
+
+struct R405Work {
+    TexRenderMng* tex[2];   // 0x00
+    u32 cnt;                // 0x08  enemy waves set by R405Main
+    int timer;              // 0x0C  frames until the next wave check
+};
+
+// One-member struct: every store through the work reloads the pointer.
+struct R405WorkPtr {
+    R405Work* p;
+};
+
+static u8 r405_texTbl0[0x20];
+static u8 r405_texTbl1[0x20];
+static R405WorkPtr r405_work;
+
+// Hit effects of attribute type 2 (water)
+static const AtEffInfo r405_eff_info = {
+    1, {1, 0x2C}, {1, 0x2F}, {1, 0x2E}, {1, 0x2D}, {1, 0x20}, {1, 0x20}, {1, 0x2B}, {1, 0x2F},
+};
+
+void st4_initAdaGame();   // st4.cpp
+
+// The list entry's enemy id as an int, truncated by the caller (the u8 result of em_set.h is never masked).
+int GetEmIdFromListI(u32 no) asm("GetEmIdFromList");
+
+static void snd_tbl_set();
+void setTexRender();
+static void R405ExecEventS00();
+extern "C" void Evt_R405S00_Func(Event* e);
+static void em_set();
+extern "C" cEm* R405_EmSetEvent(EmListData* d);
+static void em_set3();
+static void r405_StrCheck();
+
+static void snd_tbl_set()
+{
+    SndBgmTblSet(0x405, 3);
+}
+
+void R405Init()
+{
+#line 69 "D:/Bio4/Prog/r405.cpp"
+    r405_work.p = (R405Work*) MEM_CALLOC(sizeof(R405Work), 1, 0xd);
+    st4_initAdaGame();
+    void* zero = 0;
+    GamePointInit(1);
+    EvtMgr.SetFunc("evt_r405s00_func", (void*) Evt_R405S00_Func);
+    EvtMgr.SetFunc("evt_r405s99_func", (void*) Evt_R405S00_Func);
+    if (RsfCheck(G_ROOM_ID, 1) == 0) {
+        SceAtDataSet_exec(6, 0x12, 0, (TaskFunc) em_set, 0, 1);
+        SceAtDataSet_exec(8, 0x12, 0, (TaskFunc) em_set, 0, 1);
+    }
+    if (RsfCheck(G_ROOM_ID, 2) == 0) {
+        SceAtDataSet_exec(9, 0x12, 0, (TaskFunc) em_set3, 0, 1);
+    }
+    if (RsfCheck(G_ROOM_ID, 0) == 0) {
+        SceExec(0x12, (TaskFunc) R405ExecEventS00, 0, 0, 2, 0);
+        EvtMgr.EvtReadAram("event/evd/r405s00.evd", (u8) GetEmIdFromListI(0), 0, 0, 0);
+    }
+    EatMgr.registEffInfo(2, (AtEffInfo*) &r405_eff_info);
+    if (pG->x4FB8 == 2) {
+        PlRegistMotion(ROOM_ARC_PTR(pG->pRoomArc, 0x21), ROOM_ARC_PTR(pG->pRoomArc, 0x22), ROOM_ARC_PTR(pG->pRoomArc, 0x23),
+                       ROOM_ARC_PTR(pG->pRoomArc, 0x24), ROOM_ARC_PTR(pG->pRoomArc, 0x25), ROOM_ARC_PTR(pG->pRoomArc, 0x26), 0, 0,
+                       zero, zero, zero, zero);
+    } else {
+        PlRegistMotion(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, 0, 0, 0, 0, 0, zero, zero, zero, zero);
+    }
+    setTexRender();
+    SceSetRoomExitFunc((int) snd_tbl_set, 0);
+    if (pG->room_id_prev == 0x406) {
+        SmdGetObjPtr(0x42)->be_flag |= 0x20;
+        SmdGetObjPtr(0x42)->pos.y += 3000.0f;
+    }
+}
+
+void R405Main()
+{
+    if (RsfCheck(G_ROOM_ID, 1)) {
+        if (r405_work.p->cnt <= 4) {
+            if (r405_work.p->timer <= 0) {
+                if ((u32) SceCountEmAlive(0x10, 0x20) <= 8) {
+                    if (pG->sceat_x17C & 0x20000000) {
+                        R405_EmSetEvent(EM_LIST(0x10));
+                        R405_EmSetEvent(EM_LIST(0x11));
+                        r405_work.p->cnt++;
+                        r405_work.p->timer = 240;
+                    } else if (pG->sceat_x17C & 0x10000000) {
+                        R405_EmSetEvent(EM_LIST(0x13));
+                        R405_EmSetEvent(EM_LIST(0x14));
+                        r405_work.p->cnt++;
+                        r405_work.p->timer = 240;
+                    } else if (pG->sceat_x17C & 0x40000000) {
+                        R405_EmSetEvent(EM_LIST(0x25));
+                        R405_EmSetEvent(EM_LIST(0x26));
+                        r405_work.p->cnt++;
+                        r405_work.p->timer = 240;
+                    }
+                }
+            } else {
+                r405_work.p->timer--;
+            }
+        }
+    }
+}
+
+// The water surface: two render targets blended into the water objects.
+void setTexRender()
+{
+    cObj* obj;
+    u8* tbl0 = r405_texTbl0;
+    u8* tbl1 = r405_texTbl1;
+
+    if (GetTexRenderMgr(&r405_work.p->tex[0])) {
+        tbl0[0] = 1;
+        tbl0[1] = 0;
+        tbl0[4] = 0xF7;
+        tbl0[5] = r405_work.p->tex[0]->texId;
+        r405_work.p->tex[0]->repType = 1;
+        EstSet(0, -1, 0, 0, 1, 0, r405_work.p->tex[0]->mask | 1, 0, 0, 0);
+    } else {
+        pLog->err(0, 0, "R300Init() : Manager alloc failed!!");
+    }
+    obj = SmdGetObjPtr(0xC);
+    obj->pInfo->setTexBlendTbl(tbl0);
+    obj->pInfo->setBlendRatio(0xFF);
+    if (GetTexRenderMgr(&r405_work.p->tex[1])) {
+        tbl1[0] = 1;
+        tbl1[1] = 0;
+        tbl1[4] = 0xF7;
+        tbl1[5] = r405_work.p->tex[1]->texId;
+        r405_work.p->tex[1]->repType = 1;
+        EstSet(0, -1, 0, 0, 1, 4, r405_work.p->tex[1]->mask | 1, 0, 0, 0);
+    } else {
+        pLog->err(0, 0, "R300Init() : Manager alloc failed!!");
+    }
+    obj = SmdGetObjPtr(0xE);
+    obj->pInfo->setTexBlendTbl(tbl1);
+    obj->pInfo->setBlendRatio(0xFF);
+    obj->pInfo->setBlendType(1);
+}
+
+static void R405ExecEventS00()
+{
+    if (RsfCheck(G_ROOM_ID, 0) == 0) {
+        RsfSet(G_ROOM_ID, 0);
+        SceEventStart(0);
+        pG->flags_54 |= 0x400;
+        SceSleep(1);
+        EvtMgr.EvtReadExec("event/evd/r405s00.evd", (u8) GetEmIdFromListI(0), 0);
+        SceEventEnd(0);
+        SndRoomStrStart(1, 0, 1);
+        SndBgmTblSet(0x405, 2);
+        SndRoomBgmStart(0, 0);
+        SndRoomBgmStart(1, 0);
+        SceSleep(2);
+        SceMesSet(0, 0, 1, 0x64, 0x150 - cMes.getWork()->lineSpace - cMes.getWork()->fontH - 1);
+    }
+}
+
+extern "C" void Evt_R405S00_Func(Event* e)
+{
+    void* mod;
+
+    if (e->funcMode == 1) {
+        if (e->cut == 0) {
+            if (e->frame == 0) {
+                if (e->GetMod(&mod, "pl0c00", 0, 0) == 1) {
+                    ((cModel*) mod)->lightInfo.x50 = 1;
+                }
+                if (e->GetMod(&mod, "pl0c00", 0, 0) == 1) {
+                    Obj18Work* w = &((cObj*) mod)->o18;
+
+                    if (w && w->child) {
+                        ((cObj*) mod)->o18.x74 |= 0x04000000;
+                        w->child->be_flag &= ~2;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The first wave: three enemies walk in while the camera shows the gate rising.
+static void em_set()
+{
+    if (RsfCheck(G_ROOM_ID, 1) == 0) {
+        u32 i;
+
+        RsfSet(G_ROOM_ID, 1);
+        SndRoomStrStop(3);
+        SndBgmTblSet(0x405, 1);
+        SndRoomStrStart(1, 0, 1);
+        SceExec(0x12, (TaskFunc) r405_StrCheck, 0, 0, 2, 0);
+        cEmWrap em0;
+        cEmWrap em1;
+        cEmWrap em2;
+        em0.setEm(0xC, -1, 1, 1, 1);
+        em1.setEm(0xD, -1, 1, 1, 1);
+        em2.setEm(0xE, -1, 1, 1, 1);
+        em0.setNoSuspend(1);
+        em1.setNoSuspend(1);
+        em2.setNoSuspend(1);
+        em0.setGoto(&pPL->pos, 7);
+        em1.setGoto(&pPL->pos, 7);
+        em2.setGoto(&pPL->pos, 7);
+        SceEventStart(0);
+        CamCtrl.CutCall(0xE);
+        SmdGetObjPtr(0x42)->be_flag |= 0x20;
+        SndCall(6, 0xD, &SmdGetObjPtr(0x42)->pos, 0, 0, 0);
+        for (i = 0; i < 25; i++) {
+            SmdGetObjPtr(0x42)->pos.y += 120.0f;
+            SceSleep(1);
+        }
+        while (CamCtrl.IsMotionEnd() == 0) {
+            SceSleep(1);
+        }
+        CamCtrl.Comeback(0);
+        SceEventEnd(0);
+        em0.setNoSuspend(0);
+        em1.setNoSuspend(0);
+        em2.setNoSuspend(0);
+    }
+}
+
+extern "C" cEm* R405_EmSetEvent(EmListData* d)
+{
+    cEm* em = EmSetEvent(d);
+
+    if (em) {
+        ((cEmGanado*) em)->setFindPL();
+    }
+    return em;
+}
+
+// The second wave: up to three enemies depending on how many are alive.
+static void em_set3()
+{
+    if (RsfCheck(G_ROOM_ID, 2) == 0) {
+        RsfSet(G_ROOM_ID, 2);
+        u32 n = SceCountEmAlive(0x10, 0x20);
+        cEmWrap em0;
+        cEmWrap em1;
+        cEmWrap em2;
+
+        if (n <= 10) {
+            em0.setEm(0x22, -1, 1, 1, 1);
+            em0.setGoto(&pPL->pos, 7);
+        }
+        if (n <= 9) {
+            em1.setEm(0x23, -1, 1, 1, 1);
+        }
+        if (n <= 8) {
+            em2.setEm(0x24, -1, 1, 1, 1);
+        }
+    }
+}
+
+// The battle stream: on while an enemy sees the player.
+static void r405_StrCheck()
+{
+    int on = 0;
+
+    for (;;) {
+        if (SceCkFindPL(0) == 1) {
+            if (on == 0) {
+                SndRoomStrStart(1, 0, 1);
+                on = 1;
+            }
+        } else if (on == 1) {
+            SndRoomStrStop(3);
+            on = 0;
+        }
+        SceSleep(1);
+    }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Sscrn",
+  "module_id": 71,
+  "object": "files/Rel/Sscrn.rel",
+  "num_sections": 27,
+  "name_offset": 3116,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 14,
+    ".dtors": 16,
+    ".rodata": 18,
+    ".data": 20,
+    ".bss": 22
+  },
+  "links": [],
+  "field_overrides": [
+    {
+      "section": ".text",
+      "offset": 12382,
+      "kind": 4,
+      "value": 65532
+    },
+    {
+      "section": ".text",
+      "offset": 15806,
+      "kind": 4,
+      "value": 65532
+    }
+  ]
+}

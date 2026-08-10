@@ -1,0 +1,29 @@
+{
+  "name": "t_camera",
+  "module_id": 26,
+  "object": "files/Rel/t_camera.rel",
+  "num_sections": 25,
+  "name_offset": 1104,
+  "name_size": 48,
+  "align": 8,
+  "bss_align": 32,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 3,
+    ".dtors": 4,
+    ".rodata": 5,
+    ".data": 7,
+    ".bss": 9
+  },
+  "links": [
+    "Tools",
+    "t_emlist",
+    "t_id",
+    "t_event",
+    "t_sce",
+    "t_light",
+    "t_esp"
+  ],
+  "field_overrides": []
+}

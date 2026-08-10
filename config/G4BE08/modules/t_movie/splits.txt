@@ -1,0 +1,51 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+	.bss        type:bss align:32
+
+t_movie/db_light.cpp:
+	.text       start:0x00000000 end:0x0001143C
+	.rodata     start:0x00000000 end:0x00001640
+	.data       start:0x00000000 end:0x00000500 align:4
+	.bss        start:0x00000000 end:0x000000AC align:32
+	.bss        start:0x00009338 end:0x0000936C align:4 common
+
+t_movie/snd_test.cpp:
+	.text       start:0x0001143C end:0x0001655C
+	.rodata     start:0x00001640 end:0x00002644
+	.data       start:0x00000500 end:0x00000B78 align:4
+
+t_movie/t_movie.cpp:
+	.text       start:0x0001655C end:0x00016E18
+	.ctors      start:0x00000000 end:0x00000004
+	.dtors      start:0x00000000 end:0x00000004
+	.rodata     start:0x00002644 end:0x000026C4 align:4
+	.data       start:0x00000B78 end:0x00000B88 align:4
+	.bss        start:0x000000AC end:0x000090C0 align:4
+
+t_movie/t_prim.cpp:
+	.text       start:0x00016E18 end:0x000172BC
+	.rodata     start:0x000026C4 end:0x00002728 align:4
+	.data       start:0x00000B88 end:0x00000BD8 align:4
+	.bss        start:0x000090C0 end:0x00009200 align:32
+
+t_movie/t_se_at.cpp:
+	.text       start:0x000172BC end:0x0001A0D0
+	.rodata     start:0x00002728 end:0x00002C30
+	.data       start:0x00000BD8 end:0x00000D50 align:4
+	.bss        start:0x00009200 end:0x00009214 align:32
+
+t_movie/t_snd_vol.cpp:
+	.text       start:0x0001A0D0 end:0x0002023C
+	.rodata     start:0x00002C30 end:0x00003510
+	.data       start:0x00000D50 end:0x00000EB8 align:4
+
+t_movie/t_util.cpp:
+	.text       start:0x0002023C end:0x00020B98
+	.rodata     start:0x00003510 end:0x00003650
+	.data       start:0x00000EB8 end:0x00000EC0 align:4
+	.data       start:0x00000EC0 end:0x00000EC4 skip
+	.bss        start:0x00009214 end:0x00009338 align:4

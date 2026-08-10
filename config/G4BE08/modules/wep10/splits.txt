@@ -1,0 +1,20 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+
+wep10/objHkSniper.cpp:
+	.text       start:0x00000000 end:0x0000064C
+	.rodata     start:0x00000000 end:0x00000160 align:4
+
+wep10/pl_rifle.cpp:
+	.text       start:0x0000064C end:0x00001AF0
+	.rodata     start:0x00000160 end:0x00000308 align:4
+	.data       start:0x00000000 end:0x00000040 align:4
+
+wep10/wep10.cpp:
+	.text       start:0x00001AF0 end:0x0000224C
+	.rodata     start:0x00000308 end:0x00000488 align:4
+	.data       start:0x00000040 end:0x00000044 skip

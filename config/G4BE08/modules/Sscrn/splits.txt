@@ -1,0 +1,75 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+Sscrn/ss_cap.cpp:
+	.text       start:0x00000000 end:0x00000FC0
+	.rodata     start:0x00000000 end:0x00000240 align:4
+	.data       start:0x00000000 end:0x00000030 align:4
+	.bss        start:0x00000000 end:0x00000004 align:4
+
+Sscrn/ss_debug.cpp:
+	.text       start:0x00000FC0 end:0x00002514
+	.rodata     start:0x00000240 end:0x00000688 align:4
+	.data       start:0x00000030 end:0x00000040 align:4
+
+Sscrn/ss_file.cpp:
+	.text       start:0x00002514 end:0x00004FAC
+	.rodata     start:0x00000688 end:0x00000928 align:4
+	.data       start:0x00000040 end:0x00000550 align:4
+	.bss        start:0x00000004 end:0x0000008C align:4
+
+Sscrn/ss_item.cpp:
+	.text       start:0x00004FAC end:0x00009090
+	.rodata     start:0x00000928 end:0x00000CC0 align:4
+	.data       start:0x00000550 end:0x00000580 align:4
+	.bss        start:0x0000008C end:0x0000027C align:4
+
+Sscrn/ss_item_draw.cpp:
+	.text       start:0x00009090 end:0x00009978
+	.rodata     start:0x00000CC0 end:0x00000CD0 align:4
+
+Sscrn/ss_main.cpp:
+	.text       start:0x00009978 end:0x0000DCAC
+	.ctors      start:0x00000000 end:0x00000004
+	.dtors      start:0x00000000 end:0x00000004
+	.rodata     start:0x00000CD0 end:0x00001248 align:4
+	.data       start:0x00000580 end:0x00000590 align:4
+	.bss        start:0x0000027C end:0x000002F4 align:4
+
+Sscrn/ss_map.cpp:
+	.text       start:0x0000DCAC end:0x00016270
+	.rodata     start:0x00001248 end:0x000022E0 align:4
+	.data       start:0x00000590 end:0x00000980 align:4
+	.bss        start:0x000002F4 end:0x0000049C align:4
+
+Sscrn/ss_model.cpp:
+	.text       start:0x00016270 end:0x0001BA58
+	.rodata     start:0x000022E0 end:0x000026D8 align:4
+	.data       start:0x00000980 end:0x00000A44 align:4
+
+Sscrn/ss_pzzl.cpp:
+	.text       start:0x0001BA58 end:0x00023BB8
+	.rodata     start:0x000026D8 end:0x00002BC0 align:4
+	.data       start:0x00000A44 end:0x00000AE8 align:4
+	.bss        start:0x0000049C end:0x000004E0 align:4
+	.bss        start:0x00000524 end:0x00000558 align:4 common
+
+Sscrn/ss_shop.cpp:
+	.text       start:0x00023BB8 end:0x0002C880
+	.rodata     start:0x00002BC0 end:0x00003128 align:4
+	.data       start:0x00000AE8 end:0x000010E8 align:4
+	.bss        start:0x000004E0 end:0x00000508 align:4
+
+Sscrn/ss_term.cpp:
+	.text       start:0x0002C880 end:0x0002F784
+	.ctors      start:0x00000004 end:0x00000008
+	.dtors      start:0x00000004 end:0x00000008
+	.rodata     start:0x00003128 end:0x000036D8 align:4
+	.data       start:0x000010E8 end:0x000012F8 align:4
+	.data       start:0x000012F8 end:0x000012FC skip
+	.bss        start:0x00000508 end:0x00000524 align:4

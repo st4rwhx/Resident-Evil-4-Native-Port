@@ -1,0 +1,21 @@
+{
+  "name": "pl06",
+  "module_id": 106,
+  "object": "files/em/pl06.rel",
+  "num_sections": 25,
+  "name_offset": 4681,
+  "name_size": 44,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 0,
+  "sections": {
+    ".text": 1,
+    ".ctors": 3,
+    ".dtors": 4,
+    ".rodata": 5,
+    ".data": 7,
+    ".bss": 9
+  },
+  "links": [],
+  "field_overrides": []
+}

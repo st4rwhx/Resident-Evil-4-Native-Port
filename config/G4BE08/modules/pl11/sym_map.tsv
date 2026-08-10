@@ -1,0 +1,14 @@
+section	offset	size	unit	scope	name	demangled
+.text	0x00000000	0x60	pl11/pl11.cpp	local	Pl11Init__FP3cEm	Pl11Init
+.text	0x00000060	0x8C	pl11/pl11.cpp	global	__10cSubAshley	cSubAshley::cSubAshley
+.text	0x000000EC	0x160	pl11/pl11.cpp	global	modelSet__10cSubAshley	cSubAshley::modelSet
+.text	0x0000024C	0xDC	pl11/pl11.cpp	global	setFace__10cSubAshleyi	cSubAshley::setFace
+.text	0x00000328	0x14C	pl11/pl11.cpp	global	setHand__10cSubAshleyi	cSubAshley::setHand
+.text	0x00000474	0x14	pl11/pl11.cpp	global	_prolog	_prolog
+.text	0x00000488	0x4	pl11/pl11.cpp	global	_epilog	_epilog
+.text	0x0000048C	0x4	pl11/pl11.cpp	global	_unresolved	_unresolved
+.text	0x00000490	0x24	pl11/pl11.cpp	global	_._10cSubAshley	cSubAshley::~cSubAshley
+.text	0x000004B4	0x3C	pl11/pl11.cpp	global	initCloth__10cSubAshley	cSubAshley::initCloth
+.text	0x000004F0	0x38	pl11/pl11.cpp	global	moveCloth__10cSubAshley	cSubAshley::moveCloth
+.rodata	0x00000054	0xEC	pl11/pl11.cpp	local	lbl_pl11_rodata_54	lbl_pl11_rodata_54
+.rodata	0x00000140	0x88	pl11/pl11.cpp	global	lbl_pl11_rodata_140	lbl_pl11_rodata_140

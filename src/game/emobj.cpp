@@ -1,0 +1,217 @@
+// game/emobj.cpp: generic object enemy base (cEmObj): matrix update, scenario / effect
+// collision quad registration, yarare setup.
+
+#include "atari.h"
+#include "emobj.h"
+#include "math_sub.h"
+
+extern "C" {
+int MotionMove(cModel* m, int a);
+void YarareInit(cEm* em, s16 no, u16 flag, f32 x, f32 y, f32 z, f32 w, f32 h);            // at_mod.cpp
+void YarareInitCube(cEm* em, s16 no, u16 flag, f32 x, f32 y, f32 z, f32 w, f32 h, f32 rad);
+}
+
+// cSatMgr::create(pos, rot, poly, attr, flag, h) with the `lfs h` argument move issued before the
+// `lwz attr/flag` moves (atari_init.h: GCC emits the moves in declaration order, the original
+// build issued the FP argument first).
+cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h, int attr, int flag) asm("create__7cSatMgrP3VecN21iif");
+
+void cEmObj::EmObjInit()
+{
+    EmObjWork* w = EMOBJ_WK(this);
+
+    x3E0 = 0;
+    w->pSat = 0;
+    w->pEat = 0;
+    w->eff = 0xFF;
+    w->etc = 0xFF;
+}
+
+void cEmObj::EmObjMove()
+{
+    EmObjWork* w = EMOBJ_WK(this);
+
+    RotMatrix(mat, &rot);
+    TransMatrix(mat, &pos);
+    ScaleMatrix(mat, &scale);
+    if (x3E0 & 1) {
+        MotionMove(this, 0);
+    } else {
+        partsMatCalc();
+        motState = 0;
+    }
+    partsWorldCalc();
+    if (w->flags & 2) {
+        setSatMain();
+    }
+    if (w->flags & 4) {
+        setEatMain();
+    }
+}
+
+void cEmObj::setSat(Vec* pos, int n, int flag, int cube, f32 sx, f32 sy, f32 sz)
+{
+    EmObjWork* w = EMOBJ_WK(this);
+
+    if (pos) {
+        w->satPos = *pos;
+    }
+    w->satSize.x = sx;
+    w->satSize.y = sy;
+    w->satSize.z = sz;
+    w->satN = n;
+    w->satFlag = flag;
+    x3E0 |= 2;
+    setSatMain();
+}
+
+void cEmObj::setSatMain()
+{
+    EmObjWork* w = EMOBJ_WK(this);
+    Vec poly[4];
+
+    if (w->pSat) {
+        w->pSat->flags &= ~4;
+    }
+    poly[0].x = w->satPos.x - w->satSize.x;
+    poly[0].y = w->satPos.y;
+    poly[0].z = w->satPos.z - w->satSize.z;
+    poly[1].x = w->satPos.x + w->satSize.x;
+    poly[1].y = w->satPos.y;
+    poly[1].z = w->satPos.z - w->satSize.z;
+    poly[2].x = w->satPos.x + w->satSize.x;
+    poly[2].y = w->satPos.y;
+    poly[2].z = w->satPos.z + w->satSize.z;
+    poly[3].x = w->satPos.x - w->satSize.x;
+    poly[3].y = w->satPos.y;
+    poly[3].z = w->satPos.z + w->satSize.z;
+    if (w->pSat == 0) {
+        w->pSat = SatMgrCreateF(&SatMgr, &pos, &rot, poly, w->satSize.y, w->satN, w->satFlag);
+    } else {
+        w->pSat->flags |= 4;
+        w->pSat->setCoord(&pos, &rot);
+    }
+}
+
+void cEmObj::clrSat()
+{
+    EmObjWork* w = EMOBJ_WK(this);
+
+    if (w->pSat) {
+        w->pSat->flags &= ~4;
+    }
+    x3E0 &= ~2;
+}
+
+void cEmObj::setEat(Vec* pos, int n, int flag, int cube, f32 sx, f32 sy, f32 sz)
+{
+    EmObjWork* w = EMOBJ_WK(this);
+
+    if (pos) {
+        w->eatPos = *pos;
+    }
+    w->eatSize.x = sx;
+    w->eatSize.y = sy;
+    w->eatSize.z = sz;
+    w->eatN = n;
+    w->eatFlag = flag;
+    x3E0 |= 4;
+    setEatMain();
+}
+
+void cEmObj::setEatMain()
+{
+    EmObjWork* w = EMOBJ_WK(this);
+    Vec poly[4];
+
+    if (w->pEat) {
+        w->pEat->flags &= ~4;
+    }
+    poly[0].x = w->eatPos.x - w->eatSize.x;
+    poly[0].y = w->eatPos.y;
+    poly[0].z = w->eatPos.z - w->eatSize.z;
+    poly[1].x = w->eatPos.x + w->eatSize.x;
+    poly[1].y = w->eatPos.y;
+    poly[1].z = w->eatPos.z - w->eatSize.z;
+    poly[2].x = w->eatPos.x + w->eatSize.x;
+    poly[2].y = w->eatPos.y;
+    poly[2].z = w->eatPos.z + w->eatSize.z;
+    poly[3].x = w->eatPos.x - w->eatSize.x;
+    poly[3].y = w->eatPos.y;
+    poly[3].z = w->eatPos.z + w->eatSize.z;
+    if (w->pEat == 0) {
+        w->pEat = SatMgrCreateF(&EatMgr, &pos, &rot, poly, w->eatSize.y, w->eatN, w->eatFlag);
+    } else {
+        w->pEat->flags |= 4;
+        w->pEat->setCoord(&pos, &rot);
+    }
+}
+
+void cEmObj::clrEat()
+{
+    EmObjWork* w = EMOBJ_WK(this);
+
+    if (w->pEat) {
+        w->pEat->flags &= ~4;
+    }
+    x3E0 &= ~4;
+}
+
+void cEmObj::setYarare(s16 no, Vec* pos, u16 flag, int cube, f32 w, f32 h, f32 rad)
+{
+    Vec p;
+
+    if (pos == 0) {
+        p.x = 0.0f;
+        p.y = 0.0f;
+        p.z = 0.0f;
+    } else {
+        p.x = pos->x;
+        p.y = pos->y;
+        p.z = pos->z;
+    }
+    // The original re-extends both narrow parameters at the calls (`extsh r4, r4`, `clrlwi r5, r6, 16`
+    // after `ori r6, r6, 1`): its compiler does not assume promoted incoming arguments (the
+    // narrow-argument compiler difference). Ours does (combine's setup_incoming_promotions), so every
+    // int/narrow/cast form folds the extensions away; the empty asms hide the promotion from combine
+    // and `f` is pinned to flag's incoming r6 so the `ori` stays in place.
+    register int f asm("r6") = flag;
+    int n = no;
+    asm("" : "+r"(n));
+    asm("" : "+r"(f));
+    f |= 1;
+    if (cube == 0) {
+        YarareInitCube(this, n, f, p.x, p.y, p.z, w, h, rad);
+    } else {
+        YarareInit(this, n, f, p.x, p.y, p.z, w, h);
+    }
+}
+
+// Dead-stripped in the original (STRIP_UNUSED): only its constant pool (one 0.0f) survives after
+// setYarare's pool at the end of .rodata.
+static void emObjPosClear(Vec* p)
+{
+    p->x = 0.0f;
+    p->y = 0.0f;
+    p->z = 0.0f;
+}
+
+void cEmObj::setEff(u8 v)
+{
+    EMOBJ_WK(this)->eff = v;
+}
+
+u8 cEmObj::getEff()
+{
+    return EMOBJ_WK(this)->eff;
+}
+
+void cEmObj::setEtc(u8 v)
+{
+    EMOBJ_WK(this)->etc = v;
+}
+
+u8 cEmObj::getEtc()
+{
+    return EMOBJ_WK(this)->etc;
+}

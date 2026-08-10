@@ -1,0 +1,19 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+wep45/pl_grenade.cpp:
+	.text       start:0x00000000 end:0x00001764
+	.rodata     start:0x00000000 end:0x00000298 align:4
+	.data       start:0x00000000 end:0x00000050 align:4
+	.bss        start:0x00000000 end:0x00000018 align:4
+
+wep45/wep45.cpp:
+	.text       start:0x00001764 end:0x00002714
+	.rodata     start:0x00000298 end:0x00000568 align:4
+	.data       start:0x00000050 end:0x00000054 skip
+	.bss        start:0x00000018 end:0x0000001C align:4

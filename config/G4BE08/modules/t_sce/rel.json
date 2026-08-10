@@ -1,0 +1,29 @@
+{
+  "name": "t_sce",
+  "module_id": 44,
+  "object": "files/Rel/t_sce.rel",
+  "num_sections": 27,
+  "name_offset": 1907,
+  "name_size": 45,
+  "align": 8,
+  "bss_align": 4,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 14,
+    ".dtors": 16,
+    ".rodata": 18,
+    ".data": 20,
+    ".bss": 22
+  },
+  "links": [
+    "Tools",
+    "t_camera",
+    "t_emlist",
+    "t_id",
+    "t_event",
+    "t_light",
+    "t_esp"
+  ],
+  "field_overrides": []
+}

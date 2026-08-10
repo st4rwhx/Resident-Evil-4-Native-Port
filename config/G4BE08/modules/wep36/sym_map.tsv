@@ -1,0 +1,25 @@
+section	offset	size	unit	scope	name	demangled
+.text	0x00000000	0x7C	wep36/wep36.cpp	local	Wep36_init__FP6cModel	Wep36_init
+.text	0x0000007C	0x4	wep36/wep36.cpp	global	Wep36_move__FP7cPlayer	Wep36_move
+.text	0x00000080	0xDC	wep36/wep36.cpp	global	equipWeapon__FP7cPlayer	equipWeapon
+.text	0x0000015C	0x38	wep36/wep36.cpp	global	ObjHand_init__FP4cObj	ObjHand_init
+.text	0x00000194	0x25C	wep36/wep36.cpp	global	setMotion__8cObjHandP7cPlayer	cObjHand::setMotion
+.text	0x000003F0	0x5C	wep36/wep36.cpp	global	_prolog	_prolog
+.text	0x0000044C	0x10	wep36/wep36.cpp	global	_epilog	_epilog
+.text	0x0000045C	0x4	wep36/wep36.cpp	global	_unresolved	_unresolved
+.text	0x00000460	0xBC	wep36/wep36.cpp	global	countActiveWork__t8cManager1Z4cObj	cManager<cObj>::countActiveWork
+.text	0x0000051C	0x170	wep36/wep36.cpp	global	createBack__t8cManager1Z4cObji	cManager<cObj>::createBack
+.text	0x0000068C	0x4	wep36/wep36.cpp	global	beginEvent__5cUnit	cUnit::beginEvent
+.text	0x00000690	0x4	wep36/wep36.cpp	global	endEvent__5cUnit	cUnit::endEvent
+.text	0x00000694	0x20	wep36/wep36.cpp	global	_._8cObjHand	cObjHand::~cObjHand
+.text	0x000006B4	0x48	wep36/wep36.cpp	global	_._5cUnit	cUnit::~cUnit
+.text	0x000006FC	0x4	wep36/wep36.cpp	global	__dl__5cUnitPvUi	cUnit::operator delete
+.rodata	0x0000003C	0x18	wep36/wep36.cpp	local	lbl_wep36_rodata_3C	lbl_wep36_rodata_3C
+.rodata	0x00000054	0x24	wep36/wep36.cpp	local	lbl_wep36_rodata_54	lbl_wep36_rodata_54
+.rodata	0x00000078	0x18	wep36/wep36.cpp	local	lbl_wep36_rodata_78	lbl_wep36_rodata_78
+.rodata	0x00000090	0x28	wep36/wep36.cpp	local	lbl_wep36_rodata_90	lbl_wep36_rodata_90
+.rodata	0x000000B8	0x20	wep36/wep36.cpp	local	lbl_wep36_rodata_B8	lbl_wep36_rodata_B8
+.rodata	0x000000D8	0x38	wep36/wep36.cpp	local	lbl_wep36_rodata_D8	lbl_wep36_rodata_D8
+.rodata	0x00000110	0x28	wep36/wep36.cpp	local	lbl_wep36_rodata_110	lbl_wep36_rodata_110
+.rodata	0x00000138	0xB0	wep36/wep36.cpp	global	lbl_wep36_rodata_138	lbl_wep36_rodata_138
+.rodata	0x000001E8	0x28	wep36/wep36.cpp	global	lbl_wep36_rodata_1E8	lbl_wep36_rodata_1E8

@@ -1,0 +1,12 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+
+em3b/em3b.cpp:
+	.text       start:0x00000000 end:0x00002064
+	.rodata     start:0x00000000 end:0x00000328 align:4
+	.data       start:0x00000000 end:0x00000038 align:4
+	.data       start:0x00000038 end:0x0000003C skip

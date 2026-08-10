@@ -1,0 +1,542 @@
+--- src/gcc/calls.c	2026-09-08 07:08:35.725986788 +0200
++++ src/gcc/calls.c	2026-09-11 15:44:59.929780517 +0200
+@@ -622,6 +622,18 @@
+ 	       || ! strcmp (name, "__builtin_vec_new"))
+ 	*is_malloc = 1;
+     }
++  /* NOMALLOC hook (debug build only, env-gated): NOMALLOC=1 forces is_malloc
++     off for every callee, so no call result gets a REG_NOALIAS note (alias.c
++     unique base).  The oracle for "the target compiles as if the `new` result
++     were not alias-exempt" (t_esp InitTool); never install tree-wide.  */
++  if (*is_malloc)
++    {
++      static int nomalloc_state = -1;
++      if (nomalloc_state < 0)
++	nomalloc_state = getenv ("NOMALLOC") != 0;
++      if (nomalloc_state)
++	*is_malloc = 0;
++    }
+ }
+ 
+ /* Precompute all register parameters as described by ARGS, storing values
+--- src/gcc/cse.c	2026-09-08 07:08:35.860697699 +0200
++++ src/gcc/cse.c	2026-09-12 13:31:00.129276246 +0200
+@@ -46,6 +46,7 @@
+  * =============================================================== */
+ 
+ #include "config.h"
++#include <stdlib.h>
+ /* stdio.h must precede rtl.h for FFS.  */
+ #include "system.h"
+ #include <setjmp.h>
+@@ -7338,6 +7339,48 @@
+           sets[i].src_elt = lookup (src, sets[i].src_hash, mode);
+         }
+ 
++      /* CSEDBG=2 hook (debug build only): per-SET src class lookup result and the qty state of the
++	 pseudos the SET mentions (t_esp pass 30: why a duplicated exit test does not fold).  */
++      {
++	static int csedbg2 = -1;
++	if (csedbg2 < 0)
++	  csedbg2 = (getenv ("CSEDBG") != 0 && getenv ("CSEDBG")[0] == '2');
++	if (csedbg2)
++	  {
++	    rtx d = SET_DEST (sets[i].rtl);
++	    fprintf (stderr, "CSE2 %s insn %d dest %s%d src_code %s elt %d cost %d",
++		     current_function_name ? current_function_name : "?", INSN_UID (insn),
++		     GET_CODE (d) == REG ? "r" : "", GET_CODE (d) == REG ? (int) REGNO (d) : 0,
++		     GET_RTX_NAME (GET_CODE (src)), sets[i].src_elt != 0, COST (src));
++	    {
++	      rtx pat = PATTERN (insn);
++	      int k;
++	      for (k = 0; k < 4; k++)
++		{
++		  rtx r = 0;
++		  if (k == 0 && GET_CODE (src) == REG) r = src;
++		  else if (k == 1 && GET_CODE (src) != REG && GET_RTX_LENGTH (GET_CODE (src)) > 0
++			   && GET_RTX_FORMAT (GET_CODE (src))[0] == 'e')
++		    {
++		      r = XEXP (src, 0);
++		      if (GET_CODE (r) == SUBREG) r = SUBREG_REG (r);
++		      if (GET_CODE (r) != REG) r = 0;
++		    }
++		  else if (k == 2 && GET_CODE (d) == REG) r = d;
++		  else if (k == 3 && GET_CODE (src) == MEM && GET_CODE (XEXP (src, 0)) == PLUS
++			   && GET_CODE (XEXP (XEXP (src, 0), 0)) == REG)
++		    r = XEXP (XEXP (src, 0), 0);
++		  if (r && REGNO (r) >= FIRST_PSEUDO_REGISTER)
++		    fprintf (stderr, " [r%d qty %d first %d tick %d intable %d]", REGNO (r),
++			     REG_QTY (REGNO (r)), REGNO_QTY_VALID_P (REGNO (r)) ? qty_first_reg[REG_QTY (REGNO (r))] : -1,
++			     REG_TICK (REGNO (r)), REG_IN_TABLE (REGNO (r)));
++		}
++	      (void) pat;
++	    }
++	    fprintf (stderr, "\n");
++	  }
++      }
++
+       /* If this is a single SET, we are setting a register, and we have an
+ 	 equivalent constant, we want to add a REG_NOTE.   We don't want
+ 	 to write a REG_EQUAL note for a constant pseudo since verifying that
+@@ -8941,6 +8984,16 @@
+ 	 Perhaps for 2.9.  */
+       if (code != NOTE && num_insns++ > 1000)
+ 	{
++	  /* CSEDBG hook (debug build only, env-gated): the 1001-insn hash flush grid.  */
++	  {
++	    static int csedbg_state = -1;
++	    if (csedbg_state < 0)
++	      csedbg_state = getenv ("CSEDBG") != 0;
++	    if (csedbg_state)
++	      fprintf (stderr, "CSEDBG %s flush at insn %d (block from %d)\n",
++		       current_function_name ? current_function_name : "?",
++		       INSN_UID (insn), INSN_UID (from));
++	  }
+ 	  flush_hash_table ();
+ 	  num_insns = 0;
+ 	}
+--- src/gcc/global.c	2026-09-08 07:08:35.886583178 +0200
++++ src/gcc/global.c	2026-09-12 08:54:45.050754211 +0200
+@@ -307,6 +307,48 @@
+ static void reg_dies		(int, enum machine_mode);
+ static void build_insn_chain	(rtx);
+ 
++/* GDBG hooks (env-gated debug prints; the binary behaves like production when
++   GDBG is unset).  See tools/research/sngdbg/README.md.  */
++#include <stdlib.h>
++static int gdbg_state = -1;
++static int
++gdbg_on ()
++{
++  if (gdbg_state < 0)
++    gdbg_state = getenv ("GDBG") != 0;
++  return gdbg_state;
++}
++/* r14..r31 as one bit string (1 = in SET), then f14..f31 after a '/'.  */
++static void
++gdbg_regs (label, set)
++     const char *label;
++     HARD_REG_SET set;
++{
++  int r;
++  static int vol = -1;
++  if (vol < 0) vol = getenv ("GDBGV") != 0;
++  fprintf (stderr, "%s ", label);
++  if (vol)
++    {
++      /* GDBGV=1: r0..r12 first, then a ':' (volatile GPRs).  */
++      for (r = 0; r <= 12; r++)
++	fputc (TEST_HARD_REG_BIT (set, r) ? '1' : '0', stderr);
++      fputc (':', stderr);
++    }
++  for (r = 14; r <= 31; r++)
++    fputc (TEST_HARD_REG_BIT (set, r) ? '1' : '0', stderr);
++  fputc ('/', stderr);
++  for (r = 32 + 14; r <= 32 + 31; r++)
++    fputc (TEST_HARD_REG_BIT (set, r) ? '1' : '0', stderr);
++}
++static int
++gdbg_pri (a)
++     int a;
++{
++  return (int) (((double) (floor_log2 (allocno_n_refs[a]) * allocno_n_refs[a])
++		 / allocno_live_length[a]) * 10000 * allocno_size[a]);
++}
++
+ /* Perform allocation of pseudo-registers not allocated by local_alloc.
+    FILE is a file to output debugging information on,
+    or zero if such output is not desired.
+@@ -590,6 +632,23 @@
+ 	if (reg_renumber[allocno_reg[allocno_order[i]]] < 0
+ 	    && REG_LIVE_LENGTH (allocno_reg[allocno_order[i]]) >= 0)
+ 	  {
++	    /* GDBG hook (debug build only, env-gated): allocation order, priority
++	       and the three hard-reg sets that decide find_reg, BEFORE find_reg.  */
++	    if (gdbg_on ())
++	      {
++		int a = allocno_order[i];
++		fprintf (stderr,
++			 "GORDER %s %d: reg %d refs %d len %d calls %d size %d pri %d",
++			 current_function_name ? current_function_name : "?",
++			 (int) i, allocno_reg[a], allocno_n_refs[a],
++			 allocno_live_length[a], allocno_calls_crossed[a],
++			 allocno_size[a], gdbg_pri (a));
++		gdbg_regs (" used", regs_used_so_far);
++		gdbg_regs (" conf", hard_reg_conflicts[a]);
++		gdbg_regs (" smpref", regs_someone_prefers[a]);
++		gdbg_regs (" pref", hard_reg_preferences[a]);
++		gdbg_regs (" cpref", hard_reg_copy_preferences[a]);
++	      }
+ 	    /* If we have more than one register class,
+ 	       first try allocating in the class that is cheapest
+ 	       for this pseudo-reg.  If that fails, try any reg.  */
+@@ -597,10 +656,19 @@
+ 	      {
+ 		find_reg (allocno_order[i], 0, 0, 0, 0);
+ 		if (reg_renumber[allocno_reg[allocno_order[i]]] >= 0)
+-		  continue;
++		  {
++		    if (gdbg_on ())
++		      fprintf (stderr, " -> r%d\n",
++			       reg_renumber[allocno_reg[allocno_order[i]]]);
++		    continue;
++		  }
+ 	      }
+ 	    if (reg_alternate_class (allocno_reg[allocno_order[i]]) != NO_REGS)
+ 	      find_reg (allocno_order[i], 0, 1, 0, 0);
++	    if (gdbg_on ())
++	      fprintf (stderr, " -> %s%d\n",
++		       reg_renumber[allocno_reg[allocno_order[i]]] >= 0 ? "r" : "spill ",
++		       reg_renumber[allocno_reg[allocno_order[i]]]);
+ 	  }
+     }
+ 
+@@ -1045,6 +1113,18 @@
+ 	  }
+       }
+ 
++  if (gdbg_on ())
++    {
++      /* pass 0 = an already-used register not preferred by a conflicting
++	 lower-priority allocno; pass 1 = any free register (first use).  */
++      if (best_reg >= 0)
++	fprintf (stderr, " [scan pass%d r%d%s%s]", pass - 1, best_reg,
++		 alt_regs_p ? " alt" : "", accept_call_clobbered ? " ccl" : "");
++      else
++	fprintf (stderr, " [scan none%s%s]", alt_regs_p ? " alt" : "",
++		 accept_call_clobbered ? " ccl" : "");
++    }
++
+   /* See if there is a preferred register with the same class as the register
+      we allocated above.  Making this restriction prevents register
+      preferencing from creating worse register allocation.
+@@ -1128,6 +1208,41 @@
+     }
+  no_prefs:
+ 
++  /* GFORCE="<pseudo>:<hardreg>[,<pseudo>:<hardreg>..]" (env, CHANGES CODEGEN):
++     hand the listed pseudo the listed hard register regardless of the scan
++     (conflicts are still recorded afterwards).  Oracle for "what if allocno X
++     had taken rN" cascades; see tools/research/sngdbg/README.md.  */
++  {
++    static const char *gforce = (const char *) -1;
++    static const char *gforcefn;
++    if (gforce == (const char *) -1)
++      {
++	gforce = getenv ("GFORCE");
++	gforcefn = getenv ("GFORCEFN");	/* substring of the function name; unset = every function */
++      }
++    if (gforce
++	&& (!gforcefn || (current_function_name
++			  && strstr (current_function_name, gforcefn))))
++      {
++	const char *p = gforce;
++	while (*p)
++	  {
++	    int preg = atoi (p), hreg;
++	    while (*p && *p != ':') p++;
++	    if (*p == ':') p++;
++	    hreg = atoi (p);
++	    while (*p && *p != ',') p++;
++	    if (*p == ',') p++;
++	    if (preg == allocno_reg[allocno] && !retrying)
++	      {
++		best_reg = hreg;
++		if (gdbg_on ())
++		  fprintf (stderr, " [GFORCE r%d]", hreg);
++	      }
++	  }
++      }
++  }
++
+   /* If we haven't succeeded yet, try with caller-saves. 
+      We need not check to see if the current function has nonlocal
+      labels because we don't put any pseudos that are live over calls in
+--- src/gcc/haifa-sched.c	2026-09-08 07:08:35.888343411 +0200
++++ src/gcc/haifa-sched.c	2026-09-12 08:58:40.096193176 +0200
+@@ -5182,6 +5182,18 @@
+   return sometimes_max;
+ }
+ 
++/* GDBG hook (env-gated): post-sched1 live-length segments per pseudo, the
++   numbers that become REG_LIVE_LENGTH for global.c (only before reload).  */
++#include <stdlib.h>
++static int haifa_gdbg_state = -1;
++static int
++haifa_gdbg_on ()
++{
++  if (haifa_gdbg_state < 0)
++    haifa_gdbg_state = getenv ("GDBG") != 0;
++  return haifa_gdbg_state && !reload_completed;
++}
++
+ /* Count lengths of all regs we are currently tracking,
+    and find new registers no longer live.  */
+ 
+@@ -5199,6 +5211,9 @@
+ 
+       sched_reg_live_length[regno] += p->live_length;
+       sched_reg_n_calls_crossed[regno] += p->calls_crossed;
++      if (haifa_gdbg_on () && regno >= FIRST_PSEUDO_REGISTER)
++	fprintf (stderr, ";; LL reg %d block %d seg %d calls %d (open at block start)\n",
++		 regno, current_block_num, p->live_length, p->calls_crossed);
+     }
+ }
+ 
+@@ -5504,6 +5519,9 @@
+ 	         and clear its bit in the old_live_regs entry.  */
+ 	      sched_reg_live_length[regno] += p->live_length;
+ 	      sched_reg_n_calls_crossed[regno] += p->calls_crossed;
++	      if (haifa_gdbg_on () && regno >= FIRST_PSEUDO_REGISTER)
++		fprintf (stderr, ";; LL reg %d block %d seg %d calls %d\n",
++			 regno, current_block_num, p->live_length, p->calls_crossed);
+ 	      CLEAR_REGNO_REG_SET (old_live_regs, p->regno);
+ 
+ 	      /* Delete the reg_sometimes_live entry for this reg by
+@@ -7020,6 +7038,23 @@
+ 		}
+ 
+ 	      last_scheduled_insn = insn;
++	      /* SCHDBG hook (env-gated): one line per issued insn (sched1 and sched2):
++		 clock, uid, priority, reg weight, number of dependents, LUID.  */
++	      {
++		static int schdbg_state = -1;
++		if (schdbg_state < 0)
++		  schdbg_state = getenv ("SCHDBG") != 0;
++		if (schdbg_state)
++		  {
++		    extern char *current_function_name;
++		    rtx dl; int nd = 0;
++		    for (dl = INSN_DEPEND (insn); dl; dl = XEXP (dl, 1)) nd++;
++		    fprintf (stderr, "SCHDBG %s %s b%d clk %d uid %d pri %d w %d dep %d luid %d\n",
++			     current_function_name, reload_completed ? "s2" : "s1", b,
++			     clock_var, INSN_UID (insn), INSN_PRIORITY (insn),
++			     INSN_REG_WEIGHT (insn), nd, INSN_LUID (insn));
++		  }
++	      }
+ 	      last = move_insn (insn, last);
+ 	      sched_n_insns++;
+ 
+--- src/gcc/local-alloc.c	2026-09-08 07:08:35.894063262 +0200
++++ src/gcc/local-alloc.c	2026-09-12 09:21:51.606322329 +0200
+@@ -862,6 +862,26 @@
+ 
+       note = find_reg_note (insn, REG_EQUAL, NULL_RTX);
+ 
++      /* NOEQV="<pseudo>[,<pseudo>..]" (env, CHANGES CODEGEN): pretend the listed
++	 pseudo has no REG_EQUAL note here (no REG_EQUIV, no live-length doubling).
++	 Oracle for "what if this hoisted constant were not an equivalence".  */
++      {
++	static const char *noeqv = (const char *) -1;
++	if (noeqv == (const char *) -1)
++	  noeqv = getenv ("NOEQV");
++	if (noeqv)
++	  {
++	    const char *p = noeqv;
++	    while (*p)
++	      {
++		if (atoi (p) == regno)
++		  note = 0;
++		while (*p && *p != ',') p++;
++		if (*p == ',') p++;
++	      }
++	  }
++      }
++
+       if (REG_N_SETS (regno) != 1
+ 	  && (! note
+ 	      || ! function_invariant_p (XEXP (note, 0))
+@@ -1082,6 +1102,47 @@
+   reg_equiv_replacement[regno] = NULL_RTX;
+ }
+ 
++/* LADBG hooks (env-gated debug prints; the binary behaves like production
++   when LADBG is unset).  See tools/research/sngdbg/README.md.  */
++#include <stdlib.h>
++static int ladbg_state = -1;
++static char *ladbg_sugg_placed;
++static int
++ladbg_on ()
++{
++  if (ladbg_state < 0)
++    ladbg_state = getenv ("LADBG") != 0;
++  return ladbg_state;
++}
++static int
++ladbg_pri (q)
++     int q;
++{
++  return (int) (((double) (floor_log2 (qty_n_refs[q]) * qty_n_refs[q] * qty_size[q])
++		 / (qty_death[q] - qty_birth[q])) * 10000);
++}
++static void
++ladbg_qty (b, q, tag)
++     int b, q;
++     const char *tag;
++{
++  int r;
++  fprintf (stderr,
++	   "LADBG %s b%d %s q%d reg%d refs %d birth %d death %d pri %d size %d cls %d calls %d sugg",
++	   current_function_name ? current_function_name : "?", b, tag, q,
++	   qty_first_reg[q], qty_n_refs[q], qty_birth[q], qty_death[q],
++	   ladbg_pri (q), qty_size[q], (int) qty_min_class[q],
++	   qty_n_calls_crossed[q]);
++  for (r = 0; r < FIRST_PSEUDO_REGISTER; r++)
++    if (TEST_HARD_REG_BIT (qty_phys_sugg[q], r))
++      fprintf (stderr, " %d", r);
++  fprintf (stderr, " csugg");
++  for (r = 0; r < FIRST_PSEUDO_REGISTER; r++)
++    if (TEST_HARD_REG_BIT (qty_phys_copy_sugg[q], r))
++      fprintf (stderr, " %d", r);
++  fprintf (stderr, " -> %d\n", qty_phys_reg[q]);
++}
++
+ /* Allocate hard regs to the pseudo regs used only within block number B.
+    Only the pseudos that die but once can be handled.  */
+ 
+@@ -1380,6 +1441,8 @@
+   qty_order = (int *) alloca (next_qty * sizeof (int));
+   for (i = 0; i < next_qty; i++)
+     qty_order[i] = i;
++  ladbg_sugg_placed = (char *) alloca (next_qty + 1);
++  bzero (ladbg_sugg_placed, next_qty + 1);
+ 
+ #define EXCHANGE(I1, I2)  \
+   { i = qty_order[I1]; qty_order[I1] = qty_order[I2]; qty_order[I2] = i; }
+@@ -1417,8 +1480,11 @@
+     {
+       q = qty_order[i];
+       if (qty_phys_num_sugg[q] != 0 || qty_phys_num_copy_sugg[q] != 0)
+-	qty_phys_reg[q] = find_free_reg (qty_min_class[q], qty_mode[q], q,
+-					 0, 1, qty_birth[q], qty_death[q]);
++	{
++	  qty_phys_reg[q] = find_free_reg (qty_min_class[q], qty_mode[q], q,
++					   0, 1, qty_birth[q], qty_death[q]);
++	  ladbg_sugg_placed[q] = qty_phys_reg[q] >= 0;
++	}
+       else
+ 	qty_phys_reg[q] = -1;
+     }
+@@ -1538,6 +1604,20 @@
+ 	}
+     }
+ 
++  /* LADBG hook (debug build only, env-gated): every qty of this block in
++     qty_order = the priority order of the loop above (QTY_CMP_PRI descending,
++     ties by qty number).  Column 3: "S" = placed by the suggested-register
++     loop before this order applied (those go in qty_sugg order: copy
++     suggestions first, fewer suggestions first, then priority), "L" = placed
++     (or not, -> -1) in this order.  birth/death are the block scan's suids
++     (2 per insn).  */
++  if (ladbg_on ())
++    for (i = 0; i < next_qty; i++)
++      {
++	q = qty_order[i];
++	ladbg_qty (b, q, ladbg_sugg_placed[q] ? "S" : "L");
++      }
++
+   /* Now propagate the register assignments
+      to the pseudo regs belonging to the qtys.  */
+ 
+@@ -2086,6 +2166,18 @@
+ 	IOR_COMPL_HARD_REG_SET (first_used, qty_phys_sugg[qty]);
+     }
+ 
++  /* LADBG hook: the excluded set seen by this find_free_reg call.  */
++  if (ladbg_on ())
++    {
++      int k;
++      fprintf (stderr, "LAFREE %s q%d cls %d [%d,%d) sugg %d used:", current_function_name,
++	       qty, (int) class, born_index, dead_index, just_try_suggested);
++      for (k = 0; k < FIRST_PSEUDO_REGISTER; k++)
++	if (TEST_HARD_REG_BIT (first_used, k) && k < 64)
++	  fprintf (stderr, " %d", k);
++      fprintf (stderr, "\n");
++    }
++
+   /* If all registers are excluded, we can't do anything.  */
+   GO_IF_HARD_REG_SUBSET (reg_class_contents[(int) ALL_REGS], first_used, fail);
+ 
+--- src/gcc/loop.c	2026-09-08 07:08:35.894994386 +0200
++++ src/gcc/loop.c	2026-09-11 15:46:32.607091834 +0200
+@@ -1858,6 +1858,28 @@
+ 	  /* It is also desirable to move if it can be moved at no
+ 	     extra cost because something else was already moved.  */
+ 
++	  /* GDBG hook (env-gated): the move_movables test per movable:
++	     thr*savings*lifetime >= insn_count (x2 if moved once) decides
++	     the hoist; the threshold drops by 3 per moved movable.  */
++	  {
++	    extern char *current_function_name;
++	    static int loop_gdbg_state = -1;
++	    if (loop_gdbg_state < 0)
++	      loop_gdbg_state = getenv ("GDBG") != 0;
++	    if (loop_gdbg_state)
++	      fprintf (stderr,
++		       "LOOPDBG %s insn %d reg %d [thr %d sav %d life %d ic %d am %d mo %d] -> %s\n",
++		       current_function_name ? current_function_name : "?",
++		       INSN_UID (p), regno, threshold, savings, m->lifetime,
++		       insn_count, already_moved[regno], moved_once[regno],
++		       (already_moved[regno] || flag_move_all_movables
++			|| (threshold * savings * m->lifetime)
++			   >= (moved_once[regno] ? insn_count * 2 : insn_count)
++			|| (m->forces && m->forces->done
++			    && VARRAY_INT (n_times_set, m->forces->regno) == 1))
++		       ? "move" : "stay");
++	  }
++
+ 	  if (already_moved[regno]
+ 	      || flag_move_all_movables
+ 	      || (threshold * savings * m->lifetime) >=
+--- src/gcc/reload1.c	2026-09-08 07:08:35.908977584 +0200
++++ src/gcc/reload1.c	2026-09-11 16:26:46.635802127 +0200
+@@ -3887,6 +3887,28 @@
+   int something_changed = 0;
+   int i;
+ 
++  /* RLDSPILL hook (debug build only, env-gated): RLDSPILL=11,10 adds the
++     listed hard regs to the function-wide spill set, so allocate_reload_reg's
++     round robin over spill_regs sees them (oracle for "the target's reload
++     had one more spill reg", tools db_mod dbmodDispModelName).  */
++  {
++    static const char *rldspill = (const char *) -1;
++    if (rldspill == (const char *) -1)
++      rldspill = getenv ("RLDSPILL");
++    if (rldspill)
++      {
++	const char *p = rldspill;
++	while (*p)
++	  {
++	    int r = atoi (p);
++	    if (r >= 0 && r < FIRST_PSEUDO_REGISTER)
++	      SET_HARD_REG_BIT (used_spill_regs, r);
++	    while (*p && *p != ',') p++;
++	    if (*p == ',') p++;
++	  }
++      }
++  }
++
+   /* Build the spill_regs array for the function.  */
+   /* If there are some registers still to eliminate and one of the spill regs
+      wasn't ever used before, additional stack space may have to be
+@@ -5606,6 +5628,20 @@
+ 	    /* The reg is OK.  */
+ 	    last_spill_reg = i;
+ 
++	    /* RLDDBG hook (debug build only, env-gated): one line per reload
++	       register handed out: insn uid, reload index, chosen hard reg,
++	       the round-robin index and the spill set size.  */
++	    {
++	      static int rlddbg = -1;
++	      if (rlddbg < 0)
++		rlddbg = getenv ("RLDDBG") != 0;
++	      if (rlddbg)
++		fprintf (stderr, "RLDDBG %s insn %d reload %d -> r%d (rr %d/%d class %d)\n",
++			 current_function_name ? current_function_name : "?",
++			 INSN_UID (insn), r, spill_regs[i], i, n_spills,
++			 (int) reload_reg_class[r]);
++	    }
++
+ 	    /* Mark as in use for this insn the reload regs we use
+ 	       for this.  */
+ 	    mark_reload_reg_in_use (spill_regs[i], reload_opnum[r],

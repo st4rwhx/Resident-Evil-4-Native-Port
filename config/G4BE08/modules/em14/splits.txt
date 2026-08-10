@@ -1,0 +1,22 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:8
+	.bss        type:bss align:4
+
+em14/em10.cpp:
+	.text       start:0x00000000 end:0x00043518
+	.rodata     start:0x00000000 end:0x00001D40 align:4
+	.data       start:0x00000000 end:0x00000990
+	.bss        start:0x00000000 end:0x00000034 align:4 common
+
+em14/em10_tmpl.cpp:
+	.text       start:0x00043518 end:0x000438D0
+	.rodata     start:0x00001D40 end:0x00001E88 align:4
+
+em14/em14_set.cpp:
+	.text       start:0x000438D0 end:0x0004434C
+	.rodata     start:0x00001E88 end:0x00001ED4 align:4
+	.data       start:0x00000990 end:0x00000994 skip

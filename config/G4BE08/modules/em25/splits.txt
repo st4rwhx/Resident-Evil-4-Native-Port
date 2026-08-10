@@ -1,0 +1,14 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:4
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+em25/em25.cpp:
+	.text       start:0x00000000 end:0x0000445C
+	.rodata     start:0x00000000 end:0x00000490 align:4
+	.data       start:0x00000000 end:0x00000168 align:4
+	.data       start:0x00000168 end:0x0000016C skip
+	.bss        start:0x00000000 end:0x00000034 align:4 common

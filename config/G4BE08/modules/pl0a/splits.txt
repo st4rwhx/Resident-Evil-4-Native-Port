@@ -1,0 +1,19 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+pl0a/wep07.cpp:
+	.text       start:0x00000000 end:0x00000890
+	.rodata     start:0x00000000 end:0x00000150
+	.data       start:0x00000000 end:0x00000030 align:4
+
+pl0a/pl_klauser.cpp:
+	.text       start:0x00000890 end:0x00001FB0
+	.rodata     start:0x00000150 end:0x00000480
+	.data       start:0x00000030 end:0x00000038 align:4
+	.data       start:0x00000038 end:0x0000003C skip
+	.bss        start:0x00000000 end:0x00000024 align:4

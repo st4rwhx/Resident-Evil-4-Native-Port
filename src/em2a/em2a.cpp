@@ -1,0 +1,1021 @@
+// em2a module (D:/Bio4/Prog/em2a.cpp): the traps. Type 0 is the bear trap that bites the player
+// (em2a_R1_Trap1Bite, with the player catch motion and a cut-in camera) or the partner
+// (em2a_R1_Trap1BiteSub, freed by the action button), types 1 and 2 are the tripwire bombs that go
+// off when the player or an enemy crosses the wire (em2aTrap2HitCk, em2aTrap2Bomb).
+
+#include "atari.h"
+#include "light.h"
+#include "dmg.h"
+#include "ctrl.h"
+#include "map_obj.h"
+#include "widget.h"
+#include "em2a.h"
+#include "emhit.h"
+#include "em_set.h"
+#include "em_sub.h"
+#include "at_mod.h"
+#include "atari_init.h"
+#include "esp.h"
+#include "est.h"
+#include "motion.h"
+#include "cam_ctrl.h"
+#include "act_btn.h"
+#include "game.h"
+#include "quake.h"
+#include "pad.h"
+#include "pl_wep.h"
+#include "snd.h"
+#include "player.h"
+#include "pl_npc.h"
+#include "pl_sub.h"
+#include "rnd.h"
+#include "global.h"
+#include "math_sub.h"
+#include "db_log.h"
+
+// The module's 0x34-byte COMMON block (st_room.h): uninitialised template statics of the original
+// object, merged into .bss by the REL link.
+asm(".comm common_em2a,52,4");
+
+extern "C" void OSReport(const char* fmt, ...);
+extern void (*EmInitFunc)(cEm* em);   // game/em.cpp
+void EmCatchSubSet(cEm* em, cEm* sub, u32 type, int a, f32 x, f32 y, f32 z, f32 w);   // em_sub.cpp
+
+// motion.h declares the one-argument form; the enemies pass a second argument.
+u16 MotionMoveF(cModel* m, int flag) asm("MotionMove");
+
+typedef void (*Em2aFunc)(cEm2a*);
+
+static void em2a_R0_Init(cEm2a* em);
+static void em2a_R0_Move(cEm2a* em);
+static void em2a_R1_br_Dummy(cEm2a* em);
+static void em2a_R1_br_Trap1Set(cEm2a* em);
+static void em2a_R1_Trap1Set(cEm2a* em);
+static void em2a_R1_Trap1Bite(cEm2a* em);
+static void plem2a_Trap1Bite(cPlayer* pl);
+static void em2a_R1_Trap1BiteSub(cEm2a* em);
+static void subem2a_Trap1Bite(cSubChar* sub);
+static void em2aResuceAshleyAction(cSubChar* sub);
+static void plemResuceAshley(cPlayer* pl);
+static void em2a_R1_Trap1Break(cEm2a* em);
+static void em2a_R1_Trap1Reset(cEm2a* em);
+static void em2a_R1_Trap1R100(cEm2a* em);
+static void em2a_R1_Trap2Set(cEm2a* em);
+static void em2a_R1_Trap2Bomb(cEm2a* em);
+
+#define ARC(no) PL_ARC_PTR(em->subArc, no)
+#define PL_ARC(no) PL_ARC_PTR(pl->subArc, no)
+#define SUB_ARC(no) PL_ARC_PTR(sub->subArc, no)
+
+// The enemy a player / partner damage callback belongs to (pl_sub SetPlDamage's first argument).
+#define PL_EM(pl) ((cEm*) (pl)->dmgType)
+
+// Struct-member view of the player pointer (cam_ctrl.cpp PlayerPtr).
+struct PlayerPtr {
+    cPlayer* p;
+};
+#define pPLS (((PlayerPtr*) &pPL)->p)
+
+// Collision flag bits cleared through the info's address (`addi rX, em, 0x2b4; lhz 0x1a(rX)`).
+static inline void AtariOff(cAtariInfo* at, u16 mask) { at->flags &= mask; }
+
+// Routine bytes written through an int inline (player.cpp PlRoutineSet).
+static inline void EmRoutineSet(cEm* em, int r0, int r1, int r2, int r3)
+{
+    em->xFC = r0;
+    em->xFD = r1;
+    em->xFE = r2;
+    em->xFF = r3;
+}
+
+// Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
+static inline int em2aDeadCk(cEm* em)
+{
+    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+}
+
+// Work `no` of the enemy manager without the range check (em2aTrap2HitCkEM).
+static inline cEm* em2aMgrWork(u32 no)
+{
+    return (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * no);
+}
+
+extern "C" void _prolog()
+{
+    OSReport("em2a prolog Ok\n");
+    EmInitFunc = Em2aInit;
+}
+
+extern "C" void _epilog()
+{
+}
+
+extern "C" void _unresolved()
+{
+}
+
+void Em2aInit(cEm* em)
+{
+    new (em) cEm2a();
+}
+
+void em2aDmCkTrap1(cEm2a* em)
+{
+    int wep;
+
+    if (em->dmHit == 0) {
+        return;
+    }
+    wep = em->dmWep;
+    em->dmHit = 0;
+    if (wep == 0x14 || wep == 0x16 || wep == 0x17 || wep == 0x2A || wep == 0xE || wep == 0x13 || wep == 0x29
+        || wep == 0x2D) {
+        return;
+    }
+    em->hp = 0;
+    SndCall(8, 2, &em->pos, em->id, 0, em);
+    EmDmBloodSet2(em, 0x22, 9, 0, 0, 0);
+    if ((em->stat & 0xFFFF0000) == 0x01050000) {
+        EmRoutineSet(em, 1, 4, 0, 0);
+    } else {
+        GameAddPoint(9);
+        EmRoutineSet(em, 1, 3, 0, 0);
+    }
+}
+
+void em2aDmCkTrap2(cEm2a* em)
+{
+    int hit = em2aTrap2HitCk(em);
+
+    if (hit) {
+        em->hp = 0;
+        // both arms call EmSetDie: the arm's own `mr r3, em` copy is scheduled above the hp store,
+        // so the original's cross-jump starts at the `bl` and each arm keeps the copy
+        EmSetDie(em);
+        EmRoutineSet(em, 1, 7, 0, 0);
+    } else {
+        int wep;
+
+        if (em->dmHit == 0) {
+            return;
+        }
+        wep = em->dmWep;
+        em->dmHit = 0;
+        if (wep == 0x14 || wep == 0x16 || wep == 0x17 || wep == 0x2A || wep == 0xE) {
+            return;
+        }
+        EmDmBloodSet2(em, 0x22, 9, 0, 0, 0);
+        GameAddPoint(9);
+        em->hp = 0;
+        EmSetDie(em);
+        EmRoutineSet(em, 1, 7, 0, 0);
+    }
+}
+
+Em2aFunc Em2a_R0_move_tbl[5] = {
+    em2a_R0_Init,
+    em2a_R0_Move,
+    0,
+    0,
+    (Em2aFunc) Em_R0_Scenario,
+};
+
+static Em2aFunc Em2a_R1_move_tbl[16] = {
+    em2a_R1_br_Trap1Set,
+    em2a_R1_Trap1Set,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap1Bite,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap1BiteSub,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap1Break,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap1Reset,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap1R100,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap2Set,
+    em2a_R1_br_Dummy,
+    em2a_R1_Trap2Bomb,
+};
+
+// The camera plemResuceAshley installs (the partner rescue cut): explicitly zero-initialised so it
+// stays in .data.
+static Camera em2a_rescue_cam = { 0 };
+// COMPILER-DIFF: candidate #12 (cse related-value): `cam = &em2a_rescue_cam` after the `&em2a_rescue_cam.param.pos/at`
+// pointers are known is a fresh `lis/addi` pair in the original; our cse rewrites it as `at - 0xB0`.
+// An asm-labelled alias declaration gives cse a distinct SYMBOL_REF and keeps the fresh pair.
+extern Camera em2a_rescue_cam_v asm("em2a_rescue_cam");
+// .data is padded to 8 bytes before the linker's BSS tag word.
+asm(".section .data\n\t.balign 8\n\t.text");
+
+void cEm2a::move()
+{
+    Em2aWork* w = EM2A_WK(this);
+
+    if (xFC != 0) {
+        switch (type) {
+        case 0:
+        default:
+            em2aDmCkTrap1(this);
+            break;
+        case 1:
+            em2aDmCkTrap2(this);
+            break;
+        case 2:
+            em2aDmCkTrap2(this);
+            break;
+        }
+    }
+    w->flags &= ~0xF;
+    Em2a_R0_move_tbl[xFC](this);
+    if (xFC == 0xFF) {
+        EmMgr.destroy(this);
+    } else {
+        partsWorldCalc();
+    }
+}
+
+static void em2a_R0_Init(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+    cAtariInfo* at;
+    int zero;
+    f32 scale;
+
+    switch (em->type) {
+    case 0:
+    default:
+        if (em->modelInit(ARC(4), ARC(5)) == 0) {
+            pLog->err(0, 0, "em2a 00() ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        break;
+    case 1:
+        if (em->modelInit(ARC(6), ARC(7)) == 0) {
+            pLog->err(0, 0, "em2a 01() ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        // the wire scaling is written out in case 1 AND case 2 (jump2 cross-jumps the copies): the
+        // function-scope `scale` then has two sets and local-alloc cannot tie the hp * 0.001 temp to it
+        // (temp in f0, scale in f31); a shared `goto wire` block ties the whole chain to f31
+        {
+            f32 hp = (f32) em->hp;
+            cModel* p;
+
+            scale = hp * 0.001f * 0.5f;
+            p = em->getPartsPtr(1);
+            p->pos.z *= scale;
+            p = em->getPartsPtr(2);
+            p->pos.z *= scale;
+        }
+        break;
+    case 2:
+        if (em->modelInit(ARC(8), ARC(9)) == 0) {
+            pLog->err(0, 0, "em2a 02() ModelInit failed.");
+            em->xFC = 0xFF;
+            return;
+        }
+        if (em->hp <= 0) {
+            em->hp = 1;
+        }
+        {
+            f32 hp = (f32) em->hp;
+            cModel* p;
+
+            scale = hp * 0.001f * 0.5f;
+            p = em->getPartsPtr(1);
+            p->pos.z *= scale;
+            p = em->getPartsPtr(2);
+            p->pos.z *= scale;
+        }
+        break;
+    }
+    em->be_flag &= ~0x10;
+    {
+        static const Vec ofs = { 0.0f, 0.0f, 0.0f };
+
+    switch (em->type) {
+    case 0:
+    default: {
+        static const Vec size = { 750.0f, 750.0f, 750.0f };
+
+        em->lightInfo.init2(0, 3, &ofs, &size, 2);
+        em->lockParts = 0;
+        em->lockOfs.x = 0.0f;
+        em->lockOfs.y = 300.0f;
+        em->lockOfs.z = 0.0f;
+        break;
+    }
+    case 1:
+    case 2: {
+        static const Vec size = { 8000.0f, 8000.0f, 8000.0f };
+
+        em->lightInfo.init2(0, 3, &ofs, &size, 2);
+        em->lockParts = 1;
+        em->lockOfs.x = 0.0f;
+        em->lockOfs.y = 0.0f;
+        em->lockOfs.z = 0.0f;
+        break;
+    }
+    }
+    }
+    at = &em->atari;
+    at->init(3, 0x2000, 10, 0.0f, 0.0f, 0.0f, 500.0f, 400.0f, 400.0f, 1500.0f);
+    zero = 0;
+    AtariOff(at, 0xFCFF);
+    em->setStatus(0xB);
+    em2aYarareInit(em);
+    w->espKind = EspPullCoreKind();
+    EspDataLoad((u32) ARC(0x12), 0x22, 0);
+    w->flags = zero;
+    w->pCtrl11 = GetCtrlCtrl11();
+    w->pCtrl12 = GetCtrlCtrl12();
+    em->setStatus(5);
+    switch (em->type) {
+    case 0:
+    default:
+        switch (em->x38D) {
+        default:
+            EmRoutineSet(em, 1, 0, zero, zero);
+            break;
+        case 1:
+            EmRoutineSet(em, 1, 5, zero, zero);
+            break;
+            // dead loop: its LOOP_END note stops cse from following `beq case2`, so the arm does not
+            // know zero == 0 and `z` is a fresh SI zero pseudo set before the clearStatus call (li r30,0)
+            do { } while (0);
+        case 2: {
+            int z = 0;
+
+            em->hp = zero;
+            em->clearStatus(5);
+            EmRoutineSet(em, 1, 3, z, 1);
+            break;
+        }
+        }
+        break;
+    case 1:
+        EstSet((int) em, -1, 0, 0, 0x22, 3, 0x800, (u8) w->espKind, (u32) em, (void*) zero);
+        EmRoutineSet(em, 1, 6, zero, zero);
+        break;
+    case 2:
+        EstSet((int) em, -1, 0, 0, 0x22, 5, 0x800, (u8) w->espKind, (u32) em, (void*) zero);
+        EmRoutineSet(em, 1, 6, zero, zero);
+        break;
+    }
+    em2a_R0_Move(em);
+}
+
+static void em2a_R0_Move(cEm2a* em)
+{
+    Em2a_R1_move_tbl[em->xFD * 2](em);
+    Em2a_R1_move_tbl[em->xFD * 2 + 1](em);
+}
+
+static void em2a_R1_br_Dummy(cEm2a* em)
+{
+}
+
+static void em2a_R1_br_Trap1Set(cEm2a* em)
+{
+    if (em2aTrap1BiteCk(em) == 0) {
+        em2aTrap1BiteSubCk(em);
+    }
+}
+
+static void em2a_R1_Trap1Set(cEm2a* em)
+{
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, MOTION(em), ARC(0xA), 0, 0, 5, 0);
+        em->xFE++;
+    case 1:
+        MotionMoveF(em, 0);
+        break;
+    }
+}
+
+static void em2a_R1_Trap1Bite(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+    EmListData* l = EM_LIST(em->emsetNo);
+
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, MOTION(em), ARC(0xB), (int) ARC(0xD), 5, 1, 0);
+        SndCall(8, 0, &em->pos, em->id, 0, em);
+        SndCall(1, 0x39, &pPL->pos, 0, 0, pPL);
+        EmCatchPLSet(em, 0.0f, 0, (int) plem2a_Trap1Bite, 34.69f, 0.0f, 250.42f);
+        w->camTimer = 120;
+        w->biteTimer = 10;
+        VibSetData((VibDataTbl*) (pGS->pArc->ofs_1C + (u32) pGS->pArc), 7, 1);
+        l->x3 = 2;
+        em->xFE++;
+    case 1:
+        if (w->biteTimer) {
+            w->biteTimer--;
+            if (EmCatchMotionMove(em, 1.0f, 1.0f)) {
+                em->hp = 0;
+                em->xFE++;
+            }
+        } else {
+            if (MotionMoveF(em, 0)) {
+                em->hp = 0;
+                em->xFE++;
+            }
+        }
+        if (w->camTimer) {
+            em2aTrap1CamMove(em);
+            w->camTimer--;
+        }
+        if ((em->seFlags28B & 4) && em2aDeadCk(pPL)) {
+            u16 frame = (*(u16*) ARC(0xB) & 0x3FFF) - 1;
+
+            MotionSetCore(em, MOTION(em), ARC(0xB), 0, 0, 1, frame);
+            MotionMoveF(em, 0);
+            em->hp = 0;
+            em->xFE++;
+        } else {
+            em->x3A8 = em->pos;
+        }
+        break;
+    }
+}
+
+static void plem2a_Trap1Bite(cPlayer* pl)
+{
+    pl->subArc = PL_EM(pPL)->subArc;
+    switch (pl->xFE) {
+    case 0:
+        MotionSetCore(pl, MOTION(pl), PL_ARC(0x10), (int) PL_ARC(0x11), 5, 1, 0);
+        PlSetFace(1);
+        EstSet((int) pl, -1, 0, 0, 0x22, 1, 0, 0, (u32) pl, 0);
+        LifeDownSet2(pPL, 300, 0, 1);
+        pl->dmg.set(0, 0);
+        pl->xFE++;
+    case 1:
+        if (EmCatchMotionMove(pl, 0.3f, 0.2f)) {
+            EndPlDamage();
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+}
+
+static void em2a_R1_Trap1BiteSub(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+    EmListData* l = EM_LIST(em->emsetNo);
+    int r;
+
+    switch (em->xFE) {
+    case 0:
+        MotionSetCore(em, MOTION(em), ARC(0x16), 0, 5, 5, 0);
+        SubCharSetFace(1);
+        SndCall(8, 0, &em->pos, em->id, 0, em);
+        EmCatchSubSet(em, pSUB, 0, (int) subem2a_Trap1Bite, PI / 2.0f, 409.6f, 0.0f, -12.87f);
+        w->camTimer = 120;
+        w->biteTimer = 10;
+        em->hp = 0;
+        l->x3 = 2;
+        em->xFE++;
+    case 1:
+        if (w->biteTimer) {
+            w->biteTimer--;
+            r = EmCatchMotionMove(em, 1.0f, 1.0f);
+        } else {
+            r = MotionMoveF(em, 0);
+        }
+        if (r) {
+            em->xFE++;
+        }
+        em->x3A8 = em->pos;
+        break;
+    case 2:
+        MotionSetCore(em, MOTION(em), ARC(0x17), 0, 5, 5, 0);
+        em->xFE++;
+    case 3:
+        MotionMoveF(em, 0);
+        if (em2aDeadCk(pSUB)) {
+            u16 frame = (*(u16*) ARC(0xB) & 0x3FFF) - 1;
+
+            MotionSetCore(em, MOTION(em), ARC(0xB), 0, 0, 1, frame);
+            MotionMoveF(em, 0);
+            em->hp = 0;
+        } else {
+            em->x3A8 = em->pos;
+        }
+        break;
+    case 4:
+        MotionSetCore(em, MOTION(em), ARC(0x18), (int) ARC(0x19), 5, 1, 0);
+        em->xFE++;
+    case 5:
+        MotionMoveF(em, 0);
+        break;
+    }
+}
+
+static void subem2a_Trap1Bite(cSubChar* sub_)
+{
+    cSubChar* sub = pSUB;
+
+    sub->subArc = PL_EM(sub)->subArc;
+    pGS->flags_5014 |= 0x20000000;
+    switch (sub->xFE) {
+    case 0:
+        MotionSetCore(sub, MOTION(sub), SUB_ARC(0x1A), 0, 5, 5, 0);
+        EstSet((int) sub, -1, 0, 0, 0x22, 7, 0, 0, (u32) sub, 0);
+        LifeDownSet2(pSUB, 300, 0, 1);
+        sub->dmg.set(0, 2);
+        sub->xFE++;
+    case 1:
+        if (EmCatchMotionMove(sub, 0.3f, 0.2f)) {
+            sub->xFE++;
+            break;
+        }
+        if (sub->frame > 15.7f && sub->frame < 16.3f) {
+            SndCall(8, 9, &sub->pos, sub->id, 0, sub);
+        }
+        break;
+    case 2:
+        MotionSetCore(sub, MOTION(sub), SUB_ARC(0x1B), 0, 5, 5, 0);
+        sub->subHideMode = 0;
+        sub->xFE++;
+    case 3:
+        EmCatchMotionMove(sub, 0.3f, 0.2f);
+        LifeDownSet2(pSUB, 3, 0, 1);
+        if (sub->plDist2 < 9000000.0f && fabsf(sub->pos.y - pPL->pos.y) < 1000.0f) {
+            ActBtn.set(0x15, 5, (int) em2aResuceAshleyAction, (int) sub, 0, 1, 0, 0);
+        }
+        if (sub->subHideMode) {
+            sub->subHideMode--;
+        } else {
+            sub->subHideMode = Rnd() % 15 + 30;
+            SndCall(8, 0xE, &sub->pos, sub->id, 0, sub);
+        }
+        break;
+    case 4:
+        MotionSetCore(sub, MOTION(sub), SUB_ARC(0x1C), 0, 5, 1, 0);
+        EstSet((int) sub, -1, 0, 0, 0x22, 8, 0, 0, (u32) sub, 0);
+        sub->xFE++;
+    case 5:
+        sub->dmType = 2;
+        if (MotionMoveF(sub, 0)) {
+            EndSubDamage();
+        }
+        if (sub->frame > 107.7f && sub->frame < 108.3f) {
+            SndCall(8, 0x11, &sub->pos, sub->id, 0, sub);
+        }
+        if ((sub->frame > 23.7f && sub->frame < 24.3f) || (sub->frame > 58.7f && sub->frame < 59.3f)) {
+            SndCall(8, 0xE, &sub->pos, sub->id, 0, sub);
+        }
+        break;
+    }
+    sub->subArc = sub->subArc2;
+}
+
+static void em2aResuceAshleyAction(cSubChar* sub)
+{
+    SetPlDamage(sub->dmgType, plemResuceAshley);
+    sub->dmType = 10;
+    pPL->dmType = 10;
+    sub->xFE = 4;
+    PL_EM(sub)->xFE = 4;
+}
+
+static void plemResuceAshley(cPlayer* pl)
+{
+    cEm* em = PL_EM(pl);
+    Mtx m;
+    Vec v;
+
+    pl->subArc = em->subArc;
+    pPLS->dmType = 10;
+    switch (pl->xFE) {
+    case 0:
+        pl->rot.y = em->rot.y + PI / 2.0f;
+        pl->rot.y = LIMIT_ANGLE(pl->rot.y);
+        PSMTXRotRad(m, 'y', pl->rot.y);
+        TransMatrix(m, &em->pos);
+        v.x = 175.38f;
+        v.y = 0.0f;
+        v.z = -685.31f;
+        PSMTXMultVec(m, &v, &pl->pos);
+        MotionSetCore(pl, MOTION(pl), PL_ARC(0x1D), 0, 3, 1, 0);
+        pl->xFE++;
+    case 1:
+        if (MotionMoveF(pl, 0)) {
+            EndPlDamage();
+            pl->dmg.set(0, 30);
+        }
+        break;
+    }
+    pl->subArc = pl->subArc2;
+    plem2aTrapCamMove(pl);
+}
+
+void plem2aTrapCamMove(cModel* m)
+{
+    Camera* c = &pG->Cam;
+    Camera* cam;
+    Vec v;
+    Vec a;
+
+    v.x = 2500.0f;
+    v.y = 0.0f;
+    v.z = 0.0f;
+    PSMTXMultVec(m->mat, &v, &v);
+    v.y += 2000.0f;
+    a.x = 0.0f;
+    a.y = 1000.0f;
+    a.z = 1000.0f;
+    PSMTXMultVec(m->mat, &a, &a);
+    PosToPos(&c->param.at, &a, &em2a_rescue_cam.param.at, 1.0f);
+    PosToPos(&c->param.pos, &v, &em2a_rescue_cam.param.pos, 1.0f);
+    {
+        Vec* pos = &em2a_rescue_cam.param.pos;
+        Vec* at = &em2a_rescue_cam.param.at;
+        f32 dx = pos->x - at->x;
+        f32 dy = pos->y - at->y;
+        f32 dz = pos->z - at->z;
+
+        cam = &em2a_rescue_cam_v;   // COMPILER-DIFF: candidate #12
+        cam->up.x = 0.0f;
+        cam->up.y = 1.0f;
+        cam->up.z = 0.0f;
+        cam->dist = SQRTF(dx * dx + dy * dy + dz * dz);
+    }
+    cam->param.fovy = 55.0f;
+    CameraSetOrientationUp(cam);
+    CamCtrl.x250 = (s32) cam;
+}
+
+static void em2a_R1_Trap1Break(cEm2a* em)
+{
+    EmListData* l = EM_LIST(em->emsetNo);
+
+    switch (em->xFE) {
+    case 0:
+        if (em->xFF) {
+            MotionSetCore(em, MOTION(em), ARC(0xC), (int) ARC(0xF), 0, 1, 0);
+        } else {
+            MotionSetCore(em, MOTION(em), ARC(0xC), (int) ARC(0xE), 0, 1, 0);
+            SndCall(8, 0, &em->pos, em->id, 0, em);
+            EstSet((int) em, -1, 0, 0, 0x22, 2, 0, 0, (u32) em, 0);
+        }
+        l->x3 = 2;
+        em->clearStatus(5);
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em->xFE++;
+        }
+        break;
+    }
+}
+
+static void em2a_R1_Trap1Reset(cEm2a* em)
+{
+    switch (em->xFE) {
+    case 0:
+        EM_LIST(em->emsetNo)->x3 = 0;
+        MotionSetCore(em, MOTION(em), ARC(0x15), 0, 0, 1, 0);
+        SndCall(8, 0, &em->pos, em->id, 0, em);
+        em->xFE++;
+    case 1:
+        if (MotionMoveF(em, 0)) {
+            em->hp = 1;
+            em->xFC = 1;
+            em->xFD = 0;
+            em->xFF = 0;
+            em->xFE = 1;
+        }
+        break;
+    }
+}
+
+static void em2a_R1_Trap1R100(cEm2a* em)
+{
+    switch (em->xFE) {
+    case 0:
+        em->xFE++;
+    case 1:
+        MotionSetCore(em, MOTION(em), ARC(0x13), (int) ARC(0x14), 0, 1, 0);
+        MotionMoveF(em, 0);
+        if (em->flags_3C8 & 1) {
+            em->xFE++;
+        }
+        break;
+    case 2:
+        EM_LIST(em->emsetNo)->x3 = 0;
+        em->hp = 0;
+        MotionSetCore(em, MOTION(em), ARC(0x13), (int) ARC(0x14), 0, 1, 0);
+        em->xFE++;
+    case 3:
+        if (MotionMoveF(em, 0)) {
+            em->xFE++;
+        }
+        break;
+    }
+}
+
+static void em2a_R1_Trap2Set(cEm2a* em)
+{
+    RotMatrix(em->worldMat, &em->rot);
+    TransMatrix(em->worldMat, &em->pos);
+    ScaleMatrix(em->worldMat, &em->scale);
+    PSMTXCopy(em->worldMat, em->mat);
+    em->partsMatCalc();
+}
+
+static void em2a_R1_Trap2Bomb(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+
+    switch (em->xFE) {
+    case 0:
+        w->camTimer = 3;
+        em->xFE++;
+    case 1:
+        if (w->camTimer) {
+            w->camTimer--;
+        } else {
+            em2aTrap2Bomb(em);
+            em->xFE++;
+        }
+        RotMatrix(em->worldMat, &em->rot);
+        TransMatrix(em->worldMat, &em->pos);
+        ScaleMatrix(em->worldMat, &em->scale);
+        PSMTXCopy(em->worldMat, em->mat);
+        em->partsMatCalc();
+        break;
+    }
+}
+
+void em2aYarareInit(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+
+    switch (em->type) {
+    case 0:
+    default:
+        YarareInitCube(em, 0.0f, 0.0f, 0.0f, 500.0f, 200.0f, 500.0f, 0, 1);
+        break;
+    case 1:
+    case 2: {
+        f32 h;
+
+        YarareInit(em, 0.0f, -150.0f, -100.0f, 130.0f, 300.0f, 1, 1);
+        YarareAdd(em, &w->hit[0], 0.0f, -150.0f, 100.0f, 130.0f, 300.0f, 3, 1);
+        h = fabsf(em->getPartsPtr(1)->pos.z) * 0.4f;
+        YarareAdd(em, &w->hit[1], 0.0f, -30.0f, 0.0f, 130.0f, h, 1, 5);
+        YarareAdd(em, &w->hit[2], 0.0f, -50.0f, h, 130.0f, h, 1, 5);
+        YarareAdd(em, &w->hit[3], 0.0f, -70.0f, h + h, 130.0f, h, 1, 5);
+        YarareAdd(em, &w->hit[4], 0.0f, -50.0f, h * 3.0f, 130.0f, h, 1, 5);
+        YarareAdd(em, &w->hit[5], 0.0f, -30.0f, h * 4.0f, 130.0f, h, 1, 5);
+        break;
+    }
+    }
+}
+
+int em2aTrap2HitCk(cEm2a* em)
+{
+    if (em->hp <= 0) {
+        return 0;
+    }
+    if (em2aTrap2HitCkPL(em)) {
+        return 1;
+    }
+    if (em2aTrap2HitCkEM(em)) {
+        return 1;
+    }
+    return 0;
+}
+
+int em2aTrap2HitCkPL(cEm2a* em)
+{
+    cModel* p0;
+    cModel* p2;
+    f32 len;
+    Mtx inv;
+    Vec v;
+
+    p0 = em->getPartsPtr(0);
+    p2 = em->getPartsPtr(2);
+    len = SQRTF((p0->worldPos.x - p2->worldPos.x) * (p0->worldPos.x - p2->worldPos.x)
+                + (p0->worldPos.y - p2->worldPos.y) * (p0->worldPos.y - p2->worldPos.y)
+                + (p0->worldPos.z - p2->worldPos.z) * (p0->worldPos.z - p2->worldPos.z))
+          + 100.0f;
+    PSMTXInverse(em->mat, inv);
+    PSMTXMultVec(inv, &pPL->pos, &v);
+    if (!(v.z < 0.0f) && !(v.z > len) && !(v.x > 400.0f) && !(v.x < -400.0f) && !(v.y > 250.0f) && !(v.y < -2000.0f)) {
+        em->hp = 0;
+        return 1;
+    }
+    return 0;
+}
+
+int em2aTrap2HitCkEM(cEm2a* em)
+{
+    cModel* p0;
+    cModel* p2;
+    f32 len;
+    Mtx inv;
+    Vec v;
+    u32 i;
+
+    p0 = em->getPartsPtr(0);
+    p2 = em->getPartsPtr(2);
+    len = SQRTF((p0->worldPos.x - p2->worldPos.x) * (p0->worldPos.x - p2->worldPos.x)
+                + (p0->worldPos.y - p2->worldPos.y) * (p0->worldPos.y - p2->worldPos.y)
+                + (p0->worldPos.z - p2->worldPos.z) * (p0->worldPos.z - p2->worldPos.z))
+          + 100.0f;
+    PSMTXInverse(em->mat, inv);
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEm* e = em2aMgrWork(i);
+
+        if (!e->isAlive()) {
+            continue;
+        }
+        if (e->id <= 0xF) {
+            continue;
+        }
+        if (e->id > 0x20) {
+            continue;
+        }
+        if (e->hp <= 0) {
+            continue;
+        }
+        if (e == em) {
+            continue;
+        }
+        PSMTXMultVec(inv, &e->pos, &v);
+        if (!(v.z < 0.0f) && !(v.z > len) && !(v.x > 400.0f) && !(v.x < -400.0f) && !(v.y > 250.0f) && !(v.y < -2000.0f)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void em2aTrap2Bomb(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+    cModel* p1;
+    cModel* p;
+    Vec d;
+    Vec e;
+    f32 wh;
+    int water;
+
+    em->hp = 0;
+    EmSetDie(em);
+    em->be_flag &= ~2;
+    em->clearStatus(5);
+    SndCall(1, 0x14, &em->pos, em->id, 0, em);
+    EffectEspDelete(0, (u8) w->espKind, (u32) em, 0);
+    EffectEspgenDelete(0, (u8) w->espKind, (int) em);
+    EffectEfmDelete(0, (u8) w->espKind, (int) em);
+    water = 0;
+    if (GetWaterHeight(&em->pos, &wh)) {
+        if (SatMgr.getFloor(&em->pos, 600.0f, 100000.0f, 0, 0) < wh) {
+            water = 1;
+        }
+    }
+    if (water) {
+        EstSet((int) em, -1, 0, 0, 0x22, 6, 0, 0, (u32) em, 0);
+    } else {
+        if (em->type == 1) {
+            EstSet((int) em, -1, 0, 0, 0x22, 0, 0, 0, (u32) em, 0);
+        }
+        if (em->type == 2) {
+            EstSet((int) em, -1, 0, 0, 0x22, 4, 0, 0, (u32) em, 0);
+        }
+    }
+    p = em->getPartsPtr(0);
+    p1 = em->getPartsPtr(1);
+    PSVECSubtract(&p1->worldPos, &p->worldPos, &d);
+#line 1394 "D:/Bio4/Prog/em2a.cpp"
+    VECNormalize(&d, &d);
+    PSVECScale(&d, &d, 2000.0f);
+    PSVECAdd(&p->worldPos, &d, &e);
+    PlWepHitCheck2(0, &e, &e, 0x13, 2, 3000.0f);
+    p = em->getPartsPtr(2);
+    PSVECSubtract(&p1->worldPos, &p->worldPos, &d);
+#line 1401 "D:/Bio4/Prog/em2a.cpp"
+    VECNormalize(&d, &d);
+    PSVECScale(&d, &d, 2000.0f);
+    PSVECAdd(&p->worldPos, &d, &e);
+    PlWepHitCheck2(0, &e, &e, 0x13, 2, 3000.0f);
+    {
+        Camera* c = &pG->Cam;
+        f32 dist;
+
+        p = em->getPartsPtr(1);
+        dist = (p->worldPos.x - c->param.pos.x) * (p->worldPos.x - c->param.pos.x)
+               + (p->worldPos.y - c->param.pos.y) * (p->worldPos.y - c->param.pos.y)
+               + (p->worldPos.z - c->param.pos.z) * (p->worldPos.z - c->param.pos.z);
+        if (dist < 400000000.0f) {
+            f32 power = 10.0f;
+
+            if (dist > 25000000.0f) {
+                power = 8.0f;
+            }
+            if (dist > 100000000.0f) {
+                power = 6.0f;
+            }
+            if (dist > 225000000.0f) {
+                power = 4.0f;
+            }
+            QuakeExec(0, 0, 5, power, 2);
+        }
+    }
+}
+
+void em2aTrap1CamMove(cEm2a* em)
+{
+    Em2aWork* w = EM2A_WK(em);
+    Camera* c = &pG->Cam;
+    Mtx m;
+    Vec v;
+
+    PSMTXRotRad(m, 'y', pPL->rot.y);
+    TransMatrix(m, &em->pos);
+    v.x = -1200.0f;
+    v.y = 1300.0f;
+    v.z = -1000.0f;
+    PSMTXMultVec(m, &v, &v);
+    PosToPos(&c->param.pos, &v, &w->cam.param.pos, 0.1f);
+    v.x = 0.0f;
+    v.y = 500.0f;
+    v.z = -300.0f;
+    PSMTXMultVec(m, &v, &v);
+    PosToPos(&c->param.at, &v, &w->cam.param.at, 0.1f);
+    w->cam.up.x = 0.0f;
+    w->cam.up.y = 1.0f;
+    w->cam.up.z = 0.0f;
+    {
+        f32 dx = w->cam.param.pos.x - w->cam.param.at.x;
+        f32 dy = w->cam.param.pos.y - w->cam.param.at.y;
+        f32 dz = w->cam.param.pos.z - w->cam.param.at.z;
+        w->cam.dist = SQRTF(dx * dx + dy * dy + dz * dz);
+    }
+    w->cam.param.fovy = 55.0f;
+    CameraSetOrientationUp(&w->cam);
+    CamCtrl.x250 = (s32) &w->cam;
+}
+
+int em2aTrap1BiteCk(cEm2a* em)
+{
+    int dead;
+
+    if ((em->pos.x - pPL->pos.x) * (em->pos.x - pPL->pos.x) + (em->pos.z - pPL->pos.z) * (em->pos.z - pPL->pos.z)
+        > 90000.0f) {
+        return 0;
+    }
+    dead = em2aDeadCk(pPL);
+    if (dead) {
+        return 0;
+    }
+    if ((s16) pG->pl_life <= 0) {
+        return 0;
+    }
+    if (fabsf(em->pos.y - pPL->pos.y) > 500.0f) {
+        return 0;
+    }
+    em->pos.y = pPL->pos.y;
+    EmRoutineSet(em, 1, 1, 0, dead);
+    return 1;
+}
+
+int em2aTrap1BiteSubCk(cEm2a* em)
+{
+    int dead;
+    int two = 2;  // COMPILER-DIFF: #13 (single-use constant re-materialised at the store: `li r0,2` next to `stb`)
+
+    if (pSUB == 0) {
+        return 0;
+    }
+    if (pG->flags_5014 & 0x20000000) {
+        return 0;
+    }
+    dead = em2aDeadCk(pSUB);
+    if (dead) {
+        return 0;
+    }
+    if (pSUB->hp <= 0) {
+        return 0;
+    }
+    if ((em->pos.x - pSUB->pos.x) * (em->pos.x - pSUB->pos.x) + (em->pos.z - pSUB->pos.z) * (em->pos.z - pSUB->pos.z)
+        > 250000.0f) {
+        return 0;
+    }
+    if (fabsf(em->pos.y - pPL->pos.y) > 500.0f) {
+        return 0;
+    }
+    em->pos.y = pSUB->pos.y;
+    EmRoutineSet(em, 1, two, 0, dead);
+    return 1;
+}

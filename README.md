@@ -1,231 +1,86 @@
-# RE4 GameCube — Matching Decompilation Project
+# Resident Evil 4 (GameCube) — decompilation
 
-Goal: reconstruct the C/C++ source of the **2005 Nintendo GameCube release**
-of Resident Evil 4 through *matching decompilation* (same methodology as the
-Super Mario 64, Zelda OoT/MM, and Metroid Prime decomp projects), well
-enough that it recompiles to a byte-identical (or near-identical) `main.dol`.
-Once a large fraction of the game matches, the reconstructed source becomes
-a real foundation for a native Windows port (swap GX/DSP/OS calls for
-DirectX/XAudio2/Win32 equivalents, function by function, with the matched
-source as ground truth).
+A complete, byte-identical decompilation of *Resident Evil 4* for the Nintendo GameCube: the
+`G4BE08` **debug build** (the "Nov 25 2004" prototype, both discs), whose `Bio4.sym` files name every
+function. Building the repository reproduces `main.dol` and all 110 REL overlays exactly
+(`config/G4BE08/build.sha1`, checked on every build).
 
-This is **not** the 2007 PC port, and **not** the 2023 RE Engine remake.
-Those are different codebases. This project only concerns itself with the
-original GameCube binary and its own engine.
+| | |
+|---|---|
+| Units | 992 (673 in the DOL, 319 across the RELs), all matching |
+| Source | ~523k lines of C/C++ (`src/`), ~33k lines of headers (`include/`) |
+| Game code | SN Systems ProDG 3.9.3 — GCC 2.95.3 "SN BUILD v1.79", built natively from SN's GPL source drop |
+| CRI middleware (`src/lib/adx_*`, `sfd_*`, `mpv_*`, …) | Metrowerks CodeWarrior 2.4.7 (GC/2.7), the compiler CRI shipped the libraries with |
+| Nintendo SDK (`src/lib/OS*`, `GX*`, …) | Metrowerks CodeWarrior GC/1.2.5n, sources from [dolsdk2004](https://github.com/doldecomp/dolsdk2004) |
 
-## Why matching decomp, not clean-room reimplementation
+The repository contains no game assets and no code or data copied from the disc. You need your
+own image of the debug disc to build; the original files are read from it at configure time.
 
-See [docs/METHODOLOGY.md](docs/METHODOLOGY.md). Short version: matching
-decomp gives byte-for-byte verifiable correctness (via `objdiff`) and is the
-proven approach for this class of project. Clean-room separation (spec team
-never sees the binary / code team never sees original assets) isn't
-practical for a single contributor, and matching decomp already sidesteps
-the legal concern clean-room exists for — the repo never contains Capcom's
-binary or assets, only tooling + reconstructed source that requires the
-user's own legally-owned copy of the game to build against.
+## Building
 
-## Progress — where this project actually is
+Linux, Python 3, [ninja](https://ninja-build.org/). Compilers and tools (decomp-toolkit, objdiff,
+wibo, the CodeWarrior builds) are downloaded by the first configure run, except the native SN GCC:
 
-Run `python tools/scripts/progress_report.py` for current numbers (source
-of truth: `config/progress.yaml`, updated every time a function's status
-changes). As of the last update:
+```sh
+# 1. the native cc1/cc1plus (once): needs SN's GPL source drop, see tools/sn-gcc/build.sh
+SN_GCC_SRC=/path/to/NGC_GNU_SRC/NGC tools/sn-gcc/build.sh
 
-```
-Main DOL: 10383 named functions, 2,199,665 bytes of function bodies
-Matched (byte-identical):         3 fns  (0.029% of fn count, 0.00164% of code bytes)
-Equivalent (logic-verified only): 5 fns  (0.048% of fn count, 0.00582% of code bytes)
-Not yet started:              10375 fns  (99.923%)
+# 2. your disc images (disc 1: main.dol + 110 RELs; disc 2: the four island-stage RELs st3_0..st3_3)
+cp re4_debug_disc1.iso re4_debug_disc2.gcm orig/G4BE08/
+
+# 3. build and verify
+python3 configure.py && ninja
 ```
 
-**Read that plainly: we are at the very start of Phase 1, not close to
-"done."** Every function tackled so far was deliberately picked because it
-was small and simple, to validate the pipeline and build a track record —
-this is not a representative sample of the codebase's difficulty. For
-calibration: Metroid Prime's decomp (`PrimeDecomp`, an actively maintained
-project with many contributors over several years) was measured at
-~56.5% matched via `decomp.dev` when first researched for this project
-(see [docs/RESEARCH.md](docs/RESEARCH.md)) — years of sustained multi-
-contributor effort to get roughly half done, on a comparable-era GameCube
-title. Nobody should read the numbers above as "8% done" or "close" — read
-them as "the toolchain and methodology are proven correct; the actual work
-of matching ~10,000 functions has barely begun."
-
-### The two separate phases — don't conflate them
-
-1. **Phase 1 (where we are): decompile the original GameCube game.**
-   Recover C/C++ source for the ~10,383 functions in the main DOL (plus
-   everything in the 11 REL modules) until it matches Capcom's actual
-   binary, function by function. This alone is a multi-year undertaking
-   at any realistic solo or small-team pace — see
-   [docs/METHODOLOGY.md](docs/METHODOLOGY.md) "Realistic expectations."
-   **Nothing runs on Windows yet, and nothing will until a meaningful
-   fraction of this phase is done** — a "port" needs real source to port.
-2. **Phase 2 (not started): port the matched source to native Windows.**
-   Once enough of the engine is matched and understood, swap GX (graphics)
-   calls for Direct3D/Vulkan, the GameCube audio HW/DSP calls for
-   XAudio2/WASAPI, `OSReport`/thread/memory calls for Win32 equivalents,
-   etc. — a real, substantial engineering project in its own right, done
-   against source we can actually read and trust rather than raw assembly.
-   This hasn't begun and can't usefully begin until Phase 1 has real
-   coverage of the systems being ported (rendering, audio, input, etc.).
-
-## Status
-
-- [x] Legally-dumped GameCube ISO of RE4 obtained and hashed against known
-      good dumps — verified as a clean Redump match: "Resident Evil 4
-      (USA) (Disc 1)", CRC32 `f5c51b40`, SHA-1 `9de89c7f...`
-- [x] Toolchain installed (see [docs/TOOLING.md](docs/TOOLING.md)) —
-      `decomp-toolkit` (`dtk`) built from source via the GNU Rust toolchain
-      (no MSVC Build Tools on this machine; see TOOLING.md note)
-- [x] DOL/REL/filesystem extracted (`orig/disc1/`, gitignored) —
-      `sys/main.dol` (2.17 MB, SHA-1 `5aa53851...`) + 11 REL modules in
-      `files/Rel/` (`Sscrn.rel`, `st1_0..3.rel`, `st2_0..4.rel`, `st4_0.rel`
-      — one module per stage/chapter, loaded over the main DOL)
-- [x] Symbol map recovered — obtained the "Debug Disc 1" (2004-11-25)
-      GameCube prototype, extracted it, found 123 `Bio4.*.sym` files
-      (confirmed genuine: Hidden Palace explicitly documents this exact
-      prototype as containing them), ran `re4sym` on all of them.
-      **10,383 symbols** for the main executable alone (real C++
-      `Class::Method` names, e.g. `CameraControl::HermiteExport`), plus
-      full symbol coverage for every REL overlay *and* dozens of
-      enemy/player/weapon/UI overlay modules not present on the retail
-      disc at all (~25,974 symbol lines total). Exported as Dolphin `.map`
-      + Ghidra import scripts in `config/symbols/`.
-- [x] Ghidra set up with GameCube loader + symbols imported — Ghidra
-      12.1.3 + `Cuyler36/Ghidra-GameCube-Loader` (built from source, JDK 21
-      GNU toolchain) + Gekko/Broadway language, all headless (no GUI
-      interaction available/needed). Debug `main.dol` imported, fully
-      auto-analyzed (64s), all 10,383 symbols imported (0 skipped, 578
-      new functions created), verified with a sample decompile —
-      `CameraControl::AreaCheckOnOff`, `cameraHitCheck` etc. all produce
-      clean, real pseudo-C referencing other named functions/globals
-      (`EmHitCheck`, `cSatMgr::hitCheck`, `PSVECDistance`, `SatMgr`...).
-      Reusable headless scripts: `tools/scripts/ImportRE4Symbols.java`,
-      `tools/scripts/DecompileSample.java`.
-- [ ] Reconcile debug-build addresses/symbols against the retail DOL (debug
-      main.dol is 2.55 MB vs retail's 2.17 MB — different layout, so
-      addresses won't line up 1:1; names should still transfer function-by-
-      function once matched)
-- [x] CodeWarrior compiler obtained — `files.decomp.dev/compilers_20251118.zip`
-      (same archive PrimeDecomp/zeldaret/doldecomp use), extracted to
-      `tools/compilers/GC/*` (gitignored, ~77 MB). `objdiff-cli` v3.8.1
-      also fetched. Both run natively on Windows (no `wibo` needed here).
-- [~] First matching attempt: `CameraControl::AreaCheckOnOff` — status
-      **`Equivalent`** (zeldaret/tww terminology: logic 100% confirmed
-      correct via 40+ tested combinations, not yet byte-exact — 52/56
-      bytes). Root cause identified via real research, not guesswork: an
-      `or. rX,rX,rX` vs `cmpwi` instruction-selection choice that's
-      register-scheduler-emergent, not controllable from C source alone —
-      confirmed by finding the exact same idiom in this binary's own
-      linked-in `strncmp` (Metrowerks standard library, not Capcom code)
-      and then *failing* to reproduce it with a hand-written function of
-      identical shape. This specific class of problem is explicitly
-      documented as a known limitation by real GC/Wii decomp projects
-      (`mwcc-rs`, Persona4-Decompilation, zeldaret/tww's own `Equivalent`
-      status convention, which this project now follows). Full log:
-      [docs/matching/CameraControl_AreaCheckOnOff.md](docs/matching/CameraControl_AreaCheckOnOff.md).
-      Current best-effort source:
-      [src/camera/CameraControl.cpp](src/camera/CameraControl.cpp).
-- [x] **Byte-perfect matches (3 so far)**: `CameraControl::CurrentAreaNo`,
-      `CurrentCameraNo`, `getMotionInfoPtr` — all confirmed byte-identical
-      against Ghidra-dumped ground truth. First real proof the full
-      pipeline (Ghidra ground truth → hand-written C++ → real CodeWarrior
-      compile → verified match) works end to end.
-- [x] **`Equivalent` (logic/instructions/order confirmed correct, register
-      numbering doesn't match)**: `AreaCheckOnOff`, `Disable`,
-      `IsChangeCamera`, `AreaNum`, `setMotionBaseMatPtr`. A real pattern
-      is emerging across these — see
-      [docs/matching/CameraControl_pointers.md](docs/matching/CameraControl_pointers.md)
-      "A real, reproducible pattern" section: register reuse vs. fresh-
-      register allocation seems to depend on whether a loaded value is
-      used as an arithmetic operand (reused) vs. as the base address of a
-      *second* memory access (fresh register in the target, but not
-      reproducible from our source so far).
-- [ ] ...
-
-## Whole-DOL reconstruction build (separate from function matching, above)
-
-As of 2026-09-10, `tools/scripts/build.sh` reproducibly rebuilds a **complete,
-booting** `main.dol` from the debug disc's disassembly: `dtk dol split` (all
-10,383 functions, byte-identical raw disassembly — not hand-written C, this
-is a *different* verification axis from the matching work tracked above) →
-real CodeWarrior `mwldeppc` link → `dtk elf2dol`. `--iso` additionally rebuilds
-a full bootable GameCube disc image (own tool, `tools/scripts/build_gc_iso.py`
-— `wit`/Wiimms ISO Tools insists on Wii-style partition wrapping even for a
-plain GC source, which breaks Dolphin's apploader).
-
-This reconstructed build **boots to the real, fully rendered Resident Evil 4
-title menu** in Dolphin (logo, Leon/Ashley artwork, START/LOAD/OPTIONS,
-Capcom 2005 copyright, ~34 FPS), correctly plays a real FMV cutscene
-(`movie/demo0.sfd`) along the way, and — pressing Start through the debug
-build's developer menu (Opening/Debug Game/Leon, stage/room/enemy-set
-selectors etc.) — reaches **actual playable real-time 3D gameplay**: Leon
-fully rendered and animated in a forest/village environment, moving, aiming,
-with a complete working HUD, stable ~30 FPS, REL stage-overlay modules
-streaming and linking cleanly. i.e. the Nintendo SDK boot sequence, DVD
-filesystem, video decoding, rendering, camera, player controller, collision,
-HUD, and the dynamic REL-loading system are all confirmed working end-to-end
-against our own rebuild — not merely "it boots." Five real bugs in the split→link→disc
-pipeline had to be found and fixed to get there (mwldeppc mis-computing PC-
-relative branches in the object linked last before a section-kind change;
-dtk's SDK-signature system hardcoding a symbol name that collides with
-mwldeppc's own auto-generated one; a bad hand-added symbol from earlier in
-the project overlapping a real data table; DOL-vs-disc-image; `wit`'s Wii
-wrapping) — see the project memory / commit history for full root-cause
-writeups, and the comment block at the top of `build.sh` for the one known
-*remaining* issue (`_SDA2_BASE_` computed differently than the original,
-~668 small-data loads affected, deferred — doesn't block boot or the menu).
-
-**This does not mean Phase 1 is close to done.** It means the toolchain can
-produce and verify a byte-faithful *whole-binary* rebuild end-to-end, which
-is valuable both as a sanity check on the split/link pipeline itself and as
-the harness incremental function-matching work (above) will keep running
-against. The ~10,375 not-yet-matched functions are still raw disassembly,
-not understood C++ source — that work is unaffected by this milestone and
-still has to happen function by function.
-
-## Phase 2 scaffolding (proof of concept only - see warning below)
-
-`native/` is a minimal CMake project proving the actual Phase 2 workflow
-works, not a playable port: it compiles every currently matched/equivalent
-`.cpp` in `src/` (26 files, ~115 functions) with a genuine native Windows
-toolchain (MinGW-w64 g++ 16, C++17, zero source modifications needed - every
-matched file so far happens to have zero GameCube hardware dependencies) and
-runs a smoke test (`native/test_main.cpp`) that exercises `CameraControl`'s
-matched/equivalent methods and checks their behavior against the confirmed
-PowerPC semantics. All checks pass as a real native `.exe`, no emulator.
-
-```
-cmake -S native -B native/build -G "MinGW Makefiles"
-cmake --build native/build
-native/build/re4_native_test.exe
-```
-
-Real finding from building this: struct layouts with embedded pointers
-(`CameraControl`'s `AreaData*`/`MotionBase*` fields) are only
-self-consistent on the original 32-bit target — those pointers are 4 bytes
-on GameCube PowerPC but 8 bytes on native x86_64, so every field declared
-after one lands at a different real offset once compiled natively. Testing
-private state safely across that requires going through the class by field
-*name* (a test-only `friend`, see `CameraControlTestAccess` in
-`CameraControl.h`), not by assuming GameCube byte offsets still apply -
-worth knowing before porting any other struct with pointer members.
-
-**This is not a Windows port and isn't close to being playable.** It's
-confirmation that the matched-decomp source is genuinely portable, compiles
-clean, and behaves correctly on a real native toolchain - the actual
-substance of Phase 2 (replacing GX/DSP/OS/PAD calls with
-Direct3D/XAudio2/Win32 equivalents, standing up a real game loop/window/
-render pipeline) can't meaningfully start until Phase 1 has real coverage of
-the systems involved, per the "two separate phases" section above.
+`ninja` ends with the progress report (100% matched and linked for the DOL and the REL modules);
+`build/tools/dtk shasum -c config/G4BE08/build.sha1` prints 111 `OK` lines. To work on a unit, `python3 tools/bytecmp.py game/foo` compares its object with
+the original word by word and `python3 tools/fdiff.py game/foo <symbol>` shows one function.
 
 ## Layout
 
-```
-config/   decomp-toolkit / splat config, symbol maps, build config
-docs/     methodology, tooling setup, research notes (this is the real content for now)
-tools/    downloaded toolchain (Ghidra, decomp-toolkit, wibo, objdiff, CodeWarrior) — gitignored
-build/    build output — gitignored
-```
+- `src/game/` — the game (C++; a few newlib C units). `src/em*/` enemies, `src/wep*/` weapons,
+  `src/pl*/` player characters, `src/st*/` rooms (one REL per room), `src/t_*/`, `src/Tools/`,
+  `src/tools/` the in-game debug editors, `src/Sscrn/` the sub-screens, `src/lib/` SDK, CRI and runtime.
+- `include/` — headers, including the reconstructed struct layouts.
+- `config/G4BE08/` — unit lists (`objects.py`, `modules.py`), `symbols.txt`, `splits.txt`, linker
+  scripts, per-module REL data (`modules/<mod>/`), `build.sha1`.
+- `tools/` — build generator (`project.py`), the ProDG driver (`ngccc.py`), REL rebuild (`make_rel.py`,
+  `link_rel.py`), the compare tools, `sn-gcc/` (native compiler build), `research/` (compiler-analysis kit).
+- `docs/matching.md` — how the matching was done: compiler provenance, the catalogue of compiler
+  mechanisms and the source shapes that reproduce them, rules of thumb for both compilers.
+  `docs/unit-notes.md` — per-unit notes. `docs/research/` — the pass-by-pass research log.
 
-No ISO, DOL, REL, or extracted asset ever gets committed — see `.gitignore`.
+## What "matching" means here
+
+Every unit compiles to the original bytes with the original compilers. Where the compiler needed a
+particular source shape to reproduce a register choice or a schedule and no natural spelling was
+found, the construct is marked with a `// COMPILER-DIFF:` comment (644 of them: dead tests, empty
+`asm("")` launders and anchors, `register T x asm("rN")` pins, padding statements). None of them
+emits an instruction: `python3 tools/asmcheck.py --all` compiles every GCC unit with its asm templates
+marked and lists the instructions that came from a template — the only hits are the hardware kernels
+below. An earlier state of this tree had ~100 hand-placed instructions (`asm("li %0,0")`,
+`asm("lis/addi")`, `asm("mr")`) in the game code and ~100 register-pinning `asm { }` blocks in the CRI
+libraries; they were replaced by C on 2026-09-17 (`docs/research/asm-removal.md` records the recipe
+and the compiler mechanism per site). Each tag's mechanism is documented in `docs/matching.md` and
+`docs/research/`.
+
+Assembly that remains, all of it code the original authors also wrote in assembly because their
+compilers had no other way to express it:
+
+- GCC 2.95 game code: paired-single kernels (`SINF`/`COSF`/`RSQRT`/`LIMIT_ANGLE` in `math_sub`, the
+  matrix kernels in `trans`, `shape`, `dbmodule`, quantised `psq_l` in `Espgen42`/`espgen45`), the
+  GQR setup in `main`/`scheduler`, and the libsn `sndvd` exception handler.
+- MWCC CRI libraries: the paired-single / cache / SPR kernels (`mpv_umc`, `mpv_mc`, `dct_fsri`,
+  `cftyp422_ppc`, `mpv_lib`), the SDK's `mtx`/`vec`/`quat`/`GX` intrinsics, and one register-steering
+  block in `dct_ac` (`dctac_Init`: the vendor's compiler build pooled `.bss` but not the function's
+  8-byte literals; ours pools both). Codeless `asm { mr r11, x; mr x, r11 }` pins (both moves are
+  deleted by the allocator; they narrow the colour set by one register) and `asm { mr v, v }` self
+  copies (an opaque second definition) remain in 27 places.
+- Eight `.s` units: crt0 (`__start`), `eabi`, SN's `tealeaf`/`fileserver`/`ppcdown`/`proview`, and
+  Capcom's `memset_2` and `yz2asm`.
+
+## Legal
+
+The reconstructed game and SDK source is the intellectual property of its respective owners
+(Capcom, Nintendo, CRI Middleware) and is published for research and preservation only. The build
+scripts, tools and documentation written for this project are released under CC0 (`LICENSE`).

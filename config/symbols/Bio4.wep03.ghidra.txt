@@ -1,5 +1,0 @@
-Wep03_init 0x80000000
-Wep03_move 0x80000004
-_prolog 0x80000008
-_epilog 0x80000064
-_unresolved 0x80000068

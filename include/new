@@ -1,0 +1,21 @@
+#ifndef __NEW__
+#define __NEW__
+
+// Stand-in for the GCC 2.95 <new> header (the toolchain here has no libstdc++ headers). The
+// inline what() is what puts the "bad_alloc" string into the .rodata of every unit that
+// includes it (game/xml.cpp).
+class exception {
+public:
+    exception() {}
+    virtual ~exception() {}
+    virtual const char* what() const;
+};
+
+class bad_alloc : public exception {
+public:
+    bad_alloc() {}
+    virtual ~bad_alloc() {}
+    virtual const char* what() const { return "bad_alloc"; }
+};
+
+#endif

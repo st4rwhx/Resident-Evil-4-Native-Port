@@ -1,0 +1,11 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+
+wep37/wep37.cpp:
+	.text       start:0x00000000 end:0x000006D0
+	.rodata     start:0x00000000 end:0x00000210
+	.data       start:0x00000000 end:0x00000004 skip

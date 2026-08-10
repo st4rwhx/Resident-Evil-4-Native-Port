@@ -1,0 +1,21 @@
+{
+  "name": "t_movie",
+  "module_id": 48,
+  "object": "files/Rel/t_movie.rel",
+  "num_sections": 27,
+  "name_offset": 2088,
+  "name_size": 47,
+  "align": 8,
+  "bss_align": 32,
+  "common_size": 52,
+  "sections": {
+    ".text": 1,
+    ".ctors": 14,
+    ".dtors": 16,
+    ".rodata": 18,
+    ".data": 20,
+    ".bss": 22
+  },
+  "links": [],
+  "field_overrides": []
+}

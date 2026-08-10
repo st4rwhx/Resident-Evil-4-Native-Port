@@ -1,0 +1,186 @@
+#include "atari.h"
+#include "obj.h"
+#include "esp.h"
+#include "global.h"
+#include "math_sub.h"
+
+extern "C" {
+void MotionMove(cModel* m, int a);
+void Efm04RotMatrix(cObj* obj, Mtx m);
+}
+
+// Effect model (Efm): a model thrown from an effect that flies, fades and bounces off the
+// scenario/floor, following its parent until `rotFrame`.
+class cObj04 : public cObj {
+public:
+    virtual void move();
+};
+
+void cObj04::move()
+{
+    Efm04Work* w = &efm04;
+    cLightInfo* li;
+    Vec ref;
+    Vec hitPos;
+    Vec neg;
+    Vec nrm;
+    u32 attr;
+    f32 len;
+    int hit;
+    static f32 obj04_gnd_ratio = 0.0f;
+
+    if (w->parent) {
+        if ((w->parent->be_flag & 0x201) != 1) {
+            ObjMgr.destroy(this);
+            return;
+        }
+        if (w->parent->serial != w->parentSerial) {
+            ObjMgr.destroy(this);
+            return;
+        }
+    }
+    li = &lightInfo;
+    if ((li->x51 & 3) == 2) {
+        li->updateMatrix(this);
+    }
+    if (w->flags & 8) {
+        MotionMove(this, 0);
+    }
+    if (w->parentWorld != pEffParentWorld) {
+        if (w->rotFrame != 0xFF && w->rotFrame <= w->frame) {
+            Efm04RotMatrix(this, w->parentWorld->mat);
+            w->parentWorld = pEffParentWorld;
+        }
+        if (w->parentWorld != pEffParentWorld && w->parent) {
+            if (!(w->parent->be_flag & 2)) {
+                be_flag &= ~2;
+            } else {
+                be_flag |= 2;
+            }
+        }
+    }
+    if (w->moveStart <= w->frame) {
+        oldPos = pos;
+        PSVECAdd(&pos, &speed, &pos);
+        PSVECAdd(&speed, &w->acc, &speed);
+        PSVECScale(&speed, &speed, w->spdDamp);
+    }
+    if (w->scaleStart <= w->frame) {
+        w->scale += w->scaleSpd;
+        w->scaleSpd *= w->scaleDamp;
+        if (w->scale <= 0.0f) {
+            ObjMgr.destroy(this);
+            return;
+        }
+    }
+    PSVECAdd(&rot, &w->rotSpd, &rot);
+    if (w->fadeStart < w->frame) {
+        if (w->fadeStart + w->fadeLen <= w->frame) {
+            w->r *= w->rMul;
+            w->g *= w->gMul;
+            w->b *= w->bMul;
+            w->a *= w->aMul;
+            if (w->r > 255.0f) {
+                w->r = 255.0f;
+            }
+            if (w->g > 255.0f) {
+                w->g = 255.0f;
+            }
+            if (w->b > 255.0f) {
+                w->b = 255.0f;
+            }
+            if (w->a > 255.0f) {
+                w->a = 255.0f;
+            }
+            if (w->a < 4.0f) {
+                ObjMgr.destroy(this);
+                return;
+            }
+        }
+    } else if (w->fadeStart != 0) {
+        f32 ratio = (f32) w->frame / (f32) w->fadeStart;
+        w->a = (f32) w->alpha0 * ratio;
+    }
+    if (x12F != 2) {
+        if (w->a < 250.0f) {
+            x12F = 1;
+        } else {
+            x12F = 0;
+        }
+    }
+    if (w->life != 0 && w->life <= w->frame) {
+        ObjMgr.destroy(this);
+        return;
+    }
+    w->frame++;
+    pInfo->color[0] = (u8) w->r;
+    pInfo->color[1] = (u8) w->g;
+    pInfo->color[2] = (u8) w->b;
+    pInfo->color[3] = 0xFF;
+    alpha = w->a * (1.0f / 255.0f);
+    scale.y = w->scaleY * w->scale;
+    scale.z = scale.x = w->scaleXZ * w->scale;
+    if (!(w->stopped & 1)) {
+        hit = 0;
+        if (w->flags & 2) {
+            if (SatMgr.hitCheck(&oldPos, &pos, &hitPos, &nrm, 0, 0)) {
+                pos = hitPos;
+                hit = 1;
+                PSVECAdd(&nrm, &pos, &pos);
+                len = RootSumSquare3(&speed);
+                neg.x = -nrm.x;
+                neg.y = -nrm.y;
+                neg.z = -nrm.z;
+                C_VECReflect(&speed, &neg, &ref);
+                PSVECScale(&ref, &speed, len * w->bounceY);
+                PSVECScale(&w->rotSpd, &w->rotSpd, -0.8f);
+            }
+        } else if (w->flags & 1) {
+            f32 floor = EatMgr.getFloor(&pos, 600.0f, 100000.0f, &attr, 0);
+            f32 ofs = w->groundOfs;
+
+            if ((s32) pG->flags_60 < 0 && !(pG->flags_60 & 0x10000)) {
+                floor = 0.0f;
+            }
+            if (pos.y - ofs < floor) {
+                FSet(speed.x, speed.x * w->bounceXZ);
+                FSet(speed.y, speed.y * -w->bounceY);
+                FSet(speed.z, speed.z * w->bounceXZ);
+                FSet(pos.y, floor + ofs);
+                hit = 1;
+                PSVECScale(&w->rotSpd, &w->rotSpd, obj04_gnd_ratio);
+            }
+        }
+        if (hit) {
+            if (PSVECMag(&speed) < 15.0f) {
+                PSVECScale(&speed, &speed, 0.0f);
+                PSVECScale(&w->acc, &w->acc, 0.0f);
+                w->stopped = 1;
+            }
+        }
+    }
+    RotMatrix(mat, &rot);
+    TransMatrix(mat, &pos);
+    ScaleMatrix(mat, &scale);
+    if (w->parentWorld != pEffParentWorld) {
+        PSMTXConcat(w->parentWorld->mat, mat, mat);
+    }
+    partsWorldCalc();
+}
+
+// Re-orient the model by `m`: position, speed and acceleration are transformed, the rotation
+// is composed with it.
+void Efm04RotMatrix(cObj* obj, Mtx m)
+{
+    Mtx tmp;
+
+    PSMTXMultVec(m, &obj->pos, &obj->pos);
+    PSMTXMultVecSR(m, &obj->speed, &obj->speed);
+    PSMTXMultVecSR(m, &obj->efm04.acc, &obj->efm04.acc);
+    RotMatrix(tmp, &obj->rot);
+    PSMTXConcat(m, tmp, tmp);
+    Matrix2AxisAngle(tmp, &obj->rot);
+}
+
+// The next unit's .sdata starts 8-byte aligned in the original link.
+asm(".section .sdata,\"aw\"\n\t.balign 8\n\t.text");

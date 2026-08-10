@@ -1,0 +1,100 @@
+Sections:
+	.text       type:code align:4
+	.ctors      type:rodata align:4
+	.dtors      type:rodata align:4
+	.rodata     type:rodata align:8
+	.data       type:data align:4
+	.bss        type:bss align:4
+
+st2_3/em_wrap.cpp:
+	.text       start:0x00000000 end:0x00001210
+	.rodata     start:0x00000000 end:0x00000AE8
+
+st2_3/cSceObj.cpp:
+	.text       start:0x00001210 end:0x000037B4
+	.rodata     start:0x00000AE8 end:0x00000B80
+
+st2_3/r21a.cpp:
+	.text       start:0x000037B4 end:0x00005B34
+	.rodata     start:0x00000B80 end:0x00000DE8
+	.data       start:0x00000000 end:0x000000A8 align:4
+	.bss        start:0x00000000 end:0x00000004 align:4
+	.bss        start:0x000001F0 end:0x00000224 align:4 common
+
+st2_3/r21b.cpp:
+	.text       start:0x00005B34 end:0x00006BA0
+	.rodata     start:0x00000DE8 end:0x00000F08
+	.data       start:0x000000A8 end:0x00000250 align:4
+	.bss        start:0x00000004 end:0x00000008 align:4
+
+st2_3/r21d.cpp:
+	.text       start:0x00006BA0 end:0x000098A0
+	.rodata     start:0x00000F08 end:0x000011AC
+	.data       start:0x00000250 end:0x000002A0 align:4
+	.bss        start:0x00000008 end:0x0000002C align:4
+
+st2_3/r220.cpp:
+	.text       start:0x000098A0 end:0x0000A014
+	.rodata     start:0x000011AC end:0x00001268 align:4
+	.bss        start:0x0000002C end:0x00000030 align:4
+
+st2_3/r221.cpp:
+	.text       start:0x0000A014 end:0x0000E020
+	.rodata     start:0x00001268 end:0x00001520
+	.bss        start:0x00000030 end:0x00000054 align:4
+
+st2_3/r223.cpp:
+	.text       start:0x0000E020 end:0x00010EBC
+	.rodata     start:0x00001520 end:0x00001788
+	.data       start:0x000002A0 end:0x000002C0 align:4
+	.bss        start:0x00000054 end:0x00000058 align:4
+
+st2_3/r224.cpp:
+	.text       start:0x00010EBC end:0x00013558
+	.rodata     start:0x00001788 end:0x00001A80
+	.data       start:0x000002C0 end:0x000002D0 align:4
+	.bss        start:0x00000058 end:0x0000005C align:4
+
+st2_3/r225.cpp:
+	.text       start:0x00013558 end:0x000153B4
+	.rodata     start:0x00001A80 end:0x00001CD0
+	.data       start:0x000002D0 end:0x00000378 align:4
+	.bss        start:0x0000005C end:0x00000060 align:4
+
+st2_3/r226.cpp:
+	.text       start:0x000153B4 end:0x0001A350
+	.rodata     start:0x00001CD0 end:0x00002140
+	.data       start:0x00000378 end:0x00000508 align:4
+	.bss        start:0x00000060 end:0x0000015C align:4
+
+st2_3/r227.cpp:
+	.text       start:0x0001A350 end:0x0001D360
+	.rodata     start:0x00002140 end:0x00002430
+	.data       start:0x00000508 end:0x00000518 align:4
+	.bss        start:0x0000015C end:0x00000160 align:4
+
+st2_3/r228.cpp:
+	.text       start:0x0001D360 end:0x0001F000
+	.rodata     start:0x00002430 end:0x000026BC
+	.bss        start:0x00000160 end:0x000001A4 align:4
+
+st2_3/r229.cpp:
+	.text       start:0x0001F000 end:0x0001FAA0
+	.rodata     start:0x000026BC end:0x000028F8 align:4
+	.bss        start:0x000001A4 end:0x000001E8 align:4
+
+st2_3/r22a.cpp:
+	.text       start:0x0001FAA0 end:0x00020A90
+	.rodata     start:0x000028F8 end:0x00002A78
+	.data       start:0x00000518 end:0x00000530 align:4
+	.bss        start:0x000001E8 end:0x000001EC align:4
+
+st2_3/r22b.cpp:
+	.text       start:0x00020A90 end:0x00020EA0
+	.rodata     start:0x00002A78 end:0x00002B00
+	.bss        start:0x000001EC end:0x000001F0 align:4
+
+st2_3/st2.cpp:
+	.text       start:0x00020EA0 end:0x000213E8
+	.rodata     start:0x00002B00 end:0x00002B50
+	.data       start:0x00000530 end:0x00000534 skip
