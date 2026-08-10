@@ -12,6 +12,7 @@
 #include <dolphin.h>
 
 void port_set_game_dir(const char *dir);
+extern "C" void port_pad_set(u16, int, int, int, int, int, int);
 
 namespace {
 
@@ -149,6 +150,72 @@ void test_dvd(const char *dir, const char *probe)
     check(DVDConvertPathToEntrynum("ce/fichier/n/existe/pas.bin") < 0, "un chemin inconnu echoue");
 }
 
+
+// ---------------------------------------------------------------- video
+
+int g_retrace_seen = 0;
+void on_retrace(u32 count) { (void)count; ++g_retrace_seen; }
+
+void test_vi()
+{
+    std::printf("\n== video ==\n");
+    VIInit();
+    VIRetraceCallback old = VISetPostRetraceCallback(on_retrace);
+    check(old == nullptr, "la callback precedente est rendue");
+
+    u8 fb[64];
+    VISetNextFrameBuffer(fb);
+    VIFlush();
+
+    // Le vrai test : la cadence. 30 champs NTSC doivent prendre ~500 ms. Un VIWaitForRetrace
+    // qui rend la main tout de suite passerait tous les autres tests et ferait tourner le jeu
+    // en accelere sans que rien ne le signale.
+    const OSTime t0 = OSGetTime();
+    for (int i = 0; i < 30; ++i)
+        VIWaitForRetrace();
+    const OSTime t1 = OSGetTime();
+    const double ms = (double)(long long)(t1 - t0) / 40500.0;
+    std::printf("      30 champs en %.0f ms (attendu ~500)\n", ms);
+    check(ms > 400.0 && ms < 700.0, "la cadence est bien celle du NTSC");
+    check(g_retrace_seen == 30, "la callback de post-retrace est appelee a chaque champ");
+    check(VIGetNextField() <= 1, "le champ alterne dans 0/1");
+    VISetPostRetraceCallback(nullptr);
+}
+
+// ---------------------------------------------------------------- manette
+
+void test_pad()
+{
+    std::printf("\n== manette ==\n");
+    check(PADInit() == TRUE, "l'initialisation repond");
+
+    PADStatus st[PAD_MAX_CONTROLLERS];
+    PADRead(st);
+    check(st[0].err == PAD_ERR_NONE, "le canal 0 est branche");
+    check(st[1].err == PAD_ERR_NO_CONTROLLER &&
+          st[2].err == PAD_ERR_NO_CONTROLLER &&
+          st[3].err == PAD_ERR_NO_CONTROLLER, "les canaux 1 a 3 sont vides");
+    check(st[0].button == 0 && st[0].stickX == 0 && st[0].stickY == 0,
+          "au repos : aucun bouton, sticks centres");
+
+    // Ce que fera la couche tactile.
+    port_pad_set(PAD_BUTTON_A | PAD_BUTTON_START, -90, 70, 0, 0, 0, 255);
+    PADRead(st);
+    check((st[0].button & PAD_BUTTON_A) && (st[0].button & PAD_BUTTON_START), "les boutons passent");
+    check(st[0].stickX == -90 && st[0].stickY == 70, "le stick est signe et centre sur zero");
+    check(st[0].triggerRight == 255, "la gachette analogique passe");
+    check(st[0].analogA == 255, "analogA suit le bouton A");
+
+    // Debordement : une couche tactile maladroite enverrait 300.
+    port_pad_set(0, 300, -300, 0, 0, 0, 0);
+    PADRead(st);
+    check(st[0].stickX == 127 && st[0].stickY == -128, "les valeurs hors bornes sont ecretees");
+
+    PADClamp(st);
+    check(st[1].err == PAD_ERR_NO_CONTROLLER, "PADClamp laisse les canaux vides tranquilles");
+    port_pad_set(0, 0, 0, 0, 0, 0, 0);
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -160,6 +227,8 @@ int main(int argc, char **argv)
     test_heap();
     test_time();
     test_dvd(dir, probe);
+    test_vi();
+    test_pad();
 
     std::printf("\n%s : %d echec(s)\n", g_fail ? "ECHEC" : "TOUT PASSE", g_fail);
     return g_fail ? 1 : 0;

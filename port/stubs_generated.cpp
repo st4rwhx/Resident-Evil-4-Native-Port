@@ -85,6 +85,7 @@ int DVDChangeDiskAsync(DVDCommandBlock* block, DVDDiskID* id, DVDCBCallback call
 int DVDCloseDir(DVDDir* dir) { PORT_TODO("DVDCloseDir"); return 0; }   // include\dolphin\dvd.h
 int DVDCompareDiskID(const DVDDiskID* id1, const DVDDiskID* id2) { PORT_TODO("DVDCompareDiskID"); return 0; }   // include\dolphin\dvd.h
 DVDDiskID* DVDGenerateDiskID(DVDDiskID* id, const char* game, const char* company, u8 diskNum, u8 version) { PORT_TODO("DVDGenerateDiskID"); return nullptr; }   // include\dolphin\dvd.h
+s32 DVDGetCommandBlockStatus(const DVDCommandBlock* block) { PORT_TODO("DVDGetCommandBlockStatus"); return 0; }   // include\dolphin\dvd.h
 DVDDiskID* DVDGetCurrentDiskID() { PORT_TODO("DVDGetCurrentDiskID"); return nullptr; }   // include\dolphin\dvd.h
 void* DVDGetFSTLocation() { PORT_TODO("DVDGetFSTLocation"); return nullptr; }   // include\dolphin\dvd.h
 int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); return 0; }   // include\dolphin\dvd.h
@@ -203,6 +204,7 @@ void OSInitSemaphore(OSSemaphore* sem, s32 count) { PORT_TODO("OSInitSemaphore")
 void OSInitStopwatch(OSStopwatch* sw, char* name) { PORT_TODO("OSInitStopwatch"); }   // include\dolphin\os.h
 void OSInitThreadQueue(OSThreadQueue* queue) { PORT_TODO("OSInitThreadQueue"); }   // include\dolphin\os\OSThread.h
 BOOL OSLink(OSModuleInfo* newModule, void* bss) { PORT_TODO("OSLink"); return 0; }   // include\dolphin\os\OSModule.h
+void* OSPhysicalToCached(u32 paddr) { PORT_TODO("OSPhysicalToCached"); return nullptr; }   // include\dolphin\os.h
 void OSResetStopwatch(OSStopwatch* sw) { PORT_TODO("OSResetStopwatch"); }   // include\dolphin\os.h
 void OSResetSystem(int reset, u32 resetCode, BOOL forceMenu) { PORT_TODO("OSResetSystem"); }   // include\dolphin\os\OSReset.h
 s32 OSResumeThread(OSThread* thread) { PORT_TODO("OSResumeThread"); return 0; }   // include\dolphin\os\OSThread.h
@@ -219,20 +221,3 @@ void OSTicksToCalendarTime(OSTime ticks, OSCalendarTime* td) { PORT_TODO("OSTick
 BOOL OSUnlink(OSModuleInfo* oldModule) { PORT_TODO("OSUnlink"); return 0; }   // include\dolphin\os\OSModule.h
 s32 OSWaitSemaphore(OSSemaphore* sem) { PORT_TODO("OSWaitSemaphore"); return 0; }   // include\dolphin\os\OSSemaphore.h
 void OSWakeupThread(OSThreadQueue* queue) { PORT_TODO("OSWakeupThread"); }   // include\dolphin\os\OSThread.h
-void PADClamp(PADStatus* status) { PORT_TODO("PADClamp"); }   // include\dolphin\pad.h
-void PADControlMotor(s32 chan, u32 command) { PORT_TODO("PADControlMotor"); }   // include\dolphin\pad.h
-BOOL PADInit() { PORT_TODO("PADInit"); return 0; }   // include\dolphin\pad.h
-u32 PADRead(PADStatus* status) { PORT_TODO("PADRead"); return 0; }   // include\dolphin\pad.h
-BOOL PADRecalibrate(u32 mask) { PORT_TODO("PADRecalibrate"); return 0; }   // include\dolphin\pad.h
-int PADReset(u32 mask) { PORT_TODO("PADReset"); return 0; }   // include\dolphin\pad.h
-void PADSetAnalogMode(u32 mode) { PORT_TODO("PADSetAnalogMode"); }   // include\dolphin\pad.h
-void VIConfigure(const GXRenderModeObj* rm) { PORT_TODO("VIConfigure"); }   // include\dolphin\vi\vifuncs.h
-void VIFlush() { PORT_TODO("VIFlush"); }   // include\dolphin\vi\vifuncs.h
-u32 VIGetDTVStatus() { PORT_TODO("VIGetDTVStatus"); return 0; }   // include\dolphin\vi\vifuncs.h
-u32 VIGetNextField() { PORT_TODO("VIGetNextField"); return 0; }   // include\dolphin\vi\vifuncs.h
-u32 VIGetTvFormat() { PORT_TODO("VIGetTvFormat"); return 0; }   // include\dolphin\vi\vifuncs.h
-void VIInit() { PORT_TODO("VIInit"); }   // include\dolphin\vi\vifuncs.h
-void VISetBlack(BOOL black) { PORT_TODO("VISetBlack"); }   // include\dolphin\vi\vifuncs.h
-void VISetNextFrameBuffer(void* fb) { PORT_TODO("VISetNextFrameBuffer"); }   // include\dolphin\vi\vifuncs.h
-VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb) { PORT_TODO("VISetPostRetraceCallback"); return {}; }   // include\dolphin\vi\vifuncs.h
-void VIWaitForRetrace() { PORT_TODO("VIWaitForRetrace"); }   // include\dolphin\vi\vifuncs.h
