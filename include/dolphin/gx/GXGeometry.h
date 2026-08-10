@@ -28,7 +28,13 @@ void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts);
 static inline void GXEnd(void) {
 #if DEBUG
     extern GXBool __GXinBegin;
+#ifdef RE4_PORT
+    // Portage : os.h declare deja OSPanic avec des `const char*`. Les deux declarations sont
+    // en conflit pour un compilateur moderne ; on garde celle de os.h.
+#   include <dolphin/os.h>
+#else
     extern void OSPanic(char* file, int line, char* msg, ...);
+#endif
     if (!__GXinBegin) {
         OSPanic(__FILE__, 118, "GXEnd: called without a GXBegin");
     }

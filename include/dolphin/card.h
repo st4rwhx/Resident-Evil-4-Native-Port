@@ -228,7 +228,13 @@ void CARDInit(void);
 s32 CARDGetResultCode(s32 chan);
 s32 CARDCheckAsync(s32 chan, CARDCallback callback);
 s32 CARDFreeBlocks(s32 chan, s32* byteNotUsed, s32* filesNotUsed);
+#ifdef RE4_PORT
+// Portage : `new` est un mot-cle en C++ et ce SDK est du C. Renomme, la definition etant
+// fournie par la couche de plateforme et non par le SDK d'origine.
+s32 CARDRenameAsync(s32 chan, const char* old, const char* newname, CARDCallback callback);
+#else
 s32 CARDRenameAsync(s32 chan, const char* old, const char* new, CARDCallback callback);
+#endif
 
 // CARDBios
 void CARDInit(void);
@@ -300,7 +306,11 @@ s32 CARDRead(CARDFileInfo*  fileInfo, void*  buf, s32 length, s32 offset);
 s32 CARDCancel(CARDFileInfo* fileInfo);
 
 // CARDRename
+#ifdef RE4_PORT
+s32 CARDRename(s32 chan, const char* old, const char* newname);
+#else
 s32 CARDRename(s32 chan, const char* old, const char* new);
+#endif
 
 // CARDStat
 s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat* stat);

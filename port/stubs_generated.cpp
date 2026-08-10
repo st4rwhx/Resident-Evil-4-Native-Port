@@ -1,0 +1,270 @@
+// -*- coding: utf-8 -*-
+// GENERE par port/gen_stubs.py - ne pas editer a la main.
+//
+// Une definition par fonction du SDK Nintendo que le jeu appelle reellement. Chacune
+// journalise son premier appel et rend une valeur neutre. Cela ne fait rien tourner,
+// mais cela **lie** : a partir de la, on remplace les fonctions une par une en voyant
+// a chaque execution ce que le jeu reclame ensuite, au lieu de tout implementer a
+// l aveugle puis d esperer.
+//
+// Les prototypes viennent de include/dolphin/, donc ils sont exacts par construction.
+#include "port_log.h"
+#include <dolphin.h>
+// dolphin.h n inclut ni AX ni AXFX ni AXART.
+#include <dolphin/ax.h>
+#include <dolphin/axfx.h>
+#include <dolphin/axart.h>
+#include <dolphin/demo.h>
+
+u32 ARAlloc(u32 length) { PORT_TODO("ARAlloc"); return 0; }   // include\dolphin\ar.h
+u32 ARGetBaseAddress() { PORT_TODO("ARGetBaseAddress"); return 0; }   // include\dolphin\ar.h
+u32 ARInit(u32* stack_index_addr, u32 num_entries) { PORT_TODO("ARInit"); return 0; }   // include\dolphin\ar.h
+void ARQFlushQueue() { PORT_TODO("ARQFlushQueue"); }   // include\dolphin\ar.h
+void ARQInit() { PORT_TODO("ARQInit"); }   // include\dolphin\ar.h
+void ARQPostRequest(ARQRequest* request, u32 owner, u32 type, u32 priority, u32 source, u32 dest, u32 length, ARQCallback callback) { PORT_TODO("ARQPostRequest"); }   // include\dolphin\ar.h
+void AXARTInit() { PORT_TODO("AXARTInit"); }   // include\dolphin\axart.h
+void AXARTQuit() { PORT_TODO("AXARTQuit"); }   // include\dolphin\axart.h
+void AXARTServiceSounds() { PORT_TODO("AXARTServiceSounds"); }   // include\dolphin\axart.h
+AXVPB* AXAcquireVoice(u32 priority, void (*callback)(void *), u32 userContext) { PORT_TODO("AXAcquireVoice"); return nullptr; }   // include\dolphin\ax.h
+int AXFXChorusInit(AXFX_CHORUS* c) { PORT_TODO("AXFXChorusInit"); return 0; }   // include\dolphin\axfx.h
+int AXFXChorusSettings(AXFX_CHORUS* c) { PORT_TODO("AXFXChorusSettings"); return 0; }   // include\dolphin\axfx.h
+int AXFXChorusShutdown(AXFX_CHORUS* c) { PORT_TODO("AXFXChorusShutdown"); return 0; }   // include\dolphin\axfx.h
+int AXFXDelayInit(AXFX_DELAY* delay) { PORT_TODO("AXFXDelayInit"); return 0; }   // include\dolphin\axfx.h
+int AXFXDelaySettings(AXFX_DELAY* delay) { PORT_TODO("AXFXDelaySettings"); return 0; }   // include\dolphin\axfx.h
+int AXFXDelayShutdown(AXFX_DELAY* delay) { PORT_TODO("AXFXDelayShutdown"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbHiInit(AXFX_REVERBHI* rev) { PORT_TODO("AXFXReverbHiInit"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbHiInitDpl2(AXFX_REVERBHI_DPL2* reverb) { PORT_TODO("AXFXReverbHiInitDpl2"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbHiSettings(AXFX_REVERBHI* rev) { PORT_TODO("AXFXReverbHiSettings"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbHiSettingsDpl2(AXFX_REVERBHI_DPL2* rev) { PORT_TODO("AXFXReverbHiSettingsDpl2"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbHiShutdown(AXFX_REVERBHI* rev) { PORT_TODO("AXFXReverbHiShutdown"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbHiShutdownDpl2(AXFX_REVERBHI_DPL2* reverb) { PORT_TODO("AXFXReverbHiShutdownDpl2"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbStdInit(AXFX_REVERBSTD* rev) { PORT_TODO("AXFXReverbStdInit"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbStdSettings(AXFX_REVERBSTD* rev) { PORT_TODO("AXFXReverbStdSettings"); return 0; }   // include\dolphin\axfx.h
+int AXFXReverbStdShutdown(AXFX_REVERBSTD* rev) { PORT_TODO("AXFXReverbStdShutdown"); return 0; }   // include\dolphin\axfx.h
+void AXFreeVoice(AXVPB* p) { PORT_TODO("AXFreeVoice"); }   // include\dolphin\ax.h
+u32 AXGetDspCycles() { PORT_TODO("AXGetDspCycles"); return 0; }   // include\dolphin\ax.h
+u32 AXGetMaxDspCycles() { PORT_TODO("AXGetMaxDspCycles"); return 0; }   // include\dolphin\ax.h
+void AXInitEx(u32 outputBufferMode) { PORT_TODO("AXInitEx"); }   // include\dolphin\ax.h
+void AXQuit() { PORT_TODO("AXQuit"); }   // include\dolphin\ax.h
+void AXRegisterAuxACallback(void (*callback)(void*, void*), void* context) { PORT_TODO("AXRegisterAuxACallback"); }   // include\dolphin\ax.h
+void AXRegisterAuxBCallback(void (*callback)(void*, void*), void* context) { PORT_TODO("AXRegisterAuxBCallback"); }   // include\dolphin\ax.h
+AXCallback AXRegisterCallback(AXCallback callback) { PORT_TODO("AXRegisterCallback"); return {}; }   // include\dolphin\ax.h
+void AXSetMode(u32 mode) { PORT_TODO("AXSetMode"); }   // include\dolphin\ax.h
+void AXSetVoiceAddr(AXVPB* p, AXPBADDR* addr) { PORT_TODO("AXSetVoiceAddr"); }   // include\dolphin\ax.h
+void AXSetVoiceAdpcm(AXVPB* p, AXPBADPCM* adpcm) { PORT_TODO("AXSetVoiceAdpcm"); }   // include\dolphin\ax.h
+void AXSetVoiceAdpcmLoop(AXVPB* p, AXPBADPCMLOOP* adpcmloop) { PORT_TODO("AXSetVoiceAdpcmLoop"); }   // include\dolphin\ax.h
+void AXSetVoiceEndAddr(AXVPB* p, u32 addr) { PORT_TODO("AXSetVoiceEndAddr"); }   // include\dolphin\ax.h
+void AXSetVoiceLoop(AXVPB* p, u16 loop) { PORT_TODO("AXSetVoiceLoop"); }   // include\dolphin\ax.h
+void AXSetVoiceLoopAddr(AXVPB* p, u32 addr) { PORT_TODO("AXSetVoiceLoopAddr"); }   // include\dolphin\ax.h
+void AXSetVoiceLpf(AXVPB* p, AXPBLPF* lpf) { PORT_TODO("AXSetVoiceLpf"); }   // include\dolphin\ax.h
+void AXSetVoiceLpfCoefs(AXVPB* p, u16 a0, u16 b0) { PORT_TODO("AXSetVoiceLpfCoefs"); }   // include\dolphin\ax.h
+void AXSetVoicePriority(AXVPB* p, u32 priority) { PORT_TODO("AXSetVoicePriority"); }   // include\dolphin\ax.h
+void AXSetVoiceSrc(AXVPB* p, AXPBSRC* src_) { PORT_TODO("AXSetVoiceSrc"); }   // include\dolphin\ax.h
+void AXSetVoiceSrcRatio(AXVPB* p, f32 ratio) { PORT_TODO("AXSetVoiceSrcRatio"); }   // include\dolphin\ax.h
+void AXSetVoiceSrcType(AXVPB* p, u32 type) { PORT_TODO("AXSetVoiceSrcType"); }   // include\dolphin\ax.h
+void AXSetVoiceState(AXVPB* p, u16 state) { PORT_TODO("AXSetVoiceState"); }   // include\dolphin\ax.h
+void AXSetVoiceType(AXVPB* p, u16 type) { PORT_TODO("AXSetVoiceType"); }   // include\dolphin\ax.h
+s32 CARDCheckAsync(s32 chan, CARDCallback callback) { PORT_TODO("CARDCheckAsync"); return 0; }   // include\dolphin\card.h
+s32 CARDClose(CARDFileInfo* fileInfo) { PORT_TODO("CARDClose"); return 0; }   // include\dolphin\card.h
+s32 CARDCreateAsync(s32 chan, const char* fileName, u32 size, CARDFileInfo* fileInfo, CARDCallback callback) { PORT_TODO("CARDCreateAsync"); return 0; }   // include\dolphin\card.h
+s32 CARDDeleteAsync(s32 chan, const char* fileName, CARDCallback callback) { PORT_TODO("CARDDeleteAsync"); return 0; }   // include\dolphin\card.h
+s32 CARDFreeBlocks(s32 chan, s32* byteNotUsed, s32* filesNotUsed) { PORT_TODO("CARDFreeBlocks"); return 0; }   // include\dolphin\card.h
+s32 CARDGetResultCode(s32 chan) { PORT_TODO("CARDGetResultCode"); return 0; }   // include\dolphin\card.h
+s32 CARDGetSerialNo(s32 chan, u64* serialNo) { PORT_TODO("CARDGetSerialNo"); return 0; }   // include\dolphin\card.h
+s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat* stat) { PORT_TODO("CARDGetStatus"); return 0; }   // include\dolphin\card.h
+void CARDInit() { PORT_TODO("CARDInit"); }   // include\dolphin\card.h
+s32 CARDMountAsync(s32 chan, void* workArea, CARDCallback detachCallback, CARDCallback attachCallback) { PORT_TODO("CARDMountAsync"); return 0; }   // include\dolphin\card.h
+s32 CARDOpen(s32 chan, const char* fileName, CARDFileInfo* fileInfo) { PORT_TODO("CARDOpen"); return 0; }   // include\dolphin\card.h
+s32 CARDProbeEx(s32 chan, s32* memSize, s32* sectorSize) { PORT_TODO("CARDProbeEx"); return 0; }   // include\dolphin\card.h
+s32 CARDReadAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CARDCallback callback) { PORT_TODO("CARDReadAsync"); return 0; }   // include\dolphin\card.h
+s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CARDStat* stat, CARDCallback callback) { PORT_TODO("CARDSetStatusAsync"); return 0; }   // include\dolphin\card.h
+s32 CARDUnmount(s32 chan) { PORT_TODO("CARDUnmount"); return 0; }   // include\dolphin\card.h
+s32 CARDWriteAsync(CARDFileInfo*  fileInfo, void* buf, s32 length, s32 offset, CARDCallback callback) { PORT_TODO("CARDWriteAsync"); return 0; }   // include\dolphin\card.h
+s32 DVDCancelAll() { PORT_TODO("DVDCancelAll"); return 0; }   // include\dolphin\dvd.h
+int DVDCancelAsync(DVDCommandBlock* block, DVDCBCallback callback) { PORT_TODO("DVDCancelAsync"); return 0; }   // include\dolphin\dvd.h
+int DVDChangeDiskAsync(DVDCommandBlock* block, DVDDiskID* id, DVDCBCallback callback) { PORT_TODO("DVDChangeDiskAsync"); return 0; }   // include\dolphin\dvd.h
+BOOL DVDClose(DVDFileInfo* fileInfo) { PORT_TODO("DVDClose"); return 0; }   // include\dolphin\dvd.h
+int DVDCloseDir(DVDDir* dir) { PORT_TODO("DVDCloseDir"); return 0; }   // include\dolphin\dvd.h
+int DVDCompareDiskID(const DVDDiskID* id1, const DVDDiskID* id2) { PORT_TODO("DVDCompareDiskID"); return 0; }   // include\dolphin\dvd.h
+s32 DVDConvertPathToEntrynum(const char* pathPtr) { PORT_TODO("DVDConvertPathToEntrynum"); return 0; }   // include\dolphin\dvd.h
+BOOL DVDFastOpen(s32 entrynum, DVDFileInfo* fileInfo) { PORT_TODO("DVDFastOpen"); return 0; }   // include\dolphin\dvd.h
+DVDDiskID* DVDGenerateDiskID(DVDDiskID* id, const char* game, const char* company, u8 diskNum, u8 version) { PORT_TODO("DVDGenerateDiskID"); return nullptr; }   // include\dolphin\dvd.h
+s32 DVDGetCommandBlockStatus(const DVDCommandBlock* block) { PORT_TODO("DVDGetCommandBlockStatus"); return 0; }   // include\dolphin\dvd.h
+DVDDiskID* DVDGetCurrentDiskID() { PORT_TODO("DVDGetCurrentDiskID"); return nullptr; }   // include\dolphin\dvd.h
+s32 DVDGetDriveStatus() { PORT_TODO("DVDGetDriveStatus"); return 0; }   // include\dolphin\dvd.h
+void* DVDGetFSTLocation() { PORT_TODO("DVDGetFSTLocation"); return nullptr; }   // include\dolphin\dvd.h
+s32 DVDGetTransferredSize(DVDFileInfo* fileinfo) { PORT_TODO("DVDGetTransferredSize"); return 0; }   // include\dolphin\dvd.h
+BOOL DVDOpen(const char* fileName, DVDFileInfo* fileInfo) { PORT_TODO("DVDOpen"); return 0; }   // include\dolphin\dvd.h
+int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); return 0; }   // include\dolphin\dvd.h
+BOOL DVDReadAsyncPrio(DVDFileInfo* fileInfo, void* addr, s32 length, s32 offset,
+                      DVDCallback callback, s32 prio) { PORT_TODO("DVDReadAsyncPrio"); return 0; }   // include\dolphin\dvd.h
+int DVDReadDir(DVDDir* dir, DVDDirEntry* dirent) { PORT_TODO("DVDReadDir"); return 0; }   // include\dolphin\dvd.h
+void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts) { PORT_TODO("GXBegin"); }   // include\dolphin\gx\GXGeometry.h
+void GXBeginDisplayList(void* list, u32 size) { PORT_TODO("GXBeginDisplayList"); }   // include\dolphin\gx\GXDispList.h
+void GXCallDisplayList(void* list, u32 nbytes) { PORT_TODO("GXCallDisplayList"); }   // include\dolphin\gx\GXDispList.h
+void GXClearBoundingBox() { PORT_TODO("GXClearBoundingBox"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXClearVtxDesc() { PORT_TODO("GXClearVtxDesc"); }   // include\dolphin\gx\GXGeometry.h
+void GXCopyDisp(void* dest, GXBool clear) { PORT_TODO("GXCopyDisp"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXCopyTex(void* dest, GXBool clear) { PORT_TODO("GXCopyTex"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXDrawDone() { PORT_TODO("GXDrawDone"); }   // include\dolphin\gx\GXManage.h
+void GXDrawTorus(f32 rc, u8 numc, u8 numt) { PORT_TODO("GXDrawTorus"); }   // include\dolphin\gx\GXDraw.h
+void GXEnableTexOffsets(GXTexCoordID coord, u8 line_enable, u8 point_enable) { PORT_TODO("GXEnableTexOffsets"); }   // include\dolphin\gx\GXGeometry.h
+u32 GXEndDisplayList() { PORT_TODO("GXEndDisplayList"); return 0; }   // include\dolphin\gx\GXDispList.h
+void GXGetProjectionv(f32* ptr) { PORT_TODO("GXGetProjectionv"); }   // include\dolphin\gx\GXGet.h
+u32 GXGetTexBufferSize(u16 width, u16 height, u32 format, u8 mipmap, u8 max_lod) { PORT_TODO("GXGetTexBufferSize"); return 0; }   // include\dolphin\gx\GXTexture.h
+void* GXGetTexObjData(const GXTexObj* to) { PORT_TODO("GXGetTexObjData"); return nullptr; }   // include\dolphin\gx\GXGet.h
+void GXGetViewportv(f32* vp) { PORT_TODO("GXGetViewportv"); }   // include\dolphin\gx\GXGet.h
+GXFifoObj* GXInit(void* base, u32 size) { PORT_TODO("GXInit"); return nullptr; }   // include\dolphin\gx\GXManage.h
+void GXInitLightAttn(GXLightObj* lt_obj, f32 a0, f32 a1, f32 a2, f32 k0, f32 k1, f32 k2) { PORT_TODO("GXInitLightAttn"); }   // include\dolphin\gx\GXLighting.h
+void GXInitLightAttnK(GXLightObj* lt_obj, f32 k0, f32 k1, f32 k2) { PORT_TODO("GXInitLightAttnK"); }   // include\dolphin\gx\GXLighting.h
+void GXInitLightColor(GXLightObj* lt_obj, GXColor color) { PORT_TODO("GXInitLightColor"); }   // include\dolphin\gx\GXLighting.h
+void GXInitLightDir(GXLightObj* lt_obj, f32 nx, f32 ny, f32 nz) { PORT_TODO("GXInitLightDir"); }   // include\dolphin\gx\GXLighting.h
+void GXInitLightDistAttn(GXLightObj* lt_obj, f32 ref_dist, f32 ref_br, GXDistAttnFn dist_func) { PORT_TODO("GXInitLightDistAttn"); }   // include\dolphin\gx\GXLighting.h
+void GXInitLightPos(GXLightObj* lt_obj, f32 x, f32 y, f32 z) { PORT_TODO("GXInitLightPos"); }   // include\dolphin\gx\GXLighting.h
+void GXInitLightSpot(GXLightObj* lt_obj, f32 cutoff, GXSpotFn spot_func) { PORT_TODO("GXInitLightSpot"); }   // include\dolphin\gx\GXLighting.h
+void GXInitTexObj(GXTexObj* obj, void* image_ptr, u16 width, u16 height, GXTexFmt format, GXTexWrapMode wrap_s, GXTexWrapMode wrap_t, u8 mipmap) { PORT_TODO("GXInitTexObj"); }   // include\dolphin\gx\GXTexture.h
+void GXInitTexObjCI(GXTexObj* obj, void* image_ptr, u16 width, u16 height, GXCITexFmt format, GXTexWrapMode wrap_s, GXTexWrapMode wrap_t, u8 mipmap, u32 tlut_name) { PORT_TODO("GXInitTexObjCI"); }   // include\dolphin\gx\GXTexture.h
+void GXInitTexObjLOD(GXTexObj* obj, GXTexFilter min_filt, GXTexFilter mag_filt,
+    f32 min_lod, f32 max_lod, f32 lod_bias, GXBool bias_clamp,
+    GXBool do_edge_lod, GXAnisotropy max_aniso) { PORT_TODO("GXInitTexObjLOD"); }   // include\dolphin\gx\GXTexture.h
+void GXInitTlutObj(GXTlutObj* tlut_obj, void* lut, GXTlutFmt fmt, u16 n_entries) { PORT_TODO("GXInitTlutObj"); }   // include\dolphin\gx\GXTexture.h
+void GXInvalidateTexAll() { PORT_TODO("GXInvalidateTexAll"); }   // include\dolphin\gx\GXTexture.h
+void GXInvalidateVtxCache() { PORT_TODO("GXInvalidateVtxCache"); }   // include\dolphin\gx\GXGeometry.h
+void GXLoadLightObjImm(const GXLightObj* lt_obj, GXLightID light) { PORT_TODO("GXLoadLightObjImm"); }   // include\dolphin\gx\GXLighting.h
+void GXLoadNrmMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadNrmMtxImm"); }   // include\dolphin\gx\GXTransform.h
+void GXLoadPosMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadPosMtxImm"); }   // include\dolphin\gx\GXTransform.h
+void GXLoadTexMtxImm(const f32 mtx[][4], u32 id, GXTexMtxType type) { PORT_TODO("GXLoadTexMtxImm"); }   // include\dolphin\gx\GXTransform.h
+void GXLoadTexObj(GXTexObj* obj, GXTexMapID id) { PORT_TODO("GXLoadTexObj"); }   // include\dolphin\gx\GXTexture.h
+void GXLoadTlut(GXTlutObj* tlut_obj, u32 tlut_name) { PORT_TODO("GXLoadTlut"); }   // include\dolphin\gx\GXTexture.h
+void GXPeekZ(u16 x, u16 y, u32* z) { PORT_TODO("GXPeekZ"); }   // include\dolphin\gx\GXCpu2Efb.h
+void GXPixModeSync() { PORT_TODO("GXPixModeSync"); }   // include\dolphin\gx\GXManage.h
+void GXProject(f32 x, f32 y, f32 z, const f32 mtx[3][4], const f32* pm, const f32* vp, f32* sx, f32* sy, f32* sz) { PORT_TODO("GXProject"); }   // include\dolphin\gx\GXTransform.h
+void GXSetAlphaCompare(GXCompare comp0, u8 ref0, GXAlphaOp op, GXCompare comp1, u8 ref1) { PORT_TODO("GXSetAlphaCompare"); }   // include\dolphin\gx\GXTev.h
+void GXSetAlphaUpdate(GXBool update_enable) { PORT_TODO("GXSetAlphaUpdate"); }   // include\dolphin\gx\GXPixel.h
+void GXSetArray(GXAttr attr, void* base_ptr, u8 stride) { PORT_TODO("GXSetArray"); }   // include\dolphin\gx\GXGeometry.h
+void GXSetBlendMode(GXBlendMode type, GXBlendFactor src_factor, GXBlendFactor dst_factor, GXLogicOp op) { PORT_TODO("GXSetBlendMode"); }   // include\dolphin\gx\GXPixel.h
+void GXSetChanAmbColor(GXChannelID chan, GXColor amb_color) { PORT_TODO("GXSetChanAmbColor"); }   // include\dolphin\gx\GXLighting.h
+void GXSetChanCtrl(GXChannelID chan, GXBool enable, GXColorSrc amb_src, GXColorSrc mat_src, u32 light_mask, GXDiffuseFn diff_fn, GXAttnFn attn_fn) { PORT_TODO("GXSetChanCtrl"); }   // include\dolphin\gx\GXLighting.h
+void GXSetChanMatColor(GXChannelID chan, GXColor mat_color) { PORT_TODO("GXSetChanMatColor"); }   // include\dolphin\gx\GXLighting.h
+void GXSetColorUpdate(GXBool update_enable) { PORT_TODO("GXSetColorUpdate"); }   // include\dolphin\gx\GXPixel.h
+void GXSetCopyClear(GXColor clear_clr, u32 clear_z) { PORT_TODO("GXSetCopyClear"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetCopyFilter(GXBool aa, const u8 sample_pattern[12][2], GXBool vf, const u8 vfilter[7]) { PORT_TODO("GXSetCopyFilter"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetCullMode(GXCullMode mode) { PORT_TODO("GXSetCullMode"); }   // include\dolphin\gx\GXCull.h
+OSThread* GXSetCurrentGXThread() { PORT_TODO("GXSetCurrentGXThread"); return nullptr; }   // include\dolphin\gx\GXFifo.h
+void GXSetCurrentMtx(u32 id) { PORT_TODO("GXSetCurrentMtx"); }   // include\dolphin\gx\GXTransform.h
+void GXSetDispCopyDst(u16 wd, u16 ht) { PORT_TODO("GXSetDispCopyDst"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetDispCopyGamma(GXGamma gamma) { PORT_TODO("GXSetDispCopyGamma"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetDispCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetDispCopySrc"); }   // include\dolphin\gx\GXFrameBuffer.h
+u32 GXSetDispCopyYScale(f32 vscale) { PORT_TODO("GXSetDispCopyYScale"); return 0; }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetDither(GXBool dither) { PORT_TODO("GXSetDither"); }   // include\dolphin\gx\GXPixel.h
+void GXSetDrawSync(u16 token) { PORT_TODO("GXSetDrawSync"); }   // include\dolphin\gx.h
+GXDrawSyncCallback GXSetDrawSyncCallback(GXDrawSyncCallback cb) { PORT_TODO("GXSetDrawSyncCallback"); return {}; }   // include\dolphin\gx\GXManage.h
+void GXSetDstAlpha(GXBool enable, u8 alpha) { PORT_TODO("GXSetDstAlpha"); }   // include\dolphin\gx\GXPixel.h
+void GXSetFog(GXFogType type, f32 startz, f32 endz, f32 nearz, f32 farz, GXColor color) { PORT_TODO("GXSetFog"); }   // include\dolphin\gx\GXPixel.h
+void GXSetIndTexCoordScale(GXIndTexStageID ind_state, GXIndTexScale scale_s, GXIndTexScale scale_t) { PORT_TODO("GXSetIndTexCoordScale"); }   // include\dolphin\gx\GXBump.h
+void GXSetIndTexMtx(GXIndTexMtxID mtx_id, const f32 offset[2][3], s8 scale_exp) { PORT_TODO("GXSetIndTexMtx"); }   // include\dolphin\gx\GXBump.h
+void GXSetIndTexOrder(GXIndTexStageID ind_stage, GXTexCoordID tex_coord, GXTexMapID tex_map) { PORT_TODO("GXSetIndTexOrder"); }   // include\dolphin\gx\GXBump.h
+void GXSetLineWidth(u8 width, GXTexOffset texOffsets) { PORT_TODO("GXSetLineWidth"); }   // include\dolphin\gx\GXGeometry.h
+void GXSetNumChans(u8 nChans) { PORT_TODO("GXSetNumChans"); }   // include\dolphin\gx\GXLighting.h
+void GXSetNumIndStages(u8 nIndStages) { PORT_TODO("GXSetNumIndStages"); }   // include\dolphin\gx\GXBump.h
+void GXSetNumTevStages(u8 nStages) { PORT_TODO("GXSetNumTevStages"); }   // include\dolphin\gx\GXTev.h
+void GXSetNumTexGens(u8 nTexGens) { PORT_TODO("GXSetNumTexGens"); }   // include\dolphin\gx\GXGeometry.h
+void GXSetPixelFmt(GXPixelFmt pix_fmt, GXZFmt16 z_fmt) { PORT_TODO("GXSetPixelFmt"); }   // include\dolphin\gx\GXPixel.h
+void GXSetProjection(const f32 mtx[4][4], GXProjectionType type) { PORT_TODO("GXSetProjection"); }   // include\dolphin\gx\GXTransform.h
+void GXSetScissor(u32 left, u32 top, u32 wd, u32 ht) { PORT_TODO("GXSetScissor"); }   // include\dolphin\gx\GXCull.h
+void GXSetTevAlphaIn(GXTevStageID stage, GXTevAlphaArg a, GXTevAlphaArg b, GXTevAlphaArg c, GXTevAlphaArg d) { PORT_TODO("GXSetTevAlphaIn"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevAlphaOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg) { PORT_TODO("GXSetTevAlphaOp"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevColor(GXTevRegID id, GXColor color) { PORT_TODO("GXSetTevColor"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevColorIn(GXTevStageID stage, GXTevColorArg a, GXTevColorArg b, GXTevColorArg c, GXTevColorArg d) { PORT_TODO("GXSetTevColorIn"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevColorOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg) { PORT_TODO("GXSetTevColorOp"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevColorS10(GXTevRegID id, GXColorS10 color) { PORT_TODO("GXSetTevColorS10"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevDirect(GXTevStageID tev_stage) { PORT_TODO("GXSetTevDirect"); }   // include\dolphin\gx\GXBump.h
+void GXSetTevIndBumpXYZ(GXTevStageID tev_stage, GXIndTexStageID ind_stage, GXIndTexMtxID matrix_sel) { PORT_TODO("GXSetTevIndBumpXYZ"); }   // include\dolphin\gx\GXBump.h
+void GXSetTevIndWarp(GXTevStageID tev_stage, GXIndTexStageID ind_stage, u8 signed_offset, u8 replace_mode, GXIndTexMtxID matrix_sel) { PORT_TODO("GXSetTevIndWarp"); }   // include\dolphin\gx\GXBump.h
+void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel sel) { PORT_TODO("GXSetTevKAlphaSel"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevKColor(GXTevKColorID id, GXColor color) { PORT_TODO("GXSetTevKColor"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel sel) { PORT_TODO("GXSetTevKColorSel"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevOp(GXTevStageID id, GXTevMode mode) { PORT_TODO("GXSetTevOp"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevOrder(GXTevStageID stage, GXTexCoordID coord, GXTexMapID map, GXChannelID color) { PORT_TODO("GXSetTevOrder"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel ras_sel, GXTevSwapSel tex_sel) { PORT_TODO("GXSetTevSwapMode"); }   // include\dolphin\gx\GXTev.h
+void GXSetTevSwapModeTable(GXTevSwapSel table, GXTevColorChan red, GXTevColorChan green, GXTevColorChan blue, GXTevColorChan alpha) { PORT_TODO("GXSetTevSwapModeTable"); }   // include\dolphin\gx\GXTev.h
+void GXSetTexCoordGen2(GXTexCoordID dst_coord, GXTexGenType func, GXTexGenSrc src_param, u32 mtx, GXBool normalize, u32 pt_texmtx) { PORT_TODO("GXSetTexCoordGen2"); }   // include\dolphin\gx\GXGeometry.h
+void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap) { PORT_TODO("GXSetTexCopyDst"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetTexCopySrc"); }   // include\dolphin\gx\GXFrameBuffer.h
+void GXSetViewport(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz) { PORT_TODO("GXSetViewport"); }   // include\dolphin\gx\GXTransform.h
+void GXSetViewportJitter(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz, u32 field) { PORT_TODO("GXSetViewportJitter"); }   // include\dolphin\gx\GXTransform.h
+void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType type, u8 frac) { PORT_TODO("GXSetVtxAttrFmt"); }   // include\dolphin\gx\GXGeometry.h
+void GXSetVtxDesc(GXAttr attr, GXAttrType type) { PORT_TODO("GXSetVtxDesc"); }   // include\dolphin\gx\GXGeometry.h
+void GXSetZCompLoc(GXBool before_tex) { PORT_TODO("GXSetZCompLoc"); }   // include\dolphin\gx\GXPixel.h
+void GXSetZMode(GXBool compare_enable, GXCompare func, GXBool update_enable) { PORT_TODO("GXSetZMode"); }   // include\dolphin\gx\GXPixel.h
+void* OSAllocFromHeap(int heap, u32 size) { PORT_TODO("OSAllocFromHeap"); return nullptr; }   // include\dolphin\os\OSAlloc.h
+OSTime OSCalendarTimeToTicks(OSCalendarTime* td) { PORT_TODO("OSCalendarTimeToTicks"); return {}; }   // include\dolphin\os.h
+void OSCancelThread(OSThread* thread) { PORT_TODO("OSCancelThread"); }   // include\dolphin\os\OSThread.h
+s32 OSCheckHeap(int heap) { PORT_TODO("OSCheckHeap"); return 0; }   // include\dolphin\os\OSAlloc.h
+int OSCreateHeap(void* start, void* end) { PORT_TODO("OSCreateHeap"); return 0; }   // include\dolphin\os\OSAlloc.h
+int OSCreateThread(OSThread* thread, void* (*func)(void*), void* param, void* stack, u32 stackSize, OSPriority priority, u16 attr) { PORT_TODO("OSCreateThread"); return 0; }   // include\dolphin\os\OSThread.h
+void OSDestroyHeap(int heap) { PORT_TODO("OSDestroyHeap"); }   // include\dolphin\os\OSAlloc.h
+BOOL OSDisableInterrupts() { PORT_TODO("OSDisableInterrupts"); return 0; }   // include\dolphin\os.h
+BOOL OSEnableInterrupts() { PORT_TODO("OSEnableInterrupts"); return 0; }   // include\dolphin\os.h
+s32 OSEnableScheduler() { PORT_TODO("OSEnableScheduler"); return 0; }   // include\dolphin\os\OSThread.h
+void OSExitThread(void* val) { PORT_TODO("OSExitThread"); }   // include\dolphin\os\OSThread.h
+void OSFreeToHeap(int heap, void* ptr) { PORT_TODO("OSFreeToHeap"); }   // include\dolphin\os\OSAlloc.h
+void* OSGetArenaHi() { PORT_TODO("OSGetArenaHi"); return nullptr; }   // include\dolphin\os.h
+void* OSGetArenaLo() { PORT_TODO("OSGetArenaLo"); return nullptr; }   // include\dolphin\os.h
+u32 OSGetConsoleSimulatedMemSize() { PORT_TODO("OSGetConsoleSimulatedMemSize"); return 0; }   // include\dolphin\os\OSMemory.h
+u32 OSGetConsoleType() { PORT_TODO("OSGetConsoleType"); return 0; }   // include\dolphin\os.h
+OSThread* OSGetCurrentThread() { PORT_TODO("OSGetCurrentThread"); return nullptr; }   // include\dolphin\os\OSThread.h
+u16 OSGetFontEncode() { PORT_TODO("OSGetFontEncode"); return 0; }   // include\dolphin\os\OSFont.h
+char* OSGetFontTexture(const char* string, void** image, s32* x, s32* y, s32* width) { PORT_TODO("OSGetFontTexture"); return nullptr; }   // include\dolphin\os\OSFont.h
+u32 OSGetProgressiveMode() { PORT_TODO("OSGetProgressiveMode"); return 0; }   // include\dolphin\os\OSRtc.h
+BOOL OSGetResetButtonState() { PORT_TODO("OSGetResetButtonState"); return 0; }   // include\dolphin\os\OSResetSW.h
+u32 OSGetSoundMode() { PORT_TODO("OSGetSoundMode"); return 0; }   // include\dolphin\os.h
+OSTick OSGetTick() { PORT_TODO("OSGetTick"); return {}; }   // include\dolphin\os.h
+OSTime OSGetTime() { PORT_TODO("OSGetTime"); return {}; }   // include\dolphin\os.h
+void OSInit() { PORT_TODO("OSInit"); }   // include\dolphin\os.h
+void OSInitAlarm() { PORT_TODO("OSInitAlarm"); }   // include\dolphin\os\OSAlarm.h
+void* OSInitAlloc(void* arenaStart, void* arenaEnd, int maxHeaps) { PORT_TODO("OSInitAlloc"); return nullptr; }   // include\dolphin\os\OSAlloc.h
+BOOL OSInitFont(OSFontHeader* fontData) { PORT_TODO("OSInitFont"); return 0; }   // include\dolphin\os\OSFont.h
+void OSInitSemaphore(OSSemaphore* sem, s32 count) { PORT_TODO("OSInitSemaphore"); }   // include\dolphin\os\OSSemaphore.h
+void OSInitStopwatch(OSStopwatch* sw, char* name) { PORT_TODO("OSInitStopwatch"); }   // include\dolphin\os.h
+void OSInitThreadQueue(OSThreadQueue* queue) { PORT_TODO("OSInitThreadQueue"); }   // include\dolphin\os\OSThread.h
+BOOL OSLink(OSModuleInfo* newModule, void* bss) { PORT_TODO("OSLink"); return 0; }   // include\dolphin\os\OSModule.h
+extern void OSPanic(char* file, int line, char* msg, ...) { PORT_TODO("OSPanic"); }   // include\dolphin\gx\GXGeometry.h
+void* OSPhysicalToCached(u32 paddr) { PORT_TODO("OSPhysicalToCached"); return nullptr; }   // include\dolphin\os.h
+void OSResetStopwatch(OSStopwatch* sw) { PORT_TODO("OSResetStopwatch"); }   // include\dolphin\os.h
+void OSResetSystem(int reset, u32 resetCode, BOOL forceMenu) { PORT_TODO("OSResetSystem"); }   // include\dolphin\os\OSReset.h
+BOOL OSRestoreInterrupts(BOOL level) { PORT_TODO("OSRestoreInterrupts"); return 0; }   // include\dolphin\os.h
+s32 OSResumeThread(OSThread* thread) { PORT_TODO("OSResumeThread"); return 0; }   // include\dolphin\os\OSThread.h
+void OSSetArenaHi(void* newHi) { PORT_TODO("OSSetArenaHi"); }   // include\dolphin\os.h
+void OSSetArenaLo(void* newLo) { PORT_TODO("OSSetArenaLo"); }   // include\dolphin\os.h
+int OSSetCurrentHeap(int heap) { PORT_TODO("OSSetCurrentHeap"); return 0; }   // include\dolphin\os\OSAlloc.h
+OSErrorHandler OSSetErrorHandler(OSError error, OSErrorHandler handler) { PORT_TODO("OSSetErrorHandler"); return {}; }   // include\dolphin\os\OSError.h
+void OSSetProgressiveMode(u32 on) { PORT_TODO("OSSetProgressiveMode"); }   // include\dolphin\os\OSRtc.h
+void OSSetSaveRegion(void* start, void* end) { PORT_TODO("OSSetSaveRegion"); }   // include\dolphin\os\OSReboot.h
+void OSSetSoundMode(u32 mode) { PORT_TODO("OSSetSoundMode"); }   // include\dolphin\os.h
+s32 OSSignalSemaphore(OSSemaphore* sem) { PORT_TODO("OSSignalSemaphore"); return 0; }   // include\dolphin\os\OSSemaphore.h
+void OSSleepThread(OSThreadQueue* queue) { PORT_TODO("OSSleepThread"); }   // include\dolphin\os\OSThread.h
+void OSStartStopwatch(OSStopwatch* sw) { PORT_TODO("OSStartStopwatch"); }   // include\dolphin\os.h
+void OSStopStopwatch(OSStopwatch* sw) { PORT_TODO("OSStopStopwatch"); }   // include\dolphin\os.h
+s32 OSSuspendThread(OSThread* thread) { PORT_TODO("OSSuspendThread"); return 0; }   // include\dolphin\os\OSThread.h
+void OSTicksToCalendarTime(OSTime ticks, OSCalendarTime* td) { PORT_TODO("OSTicksToCalendarTime"); }   // include\dolphin\os.h
+BOOL OSUnlink(OSModuleInfo* oldModule) { PORT_TODO("OSUnlink"); return 0; }   // include\dolphin\os\OSModule.h
+s32 OSWaitSemaphore(OSSemaphore* sem) { PORT_TODO("OSWaitSemaphore"); return 0; }   // include\dolphin\os\OSSemaphore.h
+void OSWakeupThread(OSThreadQueue* queue) { PORT_TODO("OSWakeupThread"); }   // include\dolphin\os\OSThread.h
+void PADClamp(PADStatus* status) { PORT_TODO("PADClamp"); }   // include\dolphin\pad.h
+void PADControlMotor(s32 chan, u32 command) { PORT_TODO("PADControlMotor"); }   // include\dolphin\pad.h
+BOOL PADInit() { PORT_TODO("PADInit"); return 0; }   // include\dolphin\pad.h
+u32 PADRead(PADStatus* status) { PORT_TODO("PADRead"); return 0; }   // include\dolphin\pad.h
+BOOL PADRecalibrate(u32 mask) { PORT_TODO("PADRecalibrate"); return 0; }   // include\dolphin\pad.h
+int PADReset(u32 mask) { PORT_TODO("PADReset"); return 0; }   // include\dolphin\pad.h
+void PADSetAnalogMode(u32 mode) { PORT_TODO("PADSetAnalogMode"); }   // include\dolphin\pad.h
+void VIConfigure(const GXRenderModeObj* rm) { PORT_TODO("VIConfigure"); }   // include\dolphin\vi\vifuncs.h
+void VIFlush() { PORT_TODO("VIFlush"); }   // include\dolphin\vi\vifuncs.h
+u32 VIGetDTVStatus() { PORT_TODO("VIGetDTVStatus"); return 0; }   // include\dolphin\vi\vifuncs.h
+u32 VIGetNextField() { PORT_TODO("VIGetNextField"); return 0; }   // include\dolphin\vi\vifuncs.h
+u32 VIGetTvFormat() { PORT_TODO("VIGetTvFormat"); return 0; }   // include\dolphin\vi\vifuncs.h
+void VIInit() { PORT_TODO("VIInit"); }   // include\dolphin\vi\vifuncs.h
+void VISetBlack(BOOL black) { PORT_TODO("VISetBlack"); }   // include\dolphin\vi\vifuncs.h
+void VISetNextFrameBuffer(void* fb) { PORT_TODO("VISetNextFrameBuffer"); }   // include\dolphin\vi\vifuncs.h
+VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb) { PORT_TODO("VISetPostRetraceCallback"); return {}; }   // include\dolphin\vi\vifuncs.h
+void VIWaitForRetrace() { PORT_TODO("VIWaitForRetrace"); }   // include\dolphin\vi\vifuncs.h
