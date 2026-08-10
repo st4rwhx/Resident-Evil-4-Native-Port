@@ -16,6 +16,7 @@
 # Build artifacts
 /build/*
 !/build/.gitkeep
+/native/build/
 
 # Toolchain downloads (Ghidra, wibo, CodeWarrior, decomp-toolkit binaries,
 # cloned extension repos) - but keep our own hand-written scripts

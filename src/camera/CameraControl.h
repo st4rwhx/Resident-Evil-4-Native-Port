@@ -33,6 +33,15 @@ public:
     void setMotionBaseMatPtr(void* mat);
     void* getMotionInfoPtr();
 
+    // Grants native/test_main.cpp access to private fields by name so it can
+    // set up test state and verify results without depending on this
+    // struct's byte offsets - those are GameCube/32-bit-pointer specific
+    // (see the padding arrays below) and don't hold on a native 64-bit
+    // build where AreaData*/MotionBase* are 8 bytes instead of 4. Friendship
+    // is compile-time only; it changes nothing about this class's generated
+    // code or memory layout, so it has zero effect on PowerPC byte-matching.
+    friend struct CameraControlTestAccess;
+
 private:
     u8 unk_00[0x2c];  // fields not yet recovered
     u32 mFlags;        // 0x2c - bit 0x8 and 0x10 confirmed by AreaCheckOnOff

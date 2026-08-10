@@ -156,10 +156,16 @@ plain GC source, which breaks Dolphin's apploader).
 
 This reconstructed build **boots to the real, fully rendered Resident Evil 4
 title menu** in Dolphin (logo, Leon/Ashley artwork, START/LOAD/OPTIONS,
-Capcom 2005 copyright, ~34 FPS) and correctly plays a real FMV cutscene
-(`movie/demo0.sfd`) along the way — i.e. the Nintendo SDK boot sequence, DVD
-filesystem, video decoding, and rendering pipeline are all confirmed working
-end-to-end against our own rebuild. Five real bugs in the split→link→disc
+Capcom 2005 copyright, ~34 FPS), correctly plays a real FMV cutscene
+(`movie/demo0.sfd`) along the way, and — pressing Start through the debug
+build's developer menu (Opening/Debug Game/Leon, stage/room/enemy-set
+selectors etc.) — reaches **actual playable real-time 3D gameplay**: Leon
+fully rendered and animated in a forest/village environment, moving, aiming,
+with a complete working HUD, stable ~30 FPS, REL stage-overlay modules
+streaming and linking cleanly. i.e. the Nintendo SDK boot sequence, DVD
+filesystem, video decoding, rendering, camera, player controller, collision,
+HUD, and the dynamic REL-loading system are all confirmed working end-to-end
+against our own rebuild — not merely "it boots." Five real bugs in the split→link→disc
 pipeline had to be found and fixed to get there (mwldeppc mis-computing PC-
 relative branches in the object linked last before a section-kind change;
 dtk's SDK-signature system hardcoding a symbol name that collides with
@@ -177,6 +183,41 @@ the harness incremental function-matching work (above) will keep running
 against. The ~10,375 not-yet-matched functions are still raw disassembly,
 not understood C++ source — that work is unaffected by this milestone and
 still has to happen function by function.
+
+## Phase 2 scaffolding (proof of concept only - see warning below)
+
+`native/` is a minimal CMake project proving the actual Phase 2 workflow
+works, not a playable port: it compiles every currently matched/equivalent
+`.cpp` in `src/` (26 files, ~115 functions) with a genuine native Windows
+toolchain (MinGW-w64 g++ 16, C++17, zero source modifications needed - every
+matched file so far happens to have zero GameCube hardware dependencies) and
+runs a smoke test (`native/test_main.cpp`) that exercises `CameraControl`'s
+matched/equivalent methods and checks their behavior against the confirmed
+PowerPC semantics. All checks pass as a real native `.exe`, no emulator.
+
+```
+cmake -S native -B native/build -G "MinGW Makefiles"
+cmake --build native/build
+native/build/re4_native_test.exe
+```
+
+Real finding from building this: struct layouts with embedded pointers
+(`CameraControl`'s `AreaData*`/`MotionBase*` fields) are only
+self-consistent on the original 32-bit target — those pointers are 4 bytes
+on GameCube PowerPC but 8 bytes on native x86_64, so every field declared
+after one lands at a different real offset once compiled natively. Testing
+private state safely across that requires going through the class by field
+*name* (a test-only `friend`, see `CameraControlTestAccess` in
+`CameraControl.h`), not by assuming GameCube byte offsets still apply -
+worth knowing before porting any other struct with pointer members.
+
+**This is not a Windows port and isn't close to being playable.** It's
+confirmation that the matched-decomp source is genuinely portable, compiles
+clean, and behaves correctly on a real native toolchain - the actual
+substance of Phase 2 (replacing GX/DSP/OS/PAD calls with
+Direct3D/XAudio2/Win32 equivalents, standing up a real game loop/window/
+render pipeline) can't meaningfully start until Phase 1 has real coverage of
+the systems involved, per the "two separate phases" section above.
 
 ## Layout
 
