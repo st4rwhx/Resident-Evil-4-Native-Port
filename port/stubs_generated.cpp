@@ -80,24 +80,14 @@ s32 CARDReadAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CAR
 s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CARDStat* stat, CARDCallback callback) { PORT_TODO("CARDSetStatusAsync"); return 0; }   // include\dolphin\card.h
 s32 CARDUnmount(s32 chan) { PORT_TODO("CARDUnmount"); return 0; }   // include\dolphin\card.h
 s32 CARDWriteAsync(CARDFileInfo*  fileInfo, void* buf, s32 length, s32 offset, CARDCallback callback) { PORT_TODO("CARDWriteAsync"); return 0; }   // include\dolphin\card.h
-s32 DVDCancelAll() { PORT_TODO("DVDCancelAll"); return 0; }   // include\dolphin\dvd.h
 int DVDCancelAsync(DVDCommandBlock* block, DVDCBCallback callback) { PORT_TODO("DVDCancelAsync"); return 0; }   // include\dolphin\dvd.h
 int DVDChangeDiskAsync(DVDCommandBlock* block, DVDDiskID* id, DVDCBCallback callback) { PORT_TODO("DVDChangeDiskAsync"); return 0; }   // include\dolphin\dvd.h
-BOOL DVDClose(DVDFileInfo* fileInfo) { PORT_TODO("DVDClose"); return 0; }   // include\dolphin\dvd.h
 int DVDCloseDir(DVDDir* dir) { PORT_TODO("DVDCloseDir"); return 0; }   // include\dolphin\dvd.h
 int DVDCompareDiskID(const DVDDiskID* id1, const DVDDiskID* id2) { PORT_TODO("DVDCompareDiskID"); return 0; }   // include\dolphin\dvd.h
-s32 DVDConvertPathToEntrynum(const char* pathPtr) { PORT_TODO("DVDConvertPathToEntrynum"); return 0; }   // include\dolphin\dvd.h
-BOOL DVDFastOpen(s32 entrynum, DVDFileInfo* fileInfo) { PORT_TODO("DVDFastOpen"); return 0; }   // include\dolphin\dvd.h
 DVDDiskID* DVDGenerateDiskID(DVDDiskID* id, const char* game, const char* company, u8 diskNum, u8 version) { PORT_TODO("DVDGenerateDiskID"); return nullptr; }   // include\dolphin\dvd.h
-s32 DVDGetCommandBlockStatus(const DVDCommandBlock* block) { PORT_TODO("DVDGetCommandBlockStatus"); return 0; }   // include\dolphin\dvd.h
 DVDDiskID* DVDGetCurrentDiskID() { PORT_TODO("DVDGetCurrentDiskID"); return nullptr; }   // include\dolphin\dvd.h
-s32 DVDGetDriveStatus() { PORT_TODO("DVDGetDriveStatus"); return 0; }   // include\dolphin\dvd.h
 void* DVDGetFSTLocation() { PORT_TODO("DVDGetFSTLocation"); return nullptr; }   // include\dolphin\dvd.h
-s32 DVDGetTransferredSize(DVDFileInfo* fileinfo) { PORT_TODO("DVDGetTransferredSize"); return 0; }   // include\dolphin\dvd.h
-BOOL DVDOpen(const char* fileName, DVDFileInfo* fileInfo) { PORT_TODO("DVDOpen"); return 0; }   // include\dolphin\dvd.h
 int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); return 0; }   // include\dolphin\dvd.h
-BOOL DVDReadAsyncPrio(DVDFileInfo* fileInfo, void* addr, s32 length, s32 offset,
-                      DVDCallback callback, s32 prio) { PORT_TODO("DVDReadAsyncPrio"); return 0; }   // include\dolphin\dvd.h
 int DVDReadDir(DVDDir* dir, DVDDirEntry* dirent) { PORT_TODO("DVDReadDir"); return 0; }   // include\dolphin\dvd.h
 void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts) { PORT_TODO("GXBegin"); }   // include\dolphin\gx\GXGeometry.h
 void GXBeginDisplayList(void* list, u32 size) { PORT_TODO("GXBeginDisplayList"); }   // include\dolphin\gx\GXDispList.h
@@ -197,47 +187,25 @@ void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType typ
 void GXSetVtxDesc(GXAttr attr, GXAttrType type) { PORT_TODO("GXSetVtxDesc"); }   // include\dolphin\gx\GXGeometry.h
 void GXSetZCompLoc(GXBool before_tex) { PORT_TODO("GXSetZCompLoc"); }   // include\dolphin\gx\GXPixel.h
 void GXSetZMode(GXBool compare_enable, GXCompare func, GXBool update_enable) { PORT_TODO("GXSetZMode"); }   // include\dolphin\gx\GXPixel.h
-void* OSAllocFromHeap(int heap, u32 size) { PORT_TODO("OSAllocFromHeap"); return nullptr; }   // include\dolphin\os\OSAlloc.h
 OSTime OSCalendarTimeToTicks(OSCalendarTime* td) { PORT_TODO("OSCalendarTimeToTicks"); return {}; }   // include\dolphin\os.h
 void OSCancelThread(OSThread* thread) { PORT_TODO("OSCancelThread"); }   // include\dolphin\os\OSThread.h
-s32 OSCheckHeap(int heap) { PORT_TODO("OSCheckHeap"); return 0; }   // include\dolphin\os\OSAlloc.h
-int OSCreateHeap(void* start, void* end) { PORT_TODO("OSCreateHeap"); return 0; }   // include\dolphin\os\OSAlloc.h
 int OSCreateThread(OSThread* thread, void* (*func)(void*), void* param, void* stack, u32 stackSize, OSPriority priority, u16 attr) { PORT_TODO("OSCreateThread"); return 0; }   // include\dolphin\os\OSThread.h
-void OSDestroyHeap(int heap) { PORT_TODO("OSDestroyHeap"); }   // include\dolphin\os\OSAlloc.h
-BOOL OSDisableInterrupts() { PORT_TODO("OSDisableInterrupts"); return 0; }   // include\dolphin\os.h
-BOOL OSEnableInterrupts() { PORT_TODO("OSEnableInterrupts"); return 0; }   // include\dolphin\os.h
 s32 OSEnableScheduler() { PORT_TODO("OSEnableScheduler"); return 0; }   // include\dolphin\os\OSThread.h
 void OSExitThread(void* val) { PORT_TODO("OSExitThread"); }   // include\dolphin\os\OSThread.h
-void OSFreeToHeap(int heap, void* ptr) { PORT_TODO("OSFreeToHeap"); }   // include\dolphin\os\OSAlloc.h
-void* OSGetArenaHi() { PORT_TODO("OSGetArenaHi"); return nullptr; }   // include\dolphin\os.h
-void* OSGetArenaLo() { PORT_TODO("OSGetArenaLo"); return nullptr; }   // include\dolphin\os.h
-u32 OSGetConsoleSimulatedMemSize() { PORT_TODO("OSGetConsoleSimulatedMemSize"); return 0; }   // include\dolphin\os\OSMemory.h
-u32 OSGetConsoleType() { PORT_TODO("OSGetConsoleType"); return 0; }   // include\dolphin\os.h
 OSThread* OSGetCurrentThread() { PORT_TODO("OSGetCurrentThread"); return nullptr; }   // include\dolphin\os\OSThread.h
 u16 OSGetFontEncode() { PORT_TODO("OSGetFontEncode"); return 0; }   // include\dolphin\os\OSFont.h
 char* OSGetFontTexture(const char* string, void** image, s32* x, s32* y, s32* width) { PORT_TODO("OSGetFontTexture"); return nullptr; }   // include\dolphin\os\OSFont.h
 u32 OSGetProgressiveMode() { PORT_TODO("OSGetProgressiveMode"); return 0; }   // include\dolphin\os\OSRtc.h
-BOOL OSGetResetButtonState() { PORT_TODO("OSGetResetButtonState"); return 0; }   // include\dolphin\os\OSResetSW.h
 u32 OSGetSoundMode() { PORT_TODO("OSGetSoundMode"); return 0; }   // include\dolphin\os.h
-OSTick OSGetTick() { PORT_TODO("OSGetTick"); return {}; }   // include\dolphin\os.h
-OSTime OSGetTime() { PORT_TODO("OSGetTime"); return {}; }   // include\dolphin\os.h
-void OSInit() { PORT_TODO("OSInit"); }   // include\dolphin\os.h
 void OSInitAlarm() { PORT_TODO("OSInitAlarm"); }   // include\dolphin\os\OSAlarm.h
-void* OSInitAlloc(void* arenaStart, void* arenaEnd, int maxHeaps) { PORT_TODO("OSInitAlloc"); return nullptr; }   // include\dolphin\os\OSAlloc.h
 BOOL OSInitFont(OSFontHeader* fontData) { PORT_TODO("OSInitFont"); return 0; }   // include\dolphin\os\OSFont.h
 void OSInitSemaphore(OSSemaphore* sem, s32 count) { PORT_TODO("OSInitSemaphore"); }   // include\dolphin\os\OSSemaphore.h
 void OSInitStopwatch(OSStopwatch* sw, char* name) { PORT_TODO("OSInitStopwatch"); }   // include\dolphin\os.h
 void OSInitThreadQueue(OSThreadQueue* queue) { PORT_TODO("OSInitThreadQueue"); }   // include\dolphin\os\OSThread.h
 BOOL OSLink(OSModuleInfo* newModule, void* bss) { PORT_TODO("OSLink"); return 0; }   // include\dolphin\os\OSModule.h
-extern void OSPanic(char* file, int line, char* msg, ...) { PORT_TODO("OSPanic"); }   // include\dolphin\gx\GXGeometry.h
-void* OSPhysicalToCached(u32 paddr) { PORT_TODO("OSPhysicalToCached"); return nullptr; }   // include\dolphin\os.h
 void OSResetStopwatch(OSStopwatch* sw) { PORT_TODO("OSResetStopwatch"); }   // include\dolphin\os.h
 void OSResetSystem(int reset, u32 resetCode, BOOL forceMenu) { PORT_TODO("OSResetSystem"); }   // include\dolphin\os\OSReset.h
-BOOL OSRestoreInterrupts(BOOL level) { PORT_TODO("OSRestoreInterrupts"); return 0; }   // include\dolphin\os.h
 s32 OSResumeThread(OSThread* thread) { PORT_TODO("OSResumeThread"); return 0; }   // include\dolphin\os\OSThread.h
-void OSSetArenaHi(void* newHi) { PORT_TODO("OSSetArenaHi"); }   // include\dolphin\os.h
-void OSSetArenaLo(void* newLo) { PORT_TODO("OSSetArenaLo"); }   // include\dolphin\os.h
-int OSSetCurrentHeap(int heap) { PORT_TODO("OSSetCurrentHeap"); return 0; }   // include\dolphin\os\OSAlloc.h
 OSErrorHandler OSSetErrorHandler(OSError error, OSErrorHandler handler) { PORT_TODO("OSSetErrorHandler"); return {}; }   // include\dolphin\os\OSError.h
 void OSSetProgressiveMode(u32 on) { PORT_TODO("OSSetProgressiveMode"); }   // include\dolphin\os\OSRtc.h
 void OSSetSaveRegion(void* start, void* end) { PORT_TODO("OSSetSaveRegion"); }   // include\dolphin\os\OSReboot.h

@@ -152,7 +152,13 @@ s8 system_vcnt;
 
 static void systemScreenInit();
 
+#ifdef RE4_PORT
+// Portage : la coque (Activity Android, projet Xcode, ou port/main_port.cpp en desktop)
+// possede le vrai main et lui passe le chemin du jeu choisi par l'utilisateur.
+int re4_main()
+#else
 int main()
+#endif
 {
     int i;
     int j;

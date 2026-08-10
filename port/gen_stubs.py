@@ -61,6 +61,18 @@ def declarations():
     return out
 
 
+def implemented():
+    """Les fonctions deja ecrites a la main dans port/*.cpp : le generateur doit les sauter,
+    sinon le lien echoue en doublon. On lit les definitions plutot que de tenir une liste, pour
+    qu'ajouter une implementation suffise."""
+    pat = re.compile(r'^[A-Za-z_][\w \t\*&:]*?\b((?:%s)[A-Za-z0-9_]+)\s*\(' % '|'.join(FAMILIES), re.M)
+    out = set()
+    for fn in os.listdir(HERE):
+        if fn.endswith('.cpp') and fn != 'stubs_generated.cpp':
+            out.update(pat.findall(open(os.path.join(HERE, fn), encoding='utf-8').read()))
+    return out
+
+
 NEUTRAL = {'void': None, 'BOOL': '0', 'bool': 'false', 'char': '0', 'u8': '0', 's8': '0',
            'u16': '0', 's16': '0', 'u32': '0', 's32': '0', 'int': '0', 'long': '0',
            'unsigned': '0', 'f32': '0.0f', 'f64': '0.0', 'float': '0.0f', 'double': '0.0',
@@ -77,8 +89,8 @@ def neutral(ret):
 
 
 def emit(path):
-    used, decl = used_symbols(), declarations()
-    todo = sorted(n for n in used if n in decl)
+    used, decl, done = used_symbols(), declarations(), implemented()
+    todo = sorted(n for n in used if n in decl and n not in done)
     out = ['// -*- coding: utf-8 -*-',
            '// GENERE par port/gen_stubs.py - ne pas editer a la main.',
            '//',
@@ -106,9 +118,10 @@ def emit(path):
         out.append('%s %s(%s) { %s }   // %s' % (ret, n, sig_args, body, hdr))
     out.append('')
     open(path, 'w', encoding='utf-8').write('\n'.join(out))
-    return len(todo)
+    return len(todo), len(done)
 
 
 if __name__ == '__main__':
     p = os.path.join(HERE, 'stubs_generated.cpp')
-    print('%d definitions -> %s' % (emit(p), p))
+    n, d = emit(p)
+    print('%d souches generees, %d fonctions deja implementees a la main -> %s' % (n, d, p))
