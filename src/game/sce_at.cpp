@@ -998,7 +998,11 @@ void releaseModel(SceAtWork* w, int keep)
 static void sceAtGetItem(SceAtWork* w_)
 {
     // COMPILER-DIFF: 13 (global-alloc pair w/cancel r24/r25): value pin of the parameter copy.
+    #ifdef RE4_PORT
+    SceAtWork* w = w_;   // portage : epinglage sur r24, sans objet hors PowerPC
+    #else
     register SceAtWork* w asm("r24") = w_;
+    #endif
     static int disp_flag_bak;
     static int sub_screen_open;
     static int swep_flag;
@@ -1050,7 +1054,11 @@ static void sceAtGetItem(SceAtWork* w_)
     case 8: {
         // COMPILER-DIFF: 13 (global-alloc rotation it/ItemMgr/money): money pinned to the
         // original's r29 settles the other two (it r31, the ItemMgr high r30).
+        #ifdef RE4_PORT
+        u32 money = pG->x4F98;   // portage : epinglage sur r29, sans objet hors PowerPC
+        #else
         register u32 money asm("r29") = pG->x4F98;
+        #endif
 
         put = ItemMgr.get(it->id, it->num);
         if (it->id == 0x73) {
@@ -1169,7 +1177,11 @@ static void sceAtGetItem(SceAtWork* w_)
             // COMPILER-DIFF: candidate #12 (r0 pin): cse1 follows the `bne` into the else arm and would
             // canonicalise `res == 2` to sel; canon_reg never replaces a hard register, so the pinned res
             // keeps `cmpwi r0,2` and sel (a pseudo: preferred as class head) keeps `mr; cmpwi sel,1`.
+            #ifdef RE4_PORT
+            int res = cMes.getWork()->result;   // portage : epinglage sur r0, sans objet hors PowerPC
+            #else
             register int res asm("r0") = cMes.getWork()->result;
+            #endif
 
             sel = res;
             if (sel == 1) {
@@ -1271,7 +1283,12 @@ static void sceAtGetItem_NoModel(SceAtWork* w)
     int sel;
     // COMPILER-DIFF: codeless def: a mention of sel before the result block so cse1 makes sel the
     // head of the `sel = res` class (a block-local sel is replaced by the sign-extend temp: 4 refs, r31).
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=r"(sel));
+    #endif
     int i;
     ItemInfo info;
     ItemWork tmp;
@@ -1282,7 +1299,12 @@ static void sceAtGetItem_NoModel(SceAtWork* w)
     swep_flag = 0;
     // COMPILER-DIFF: 12 (sched2 rank in block 0): the `it->id` load after the swep_flag store ranks
     // `li r31,0` (cancel) above `addi r29,&w->item` in the prologue.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(*(int*) &it->id) : "m"(swep_flag));
+    #endif
     itemInfo(it->id, &info);
     switch (info.type) {
     case 0:
@@ -1410,7 +1432,11 @@ static void sceAtGetItem_NoModel(SceAtWork* w)
             // COMPILER-DIFF: candidate #12 (r0 pin): cse1 follows the `bne` into the else arm and would
             // canonicalise `res == 2` to sel; canon_reg never replaces a hard register, so the pinned res
             // keeps `cmpwi r0,2` and sel (a pseudo: preferred as class head) keeps `mr; cmpwi sel,1`.
+            #ifdef RE4_PORT
+            int res = cMes.getWork()->result;   // portage : epinglage sur r0, sans objet hors PowerPC
+            #else
             register int res asm("r0") = cMes.getWork()->result;
+            #endif
 
             sel = res;
             if (sel == 1) {
@@ -1978,8 +2004,16 @@ static int sceAtFunc_pos_jump(SceAtWork* w, cModel* m)
     // the local-alloc'd dstAngle load in f0); ours allocates the 3-ref 0.0 first (f0). Both values
     // pinned: the angle too, so the y store gets the same call anti-dependent as the z/x stores
     // and the three stores keep the source order.
+    #ifdef RE4_PORT
+    f32 a;   // portage : epinglage sur fr0, sans objet hors PowerPC
+    #else
     register f32 a asm("fr0");
+    #endif
+    #ifdef RE4_PORT
+    f32 z;   // portage : epinglage sur fr13, sans objet hors PowerPC
+    #else
     register f32 z asm("fr13");
+    #endif
 
     pPL->setPos(&w->jumpPos);
     a = w->dstAngle;

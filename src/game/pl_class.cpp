@@ -46,7 +46,11 @@ u32 upDownCk(cPlayer* pl);
 }
 
 // cEmWindow::ExeWindowEvent as a SceExec task (the member's address is not a plain function pointer).
+#ifdef RE4_PORT
+static inline int ExeWindowEventTask(cEmWindow* w) { return w->ExeWindowEvent(); }
+#else
 int ExeWindowEventTask(cEmWindow* w) asm("ExeWindowEvent__9cEmWindow");
+#endif
 
 #define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
 // cPlNeck's checks compile to the folded `addis 0x8000; cmplwi 0x02FFFFFF` range form.
@@ -80,7 +84,12 @@ static inline void PlRoutineSet(cPlayer* pl, int r0, int r1, int r2, int r3)
 
 // Partner (id 3) dead while the player is in routine 0: routine 6 (die), damage info 0x80. An
 // inline member of the class whose vtable this unit owns: emitted here after the destructor.
+#ifdef RE4_PORT
+// Portage : meme raison que cModel::isTrans - player.cpp appelle cette methode.
+void cPlayer::subCharLiveCheck()
+#else
 inline void cPlayer::subCharLiveCheck()
+#endif
 {
     cEm* sub = pSubEm;
     if (sub && sub->id == 3 && sub->hp <= 0 && xFC == 0) {
@@ -1084,7 +1093,11 @@ int cPlayer::getLifeLevel()
 // Event start (mode in r4, see player.h): interrupt, routine 5 (0: idle footwork, 1: sub 2).
 void cPlayer::beginEvent()
 {
+    #ifdef RE4_PORT
+    int modeReg;   // portage : epinglage sur r4, sans objet hors PowerPC
+    #else
     register int modeReg asm("r4");
+    #endif
     int mode = modeReg;
 
     interrupt();
@@ -1201,7 +1214,11 @@ int cPlayer::endCamera()
 // Event end (mode in r4, see player.h).
 void cPlayer::endEvent()
 {
+    #ifdef RE4_PORT
+    u32 modeReg;   // portage : epinglage sur r4, sans objet hors PowerPC
+    #else
     register u32 modeReg asm("r4");
+    #endif
 
     endEvent0(modeReg);
 }
@@ -1739,7 +1756,11 @@ void cMot3::set(cModel* m, void* m0, void* m1, void* m2, int a, u8 b, int c, u16
     // any mask written on `b`. Reading the incoming register through a pin gives the
     // zero_extendqisi2 no LOG_LINK to fold through (and no CC clobber: sched1 weight 0, so it
     // is ranked like the original's insn).
+    #ifdef RE4_PORT
+    int rb;   // portage : epinglage sur r9, sans objet hors PowerPC
+    #else
     register int rb asm("r9");
+    #endif
     int mode = (u8) rb;
 
     model = m;

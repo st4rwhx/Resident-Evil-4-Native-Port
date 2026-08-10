@@ -164,6 +164,11 @@ void* TaskExec_hook(void* arg)
     if (ParentThread() != NULL) {
         OSSuspendThread(ParentThread());
     }
+#ifdef RE4_PORT
+    // Portage : programmation des registres de quantification GQR2..GQR5 (types u8, u16, s8,
+    // s16, echelle 0). Ils n'ont de sens que pour les instructions paired-single du Gekko ;
+    // partout ou le jeu s'en sert, le portage ecrit la conversion explicitement.
+#else
     asm("li 3, 4\n"
         "oris 3, 3, 4\n"
         "mtspr 914, 3\n"
@@ -179,6 +184,7 @@ void* TaskExec_hook(void* arg)
         :
         :
         : "r3");
+#endif
     GXSetCurrentGXThread();
     CTASK->func((int) arg);
     return NULL;

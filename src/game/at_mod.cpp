@@ -744,7 +744,12 @@ int ObaLineHitChk(cEm* m, cAtariInfo* info, Vec* a, Vec* b, Vec* hit, Vec* nrm)
     // gates it), so the `mr r3,r27` hoisted argument takes the slot the codeless anchor used to
     // occupy; the extra `"f"(den)` reference keeps den's local-alloc priority above the product's
     // (which gained a third reference) so den stays in f0 and the product in f13.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+f"(den) : "f"(den), "f"(de * ef));
+    #endif
     t = (ee * df - de * ef) / den;
     s = (de * df - dd * ef) / den;
     tc = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);

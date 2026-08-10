@@ -31,7 +31,15 @@ extern cModel* pSUB;   // game/em.cpp
 // COMPILER-DIFF: 1 (argument-move order). cSatMgr::create(pos, rot, poly, attr, flag, h) with the
 // `fmr f1, h` move issued before the `mr attr` / `li flag` moves (emobj.cpp SatMgrCreateF); only the
 // sub[0] / sub[1] creates of emBarredEatSet show the interleave, the other call sites match as is.
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h,
+                                  int attr, int flag)
+{ return m->create(pos, rot, poly, attr, flag, h); }
+#else
 cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h, int attr, int flag) asm("create__7cSatMgrP3VecN21iif");
+#endif
 
 typedef void (*EmBarredFunc)(cEmBarred*);
 

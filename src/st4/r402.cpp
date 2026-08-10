@@ -328,7 +328,15 @@ static void R402ExecEvent02Main()
 
 // The collision pieces of the two door 02 halves (objects 0x40 / 0x41).
 // COMPILER-DIFF: #1 (the original issues `fmr f1,h` before the `li 0x40; li 0x100` argument moves)
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h,
+                                  int attr, int flag)
+{ return m->create(pos, rot, poly, attr, flag, h); }
+#else
 cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h, int attr, int flag) asm("create__7cSatMgrP3VecN21iif");
+#endif
 
 void R402InitDoor02()
 {

@@ -129,7 +129,12 @@ void cToolBugcheck::menuPosMove()
             // r4) and leaves sched2's dependent counts of the setPos arg moves equal; it is also the
             // extra loop insn at global-alloc time that orders the 14 hoisted highs r14-r25.
             Vec* pr = &pl->rot;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(pl) : "r"(pr));
+            #endif
             pl->setAng(pr);
         }
         {
@@ -292,8 +297,18 @@ void cToolBugcheck::menuLife()
         // int(30000/len) = 45 (allocated last, in bucket order: LIFE r17, PLAYER r16) while
         // ASHLEY..L-TRIG (652-642) and ">" (640) share 46. The second anchor must not be the same
         // asm again (cse deletes the repeated store as redundant).
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(PlKaiou));
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "+m"(PlKaiou));
+        #endif
     }
 }
 

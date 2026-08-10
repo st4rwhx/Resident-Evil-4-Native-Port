@@ -1275,7 +1275,11 @@ void SceElevator(SceElevatorData* d)
     int i;
     int j;
     u32 hSnd;
+    #ifdef RE4_PORT
+    Vec* jp;   // portage : epinglage sur r25, sans objet hors PowerPC
+    #else
     register Vec* jp asm("r25");  // COMPILER-DIFF: register pin (see the comment above the function)
+    #endif
 
     obj = SmdGetObjPtr(d->objId);
     if (obj == 0) {

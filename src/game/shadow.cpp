@@ -357,7 +357,12 @@ void ShadowTrans()
         {
             // COMPILER-DIFF: 5 (interblock hoist of the `mr r3, em` argument copy above the flag test)
             cEm* e = em;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(e));
+            #endif
             if (e->be_flag & 0x10) {
                 if (Fit_ParallelShadowModelSet(e, 0) == 1) {
                     found = 1;
@@ -676,9 +681,23 @@ void make_comn_fit_light(ShadowMng* mng, cModel* m)
     {
         // COMPILER-DIFF: 13 (local-alloc qty order): r11 pinned after the 1.0 load and before the
         // conversion's lfd, so the fpmem loadaddr cannot take r11 and the 1.0 pool high gets it.
+        #ifdef RE4_PORT
+        u32 k;   // portage : epinglage sur r11, sans objet hors PowerPC
+        #else
         register u32 k asm("r11");
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=r"(k) : "f"(1.0f));
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(pos.x) : "r"(k));
+        #endif
         if (mng->fov < 1.0f) {
             mng->fov = 1.0f;
         }
@@ -749,9 +768,23 @@ void make_comn_parallel_light(ShadowMng* mng, cModel* m)
     mng->fov -= w->x18;
     {
         // COMPILER-DIFF: 13 (local-alloc qty order): see make_comn_fit_light.
+        #ifdef RE4_PORT
+        u32 k;   // portage : epinglage sur r11, sans objet hors PowerPC
+        #else
         register u32 k asm("r11");
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=r"(k) : "f"(1.0f));
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(pos.x) : "r"(k));
+        #endif
         if (mng->fov < 1.0f) {
             mng->fov = 1.0f;
         }
@@ -1262,7 +1295,12 @@ void shadowScrModelRender(ShadowMng* mngs)
         {
             // COMPILER-DIFF: 5 (interblock hoist of the `mr r3, obj` argument copy above the flag test)
             cObj* o = obj;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(o));
+            #endif
             if (BitChk(o->be_flag, 1) && BitChk(o->be_flag, 0x80)) {
                 ProcShadowScrModel(o, mngs);
             }

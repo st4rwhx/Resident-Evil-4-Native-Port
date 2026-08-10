@@ -91,8 +91,16 @@ int cTexSys::DataLoad(TexData* data, u32 owner, int clamp)
     // temporaries r9/r11/r0 (ofsId/ofsTpl/ofsAnm), ours r0/r9/r0: a fake-lifetime tie decided by
     // the sched1 position of the third `lwz` (30 statement/base/order forms tried); the two pins
     // give the target's names with the same schedule.
+    #ifdef RE4_PORT
+    u32 oI;   // portage : epinglage sur r9, sans objet hors PowerPC
+    #else
     register u32 oI asm("r9");
+    #endif
+    #ifdef RE4_PORT
+    u32 oT;   // portage : epinglage sur r11, sans objet hors PowerPC
+    #else
     register u32 oT asm("r11");
+    #endif
 
     if (data->version != 3) {
         pLog->err(0, 0, "%s::DataLoad() : Data Invalid. [0x%x]", name, data);

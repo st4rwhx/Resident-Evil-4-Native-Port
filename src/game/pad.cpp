@@ -69,10 +69,19 @@ void PadRead()
     // constant has no dependents in block 0 (priority 1 < the `lis Pad_data@ha` chain), so sched
     // would issue it second; the codeless barrier after it makes every later insn depend on it,
     // where the target issues `li r16,10` before `lis Pad_data@ha`.
+    #ifdef RE4_PORT
+    int dead;   // portage : epinglage sur r16, sans objet hors PowerPC
+    #else
     register int dead asm("r16");                // COMPILER-DIFF: #17
+    #endif
 
     dead = 10;
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm volatile("");                            // COMPILER-DIFF: #13 (sched barrier, no code)
+    #endif
     PADRead(Pad_data);
     PADClamp(Pad_data);
     for (i = 0; i < 4; i++) {

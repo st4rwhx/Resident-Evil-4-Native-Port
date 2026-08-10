@@ -8,10 +8,13 @@
 #include <cstdlib>
 
 void port_set_game_dir(const char *dir);
+extern "C" void port_install_crash_handler(void);
 int re4_main();   // liaison C++ : defini dans src/game/main.cpp
 
 int main(int argc, char **argv)
 {
+    port_install_crash_handler();
+
     const char *dir = (argc > 1) ? argv[1] : std::getenv("RE4_GAME_DIR");
     if (!dir) {
         std::printf("usage: %s <dossier du jeu extrait (sys/ + files/)>\n", argv[0]);

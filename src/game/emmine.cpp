@@ -1165,12 +1165,22 @@ void cEmMine::setBomb()
     // `hit` register into xFE (ours folds it to the HImode zero pseudo); the launder keeps `hit` as
     // the store source, the codeless keep-alive after the stores keeps `hit`/`this` from dying at
     // the xFE store (weight -1 would issue it first; the target has it last, source order).
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+r"(hit));
+    #endif
     xFF = 0;
     xFC = 1;
     xFD = 6;
     xFE = hit;
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(hp) : "r"(hit));
+    #endif
 }
 
 void cEmMine::setFall()

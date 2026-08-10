@@ -14,8 +14,9 @@
 #ifdef RE4_PORT
 // Portage : sur toute cible 64 bits `size_t` fait 64 bits, quelle que soit la largeur de
 // `long`, donc la signature d'origine n'est pas reconnue comme un placement new.
-#include <cstddef>
-inline void* operator new(std::size_t, void* p) { return p; }
+// `decltype(sizeof(0))` **est** size_t par construction, sans dependre d'un en-tete : cet
+// en-tete est parfois inclus depuis un bloc extern "C", ou `std::` n'existe pas.
+inline void* operator new(decltype(sizeof(0)), void* p) { return p; }
 #else
 inline void* operator new(unsigned int, void* p) { return p; }
 #endif
@@ -41,7 +42,7 @@ public:
     // treat this as the usual deallocation function.
 #ifdef RE4_PORT
     void operator delete(void*) {}
-    void operator delete(void*, std::size_t) {}
+    void operator delete(void*, decltype(sizeof(0))) {}
 #else
     void operator delete(void*, unsigned int) {}
 #endif

@@ -1797,13 +1797,22 @@ EmHitInfo* EmYarareContactCk(cEm* em, Vec* pos, Vec* out, f32 r)
     f32 rr;
     f32 len;  // the axis length, then the step (one variable: it lives across the VECNormalize call)
     u32 n;
+    #ifdef RE4_PORT
+    s16 hm;   // portage : epinglage sur r5, sans objet hors PowerPC
+    #else
     register s16 hm asm("r5"); // COMPILER-DIFF: #8
+    #endif
 
     // COMPILER-DIFF: #8 -- the original ranks `mr r26,r5` (out) after `fmr f28,f1`, i.e. as if r5
     // did not die at the copy; the HImode read of r5 keeps it live past the copy (docs/matching.md #8).
     // The dummy memory output is a stack local: naming `em->hitInfo.flags` here gave `em` one more
     // reference than `pos`, which swaps their r23/r24 global-alloc order.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(q) : "r"(hm));
+    #endif
     if (em->hp <= 0) {
         return 0;
     }
@@ -2971,7 +2980,12 @@ void GetDropBullet(int* id, int* num)
             // into the fallback's else arm (see `fallback:`); the `*num` input is an anti-dependence
             // on the store, so sched2 still issues the `*id` store first.
             int z = 0;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(z) : "m"(*num));
+            #endif
             *num = z;
             return;
         }
@@ -3062,7 +3076,12 @@ void GetDropBullet(int* id, int* num)
             // into the fallback's else arm (see `fallback:`); the `*num` input is an anti-dependence
             // on the store, so sched2 still issues the `*id` store first.
             int z = 0;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(z) : "m"(*num));
+            #endif
             *num = z;
             return;
         }

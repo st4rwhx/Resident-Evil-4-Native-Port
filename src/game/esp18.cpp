@@ -217,7 +217,12 @@ void Esp18_Trans(cEsp18* esp)
         // One codeless insn in the loop: the hoisted 1.0/0.5 (REG_EQUIV, live length doubled)
         // then tie at priority 171 (270000/1570 vs /1574) and the older 0.5 is coloured first
         // (f18), 1.0 after it (f17); with 819 loop insns ours had 172 vs 171 the other way.
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(inv[0][0]));  // COMPILER-DIFF: candidate (loop.c insn_count)
+        #endif
         if (esp->flags & 0x1000) {
             if (GetDrawTmpBufType() == 2) {
                 copyOk = 0;

@@ -126,7 +126,11 @@ void espgen02_Update(EspgenWork* w)
     f32 spdR = 0.0f;
     // COMPILER-DIFF: #17. colR pinned to f24 (global-alloc order of the three 0.0f copies); no
     // code is emitted.
+    #ifdef RE4_PORT
+    f32 colR;   // portage : epinglage sur fr24, sans objet hors PowerPC
+    #else
     register f32 colR asm("fr24");
+    #endif
     int bScale = 0;
     scaleR = spdR;
     colR = spdR;

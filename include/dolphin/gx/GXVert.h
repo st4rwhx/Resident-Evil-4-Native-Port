@@ -3,6 +3,9 @@
 
 #include <dolphin/types.h>
 #include <dolphin/os.h>
+#ifdef RE4_PORT
+#include "wgpipe.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +26,13 @@ typedef union {
     f64 f64;
 } PPCWGPipe;
 
-#ifdef __MWERKS__
+#ifdef RE4_PORT
+/* Portage : 0xCC008000 est le write-gather pipe du Gekko, la fenetre par laquelle le processeur
+ * pousse la geometrie vers le GPU. Y ecrire ici ferait tomber le processus. Sous DEBUG les
+ * fonctions de sommet sont externes et passent par port/gx.cpp, donc plus rien ne devrait
+ * atteindre ce tuyau ; ce qui subsiste tombe dans un puits, et reste visible si besoin. */
+#define GXWGFifo port_wg_pipe
+#elif defined(__MWERKS__)
 volatile PPCWGPipe GXWGFifo AT_ADDRESS(GXFIFO_ADDR);
 #else
 #define GXWGFifo (*(volatile PPCWGPipe *)GXFIFO_ADDR)

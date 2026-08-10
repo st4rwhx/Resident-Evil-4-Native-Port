@@ -324,7 +324,12 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
     pp->maxFrame = w->maxFrame;
     if (w->flags & 2) {
         if (!(w->flags & 0x1000)) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : : "r"(zero));  // COMPILER-DIFF: dead use makes the zero global (r11), w->flags takes r0
+            #endif
             pp->flags = 2;
         }
     } else {
@@ -386,7 +391,12 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
                 HermiteInterpolation(pp, &v2, hist0);
             }
             cam->frame = 0;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile("" : : : "memory");  // COMPILER-DIFF: anchor, the type load stays after the frame store
+            #endif
             if (cam->type == 1) {
                 cam->pMat = &m->mat;
             } else if (cam->type == 2) {
@@ -919,7 +929,12 @@ void MotionHokan(cModel* m, MotionWork* w)
         TransMatrix(p->worldMat, &pos);
         {
             MtxPtr pm;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=r"(pm) : "0"(p->prevMat));  // COMPILER-DIFF: launder, the extra insn on the r4 path ranks both addi r4 above mr r3
+            #endif
             PSMTXCopy(p->worldMat, pm);
         }
     }
@@ -1032,7 +1047,12 @@ void MotionGetPosition(cModel* m, Vec* pos, Vec* rot)
     w->frame = SEQ_FRAME(w->key1.frame);
     pp = &prm;
     pp->flags = 0;
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : : "r"(pp));  // COMPILER-DIFF: pp must outrank w for r31
+    #endif
     if (w->flags & 2) {
         if (!(w->flags & 0x1000)) {
             pp->flags = 2;
@@ -1263,18 +1283,37 @@ int HermiteInterpolation(HermitePrm* prm, Vec* out, u16* hist)
             // (gcse's pre_insert_copies shape); a plain copy is coalesced by regmove. The r0 pin plus
             // the codeless use in the error arm keep m live past the compare, so combine cannot fold
             // the copy and regmove's forward scan stops at the branch (COMPILER-DIFF: gcse copy kept).
+            #ifdef RE4_PORT
+            int m = n - 1;   // portage : epinglage sur r0, sans objet hors PowerPC
+            #else
             register int m asm("r0") = n - 1;
+            #endif
             last = m;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : : "r"(last));                    // COMPILER-DIFF: last must outrank n for r30
+            #endif
             if (idx > m) {
+                #ifdef RE4_PORT
+                // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                // operandes contraignaient l ordonnancement du compilateur d origine
+                #else
                 asm("" : : "r"(m));                   // COMPILER-DIFF: keep-alive for the r0 temp
+                #endif
                 pLog->err(0, 0, "H.I.(): axis=%d, hist=%d nFrm=%d, Invalid key history.", axis, idx, n);
                 idx = 0;
                 ret = 1;
             }
         }
         if (cnt != 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(idx));  // COMPILER-DIFF: the table lis is issued before the fp init
+            #endif
             u16* fp = (u16*) (idx * 2 + (u32) frames);
 
             do {

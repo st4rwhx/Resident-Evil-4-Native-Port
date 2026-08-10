@@ -325,7 +325,11 @@ int retry_load_menu(OptionScreen* o)
 {
     static int yes = 0;
     static u32 snd_id = 0;
+    #ifdef RE4_PORT
+    int old = o->sub;   // portage : epinglage sur r29, sans objet hors PowerPC
+    #else
     register int old asm("r29") = o->sub;  // COMPILER-DIFF: o must outrank old for r31
+    #endif
     int confirm = 0;
     IdUnit* base;
     IdUnit* u;
@@ -678,7 +682,12 @@ int controller_menu(OptionScreen* o)
         uns->col0[2] = off->col0[2];
         uns->col0[3] = off->col0[3];
     }
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : : "r"(sel));  // COMPILER-DIFF: candidate (global.c allocno order: sel 29/338 must outrank o 42/600 for r31)
+    #endif
     if ((s32) pSys->flags < 0) {
         IdSys.unitPtr(0xA, ID_OPT)->flags |= 8;
         IdSys.unitPtr(0xB, ID_OPT)->flags &= ~8;
@@ -758,12 +767,20 @@ int brightness_menu(OptionScreen* o)
             {
                 // COMPILER-DIFF: candidate (global alloc order): pSys must be allocated after DEFAULT
                 // (target r10/r11; ours has pSys 4 refs/18 = 0.444 > DEFAULT 3/9 = 0.333).
+                #ifdef RE4_PORT
+                SystemWork* s = pSys;   // portage : epinglage sur r10, sans objet hors PowerPC
+                #else
                 register SystemWork* s asm("r10") = pSys;
+                #endif
 
                 if (s->brightness < DEFAULT + MIN_OFS) {
                     // COMPILER-DIFF: candidate (local-alloc qty order): the byte-narrowed DEFAULT must take
                     // r9 (D dies into the sum) so the two `stb r9,0xa(r10)` tails cross-jump.
+                    #ifdef RE4_PORT
+                    u8 d = DEFAULT;   // portage : epinglage sur r9, sans objet hors PowerPC
+                    #else
                     register u8 d asm("r9") = DEFAULT;
+                    #endif
                     s->brightness = d + MIN_OFS;
                 } else {
                     n = s->brightness;

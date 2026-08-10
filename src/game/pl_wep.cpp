@@ -756,8 +756,16 @@ cModel* searchLockEm(Vec* pos, cModel* skip_, f32 range_)
     // COMPILER-DIFF: candidate (global-alloc order): skip r30 / range f30 pins; a plain `skip` copy
     // ranks below `i`/`pos` here (ours r28, target r30). `best`/`i` cannot be pinned: a hard-reg
     // `best` stops cse from reusing its zero for the loop entry test (`cmplw best,nArray`).
+    #ifdef RE4_PORT
+    cModel* skip = skip_;   // portage : epinglage sur r30, sans objet hors PowerPC
+    #else
     register cModel* skip asm("r30") = skip_;
+    #endif
+    #ifdef RE4_PORT
+    f32 range = range_;   // portage : epinglage sur fr30, sans objet hors PowerPC
+    #else
     register f32 range asm("fr30") = range_;
+    #endif
     cEm* best = 0;
     f32 bestD = 1000000000000.0f;
     u32 i;
@@ -785,7 +793,12 @@ cModel* searchLockEm(Vec* pos, cModel* skip_, f32 range_)
     }
     // COMPILER-DIFF: candidate (global-alloc priority): one more ref of `best` (7 -> 8, floor_log2 2 -> 3)
     // ranks it above the hoisted `&EmMgr` pointer (target best r27, EmMgr r26).
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : : "r"(best));
+    #endif
     return best;
 }
 
@@ -995,7 +1008,12 @@ void PlWepLockCtrl(cModel* plm)
         if (pl->x400 > lim) {
             // COMPILER-DIFF: candidate (alias): the target reloads repCtr in the shared `rot.y -=`
             // else-arm below (`lfs f12,repCtr`), ours kept the value loaded for the yaw stick step.
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(repCtr));
+            #endif
             pl->x400 = lim;
             if (Joy[0].on & 1) {
                 pl->rot.y += 0.039269908f;
@@ -1020,7 +1038,12 @@ rand:
         // load (both prio 4, weight 0, so RTL order decides); a laundered local puts the constant's
         // load first and keeps cse from folding it back into the compare.
         f32 z = 0.0f;
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "+f"(z));
+        #endif
         m3r[1] = tmp;
         if (m3r[2] == z) {
             m3r[0] = tmp;
@@ -1085,12 +1108,21 @@ void PlWepAutoTrack(cModel* plm, int mode, f32 rate)
     f32 d;
     f32 e;
     f32 na = 0.20943952f;  // function-scope, dead initialiser: puts 12deg before 400.0f in the pool (target 0x178)
+    #ifdef RE4_PORT
+    s16 hm;   // portage : epinglage sur r4, sans objet hors PowerPC
+    #else
     register s16 hm asm("r4"); // COMPILER-DIFF: #8
+    #endif
 
     // COMPILER-DIFF: #8 -- the original ranks `mr r29,r4` (mode) after `fmr f31,f1`, i.e. as if r4
     // did not die at the copy; the HImode read of r4 keeps it live past the copy (regmove only moves
     // the death when the dying mode matches the copy's), see docs/matching.md #8.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(pl->x400) : "r"(hm));
+    #endif
     if (pl->pLockEm == 0) {
         return;
     }
@@ -1194,7 +1226,11 @@ void PlSetLockPitch(cModel* plm)
         // COMPILER-DIFF: 13 (value pin): the target's 2/PI high sits in r11 and pWep in r9 -- the
         // original rematerialises the pool constant's high with a reload register that avoids the
         // live pWep; local-alloc here hands the shorter-lived high r9 first.
+        #ifdef RE4_PORT
+        cPlWep* w = pl->pWep;   // portage : epinglage sur r9, sans objet hors PowerPC
+        #else
         register cPlWep* w asm("r9") = pl->pWep;
+        #endif
         w->pitch = p;
     }
     p *= 2.0f / PI;
@@ -1203,7 +1239,12 @@ void PlSetLockPitch(cModel* plm)
         // barrier. Ours would be the `lis m3r` of the m3r[2] store's address, the target's order
         // (`lis 0.0; lis m3r; lfs z; addi`) is what the ready list gives when the barrier insn
         // emits no code.
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : : "f"(p));
+        #endif
         m3r[2] = 0.0f;
         m3r[1] = p;
         m3r[0] = m3r[1] * m3r[2] + m3r[1];

@@ -11,8 +11,20 @@
 // (equal priority, equal register weight, LUID tie-break) always issue the int immediates first.
 // The GPR and FPR argument registers are assigned independently by the SysV ABI, so declaring the
 // same symbol with the float parameters first gives exactly that move order (see docs/matching.md).
+#ifdef RE4_PORT
+// Portage : l'astuce consiste a redeclarer cAtariInfo::init sous son nom mange par le
+// compilateur d'origine, avec les flottants en tete, pour obtenir son ordre de chargement des
+// registres. clang mange les noms autrement et le symbole n'existerait pas : on appelle donc
+// simplement la methode. L'ordre des arguments machine n'a plus aucune importance ici.
+static inline void atariInitF(cAtariInfo* at, f32 x, f32 y, f32 z, f32 rx, f32 rz, f32 w, f32 h,
+                              int parts, int flags, int cnt)
+{
+    at->init(parts, flags, cnt, x, y, z, rx, rz, w, h);
+}
+#else
 void atariInitF(cAtariInfo* at, f32 x, f32 y, f32 z, f32 rx, f32 rz, f32 w, f32 h, int parts, int flags,
                 int cnt) asm("init__10cAtariInfoiiifffffff");
+#endif
 
 // Float constants must reach the call as pseudos (cse then shares the 0.0 with the `pos = 0`
 // stores that follow, and the 1000.0 load gets the longer dependence chain the original schedules

@@ -49,7 +49,12 @@ int IdTexDataLoad(void* data, int id)
 
     // The table offsets live in r9/r11 (BASE_REGS): the base is an integer, not the pointer parameter.
     // The empty asm keeps cse from folding `addr` back into `data`'s pointer-flagged pseudo.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+r"(addr));
+    #endif
     d = (IdTexData*) addr;
     if (d->version != 0xB) {
         pLog->err(0, 0, "IdDataLoad():EffData [0x%x] Invalid.", addr);
@@ -86,7 +91,12 @@ void IdTexSet(u8 id, u8 no)
     // difference); the empty asm hides the incoming promotion from combine (emobj setYarare).
     int n = no;
 
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+r"(n));
+    #endif
     if (g_pIdTexSys->GetTexObj(id, (u8) n, &tex) == 0) {
         pLog->err(0, 0, "IdTexSet: TexId[%x] no data", id);
         return;

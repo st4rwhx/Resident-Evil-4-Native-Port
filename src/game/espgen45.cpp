@@ -102,7 +102,14 @@ void Espgen45_static_init()
 // the pos/cur address adds before the noise lbzx and the neighbour loads after it in the target's loop A.
 // Loads straight into the destination variable (no statement-expression temp): the target's `psq_l f10; fsubs f10,f10`
 // is one pseudo, the function-level `n`.
+#ifdef RE4_PORT
+// Portage : `psq_l ...,1,2` est une lecture **dequantifiee** par le registre GQR2. Or main.cpp
+// programme GQR2 a 0x00040004 : type 4 (u8), exposant d'echelle 0. L'instruction se reduit donc
+// exactement a une conversion u8 -> f32, ce que la ligne ci-dessous fait sans ambiguite.
+#define PSQ_L_U8_TO(dst, p) ((dst) = (f32) *(p))
+#else
 #define PSQ_L_U8_TO(dst, p) asm volatile("psq_l %0,0(%1),1,2" : "=f"(dst) : "b"(p), "m"(*(p)))
+#endif
 
 // Bump texture (I8, 8x4 tiles) index of grid point (x, y). x/8 before y/4 (the two signed divisions are
 // separate blocks, so their order is the source order) and `(y / 4) << 5`: with `* 32` fold would
@@ -319,7 +326,12 @@ void Espgen45_Move00(EspgenWork* w)
         for (i = 1; i < p->ny; i++) {
             k = i * (p->nx + 1);
             for (j = 1; j < p->nx; j++) {
+                #ifdef RE4_PORT
+                // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                // operandes contraignaient l ordonnancement du compilateur d origine
+                #else
                 asm("" : "=r"(dead) : "r"(i));
+                #endif
                 j7 = j & 7;
                 nz = (((i) << 6) & 0xB00) + (((j) << 2) & 0xA0) + (((i) & 3) << 3) + j7;   // NOISE_INDEX with the shared j7
                 nz = noise[nz];   // same variable: `lbzx r0,noise,r0; xoris r0` (see loop A)
@@ -359,7 +371,11 @@ void Espgen45_Move00(EspgenWork* w)
                     // COMPILER-DIFF: candidate #17 (r0 occupant): `j / 8` pinned to r0 = a hard-register conflict of the i
                     // copy `t_i` with r0 during the i-division blocks, so global.c's preference override skips r0 and t_i
                     // takes r9 (the target's `mr r9,i`); jq's shift then inherits r0 (`slwi r0,r0,5`).
+                    #ifdef RE4_PORT
+                    int jq = j / 8;   // portage : epinglage sur r0, sans objet hors PowerPC
+                    #else
                     register int jq asm("r0") = j / 8;
+                    #endif
                     jx = (i / 4) << 5;
                     mx = p->nx;
                     // COMPILER-DIFF: candidate (sched1 slot fillers). Three codeless frame stores of `v` (dead after the
@@ -369,9 +385,24 @@ void Espgen45_Move00(EspgenWork* w)
                     // it can take r10), the j loadaddr lives longer than the byte (byte r11, loadaddr r8) and `xoris j` is
                     // issued after the first index `add` (jq32 and the xoris share r0). Without them the loadaddr is issued
                     // at t2 and the xoris before the add: 49 words in the Z block. What the original had there is unknown.
+                    #ifdef RE4_PORT
+                    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                    // operandes contraignaient l ordonnancement du compilateur d origine
+                    #else
                     asm("" : "=m"(v.x) : "r"(jx));
+                    #endif
+                    #ifdef RE4_PORT
+                    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                    // operandes contraignaient l ordonnancement du compilateur d origine
+                    #else
                     asm("" : "=m"(v.y) : "r"(jx));
+                    #endif
+                    #ifdef RE4_PORT
+                    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                    // operandes contraignaient l ordonnancement du compilateur d origine
+                    #else
                     asm("" : "=m"(v.z) : "r"(jx));
+                    #endif
                     p->bump[jx * ((mx + 1) >> 3) + (jq << 5) + ((i & 3) << 3) + j7] = (u8) (nrm[k].x * 255.0f * 2.0f + 128.0f);
                 }
                 nrm[k].x += ((f32) j - (f32) (p->nx / 2)) * (1.0f / (f32) (int) p->nx);
@@ -379,7 +410,12 @@ void Espgen45_Move00(EspgenWork* w)
                 nk->y *= 0.25f;
                 k++;
             }
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : : "r"(dead));   // COMPILER-DIFF: use of the moved asm set (see above); emits nothing
+            #endif
         }
     }
     {

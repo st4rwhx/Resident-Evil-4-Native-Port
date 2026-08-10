@@ -1588,7 +1588,12 @@ void cItemMgr::construct(ItemWork* p, u16 id)
             break;
         default:
             LV_SET(p, 0, 0, 0, 0);
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile("");
+            #endif
             break;
         }
         p->x8 = BULLET(p);
@@ -1957,68 +1962,123 @@ int cItemMgr::use(ItemWork* p)
             }
         }
         if (ok == 0 && hp == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     }
     case 0x08:
         if (healing(400) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x09:
         if (healing(800) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x0A:
         if (healing(2400) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x05:
         if (healing(2400) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x95:
         if (healing(900) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x97:
         if (healing(2400) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x06:
         if (healing(600) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x12:
         if (healing(1300) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x13:
         if (healing(2400) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
     case 0x14:
         if (healing(2400) == 0) {
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile(""); // COMPILER-DIFF: 6 (layout: keeps the healing arms apart at jump2)
+            #endif
             goto ng;
         }
         break;
@@ -2235,7 +2295,11 @@ int cItemMgr::combine(ItemWork* a, ItemWork* b, int flag)
                     }
                     a->x8 = (inv << 13) | (n & 0x1FFF);
                     {
+                        #ifdef RE4_PORT
+                        ItemWork* arm;   // portage : epinglage sur r0, sans objet hors PowerPC
+                        #else
                         register ItemWork* arm asm("r0"); // COMPILER-DIFF: 17 (local-alloc fake-lifetime parity: the pArm load reuses r0 right after the x8 store's value dies)
+                        #endif
 
                         arm = pArm;
                         if (a == arm) {
@@ -2275,7 +2339,11 @@ int cItemMgr::combine(ItemWork* a, ItemWork* b, int flag)
                     }
                     b->x8 = (inv << 13) | (n & 0x1FFF);
                     {
+                        #ifdef RE4_PORT
+                        ItemWork* arm;   // portage : epinglage sur r0, sans objet hors PowerPC
+                        #else
                         register ItemWork* arm asm("r0"); // COMPILER-DIFF: 17 (local-alloc fake-lifetime parity: the pArm load reuses r0 right after the x8 store's value dies)
+                        #endif
 
                         arm = pArm;
                         if (b == arm) {
@@ -2569,9 +2637,18 @@ int cItemMgr::trigger()
     case 3:
     case 6: {
         ItemWork* p = pArm;
+        #ifdef RE4_PORT
+        int id;   // portage : epinglage sur r9, sans objet hors PowerPC
+        #else
         register int id asm("r9"); // COMPILER-DIFF: #2 (the original masks the u16 member before the call)
+        #endif
         id = armId;
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "+r"(id));
+        #endif
 
         if (p->flags == 0 || id != p->id) {
             p = minimumSearch((u16) id);
@@ -2775,7 +2852,11 @@ void cItemMgr::save(void* dst)
     for (i = 0; i < nItems; i++, p++) {
         memclr_asm(&s[i], sizeof(ItemSaveWork));
         if (itemEmpty(p)) {
+            #ifdef RE4_PORT
+            int m1;   // portage : epinglage sur r0, sans objet hors PowerPC
+            #else
             register int m1 asm("r0"); // COMPILER-DIFF: #13 (the 0xFFFF re-materialised at the store)
+            #endif
             m1 = -1;
             s[i].id = m1;
         } else {

@@ -9,15 +9,25 @@ f32 asinf(f32 x);
 f32 acosf(f32 x);
 void* memcpy(void* dst, const void* src, unsigned int n);
 int printf(const char* fmt, ...);
+#ifdef RE4_PORT
+#include <cstdio>
+#else
 int fprintf(void* fp, const char* fmt, ...);
+#endif
 struct ReentStd {
     int _errno;
     void* _stdin;
     void* _stdout;
     void* _stderr;
 };
+#ifdef RE4_PORT
+// Portage : la libc de ProDG n'est plus liee (elle remplacait celle de la plateforme pour tout
+// le processus, voir port/build_game.py). `stderr` vient donc de <cstdio>, et ces deux appels
+// a fprintf servent uniquement a signaler une matrice non inversible.
+#else
 extern ReentStd* _impure_ptr;
 #define stderr (_impure_ptr->_stderr)
+#endif
 
 }
 
@@ -663,6 +673,16 @@ f32 SQRTF(f32 x)
     if (x <= 0.00001f) {
         return 0.0f;
     }
+#ifdef RE4_PORT
+    // Portage : l'original part de `frsqrte` (une estimation materielle de 1/sqrt lue dans une
+    // table du Gekko) et fait **un** pas de Newton. On ne peut pas reproduire cette table, et
+    // l'imiter donnerait une valeur differente sans etre plus fidele. La racine exacte du
+    // materiel ARM est plus precise que l'approximation d'origine, jamais moins : le sens de
+    // l'ecart est connu et borne par la precision de `frsqrte` (environ 1/4096).
+    r = __builtin_sqrtf(x);
+    (void) half;
+    (void) three;
+#else
     asm("frsqrte 2, %1\n\t"
         "fmuls 3, 2, 2\n\t"
         "fmuls 4, 2, %2\n\t"
@@ -672,6 +692,7 @@ f32 SQRTF(f32 x)
         : "=f"(r)
         : "f"(x), "f"(half), "f"(three)
         : "fr2", "fr3", "fr4");
+#endif
     return r;
 }
 
@@ -717,6 +738,28 @@ f32 SINF(f32 x)
     f32 r;
 
     x = LIMIT_ANGLE(x);
+#ifdef RE4_PORT
+    // Portage : transcription de la serie en paired-single. Les registres portaient deux
+    // voies : f2 = (x, x^2), et a chaque tour f3 est multiplie par sa voie haute (x^2), donc
+    // la voie basse accumule les puissances impaires et la voie haute les paires. Le
+    // `ps_sum0` final additionne les deux voies. D'ou, terme a terme :
+    //     Coeff[2k] * x^(2k+1)  +  Coeff[2k+1] * x^(2k+2),   k = 0..4
+    // Les coefficients pairs sont minuscules (~1e-06) : ce sont les corrections d'erreur de
+    // la serie de Taylor, et les omettre changerait le resultat au 6e chiffre.
+    {
+        const f32 x2 = x * x;
+        f32 pow_odd = x;      /* x^(2k+1) */
+        f32 pow_even = x2;    /* x^(2k+2) */
+        f32 acc = 0.0f;
+        int k;
+        for (k = 0; k < 5; ++k) {
+            acc += Coeff[2 * k] * pow_odd + Coeff[2 * k + 1] * pow_even;
+            pow_odd *= x2;
+            pow_even *= x2;
+        }
+        r = acc;
+    }
+#else
     asm volatile(
         "lis 9, Coeff@ha\n\t"
         "li 10, powx@sda21\n\t"
@@ -745,6 +788,7 @@ f32 SINF(f32 x)
         : "=f"(r)
         : "f"(x)
         : "r9", "r10", "r11", "fr2", "fr3", "fr4", "fr5");
+#endif
     return r;
 }
 
@@ -753,6 +797,28 @@ f32 COSF(f32 x)
     f32 r;
 
     x = LIMIT_ANGLE(x + 1.5707964f);
+#ifdef RE4_PORT
+    // Portage : transcription de la serie en paired-single. Les registres portaient deux
+    // voies : f2 = (x, x^2), et a chaque tour f3 est multiplie par sa voie haute (x^2), donc
+    // la voie basse accumule les puissances impaires et la voie haute les paires. Le
+    // `ps_sum0` final additionne les deux voies. D'ou, terme a terme :
+    //     Coeff[2k] * x^(2k+1)  +  Coeff[2k+1] * x^(2k+2),   k = 0..4
+    // Les coefficients pairs sont minuscules (~1e-06) : ce sont les corrections d'erreur de
+    // la serie de Taylor, et les omettre changerait le resultat au 6e chiffre.
+    {
+        const f32 x2 = x * x;
+        f32 pow_odd = x;      /* x^(2k+1) */
+        f32 pow_even = x2;    /* x^(2k+2) */
+        f32 acc = 0.0f;
+        int k;
+        for (k = 0; k < 5; ++k) {
+            acc += Coeff[2 * k] * pow_odd + Coeff[2 * k + 1] * pow_even;
+            pow_odd *= x2;
+            pow_even *= x2;
+        }
+        r = acc;
+    }
+#else
     asm volatile(
         "lis 9, Coeff@ha\n\t"
         "li 10, powx@sda21\n\t"
@@ -781,6 +847,7 @@ f32 COSF(f32 x)
         : "=f"(r)
         : "f"(x)
         : "r9", "r10", "r11", "fr2", "fr3", "fr4", "fr5");
+#endif
     return r;
 }
 
@@ -791,6 +858,20 @@ f32 LIMIT_ANGLE(f32 x)
     f32 max = PI;
     f32 step = PI2;
 
+#ifdef RE4_PORT
+    // Portage : la boucle d'origine ramene x dans [min, max) = [-PI, PI) par pas de 2*PI.
+    // Elle est transcrite telle quelle - et non remplacee par un fmodf - parce que le sens de
+    // l'arrondi aux bornes est exactement ce dont dependent les angles du jeu.
+    if (x >= max) {
+        do {
+            x -= step;
+        } while (x >= max);
+    } else if (x < min) {
+        do {
+            x += step;
+        } while (x < min);
+    }
+#else
     asm("fcmpu 0, %0, %2\n\t"
         "blt 1f\n"
         "0:\n\t"
@@ -809,5 +890,6 @@ f32 LIMIT_ANGLE(f32 x)
         : "+f"(x)
         : "f"(min), "f"(max), "f"(step)
         : "cr0");
+#endif
     return x;
 }

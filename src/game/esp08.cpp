@@ -8,6 +8,18 @@
 #include "tpl.h"
 #include "espgen.h"
 
+// Portage : ces deux ancres remplacent des blocs `asm("")` **vides**, qui n'emettaient aucune
+// instruction. Elles n'existaient que pour fixer l'ordre d'allocation des registres du
+// compilateur de 2001 a l'interieur du grand macro de pavage ci-dessous, ou un `#ifdef` par
+// site aurait ete illisible.
+#ifdef RE4_PORT
+#define ESP08_ANCHOR(v) ((void) (v))
+#define ESP08_KEEP(m, a, b) ((void) (a), (void) (b))
+#else
+#define ESP08_ANCHOR(v) asm("" : "+f"(v))
+#define ESP08_KEEP(m, a, b) asm("" : "=m"(m) : "f"(a), "f"(b))
+#endif
+
 // Scrolling-texture sprite (Esp08_Trans) and the heat-shimmer variant (Esp08_TransShimmer).
 struct Esp08Work {
     f32 rateX;     // 0x00 texture repeat along s (>= 1)
@@ -119,14 +131,14 @@ extern f32 ZFAR;
     tileW = sx / w->rateX;                                                                        \
     if (w->ofsX != 0.0f) {                                                                        \
         if (w->ofsY != 0.0f) {                                                                    \
-            x = x0; asm("" : "+f"(x)); /* COMPILER-DIFF: candidate (first-tile copy canon) */  \
-            y = y0; asm("" : "+f"(y));                                                            \
+            x = x0; ESP08_ANCHOR(x); /* COMPILER-DIFF: candidate (first-tile copy canon) */  \
+            y = y0; ESP08_ANCHOR(y);                                                            \
             y1 = y + tileH * w->ofsY;                                                             \
             x1 = x + tileW * w->ofsX;                                                             \
             st0 = t0 + dt * (1.0f - w->ofsY);                                                     \
             ss0 = s0 + ds * (1.0f - w->ofsX);                                                     \
-            st1 = t1; asm("" : "+f"(st1));                                                        \
-            ss1 = s1; asm("" : "+f"(ss1));                                                        \
+            st1 = t1; ESP08_ANCHOR(st1);                                                        \
+            ss1 = s1; ESP08_ANCHOR(ss1);                                                        \
             if (!ind) {                                                                           \
                 ESP08_QUAD(x, y, x1, y1, ss0, st0, ss1, st1)                                      \
             } else {                                                                              \
@@ -137,7 +149,7 @@ extern f32 ZFAR;
                     dv = w->ofsY / w->rateY; /* the divides are scheduled as in another block  */ \
                 } while (0);                                                                      \
                 ESP08_QUAD2(x0, y0, x1, y1, ss0, st0, s1, t1, cu, cv, cu + du, cv + dv)           \
-                asm("" : "=m"(inv[0][0]) : "f"(y), "f"(st1)); /* COMPILER-DIFF: candidate (keep-alive, global-alloc order) */ \
+                ESP08_KEEP(inv[0][0], y, st1); /* COMPILER-DIFF: candidate (keep-alive, global-alloc order) */ \
             }                                                                                     \
         }                                                                                         \
         y = y0 + tileH * w->ofsY;                                                                 \

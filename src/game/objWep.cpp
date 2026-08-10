@@ -324,7 +324,11 @@ void drawPoint(Vec* p0, Vec* p1)
         // COMPILER-DIFF: #17. `esp` is address-taken, so each store reloads it; the original's first
         // reload sits in r11 (r9 was still held by the previous reload at its sched1 position), ours
         // in r9. Pinned, no code emitted.
+        #ifdef RE4_PORT
+        cEsp* e;   // portage : epinglage sur r11, sans objet hors PowerPC
+        #else
         register cEsp* e asm("r11");
+        #endif
         e = esp;
         e->xA4 = 1;
         esp->xA5 = 4;

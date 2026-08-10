@@ -14,7 +14,15 @@ void YarareInitCube(cEm* em, s16 no, u16 flag, f32 x, f32 y, f32 z, f32 w, f32 h
 // cSatMgr::create(pos, rot, poly, attr, flag, h) with the `lfs h` argument move issued before the
 // `lwz attr/flag` moves (atari_init.h: GCC emits the moves in declaration order, the original
 // build issued the FP argument first).
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h,
+                                  int attr, int flag)
+{ return m->create(pos, rot, poly, attr, flag, h); }
+#else
 cSat* SatMgrCreateF(cSatMgr* m, Vec* pos, Vec* rot, Vec* poly, f32 h, int attr, int flag) asm("create__7cSatMgrP3VecN21iif");
+#endif
 
 void cEmObj::EmObjInit()
 {
@@ -175,10 +183,24 @@ void cEmObj::setYarare(s16 no, Vec* pos, u16 flag, int cube, f32 w, f32 h, f32 r
     // narrow-argument compiler difference). Ours does (combine's setup_incoming_promotions), so every
     // int/narrow/cast form folds the extensions away; the empty asms hide the promotion from combine
     // and `f` is pinned to flag's incoming r6 so the `ori` stays in place.
+    #ifdef RE4_PORT
+    int f = flag;   // portage : epinglage sur r6, sans objet hors PowerPC
+    #else
     register int f asm("r6") = flag;
+    #endif
     int n = no;
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+r"(n));
+    #endif
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+r"(f));
+    #endif
     f |= 1;
     if (cube == 0) {
         YarareInitCube(this, n, f, p.x, p.y, p.z, w, h, rad);

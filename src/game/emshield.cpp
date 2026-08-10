@@ -167,7 +167,12 @@ void cEmShield::beginEvent()
 // goes through a do-while(0) + void-returning alias: the loop notes give `&parts0->worldPos` a 5th
 // weighted ref (global-alloc priority above `w`: r26/r25) and the void result keeps `li r3,8`
 // ahead of the other argument `li`s inside the notes (u32 SndCall issues it last there).
+#ifdef RE4_PORT
+static inline void SndCallV(u16 blk, u16 no, Vec* pos, int id, int vol, cUnit* obj)
+{ SndCall(blk, no, pos, id, vol, obj); }
+#else
 void SndCallV(u16, u16, Vec*, int, int, cUnit*) asm("SndCall__FUsUsP3VeciiP5cUnit");
+#endif
 void emShieldDmCk(cEmShield* em)
 {
     EmShieldWork* w = EMSHIELD_WK(em);
@@ -738,14 +743,23 @@ void cEmShield::setFall(f32 gravity, Vec* spd)
     Mtx m;
     Vec v;
     u32 i;
+    #ifdef RE4_PORT
+    f64 hd;   // portage : epinglage sur fr1, sans objet hors PowerPC
+    #else
     register f64 hd asm("fr1"); // COMPILER-DIFF: #8
+    #endif
 
     pMotion = 0;
     // COMPILER-DIFF: #8 -- the original ranks `fmr f29,f1` as if f1 did not die at the copy. A DFmode
     // read of f1 after the copy keeps f1 live past it (regmove's optimize_reg_copy_1 only moves the
     // death when the dying mode matches the copy's SFmode); the "=m" output on a `this` field the
     // block does not touch keeps the codeless asm dependence-free.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(hp) : "f"(hd));
+    #endif
     for (i = 0; i < 3; i++) {
         if (spd) {
             f32 ang;

@@ -881,7 +881,12 @@ END:
     // COMPILER-DIFF: tie (global-alloc live length): x (4 refs / 216 insns) and z (2 / 54) both truncate
     // to priority 370 and the lower pseudo (x) took f30; the original allocated z first. One codeless
     // real insn inside x's range but past z's death makes it 217 -> 368.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(pos.x));
+    #endif
     if (x != 0.0f) {
         pPL->setPos(&wk->savePos);
         pPL->setAng(&wk->saveRot);

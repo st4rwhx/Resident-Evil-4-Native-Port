@@ -120,7 +120,13 @@ void Esp0a_Trans(cEsp0a* esp)
                     } else {
                         wpos = e.p->pos;
                     }
+                    #ifdef RE4_PORT
+                    // Portage : le compilateur d'origine acceptait la conversion implicite du
+                    // pointeur de fonction ; elle est explicite ici, sans rien changer d'autre.
+                    AddOtWorldPos(e.p, (void (*)(void*)) Esp0a_Trans2, &wpos, ot, 0.0f);
+#else
                     AddOtWorldPos(e.p, Esp0a_Trans2, &wpos, ot, 0.0f);
+#endif
                 }
                 if (!base->CommonMove()) {
                     break;

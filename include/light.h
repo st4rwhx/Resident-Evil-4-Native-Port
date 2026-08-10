@@ -308,7 +308,11 @@ public:
     // Every caller (cloth, espgen42/43/45) passes a light count in r5 that the body never reads:
     // the original declaration had a second parameter the definition lacks. Same trick as
     // dvd.h ReadCheckInfo.
+#ifdef RE4_PORT
+    void setClothN(cModel* m, int n) { (void) n; setCloth(m); }
+#else
     void setClothN(cModel* m, int n) asm("setCloth__9cLightMgrP6cModel");
+#endif
     void setEsp(EspLightList* list, u8 mask);
     int update(int area_no, int camera_no);
     int setThermo();

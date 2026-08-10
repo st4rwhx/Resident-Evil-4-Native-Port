@@ -97,7 +97,11 @@ void cActionButton::disp(ActBtnWork* w)
     int x;
     // COMPILER-DIFF: candidate (local-alloc order): `fontH / 2` is computed in the MesSet argument
     // register r6 in the target; here the third fpmem-address scratch copy (`mr r6,r10`) takes r6 first.
+    #ifdef RE4_PORT
+    int y;   // portage : epinglage sur r6, sans objet hors PowerPC
+    #else
     register int y asm("r6");
+    #endif
 
     if (w->flags & 0x80) {
         col = 7;
@@ -148,7 +152,11 @@ int cActionButton::checkButton(ActBtnWork* w)
     // that gets the pair left over after local-alloc gave the `key & ~mask` temp r9:r10; the target has
     // key in r9:r10 and the temp in r11:r12. With the pair fixed, the `or.` scratch alternates r0/r9 as
     // in the target, so the C/D leaves stay separate copies (their `or. r9` no longer matches `or. r0`).
+    #ifdef RE4_PORT
+    u64 key;   // portage : epinglage sur r9, sans objet hors PowerPC
+    #else
     register u64 key asm("r9");
+    #endif
     u32 flags;
 
     switch (w->btn) {
@@ -280,7 +288,12 @@ int cActionButton::checkButton(ActBtnWork* w)
         return 1;
     case 9:
         // COMPILER-DIFF: 6 (cross-jump): codeless real insn, see the header comment
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("");
+        #endif
         break;
     case 0xA:
         break;

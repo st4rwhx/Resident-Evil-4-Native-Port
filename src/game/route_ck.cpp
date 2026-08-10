@@ -414,7 +414,12 @@ f32 RouteCkPosToPosDis(Vec* from, Vec* to)
         // COMPILER-DIFF: candidate (reload_cse register table): the original keeps `mr r3,r31; mr r4,r29`
         // for the from/to arguments although r3/r4 still hold them since the entry copies; ours deletes
         // the two copies in reload_cse_regs. The volatile asm forgets the table (a label or call would too).
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("" : : : "memory");
+        #endif
         if (rckLineHitCheck(from, to, 0, 0) == 0) {
             PosToPos(&a, &b, &c, 0.5f);
             if (SatMgr.getFloor(&c, 600.0f, 100000.0f, NULL, 0) > c.y - 2000.0f) {

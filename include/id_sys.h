@@ -154,10 +154,19 @@ public:
     void unitParent(IdUnit* parent, IdUnit* child);
     IdUnit* unitPtr(u8 id, u8 type);
     // card.cpp passes `0x40 + i` without the `clrlwi` truncation: int view of the type parameter.
+#ifdef RE4_PORT
+    IdUnit* unitPtrI(u8 id, int type) { return unitPtr(id, (u8) type); }
+#else
     IdUnit* unitPtrI(u8 id, int type) asm("unitPtr__8IDSystemUcUc");
+#endif
     void set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode);
     // card.cpp passes `0x40 + i` without the `clrlwi` truncation: int view of the type parameter.
+#ifdef RE4_PORT
+    void setI(void* data, u8 id, int type, u8 ot, u8 prio, u8 mode)
+    { set(data, id, (u8) type, ot, prio, mode); }
+#else
     void setI(void* data, u8 id, int type, u8 ot, u8 prio, u8 mode) asm("set__8IDSystemPvUcUcUcUcUc");
+#endif
     void kill(u8 id, u8 type);
     // COMPILER-DIFF: item 4 (narrow-argument truncation). Sscrn IdNumErase passes `0x40 + i` without
     // the `clrlwi`: int view of the type parameter.
@@ -168,7 +177,12 @@ public:
     void setTime(IdUnit* u, u16 time);
     // option.cpp passes a sign-extended value (`extsh` before the call): the declaration it was
     // compiled against took a signed short. Same function, signed view of the parameter.
+#ifdef RE4_PORT
+    // Portage : alias sur le nom mange par le compilateur d'origine, qui n'existe plus ici.
+    void setTimeS(IdUnit* u, s16 time) { setTime(u, (u16) time); }
+#else
     void setTimeS(IdUnit* u, s16 time) asm("setTime__8IDSystemP6IdUnitUs");
+#endif
     void movePos(IdUnit* u);
     void trans();
     void unitTrans(IdUnit* u);

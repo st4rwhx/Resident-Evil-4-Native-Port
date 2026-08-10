@@ -293,16 +293,31 @@ void Esp09_PolyTrans(cEsp09* esp, u8 r, u8 g, u8 b, u8 a)
     s = &w->pts[idx];
     p = s;
     for (i = 0; i < n1; i++) {
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(d));  // COMPILER-DIFF: candidate (global-alloc priority): +1 insn in esp's range only
+        #endif
         p0 = p;
         idx--;
         pp = p;
         if (idx < 0) {
             idx = n1;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(d) : "r"(p), "r"(p));  // COMPILER-DIFF: candidate (global-alloc priority)
+            #endif
         }
         pn = &w->pts[idx];
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=r"(p) : "0"(pn));  // COMPILER-DIFF: candidate (cse canonical register): tied copy, regmove emits the mr
+        #endif
         rate = (f32)i / (f32)n1;
         half = (rate * esp->sizeY + (1.0f - rate) * esp->sizeX) * 0.1f;
         PSVECSubtract(pn, p0, &d);
@@ -331,7 +346,12 @@ void Esp09_PolyTrans(cEsp09* esp, u8 r, u8 g, u8 b, u8 a)
         if (first == 0) {
             PSVECAdd(pp, &q[0], &v[0]);
             PSVECAdd(pp, &q[1], &v[1]);
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(d) : "r"(pp), "r"(pp), "r"(pp), "r"(pp), "m"(v[1].x));  // COMPILER-DIFF: candidate (global-alloc priority)
+            #endif
             first = 1;
         } else {
             v[0] = v[3];

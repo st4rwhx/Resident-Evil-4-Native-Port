@@ -325,7 +325,13 @@ struct TOOL_WINDOW {
     // fp-relative pos stores: `mr r30,r3; stw r29,4(r30); stw rP,0(r30)`), yet the calls are `bl __builtin_new`. A class-scope
     // allocator bound to that symbol gives the same RTL: calls.c special_function_p sets is_malloc only for a DECL_CONTEXT ==
     // NULL_TREE decl, so no REG_NOALIAS note is put on the result copy and alias.c record_set leaves the pseudo's base 0.
+#ifdef RE4_PORT
+    // Portage : `__builtin_new` est le nom que ProDG donne a l operateur new global. Le portage
+    // le fournit (port/prodg_rt.cpp) ; ici il suffit de l allocateur ordinaire.
+    static void* operator new(decltype(sizeof(0)) n);
+#else
     static void* operator new(unsigned n) asm("__builtin_new");
+#endif
     DB_PRIM_ARRAY* pa;
     DB_WINDOW* win;
 };

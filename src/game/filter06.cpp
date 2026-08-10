@@ -128,14 +128,23 @@ void cParticle06::move()
     {
         // COMPILER-DIFF: #17. The alphaBase load/product live in r11 in the original (the fast-cast
         // address pseudo of `(u8) a` took r9 first); ours gives them r9. Pinned, no code emitted.
+        #ifdef RE4_PORT
+        int ab;   // portage : epinglage sur r11, sans objet hors PowerPC
+        #else
         register int ab asm("r11");
+        #endif
         ab = alphaBase;
         v = (ab * (u8) a) >> 8;
     }
     // the original re-reads `alpha` masked (`clrlwi rX, rStore, 24`) with the `&flt06` pair issued
     // after the store; ours knows the product fits in 8 bits and folds the mask -- the volatile asm
     // hides the range from combine and keeps the address pair below the product (emobj setYarare)
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm volatile("" : "+r"(v));
+    #endif
     alpha = v;
     v = ((u32) alpha * flt06.cur[3]) >> 8;
     alpha = v;

@@ -147,7 +147,11 @@ extern "C" void Esp16_Trans(cEsp16* esp)
     f32 s1;
     f32 rate;
     f32 half;
+    #ifdef RE4_PORT
+    f32 z;   // portage : epinglage sur fr12, sans objet hors PowerPC
+    #else
     register f32 z asm("fr12"); // COMPILER-DIFF: #13
+    #endif
 
     if (esp->cnt < w->nPt) {
         n = esp->cnt + 1;

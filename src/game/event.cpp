@@ -334,7 +334,12 @@ int Event::Run()
         // compare); a volatile ASM_OPERANDS between the copy and the compare is what stops our
         // combine (an operand-less `asm volatile("")` is an ASM_INPUT and does not), and the dead
         // `wait == 1` test below gives `wait` a mention beyond the block so cse keeps it canonical.
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("" : : "r"(wait));
+        #endif
         if (wait > 0) {
             goto func;
         }
@@ -1985,9 +1990,23 @@ int Event::GetMod(void** mod, char* nm, u8* type, int* wkNo)
     } else if (datTbl.GetDat(&m, &t, nm, &no) == 0) {
     err:
         {
+            #ifdef RE4_PORT
+            int pin;   // portage : epinglage sur r27, sans objet hors PowerPC
+            #else
             register int pin asm("r27"); // COMPILER-DIFF: #17
+            #endif
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile("" : "=r"(pin));
+            #endif
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm volatile("" : : "r"(pin));
+            #endif
         }
         pLog->err(0, 0, "Event::GetMod : mod failed[%s]", nm);
         return 0;
@@ -1996,9 +2015,23 @@ int Event::GetMod(void** mod, char* nm, u8* type, int* wkNo)
         // COMPILER-DIFF: #17. r27 was used-so-far in the original's global-alloc pass 0 and
         // conflicted with nm (err block) and type/wkNo/mod (tail) but not with `this`, which
         // therefore took r27 while mod fell to r28. No code is emitted.
+        #ifdef RE4_PORT
+        int pin;   // portage : epinglage sur r27, sans objet hors PowerPC
+        #else
         register int pin asm("r27");
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("" : "=r"(pin));
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("" : : "r"(pin));
+        #endif
     }
     if (type != 0) {
         *type = t;
@@ -2006,7 +2039,12 @@ int Event::GetMod(void** mod, char* nm, u8* type, int* wkNo)
     // COMPILER-DIFF: #17 (companion). A codeless memory-operand asm = one more real insn inside the
     // wkNo compare's live range only, so the type compare (equal length, lower pseudo) is allocated
     // first and takes cr4 as in the original; a register-tied asm here is deleted as dead.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+m"(no));
+    #endif
     if (wkNo != 0) {
         *wkNo = no;
     }

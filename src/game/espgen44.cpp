@@ -19,11 +19,25 @@ void Espgen44_Trans(EspgenWork* w)
 // Filter05SetParam with all-immediate arguments: the original issues the FPR argument copies
 // interleaved before the trailing `li`s (`fmr f2; li r7; fmr f3; li r8; li r9`), which GCC 2.95
 // only produces when the float parameters are declared first (atari_init.h idiom).
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline void Filter05SetParamF(f32 x, f32 y, f32 z, int a, int b, int c, int d,
+                                     int e, int f, int g)
+{ Filter05SetParam(a, b, c, d, e, f, g, x, y, z); }
+#else
 void Filter05SetParamF(f32 x, f32 y, f32 z, int a, int b, int c, int d, int e, int f, int g) asm("Filter05SetParam__Fiiiiiiifff");
+#endif
 // Same call with loaded arguments (Espgen44_SetFreeWork): there the original's move order is the
 // five leading ints, the three floats, then the two trailing ints (`lbz r9` early, `lfs f1` after
 // `lbz r7`, `lbz r8` last) — a per-call-site interleaving (the only one of 7 tried that matches).
+#ifdef RE4_PORT
+static inline void Filter05SetParamM(int a, int b, int c, int d, int e, f32 x, f32 y, f32 z,
+                                     int f, int g)
+{ Filter05SetParam(a, b, c, d, e, f, g, x, y, z); }
+#else
 void Filter05SetParamM(int a, int b, int c, int d, int e, f32 x, f32 y, f32 z, int f, int g) asm("Filter05SetParam__Fiiiiiiifff");
+#endif
 
 void Espgen44_Destruct(EspgenWork* w)
 {

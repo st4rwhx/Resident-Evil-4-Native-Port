@@ -36,7 +36,12 @@ public:
 // COMPILER-DIFF: item 4. Int views of the u8 id / type parameters (no `clrlwi` at the calls).
 class IDSystemN : public IDSystem {
 public:
+#ifdef RE4_PORT
+    // Portage : vue int des parametres u8, sans passer par le nom mange.
+    IdUnit* unitPtrN(int id, int type) { return unitPtr((u8) id, (u8) type); }
+#else
     IdUnit* unitPtrN(int id, int type) asm("unitPtr__8IDSystemUcUc");
+#endif
 };
 #define IdSubN (*(IDSystemN*) &IdSub)
 #define IdNumN (*(IDSystemN*) &IdNum)

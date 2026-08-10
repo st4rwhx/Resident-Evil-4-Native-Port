@@ -58,7 +58,14 @@ void pl_R1_BoatDrive(cPlayer* pl);
 void Pl_R0_Damage(cPlayer* pl);   // game/pl_dmg.cpp
 void Pl_R0_Die(cPlayer* pl);
 // cSubChar::registPlAction(Vec*, f32) (pl_npc.h) called with an extra `li r5, 0` the original passes.
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline void SubCharRegistPlAction(cSubChar* sub, Vec* pos, int a, f32 ang)
+{ (void) a; sub->registPlAction(pos, ang); }
+#else
 void SubCharRegistPlAction(cSubChar* sub, Vec* pos, int a, f32 ang) asm("registPlAction__8cSubCharP3Vecf");
+#endif
 
 #line 41 "D:/Bio4/Prog/player.cpp"
 #define PL_MEM_ALLOC(size, line) mem_alloc(size, __FILE__, line, 1, 13)

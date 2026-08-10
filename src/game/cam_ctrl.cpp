@@ -409,8 +409,17 @@ int cameraHitCheck(Vec* pos, Vec* nrm, Vec* from, Vec* to)
         // COMPILER-DIFF: register pin (r29) plus launder. The pin keeps `at` out of cse's canonical class
         // (hard regs go last), so the copy loop's address is the `this` temporary; the launder gives `at` a
         // second set so the `at = this` copy is not propagated into the later field accesses.
+        #ifdef RE4_PORT
+        cAtariInfo* at = &atBuf;   // portage : epinglage sur r29, sans objet hors PowerPC
+        #else
         register cAtariInfo* at asm("r29") = &atBuf;
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "+r"(at));
+        #endif
         cModel* parts;
         Vec w;
 
@@ -543,7 +552,11 @@ void CameraControl::switchCamera(CameraAreaRec* rec)
     CameraCut* cut = rec->cut;
     CameraLerp* lerp = NULL;
     CameraDataHeader* d;
+    #ifdef RE4_PORT
+    int i;   // portage : epinglage sur r11, sans objet hors PowerPC
+    #else
     register int i asm("r11");  // COMPILER-DIFF: loop counter r11 / pointer r10 (global allocates `r` first in ours: 14 refs/28 insns vs `i` 16/64)
+    #endif
     CameraAreaRec* r;
     int size;
 
@@ -1877,7 +1890,12 @@ void CameraControl::r0_Free()
         {
             int st = x36;
 
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "+r"(st));  // COMPILER-DIFF 2: the original zero-extends the loaded byte again
+            #endif
             switch ((u8) st) {
             case 0:
                 if (JoyTrg(joy, 0x200) || JoyOn(joy, 0x200) || JoyOn(joy, 0x20)) {

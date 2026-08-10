@@ -91,13 +91,21 @@ public:
     void construct(ItemWork* out, u16 id);  // fill a slot template for item `id` (puzzle PutInCase)
     // get() passes its int id without the `clrlwi 16` the u16 parameter would get: the original
     // build did not narrow it. Same function, int view of the parameter.
+#ifdef RE4_PORT
+    void constructI(ItemWork* out, int id) { construct(out, (u16) id); }
+#else
     void constructI(ItemWork* out, int id) asm("construct__8cItemMgrP8ItemWorkUs");
+#endif
     ItemWork* at(int no);       // 0x8001DB5C: slot `no` of pItems, NULL when no >= nItems
     int searchAt(ItemWork* p);  // 0x8001DB80: slot index of `p`, -1 if not in pItems
     int makeItemList(u8* list, int all, s8* pNum, s8* pNum2);
     ItemWork* search(u16 id);   // 0x8001DED0: the in-use slot of this->type holding `id`, NULL if none
     // dump(int)/debugWeapon pass their int id without the `clrlwi 16` (original build). Same function.
+#ifdef RE4_PORT
+    ItemWork* searchI(int id) { return search((u16) id); }
+#else
     ItemWork* searchI(int id) asm("search__8cItemMgrUs");
+#endif
     ItemWork* minimumSearch(u16 id);
     void ordering(u16 id);      // 0x8001DFD0: collect the in-use slots holding `id` into pOrder (qsort by order_cmp)
     int get(int id, int num);
@@ -129,10 +137,18 @@ public:
     u16 bulletNum();            // 0x8001FC20: bulletNumCurrent() of the equipped weapon
     u32 bulletNumCurrent();     // 0x8001FC40
     // bulletNum() returns it without the `clrlwi 16` (original build). Same function, u16 view.
+#ifdef RE4_PORT
+    u16 bulletNumCurrentS() { return (u16) bulletNumCurrent(); }
+#else
     u16 bulletNumCurrentS() asm("bulletNumCurrent__8cItemMgr");
+#endif
     // COMPILER-DIFF: 4 (bulletNumTotal assigns num()'s int result to a u16 total without the
     // `clrlwi 16` the int -> u16 conversion gives us). Same function, u16 view.
+#ifdef RE4_PORT
+    u16 numS(int id) { return (u16) num(id); }
+#else
     u16 numS(int id) asm("num__8cItemMgri");
+#endif
     int bulletNum(u16 id);
     int bulletNum(ItemWork* p);
     int saveDataSize();

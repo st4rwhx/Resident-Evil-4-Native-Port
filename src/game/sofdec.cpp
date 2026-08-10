@@ -17,7 +17,12 @@ void DCFlushRangeNoSync(void* addr, u32 nBytes);
 void OSReport(const char* fmt, ...);
 int sprintf(char* dst, const char* fmt, ...);
 char* strcpy(char* dst, const char* src);
+#ifdef RE4_PORT
+// Portage : `u32` est `unsigned long`, distinct de `size_t` meme quand les deux font 32 bits ;
+// la declaration du prelude fait alors foi et celle-ci deviendrait un conflit.
+#else
 void* memset(void* dst, int c, u32 n);
+#endif
 }
 
 // CodeWarrior MSL math.h float constants, defined by the CRI headers for this compiler.

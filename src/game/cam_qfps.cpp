@@ -1136,8 +1136,16 @@ void CameraQuasiFPS::init()
     // u8&/s16& setters would copy a hard register into a pseudo) plus one codeless keep-alive
     // at the block end so no store has a dying source.
     int one;
+    #ifdef RE4_PORT
+    int two;   // portage : epinglage sur r8, sans objet hors PowerPC
+    #else
     register int two asm("r8");    // COMPILER-DIFF: #13 (value pin)
+    #endif
+    #ifdef RE4_PORT
+    int zero;   // portage : epinglage sur r7, sans objet hors PowerPC
+    #else
     register int zero asm("r7");   // COMPILER-DIFF: #13 (value pin)
+    #endif
     f32 fz;
     u32 fl;
     one = 1;
@@ -1155,7 +1163,12 @@ void CameraQuasiFPS::init()
     FSet(angle_y, fz);
     FSet(angle_x, fz);
     { s16& r_ = search_count; r_ = zero; }
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(floor_ratio) : "r"(one), "r"(two), "r"(zero), "f"(fz), "r"(fl));  // COMPILER-DIFF: #13 (keep-alive)
+    #endif
     if (pPL) {
         setPlayerLocation(pPL->mat, pPL->pFloorNrm);
     }

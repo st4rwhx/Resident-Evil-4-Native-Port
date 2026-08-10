@@ -182,7 +182,12 @@ void dispSaveInfo(int no, SaveInfo* info, u8 type, int broken);
 // parameter gets): int view of ScreenReSize.
 extern "C" void ScreenReSizeI(int w, int h) asm("ScreenReSize");
 // CardID::updateSaveInfo passes `0x40 + i` without the `clrlwi` truncation: int view of `type`.
+#ifdef RE4_PORT
+static inline void dispSaveInfoI(int no, SaveInfo* info, int type, int broken)
+{ dispSaveInfo(no, info, (u8) type, broken); }
+#else
 void dispSaveInfoI(int no, SaveInfo* info, int type, int broken) asm("dispSaveInfo__FiP8SaveInfoUci");
+#endif
 
 int isDbgInfoAlloc = 0;
 static int isDbgInfoCached = 0;

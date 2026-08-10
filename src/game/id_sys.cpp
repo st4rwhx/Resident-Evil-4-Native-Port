@@ -80,14 +80,22 @@ void IDSystem::free()
 
 int IDSystem::setCk(u8 type)
 {
+    #ifdef RE4_PORT
+    int raw;   // portage : epinglage sur r4, sans objet hors PowerPC
+    #else
     register int raw asm("r4");  // COMPILER-DIFF: #2 (the original masks the incoming u8 at the entry)
+    #endif
     u8 t = raw;
     return IdBitChk(ck, t);
 }
 
 void IDSystem::dispSw(u8 type, int sw)
 {
+    #ifdef RE4_PORT
+    int r4v;   // portage : epinglage sur r4, sans objet hors PowerPC
+    #else
     register int r4v asm("r4");  // COMPILER-DIFF: #2 (the original masks the u8 at each use)
+    #endif
     int raw = r4v;
     switch (sw) {
     case 1:
@@ -168,7 +176,11 @@ void IDSystem::unitParent(IdUnit* parent, IdUnit* child)
 IdUnit* IDSystem::unitPtr(u8 id, u8 type)
 {
     static IdUnit tmpId;
+    #ifdef RE4_PORT
+    int r5v;   // portage : epinglage sur r5, sans objet hors PowerPC
+    #else
     register int r5v asm("r5");  // COMPILER-DIFF: #2 (the original masks the u8 at the use)
+    #endif
     int raw = r5v;
     int i;
     IdUnit* u = pUnit;
@@ -210,7 +222,11 @@ void IDSystem::set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode)
     IdUnit* u;
     IdUnit* c;
     u32 a;
+    #ifdef RE4_PORT
+    int r6v;   // portage : epinglage sur r6, sans objet hors PowerPC
+    #else
     register int r6v asm("r6");  // COMPILER-DIFF: #2 (the original masks the u8 at the use)
+    #endif
     int raw = r6v;
 
     setCk(type);
@@ -458,7 +474,11 @@ void IDSystem::set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode)
 
 void IDSystem::kill(u8 id, u8 type)
 {
+    #ifdef RE4_PORT
+    int r5v;   // portage : epinglage sur r5, sans objet hors PowerPC
+    #else
     register int r5v asm("r5");  // COMPILER-DIFF: #2 (the original masks the u8 at each use)
+    #endif
     int raw = r5v;
     int i;
     IdUnit* u = pUnit;

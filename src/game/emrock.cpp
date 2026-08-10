@@ -52,7 +52,14 @@ int GameSaveSave(cGameSave* g, void* data, int mode) asm("save__9cGameSavePv");
 
 // setYarareCube(0, 400, 800, 400) with the float arguments' moves issued before the `li r4, 0`
 // (atari_init.h: GCC emits the argument moves in declaration order).
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline void setYarareCubeF(cEmRock* em, f32 x, f32 y, f32 z, Vec* size)
+{ em->setYarareCube(size, x, y, z); }
+#else
 void setYarareCubeF(cEmRock* em, f32 x, f32 y, f32 z, Vec* size) asm("setYarareCube__7cEmRockP3Vecfff");
+#endif
 
 // The rock the player damage callbacks belong to: the original re-reads pl->dmgType at every use.
 #define PL_ROCK(pl) ((cEmRock*) (pl)->dmgType)
@@ -203,7 +210,12 @@ cEmRock* SetRock(void* bin, void* tpl, Vec* pos, Vec* rot, u8 type)
     w->eff9E[1] = 0xFF;
     w->eff9C[0] = 0xFF;
     w->eff9C[1] = 0xFF;
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm volatile("" : : "r"(zero)); // COMPILER-DIFF: #13
+    #endif
     if (em->type != 3) {
         w->radius = em->scale.x * 600.0f;
     } else {

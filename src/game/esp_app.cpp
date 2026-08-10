@@ -332,7 +332,12 @@ void EffAreaUpdate()
         }
     }
     flag |= sys->sstAddAreaFlag;
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(*(u32*) &pos)); // COMPILER-DIFF: candidate (sched2 issue-slot filler)
+    #endif
     y = 0;
     // y is the hit count; the row `0xE8 + y * 0x10` is a strength-reduced giv (its `li 0xE8` is
     // the last preheader insn). The codeless asm above is an issue-slot filler: sched2 (2 insns
@@ -452,7 +457,12 @@ void EspDrawLaserLine(Vec from, Vec to, f32 width)
     if (pGS->flags_5010 & 1) {
         cEsp* e1 = esp;
         e1->xA4 = 1;
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(esp) : "r"(e1), "r"(e1)); // COMPILER-DIFF: candidate (local-alloc qty order)
+        #endif
         esp->xA5 = 4;
         esp->xA6 = 5;
         esp->xA7 = 0;

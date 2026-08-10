@@ -49,6 +49,17 @@ void Snd_req_work_copy_para(SND_CTRL_WORK* ctrl, SND_REQ_WORK* req)
     SND_SIT* sit;
 
     sit = Snd_iss_blk[req->blk_no].sit;
+#ifdef RE4_PORT
+    // Portage : la banque de sons de ce bloc n'est pas chargee tant que la couche audio n'est
+    // pas ecrite, et `sit` est alors nul. L'original n'avait pas a s'en premunir - le DSP
+    // remplissait toujours la table - mais ici la requete doit simplement etre abandonnee.
+    // Trouve par le tombstone Android : deference nulle a l'offset 0x30C, dans
+    // se_set_paras_sub, juste apres la premiere lecture du disque.
+    if (sit == NULL) {
+        req->status = 0;
+        return;
+    }
+#endif
     sit += req->req_no;
     req->x1A = -1;
     req->x1B = -1;

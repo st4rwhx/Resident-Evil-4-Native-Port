@@ -5,6 +5,9 @@
 // compiled by ProDG/GCC; shares the dolphin/gx/GXStruct.h guard so both can coexist.
 
 #include "types.h"
+#ifdef RE4_PORT
+#include "wgpipe.h"
+#endif
 
 #ifndef _DOLPHIN_GX_GXSTRUCT_H_
 #define _DOLPHIN_GX_GXSTRUCT_H_
@@ -71,6 +74,38 @@ typedef union {
 // constant address (`(*(volatile WGPipe*)0xCC008000)` or a struct member at 0xCC000000)
 // reorders those loads. Declared as an incomplete array because an 8-byte extern object
 // would be placed in small data (`@sda21`).
+#ifdef RE4_PORT
+// Portage : **c'est ici que passe toute la geometrie du jeu.** Les attributs de sommet ne sont
+// pas des appels de fonction sur GameCube : ce sont des ecritures directes dans le write-gather
+// pipe du processeur, que le GPU lit a l'autre bout. C'est du materiel, et il n'y a rien a
+// emuler cote ARM - il faut intercepter au niveau au-dessus.
+//
+// Les neuf fonctions ci-dessous deviennent donc de vraies fonctions externes, implementees dans
+// port/gx.cpp, qui assemblent les sommets dans un tampon hote. C'est le seul point du portage
+// ou le **chemin chaud** du jeu change de forme, et c'est aussi pourquoi l'oublier donnait un
+// symbole GXWGFifo non defini plutot qu'une scene vide : un echec bruyant, pour une fois.
+//
+// Les variantes entieres (s16, s8, u16) sont en virgule fixe, avec un nombre de bits
+// fractionnaires donne par GXSetVtxAttrFmt : la conversion se fait cote portage, la ou cette
+// information est connue.
+#define GXWGFifo port_wg_pipe
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void GXPosition3f32(f32 x, f32 y, f32 z);
+void GXPosition3s16(s16 x, s16 y, s16 z);
+void GXColor4u8(u8 r, u8 g, u8 b, u8 a);
+void GXNormal3f32(f32 x, f32 y, f32 z);
+void GXNormal3s8(s8 x, s8 y, s8 z);
+void GXTexCoord2f32(f32 s, f32 t);
+void GXMatrixIndex1u8(u8 idx);
+void GXPosition2u16(u16 x, u16 y);
+void GXTexCoord2s16(s16 s, s16 t);
+#ifdef __cplusplus
+}
+#endif
+#else
 extern volatile WGPipe GXWGFifo[];
 
 static inline void GXPosition3f32(f32 x, f32 y, f32 z)
@@ -131,6 +166,7 @@ static inline void GXTexCoord2s16(s16 s, s16 t)
     GXWGFifo->s16 = s;
     GXWGFifo->s16 = t;
 }
+#endif   /* RE4_PORT */
 #endif
 
 // GX API entry points used by game code. Enum parameters are declared as plain ints: the

@@ -26,6 +26,11 @@
 #include "filter.h"
 #include "foot_shadow.h"
 #include "db_cam.h"
+#ifdef RE4_PORT
+#include <dolphin/os/OSCache.h>   // LCGetBase : le tampon qui remplace le cache verrouille
+#include "ppc_quantize.h"
+extern "C" u32 port_gqr6(void);
+#endif
 
 #line 1 "D:/Bio4/Prog/trans.cpp"
 
@@ -110,9 +115,23 @@ struct Weight {
     }
 
 // u8 -> f32 through GQR2 straight from memory: the compiler only emits psq_l from a stack slot.
+#ifdef RE4_PORT
+// Portage : lecture dequantifiee par un GQR. main.cpp programme GQR2 = u8 et
+// GQR5 = s16, tous deux avec un exposant d echelle nul : ces instructions se
+// reduisent donc a une conversion de type, ecrite ici explicitement.
+#define PSQ_L_U8(p) ((f32) *(const u8*) (p))
+#else
 #define PSQ_L_U8(p) ({ f32 f_; asm volatile("psq_l %0,0(%1),1,2" : "=f"(f_) : "b"(p) : "memory"); f_; })
+#endif
 // Loads straight into the named variable so the asm output shares the variable's (global) register.
+#ifdef RE4_PORT
+// Portage : lecture dequantifiee par un GQR. main.cpp programme GQR2 = u8 et
+// GQR5 = s16, tous deux avec un exposant d echelle nul : ces instructions se
+// reduisent donc a une conversion de type, ecrite ici explicitement.
+#define PSQ_L_U8_TO(dst, p) ((dst) = (f32) *(const u8*) (p))
+#else
 #define PSQ_L_U8_TO(dst, p) asm volatile("psq_l %0,0(%1),1,2" : "=f"(dst) : "b"(p) : "memory")
+#endif
 
 static inline int isBit(u32 f, u32 b)
 {
@@ -721,7 +740,12 @@ int commonScreenMatSub(cModel* m, cModelInfo* info)
         // `size` and `asize` conflict and `size` does not inherit asize's r3 preference
         // (mulli r9 / addi r3 instead of a chained r3). The source form that did this is
         // unknown; the empty asm reproduces the liveness without emitting code.
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : : "r"(size));
+        #endif
         buf = GetPrimBuff(asize);
         if (PTR_INVALID2(buf)) {
             pLog->warn(0, 0, "commonScreenMatSub() : VTX prim alloc failed.");
@@ -842,7 +866,12 @@ static int MakeWeightPaletteExt(WeightExt* w0, int n)
             m[2][3] += *s++ * rate;
             cnt++;
         }
+        #ifdef RE4_PORT
+        // Portage : la palette de matrices va dans le tampon qui remplace le cache verrouille.
+        PSMTXReorder(m, (f32(*)[3]) ((u8*) LCGetBase() + i * 0x30));
+#else
         PSMTXReorder(m, (f32(*)[3]) (0xE0000000 + i * 0x30));
+#endif
     }
 #undef w
     return cnt;
@@ -892,7 +921,12 @@ static int MakeWeightPalette(Weight* w0, int n)
             m[2][3] += *s++ * rate;
             cnt++;
         }
+        #ifdef RE4_PORT
+        // Portage : la palette de matrices va dans le tampon qui remplace le cache verrouille.
+        PSMTXReorder(m, (f32(*)[3]) ((u8*) LCGetBase() + i * 0x30));
+#else
         PSMTXReorder(m, (f32(*)[3]) (0xE0000000 + i * 0x30));
+#endif
     }
 #undef w
     return cnt;
@@ -2433,6 +2467,41 @@ static void primBuffDebugDisp(int n)
 
 // Skin `n` vertices (s16 x/y/z + s16 matrix index, 8 bytes) from src into dst (s16 x/y/z, 6 bytes)
 // with the matrix palette in locked cache (0xE0000000, ROMtx 0x30 each). GQR6 holds the fixed point scale.
+// Portage : transcription du noyau de skinning a un os. Ce que fait l'assembleur d'origine :
+// pour chaque sommet, lire un indice de matrice range **avec** les coordonnees, prendre la
+// matrice correspondante dans la palette (0x30 octets : trois vec3 puis une translation,
+// rangees en lignes), transformer, et reecrire au format quantifie.
+//
+// Deux points ou l'assembleur trompe la lecture rapide :
+//  * les trois premieres lignes de la matrice sont les **colonnes** de la transformation -
+//    ps_madds0/1 multiplient une ligne entiere par une seule voie du sommet ;
+//  * l'indice lu en fin de boucle est celui du sommet **suivant**, pas du courant.
+//
+// L'echelle vient de GQR6, que le jeu reprogramme juste avant l'appel. Lecture et ecriture sont
+// traitees separement meme quand l'echelle est la meme : la translation est en unites
+// flottantes, la confondre avec les coordonnees quantifiees donnerait un modele decale.
+#ifdef RE4_PORT
+static void CalcSk1_x(void* dst, void* src, u32 n)
+{
+    const u32 gqr = port_gqr6();
+    const int lt = port_gqr_ld_type(gqr), ls = port_gqr_ld_scale(gqr);
+    const int st = port_gqr_st_type(gqr), ss = port_gqr_st_scale(gqr);
+    const s16* in = (const s16*) src;
+    u8* out = (u8*) dst;
+    const u8* lc = (const u8*) LCGetBase();
+    u32 v;
+
+    for (v = 0; v < n; ++v, in += 4, out += 6) {
+        const f32* m = (const f32*) (lc + (u32) (u16) in[3] * 0x30);
+        const f32 x = port_dequantize(&in[0], lt, ls);
+        const f32 y = port_dequantize(&in[1], lt, ls);
+        const f32 z = port_dequantize(&in[2], lt, ls);
+        port_quantize(out + 0, m[0] * x + m[3] * y + m[6] * z + m[9], st, ss);
+        port_quantize(out + 2, m[1] * x + m[4] * y + m[7] * z + m[10], st, ss);
+        port_quantize(out + 4, m[2] * x + m[5] * y + m[8] * z + m[11], st, ss);
+    }
+}
+#else
 static void CalcSk1_x(void* dst, void* src, u32 n)
 {
     asm volatile(
@@ -2467,8 +2536,33 @@ static void CalcSk1_x(void* dst, void* src, u32 n)
         "addis 9, 9, 0xE000\n"
         "bdnz 1b\n");
 }
+#endif
 
 // Same for s8 normals (s8 x/y/z + u8 matrix index, 4 bytes) into s8 x/y/z (3 bytes).
+#ifdef RE4_PORT
+// Meme noyau pour les normales : quatre octets en entree (s8 x, y, z puis l'indice), trois en
+// sortie.
+static void CalcSk1_x2(void* dst, void* src, u32 n)
+{
+    const u32 gqr = port_gqr6();
+    const int lt = port_gqr_ld_type(gqr), ls = port_gqr_ld_scale(gqr);
+    const int st = port_gqr_st_type(gqr), ss = port_gqr_st_scale(gqr);
+    const s8* in = (const s8*) src;
+    u8* out = (u8*) dst;
+    const u8* lc = (const u8*) LCGetBase();
+    u32 v;
+
+    for (v = 0; v < n; ++v, in += 4, out += 3) {
+        const f32* m = (const f32*) (lc + (u32) (u8) in[3] * 0x30);
+        const f32 x = port_dequantize(&in[0], lt, ls);
+        const f32 y = port_dequantize(&in[1], lt, ls);
+        const f32 z = port_dequantize(&in[2], lt, ls);
+        port_quantize(out + 0, m[0] * x + m[3] * y + m[6] * z + m[9], st, ss);
+        port_quantize(out + 1, m[1] * x + m[4] * y + m[7] * z + m[10], st, ss);
+        port_quantize(out + 2, m[2] * x + m[5] * y + m[8] * z + m[11], st, ss);
+    }
+}
+#else
 static void CalcSk1_x2(void* dst, void* src, u32 n)
 {
     asm volatile(
@@ -2503,11 +2597,28 @@ static void CalcSk1_x2(void* dst, void* src, u32 n)
         "addis 9, 9, 0xE000\n"
         "bdnz 1b\n");
 }
+#endif
 
+#ifdef RE4_PORT
+// Portage : GQR6 est le registre de quantification que le materiel consulte pour les lectures
+// et ecritures paired-single "type 6". Il n'a pas d'equivalent ARM, mais sa **valeur** compte :
+// elle porte le type entier et l'exposant d'echelle du format de sommets de la salle courante.
+// On la conserve donc, au lieu de la jeter, pour que le code qui decode ces sommets puisse la
+// lire. `port_gqr6()` la rend.
+static u32 g_port_gqr6 = 0;
+
+extern "C" u32 port_gqr6(void) { return g_port_gqr6; }
+
+void setupGQR6(u32 v)
+{
+    g_port_gqr6 = v;
+}
+#else
 void setupGQR6(u32 v)
 {
     asm volatile("mtspr 918, %0" : : "r"(v));
 }
+#endif
 
 // Relocate a TPL whose texture headers also carry a CLUT (thermo palette).
 void CalcTplAddrC8(TEXPalette* tpl)

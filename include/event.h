@@ -196,7 +196,13 @@ public:
 
     Event(u8 type);
     // int-parameter alias of the constructor: EventMgr::construct passes its u32 id without a clrlwi.
+#ifdef RE4_PORT
+    // Portage : alias entier du constructeur (EventMgr::construct passe son u32 sans troncature).
+    // Le constructeur de ProDG rend `this` ; ici, construction sur place et meme retour.
+    Event* ctorI(int type) { return new (this) Event((u8) type); }
+#else
     Event* ctorI(int type) asm("__5EventUc");
+#endif
     virtual ~Event();
     int init(char* name, EvtHeader* data);
     int Run();

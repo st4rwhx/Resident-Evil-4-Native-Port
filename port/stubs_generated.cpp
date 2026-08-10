@@ -16,12 +16,6 @@
 #include <dolphin/axart.h>
 #include <dolphin/demo.h>
 
-u32 ARAlloc(u32 length) { PORT_TODO("ARAlloc"); return 0; }   // include\dolphin\ar.h
-u32 ARGetBaseAddress() { PORT_TODO("ARGetBaseAddress"); return 0; }   // include\dolphin\ar.h
-u32 ARInit(u32* stack_index_addr, u32 num_entries) { PORT_TODO("ARInit"); return 0; }   // include\dolphin\ar.h
-void ARQFlushQueue() { PORT_TODO("ARQFlushQueue"); }   // include\dolphin\ar.h
-void ARQInit() { PORT_TODO("ARQInit"); }   // include\dolphin\ar.h
-void ARQPostRequest(ARQRequest* request, u32 owner, u32 type, u32 priority, u32 source, u32 dest, u32 length, ARQCallback callback) { PORT_TODO("ARQPostRequest"); }   // include\dolphin\ar.h
 void AXARTInit() { PORT_TODO("AXARTInit"); }   // include\dolphin\axart.h
 void AXARTQuit() { PORT_TODO("AXARTQuit"); }   // include\dolphin\axart.h
 void AXARTServiceSounds() { PORT_TODO("AXARTServiceSounds"); }   // include\dolphin\axart.h
@@ -86,8 +80,6 @@ int DVDCloseDir(DVDDir* dir) { PORT_TODO("DVDCloseDir"); return 0; }   // includ
 int DVDCompareDiskID(const DVDDiskID* id1, const DVDDiskID* id2) { PORT_TODO("DVDCompareDiskID"); return 0; }   // include\dolphin\dvd.h
 DVDDiskID* DVDGenerateDiskID(DVDDiskID* id, const char* game, const char* company, u8 diskNum, u8 version) { PORT_TODO("DVDGenerateDiskID"); return nullptr; }   // include\dolphin\dvd.h
 s32 DVDGetCommandBlockStatus(const DVDCommandBlock* block) { PORT_TODO("DVDGetCommandBlockStatus"); return 0; }   // include\dolphin\dvd.h
-DVDDiskID* DVDGetCurrentDiskID() { PORT_TODO("DVDGetCurrentDiskID"); return nullptr; }   // include\dolphin\dvd.h
-void* DVDGetFSTLocation() { PORT_TODO("DVDGetFSTLocation"); return nullptr; }   // include\dolphin\dvd.h
 int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); return 0; }   // include\dolphin\dvd.h
 int DVDReadDir(DVDDir* dir, DVDDirEntry* dirent) { PORT_TODO("DVDReadDir"); return 0; }   // include\dolphin\dvd.h
 void GXBeginDisplayList(void* list, u32 size) { PORT_TODO("GXBeginDisplayList"); }   // include\dolphin\gx\GXDispList.h
@@ -161,35 +153,23 @@ void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetTexCop
 void GXSetViewportJitter(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz, u32 field) { PORT_TODO("GXSetViewportJitter"); }   // include\dolphin\gx\GXTransform.h
 void GXSetZCompLoc(GXBool before_tex) { PORT_TODO("GXSetZCompLoc"); }   // include\dolphin\gx\GXPixel.h
 OSTime OSCalendarTimeToTicks(OSCalendarTime* td) { PORT_TODO("OSCalendarTimeToTicks"); return {}; }   // include\dolphin\os.h
-void OSCancelThread(OSThread* thread) { PORT_TODO("OSCancelThread"); }   // include\dolphin\os\OSThread.h
-int OSCreateThread(OSThread* thread, void* (*func)(void*), void* param, void* stack, u32 stackSize, OSPriority priority, u16 attr) { PORT_TODO("OSCreateThread"); return 0; }   // include\dolphin\os\OSThread.h
 s32 OSEnableScheduler() { PORT_TODO("OSEnableScheduler"); return 0; }   // include\dolphin\os\OSThread.h
-void OSExitThread(void* val) { PORT_TODO("OSExitThread"); }   // include\dolphin\os\OSThread.h
-OSThread* OSGetCurrentThread() { PORT_TODO("OSGetCurrentThread"); return nullptr; }   // include\dolphin\os\OSThread.h
 u16 OSGetFontEncode() { PORT_TODO("OSGetFontEncode"); return 0; }   // include\dolphin\os\OSFont.h
 char* OSGetFontTexture(const char* string, void** image, s32* x, s32* y, s32* width) { PORT_TODO("OSGetFontTexture"); return nullptr; }   // include\dolphin\os\OSFont.h
 u32 OSGetProgressiveMode() { PORT_TODO("OSGetProgressiveMode"); return 0; }   // include\dolphin\os\OSRtc.h
 u32 OSGetSoundMode() { PORT_TODO("OSGetSoundMode"); return 0; }   // include\dolphin\os.h
 void OSInitAlarm() { PORT_TODO("OSInitAlarm"); }   // include\dolphin\os\OSAlarm.h
 BOOL OSInitFont(OSFontHeader* fontData) { PORT_TODO("OSInitFont"); return 0; }   // include\dolphin\os\OSFont.h
-void OSInitSemaphore(OSSemaphore* sem, s32 count) { PORT_TODO("OSInitSemaphore"); }   // include\dolphin\os\OSSemaphore.h
 void OSInitStopwatch(OSStopwatch* sw, char* name) { PORT_TODO("OSInitStopwatch"); }   // include\dolphin\os.h
-void OSInitThreadQueue(OSThreadQueue* queue) { PORT_TODO("OSInitThreadQueue"); }   // include\dolphin\os\OSThread.h
 BOOL OSLink(OSModuleInfo* newModule, void* bss) { PORT_TODO("OSLink"); return 0; }   // include\dolphin\os\OSModule.h
 void* OSPhysicalToCached(u32 paddr) { PORT_TODO("OSPhysicalToCached"); return nullptr; }   // include\dolphin\os.h
 void OSResetStopwatch(OSStopwatch* sw) { PORT_TODO("OSResetStopwatch"); }   // include\dolphin\os.h
 void OSResetSystem(int reset, u32 resetCode, BOOL forceMenu) { PORT_TODO("OSResetSystem"); }   // include\dolphin\os\OSReset.h
-s32 OSResumeThread(OSThread* thread) { PORT_TODO("OSResumeThread"); return 0; }   // include\dolphin\os\OSThread.h
 OSErrorHandler OSSetErrorHandler(OSError error, OSErrorHandler handler) { PORT_TODO("OSSetErrorHandler"); return {}; }   // include\dolphin\os\OSError.h
 void OSSetProgressiveMode(u32 on) { PORT_TODO("OSSetProgressiveMode"); }   // include\dolphin\os\OSRtc.h
 void OSSetSaveRegion(void* start, void* end) { PORT_TODO("OSSetSaveRegion"); }   // include\dolphin\os\OSReboot.h
 void OSSetSoundMode(u32 mode) { PORT_TODO("OSSetSoundMode"); }   // include\dolphin\os.h
-s32 OSSignalSemaphore(OSSemaphore* sem) { PORT_TODO("OSSignalSemaphore"); return 0; }   // include\dolphin\os\OSSemaphore.h
-void OSSleepThread(OSThreadQueue* queue) { PORT_TODO("OSSleepThread"); }   // include\dolphin\os\OSThread.h
 void OSStartStopwatch(OSStopwatch* sw) { PORT_TODO("OSStartStopwatch"); }   // include\dolphin\os.h
 void OSStopStopwatch(OSStopwatch* sw) { PORT_TODO("OSStopStopwatch"); }   // include\dolphin\os.h
-s32 OSSuspendThread(OSThread* thread) { PORT_TODO("OSSuspendThread"); return 0; }   // include\dolphin\os\OSThread.h
 void OSTicksToCalendarTime(OSTime ticks, OSCalendarTime* td) { PORT_TODO("OSTicksToCalendarTime"); }   // include\dolphin\os.h
 BOOL OSUnlink(OSModuleInfo* oldModule) { PORT_TODO("OSUnlink"); return 0; }   // include\dolphin\os\OSModule.h
-s32 OSWaitSemaphore(OSSemaphore* sem) { PORT_TODO("OSWaitSemaphore"); return 0; }   // include\dolphin\os\OSSemaphore.h
-void OSWakeupThread(OSThreadQueue* queue) { PORT_TODO("OSWakeupThread"); }   // include\dolphin\os\OSThread.h

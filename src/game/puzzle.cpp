@@ -310,7 +310,11 @@ none:
 // (global.c's sign_extend preference); the original keeps it in r0.
 int pzlPiece::size_y()
 {
+    #ifdef RE4_PORT
+    s8 size;   // portage : epinglage sur r0, sans objet hors PowerPC
+    #else
     register s8 size asm("r0");  // COMPILER-DIFF: #17 (value pin)
+    #endif
 
     if (data == 0) {
         return 0;
@@ -1451,7 +1455,12 @@ int pzlPlayer::movePiece()
                         edge = cur->h;
                         if (fy > (f32) cur->h) {
                             int sy = p->size_y();
+                            #ifdef RE4_PORT
+                            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                            // operandes contraignaient l ordonnancement du compilateur d origine
+                            #else
                             asm volatile("" : "+r"(edge)); // COMPILER-DIFF: the target re-extends edge after the size_y call (extsb r30,r30; addi r30,r30,1); ours proves it sign-extended and, edge crossing calls, would hoist the two above the call
+                            #endif
                             edge = (s8) edge;
                             edge += 1;
                             h = edge - sy;
@@ -1687,7 +1696,12 @@ int PutInCase(u16 id, u16 num, int type)
 placed:
     pl->save();
     last = (ItemWork*) p; // COMPILER-DIFF: codeless copy of the dead r31 value: `last` then crosses the get() call and takes the first callee-saved reg, r31
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "+r"(p)); // COMPILER-DIFF: makes the copy unavailable to gcse's copy propagation; flow deletes it (p is dead)
+    #endif
     if (ok) {
         u16 rest;
         int n;
@@ -1704,7 +1718,12 @@ placed:
             } while (n < ItemMgr.nOrder);
         }
         ItemMgr.get(id, rest);
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(item.x) : "r"(last)); // COMPILER-DIFF: keeps the copy live across the call (an output-less asm is volatile and flushes cse's ItemMgr high)
+        #endif
         last = ItemMgr.pLast;
         if (last) {
             last->x = item.x;

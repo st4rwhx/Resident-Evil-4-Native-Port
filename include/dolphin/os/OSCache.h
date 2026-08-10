@@ -16,9 +16,19 @@ void DCZeroRange(void* addr, u32 nBytes);
 void DCTouchRange(void* addr, u32 nBytes);
 void ICInvalidateRange(void* addr, u32 nBytes);
 
+#ifdef RE4_PORT
+/* Portage : 0xE0000000 est la fenetre du cache L1 verrouille du Gekko. Elle n'existe pas sur
+ * ARM, et y ecrire ferait tomber le processus. Le portage fournit a la place 16 Ko de memoire
+ * ordinaire (port/os.cpp) : meme taille, meme role, sans le verrouillage - qui n'etait qu'une
+ * optimisation, jamais une condition de correction. */
+void *port_lc_base(void);
+#define LCGetBase() port_lc_base()
+#define LC_BASE ((u32) port_lc_base())
+#else
 #define LC_BASE_PREFIX 0xE000
 #define LC_BASE (LC_BASE_PREFIX << 16)
 #define LCGetBase() ((void*)LC_BASE)
+#endif
 
 void LCEnable(void);
 void LCDisable(void);

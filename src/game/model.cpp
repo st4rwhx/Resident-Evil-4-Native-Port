@@ -34,7 +34,14 @@ int GetModelInfoNum(cModelInfo* info);
 // MotionMove takes a second argument (pl_npc.cpp MotionMoveF)
 int MotionMoveF(cModel* m, int flag) asm("MotionMove");
 // cAtariInfo lives in cModel's union (no member constructor call): constructed by hand
+#ifdef RE4_PORT
+// Portage : cAtariInfo vit dans une union de cModel, donc aucun constructeur n est appele par
+// le compilateur : le jeu le fait a la main, par le nom mange du constructeur. Ici, une
+// construction sur place explicite.
+static inline cAtariInfo* AtariInfoConstruct(cAtariInfo* p) { return new (p) cAtariInfo(); }
+#else
 cAtariInfo* AtariInfoConstruct(cAtariInfo* p) asm("__10cAtariInfo");
+#endif
 }
 cModelInfo* GetModelInfoAddr(cModelInfo* info, int no);
 
@@ -280,7 +287,13 @@ inline void cModel::setNoSuspend(int on)
     }
 }
 
+#ifdef RE4_PORT
+// Portage : `inline` dans un .cpp n'emet aucun symbole externe, et event.cpp appelle celui-ci.
+// Le compilateur d'origine en emettait toujours une copie hors ligne.
+int cModel::isTrans()
+#else
 inline int cModel::isTrans()
+#endif
 {
     int ret = 0;
 
@@ -338,13 +351,22 @@ void cModel::matBlend(f32 rate)
         // and copies it (`addi r0,r31,60; mr r28,r0`). With the temp pinned to r0 and kept live
         // past the copy by the codeless anchor below (before the PSVECMag call), combine cannot
         // fold the copy into the addi (the r0 set is still needed) and regmove skips hard registers.
+        #ifdef RE4_PORT
+        MtxPtr t = p->worldMat;   // portage : epinglage sur r0, sans objet hors PowerPC
+        #else
         register MtxPtr t asm("r0") = p->worldMat;
+        #endif
         MtxPtr wm = t;
 
         vx.x = p->worldMat[0][0];
         vx.y = p->worldMat[1][0];
         vx.z = p->worldMat[2][0];
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(vx) : "r"(t)); // COMPILER-DIFF: 3 (keep-alive for the r0 temp)
+        #endif
         len.x = PSVECMag(&vx);
         vy.x = p->worldMat[0][1];
         vy.y = p->worldMat[1][1];
@@ -400,6 +422,12 @@ void cModel::matBlend(f32 rate)
         }
     }
 }
+
+#ifdef RE4_PORT
+// Portage : motion.cpp appelle cette methode par un nom C. L'original y arrivait par un alias
+// sur le nom mange ; ici, une fonction de pontage d'une ligne.
+void cModel_matBlend(cModel* m, f32 rate) { m->matBlend(rate); }
+#endif
 
 void cModel::zeroPartsPosInit(Vec* pos, Vec* rot)
 {

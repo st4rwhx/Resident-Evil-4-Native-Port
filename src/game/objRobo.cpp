@@ -540,7 +540,11 @@ void cObjRobo::TaskSwitchFront(cObjRobo* robo)
     cModel* parts;
     int i;
     int j;
+    #ifdef RE4_PORT
+    f32 to;   // portage : epinglage sur fr28, sans objet hors PowerPC
+    #else
     register f32 to asm("fr28");  // COMPILER-DIFF: #17 (FPR value pin): a hard-register `to` keeps the for-init copy `range = to` out of gcse's copy propagation
+    #endif
     to = -1.483529806137085f;
     f32 from = 0.0f;
     f32 max;
@@ -590,7 +594,11 @@ void cObjRobo::TaskSwitchBack(cObjRobo* robo)
     cModel* parts;
     int i;
     int j;
+    #ifdef RE4_PORT
+    f32 to;   // portage : epinglage sur fr28, sans objet hors PowerPC
+    #else
     register f32 to asm("fr28");  // COMPILER-DIFF: #17 (FPR value pin): a hard-register `to` keeps the for-init copy `range = to` out of gcse's copy propagation
+    #endif
     to = -1.483529806137085f;
     f32 from = 0.0f;
     f32 max;

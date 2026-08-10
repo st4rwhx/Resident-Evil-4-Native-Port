@@ -2,6 +2,20 @@
 #ifndef VA_PPC_H
 #define VA_PPC_H
 
+#ifdef RE4_PORT
+/* Portage : ce fichier decrit la va_list SysV du PowerPC - deux compteurs de registres, une
+ * zone de sauvegarde, une zone de debordement - et la construit avec __builtin_next_arg et
+ * __builtin_saveregs, qui n'existent que la. Sur ARM la convention d'appel est autre, et c'est
+ * au compilateur de la connaitre : on prend ses builtins. Le code du jeu, lui, ne voit que
+ * va_list / va_start / va_arg et ne change pas d'une ligne. */
+typedef __builtin_va_list va_list;
+typedef __builtin_va_list __gnuc_va_list;
+#define va_start(AP, LASTARG) __builtin_va_start(AP, LASTARG)
+#define va_end(AP) __builtin_va_end(AP)
+#define va_arg(AP, TYPE) __builtin_va_arg(AP, TYPE)
+#define VA_PPC_ARG
+#else
+
 typedef struct __va_list_tag {
     char gpr;   /* SN: signed (gcc's ginclude has unsigned char) */
     char fpr;
@@ -86,5 +100,7 @@ __extension__ (*({							\
   __ptr;								\
 }))
 #endif /* VA_PPC_ARG */
+
+#endif /* RE4_PORT */
 
 #endif

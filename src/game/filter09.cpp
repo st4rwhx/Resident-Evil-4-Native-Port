@@ -187,4 +187,9 @@ int Filter09GetbUse()
 }
 
 asm(".section .sdata,\"aw\"\n\t.balign 32\n\t.text");
+#ifdef RE4_PORT
+// Portage : le prefixe du type de section est @ sur PowerPC et % sur ARM.
+asm(".section .sbss,\"aw\",%nobits\n\t.balign 8\n\t.text");
+#else
 asm(".section .sbss,\"aw\",@nobits\n\t.balign 8\n\t.text");
+#endif

@@ -71,8 +71,51 @@ Cette exigence n'est pas du zele : une tuile mal dimensionnee (I8 et IA4 font 8x
 produit une image parfaitement plausible et fausse, et RGBA8 lu en quadruplets reste lisible.
 Aucun de ces deux bugs ne se voit a l'oeil ; tous deux sautent au premier octet compare.
 
+## Le jeu demarre sur l appareil
+
+`port/build_game.py` compile les **312 unites du DOL** plus la couche de plateforme en un
+executable ARM de 3,6 Mo, et `./re4 <image du jeu>` va, sur un Galaxy S5 Plus :
+
+```
+[PORT] OSInit : MEM1 de 32 Mo a 0x80000000, arene 0x80300000-0x81800000
+[PORT] DVD : 1018 fichiers dans l image /data/local/tmp/re4/re4.iso
+[JEU]  FST Address = 0x817fa460
+[JEU]  -- MemCreateHeap 0 80974000 - 817f4000  succeed!!
+[JEU]  width = 512   height = 448
+[PORT] GX : Adreno (TM) 420, 640x448 hors ecran
+[PORT] ARAM : 16 Mo, base utilisateur 0x4000
+[JEU]  DVD: Read File: bgm/bio4str.hed   Trans MRAM addr: 80370000 size: 0000ad60   Read Ok
+```
+
+Trois decisions ont fait la difference, et aucune n etait devinable sans executer :
+
+* **MEM1 est cartographie a 0x80000000**, son adresse d origine, par un `mmap` fixe. RE4 n alloue
+  pas ses zones, il les ecrit en dur (`heap_end = 0x817F4000`) et refuse de demarrer si
+  `OSGetArenaLo()` depasse 0x8034FFFF. Un bloc `calloc` ne pouvait pas marcher.
+* **La libc de ProDG est retiree du lien.** Le decompile la reproduit unite par unite, et ses
+  symboles remplacaient ceux de la plateforme pour tout le processus : son `malloc` rendait
+  NULL, son `fopen` tenait quatre flux. Voir EXCLUDED dans build_game.py.
+* **Les threads sont reels**, en pthreads serialises par un jeton unique. L ordonnanceur de
+  taches de RE4 est bati dessus ; avec des souches vides, la premiere tache terminee revenait
+  dans une pile morte.
+
+La lecture se fait **directement dans l image disque** de l utilisateur (FST analysee en place),
+pas dans une arborescence extraite : c est exactement ce que fera l application mobile.
+
+## Le mur suivant : l endianness
+
+Le jeu tombe maintenant dans `SndInit`, et pas sur une fonction manquante : **les donnees de
+RE4 sont gros-boutistes**, le code decompile les lit avec des acces ordinaires, et ARM est
+petit-boutiste. Un decalage de fichier lu `0x20` sur console vaut `0x20000000` ici.
+
+C est le vrai obstacle restant, et il demande une conversion des donnees a la premiere
+ouverture du disque, format par format. Le raisonnement complet, les voies ecartees et l ordre
+de travail sont dans **`port/ENDIANNESS.md`**.
+
 ## Suite
 
+0. **La conversion d endianness**, dans l ordre ou le jeu reclame les fichiers (voir
+   ENDIANNESS.md). Tout le reste en depend.
 1. **TEV -> shaders generes.** Le shader actuel a un seul etage (couleur de sommet x texture) ;
    TEV en a jusqu'a seize. Dolphin est la reference.
 2. Eclairage et generation de coordonnees de texture (`GXSetTexCoordGen`, matrices de texture).

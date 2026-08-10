@@ -549,7 +549,12 @@ void debugCamera::menu(Camera* cam, JOY* joy)
                 // tying t to wy; the second anchor after FSet keeps t (and so this insn) alive to
                 // sched2 without touching the up copy's pG reload (a slot between the up stores and
                 // that reload breaks the fake-death overlap that gives its `addi` r11).
+                #ifdef RE4_PORT
+                // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                // operandes contraignaient l ordonnancement du compilateur d origine
+                #else
                 asm("" : "=&r"(t) : "r"(wy), "f"(0.0f));
+                #endif
             }
             {
                 u8* d1 = (u8*) &pG->Cam.param.at;
@@ -561,7 +566,12 @@ void debugCamera::menu(Camera* cam, JOY* joy)
             }
             FSet(pG->Cam.param.roll, 0.0f);
             // COMPILER-DIFF: candidate (sched2 tie, second half; see the campos copy above).
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(ProjType) : "r"(t));
+            #endif
             CameraSetOrientationUp(&pG->Cam);
             pG->flags_60 |= 0x10000000;
         }

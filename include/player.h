@@ -128,7 +128,13 @@ public:
     // game/pl_class.cpp
     // m0/seq0 when dmMotCk(), else m1/seq1. The overload hides cModel::motionSet: keep it reachable.
     void motionSet(void* m0, void* seq0, void* m1, void* seq1, int hokan, int frame);
+#ifdef RE4_PORT
+    // Portage : la surcharge ci-dessus masque cModel::motionSet ; `using` la remet a portee,
+    // ce que l alias faisait par un detour par le nom mange.
+    using cModel::motionSet;
+#else
     void motionSet(void* data, int a, int b, int c, int d) asm("motionSet__6cModelPviiii");
+#endif
     int actionSelect();  // routine 1 selection from the keys / action buttons; returns checkXbutton()
     void dmgCheck();     // DmgMgr areas -> setDamage
     void visibleCtrl();  // alpha fade with pG->flags_500C bit13

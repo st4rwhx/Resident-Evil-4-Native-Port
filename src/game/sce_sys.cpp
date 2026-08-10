@@ -556,8 +556,17 @@ void SceSetEventCancel(int on, TaskFunc func, int arg, int flagNo, int sndFlag)
     {
         // COMPILER-DIFF: candidate #17 (global.c pass 0 regs_used_so_far): r30 used-so-far makes `on`
         // take r30 in pass 0 and flagNo r31 (stock priorities give on r31, flagNo r30).
+        #ifdef RE4_PORT
+        int pin;   // portage : epinglage sur r30, sans objet hors PowerPC
+        #else
         register int pin asm("r30");
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("" : "=r"(pin));
+        #endif
     }
 }
 

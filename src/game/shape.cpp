@@ -182,8 +182,22 @@ struct ShapeEntry {
 };
 
 // Apply the shape `data` at `rate` to the vertex buffer `dst` (8-byte vertices, s16 xyz).
+#ifdef RE4_PORT
+// Portage : lecture dequantifiee par un GQR. main.cpp programme GQR2 = u8 et
+// GQR5 = s16, tous deux avec un exposant d echelle nul : ces instructions se
+// reduisent donc a une conversion de type, ecrite ici explicitement.
+#define PSQ_L_S16(p) ((f32) *(const s16*) (p))
+#else
 #define PSQ_L_S16(p) ({ f32 f_; asm volatile("psq_l %0,0(%1),1,5" : "=f"(f_) : "b"(p)); f_; })
+#endif
+#ifdef RE4_PORT
+// Portage : ecriture quantifiee vers s16 par GQR5 (echelle nulle). Le materiel sature
+// aux bornes du type et tronque vers zero ; les deux sont reproduits ici, car un
+// debordement silencieux se lirait comme un sommet parti a l autre bout de la salle.
+#define PSQ_ST_S16(f, p) ((void) (*(s16*) (p) = (s16) ((f) > 32767.0f ? 32767.0f : ((f) < -32768.0f ? -32768.0f : (f)))))
+#else
 #define PSQ_ST_S16(f, p) asm volatile("psq_st %0,0(%1),1,5" : : "f"(f), "b"(p) : "memory")
+#endif
 
 void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
 {

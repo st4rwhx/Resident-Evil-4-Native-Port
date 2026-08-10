@@ -184,7 +184,14 @@ public:
     // read.cpp calls ReadCheck(int) with a DvdReadInfo* as a third argument (r5): the callee
     // passes its uninitialised `info` pointer straight to readCheckMain, so the info block gets
     // filled. This declaration is that entry point with the arguments the callers really pass.
+#ifdef RE4_PORT
+    // Portage : cet alias visait la meme fonction sous le nom mange par le compilateur
+    // d origine, avec des parametres d un autre type pour retrouver son code machine.
+    // Ici on appelle directement, avec la conversion rendue explicite.
+    int ReadCheckInfo(int req, DvdReadInfo* info) { return readCheckMain(req, info); }
+#else
     int ReadCheckInfo(int req, DvdReadInfo* info) asm("ReadCheck__4cDvdi");
+#endif
     int readCheckMain(int req, DvdReadInfo* info);
     cDvdQueue* getQueuePtr(u8 no);
     int ErrCheck(int disc, int flag);

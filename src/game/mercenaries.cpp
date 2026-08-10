@@ -186,7 +186,11 @@ int MercSysInitRoom(MercInit* pMInit)
         // COMPILER-DIFF: #13 (int shape): the original never allocates the single-use REG_EQUIV zero;
         // reload re-materialises `li r11, 0` right before the store (after the pG load), where ours
         // local-allocs the constant to r0 and hoists it above the load.
+        #ifdef RE4_PORT
+        int z;   // portage : epinglage sur r11, sans objet hors PowerPC
+        #else
         register int z asm("r11"); // COMPILER-DIFF: #13
+        #endif
         z = 0;
         wk->stage = z;
     }
@@ -283,7 +287,12 @@ int MercSysMoveStart(MercSysWork* wk)
     // hoisted `mercId.idsys` high (r24) but not in `&cMes`'s (r25), so their equal-priority
     // buckets (int(10000 * floor(log2 refs) * refs / len): 290/289) tie and the lower pseudo
     // (&cMes) is allocated first, as in the original.
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(*(u16*) st)); // COMPILER-DIFF: tie (global-alloc live length)
+    #endif
     Cckpt.getCountDown()->frameOut();
     st[0] = 1;
     do {

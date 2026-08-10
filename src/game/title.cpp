@@ -196,7 +196,11 @@ void titleWait(TitleWork* w)
             IdSys.roomInit();
             IdTexDataLoad(TITLE_ARC_PTR(w->pDat, 4), 7);
             {
+                #ifdef RE4_PORT
+                u8 z;   // portage : epinglage sur r11, sans objet hors PowerPC
+                #else
                 register u8 z asm("r11");  // COMPILER-DIFF: #13 (REG_EQUIV zero reloaded into r11)
+                #endif
                 z = 0;
                 CSet(w->mode, 2);
                 ISet(w->sndFlag, 1);
@@ -1515,8 +1519,24 @@ void titleExit(TitleWork* w)
 }
 
 // COMPILER-DIFF: #4 (int argument to an s8 parameter: the original passes `no` without the extsb)
+#ifdef RE4_PORT
+// Portage : ces deux declarations visaient les methodes de cRoomJmp sous le nom mange par le
+// compilateur d'origine, pour passer `room` en int la ou la methode prend un s8 (et eviter une
+// extension de signe que le binaire de reference n'a pas). Ici on appelle la methode, et la
+// conversion est explicite.
+static inline s8 RjGetPointNumI(cRoomJmp* rj, s8 stage, int room)
+{
+    return rj->getPointNum(stage, (s8) room);
+}
+
+static inline s8 RjGetNextPointNoI(cRoomJmp* rj, s8 stage, int room, s8 point, int dir)
+{
+    return rj->getNextPointNo(stage, (s8) room, point, dir);
+}
+#else
 s8 RjGetPointNumI(cRoomJmp* rj, s8 stage, int room) asm("getPointNum__8cRoomJmpScSc");
 s8 RjGetNextPointNoI(cRoomJmp* rj, s8 stage, int room, s8 point, int dir) asm("getNextPointNo__8cRoomJmpScScSci");
+#endif
 
 void titleDebugMenu(TitleWork* w)
 {

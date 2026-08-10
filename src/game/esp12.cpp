@@ -74,7 +74,11 @@ extern "C" void Esp12_Trans(cEsp12* esp)
     f32 tstep;
     f32 r;
     f32 wid;
+    #ifdef RE4_PORT
+    f32 z;   // portage : epinglage sur fr12, sans objet hors PowerPC
+    #else
     register f32 z asm("fr12");  // COMPILER-DIFF: #13
+    #endif
     u32 magic;                   // COMPILER-DIFF: #13 (hoisted conversion constant)
 
     if (esp->cnt < w->n) {
@@ -130,7 +134,12 @@ extern "C" void Esp12_Trans(cEsp12* esp)
     nrm.y = 0.0f;
     nrm.z = 0.0f;
     GXBegin(0x98, 0, n * 2);
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(nrm.x) : "r"(magic));  // COMPILER-DIFF: #13 (keep-alive)
+    #endif
     p = Esp3f_GetVecPtr(w->buf, 0);
     next = NULL;
     for (i = 0; i < n; i++) {

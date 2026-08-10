@@ -206,9 +206,23 @@ void Em34ClothSet1(cModel* m, PlCloth* c)
     {
         // COMPILER-DIFF: 13 (local-alloc qty order): a codeless prio-4 filler issued before the
         // pUp2 `lis` in sched1 equalises the pUp2/pDown2/pMax2 qty lives (r10/r8/r7 in qty order).
+        #ifdef RE4_PORT
+        u32 k;   // portage : epinglage sur r12, sans objet hors PowerPC
+        #else
         register u32 k asm("r12");
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=r"(k));
+        #endif
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(em34ClothRate[1]) : "r"(k));
+        #endif
     }
     c->pRight = 0;
     c->pUpLeft = 0;

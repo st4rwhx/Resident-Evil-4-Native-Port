@@ -134,7 +134,11 @@ void AddSandPower(Vec* pos, f32 power)
         // (2 refs) in local-alloc and give it r11. Pinning the .z word removes that qty: high takes
         // r10 (r11 busy), addi r8, W0 r0, W4 r9 as in the original. Order 0,4,8 keeps the addi's
         // death on the .z store so sched1 issues S0, S8, S4.
+        #ifdef RE4_PORT
+        u32 c;   // portage : epinglage sur r11, sans objet hors PowerPC
+        #else
         register u32 c asm("r11");
+        #endif
         u32* s = (u32*) pos;
         u32* d = (u32*) &Chk_pos;
         u32 a, b;

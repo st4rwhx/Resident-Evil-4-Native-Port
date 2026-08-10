@@ -52,7 +52,14 @@ void Obj01SetEst(cObj* obj, int no0, int prm0, u32 type, int no1, int prm1, int 
 
 // setYarareCube(0, x, y, z) with the float arguments' moves issued before the `li r4, 0`
 // (atari_init.h: GCC emits the argument moves in declaration order).
+#ifdef RE4_PORT
+// Portage : appel direct, la reorganisation des arguments ne servait qu a retrouver l ordre
+// des instructions du binaire d origine.
+static inline void setYarareCubeF(cEmWep* em, f32 x, f32 y, f32 z, Vec* size)
+{ em->setYarareCube(size, x, y, z); }
+#else
 void setYarareCubeF(cEmWep* em, f32 x, f32 y, f32 z, Vec* size) asm("setYarareCube__6cEmWepP3Vecfff");
+#endif
 
 
 // The weapon the player damage callbacks belong to.
@@ -1101,7 +1108,12 @@ void emWep_R1_ShotArrow(cEmWep* em)
             }
             EmAtkSetDamagePL((cEm*) part, w->pAtk, &em->oldPos, &em->pos);
             // `mr r3,part` is the LAST argument move in the original (part does not die there).
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(hit) : "r"(part));  // COMPILER-DIFF: #13 (keep-alive)
+            #endif
         } else {
             part = EmAtkLineHitCkSub(&em->oldPos, &em->pos, &hit, &nrm);
             if (part == 0) {
@@ -1119,7 +1131,12 @@ void emWep_R1_ShotArrow(cEmWep* em)
                 EmPlBloodSet2(em, &em->pos, 1, 0xFF, 0xFF);
             }
             EmAtkSetDamageSub(part, w->pAtk, &em->oldPos, &em->pos);
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(hit) : "r"(part));  // COMPILER-DIFF: #13 (keep-alive)
+            #endif
         }
         emWepArrowBomb(em);
         EffectEspDelete(0, w->espKind, (u32) em, 0);
@@ -1855,12 +1872,21 @@ void cEmWep::setThrow(Vec* spd, f32 grav, EmAtkInfo* atk)
     EmWepWork* w = EMWEP_WK(this);
     Vec v;
     Mtx m;
+    #ifdef RE4_PORT
+    f64 hd;   // portage : epinglage sur fr1, sans objet hors PowerPC
+    #else
     register f64 hd asm("fr1"); // COMPILER-DIFF: #8
+    #endif
 
     // COMPILER-DIFF: #8 -- the original ranks `fmr f30,f1` (grav) after `mr r26,r5; addi w`, i.e. as
     // if f1 did not die at the copy; the DFmode read of f1 keeps it live past the copy (see
     // emshield setFall / docs/matching.md #8).
+    #ifdef RE4_PORT
+    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+    // operandes contraignaient l ordonnancement du compilateur d origine
+    #else
     asm("" : "=m"(hp) : "f"(hd));
+    #endif
     if (spd) {
         v = *spd;
     } else {

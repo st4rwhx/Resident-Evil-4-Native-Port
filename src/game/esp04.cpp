@@ -94,14 +94,23 @@ void move10(cEsp04* esp)
             // The original's loop step lives in f0 and its `v = y` copy is issued after the
             // hoisted step/bound copies (y stays live past it, so the loop bound cannot take
             // y's f12): value pin + keep-alive.
+            #ifdef RE4_PORT
+            f32 s;   // portage : epinglage sur fr0, sans objet hors PowerPC
+            #else
             register f32 s asm("fr0");  // COMPILER-DIFF: #17 (FPR value pin)
+            #endif
             s = esp->sizeY;
             v = y;
             while (v < lim - esp->sizeX) {
                 v += s;
             }
             esp->pos.y = v;
+            #ifdef RE4_PORT
+            // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+            // operandes contraignaient l ordonnancement du compilateur d origine
+            #else
             asm("" : "=m"(esp->pos.y) : "f"(y));  // COMPILER-DIFF: #13 (keep-alive)
+            #endif
         }
     }
     x = esp->pos.x;  // dead: keeps x/y alive past v for cse (see above)

@@ -767,7 +767,12 @@ void IdBinocular::cutin()
         // Codeless keep-alive on an unstored field: the original's u does not die at the last
         // store, so the three sth stay in source order; the non-volatile form (unlike the earlier
         // volatile input-only asm) is no scheduling barrier, so the unitPtr arg moves keep their order.
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm("" : "=m"(u->timer[3]) : "r"(u)); // COMPILER-DIFF: #13 (keep-alive)
+        #endif
     }
 }
 

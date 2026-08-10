@@ -1164,6 +1164,16 @@ void cDvd::ReadProc()
     int sync = 1;
     int intr = 1;
 
+#ifdef RE4_PORT
+    // Portage : la tache DvdReadProc peut arriver apres que la requete a ete traitee par le
+    // chemin synchrone (cDvd::blockRead), qui laisse pRead a zero. Sur console l ordre
+    // d ordonnancement l evitait ; ici la tache trouve une file vide et n a rien a faire.
+    // Sans ce test, c est une ecriture a l adresse 0x30C - le champ startTick - et le jeu
+    // tombe juste apres avoir lu son premier fichier.
+    if (q == NULL) {
+        return;
+    }
+#endif
     q->startTick = OSGetTick();
     readProcMain(q);
     pRead = 0;

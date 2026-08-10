@@ -57,7 +57,12 @@ u16 MotionMoveF(cModel* m, int flag) asm("MotionMove");
 // COMPILER-DIFF #4: the original passes an int SE number to SndCall's u16 parameter without the
 // truncation ours emits (`mr` instead of `clrlwi 16`): int-view declaration (em39SetVoice, em39FootEff,
 // em39PLVoiceCk).
+#ifdef RE4_PORT
+static inline u32 SndCallI(u16 blk, int no, Vec* pos, int id, int vol, cUnit* obj)
+{ return SndCall(blk, (u16) no, pos, id, vol, obj); }
+#else
 u32 SndCallI(u16 blk, int no, Vec* pos, int id, int vol, cUnit* obj) asm("SndCall__FUsUsP3VeciiP5cUnit");
+#endif
 // em_set.h declares the empty form; this unit passes the dying enemy (the original prototype
 // took it; em_set.cpp ignores its arguments).
 void EmSetDieCntE(cEm* em) asm("EmSetDieCnt");

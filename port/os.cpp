@@ -22,15 +22,41 @@
 #include <ctime>
 #include <time.h>
 
+#include <sys/mman.h>
+
 #include <dolphin.h>
 
 namespace {
 
 // ---------------------------------------------------------------- arene
 
-// MEM1 du GameCube : 24 Mo. Le jeu y taille ses tas lui-meme via OSInitAlloc/OSCreateHeap,
-// donc on lui rend simplement un bloc contigu de cette taille.
-const u32 ARENA_SIZE = 24u * 1024u * 1024u;
+// **MEM1 est place a son adresse d origine, 0x80000000.**
+//
+// Ce n est pas un detail de confort. RE4 ne demande pas de la memoire a l OS pour y tailler ses
+// zones : il les ecrit en dur. `SystemMemInit` pose heap_end a 0x817F4000, le tas son a
+// 0x803F0000, le FIFO a 0x80460000, le framebuffer a 0x80578000, et refuse de demarrer si
+// `OSGetArenaLo()` depasse 0x8034FFFF - c est le controle "ELF size overflow" de
+// main_mem.cpp:100, sur lequel le premier lancement avec le vrai disque s est arrete.
+//
+// Rendre un bloc quelconque (calloc) ne pouvait donc pas marcher : le jeu n en aurait rien
+// fait et aurait ecrit a 0x80000000 de toute facon. Sur Linux 32 bits l espace utilisateur va
+// jusqu a 0xBFFFFFFF, donc cette adresse **est** disponible : on la reserve avec mmap MAP_FIXED
+// et toutes les adresses absolues du jeu redeviennent valides, sans toucher une ligne de son
+// code.
+//
+// 32 Mo plutot que 24 : SysMem place ses zones usb et debug juste au-dessus de MEM1
+// (0x81800000 et 0x8181FB00). Elles ne servent qu au mode developpement, mais les cartographier
+// coute une plage d adresses et evite une faute de segmentation lointaine.
+const u32 MEM1_BASE = 0x80000000u;
+const u32 MEM1_SIZE = 32u * 1024u * 1024u;
+const u32 ARENA_SIZE = 24u * 1024u * 1024u;   // ce que la console annonce au jeu
+
+// Ou commence l arene rendue au jeu. Sur console c est la fin du DOL charge ; ici le code vit
+// ailleurs, donc on choisit une valeur qui satisfait le controle de main_mem.cpp et laisse la
+// memoire basse tranquille (le jeu y range des variables a adresse fixe).
+const u32 ARENA_LO = 0x80300000u;
+const u32 ARENA_HI = 0x81800000u;
+
 u8 *g_arena = nullptr;
 u8 *g_arena_lo = nullptr;
 u8 *g_arena_hi = nullptr;
@@ -39,9 +65,21 @@ void arena_init()
 {
     if (g_arena)
         return;
-    g_arena = (u8 *)std::calloc(1, ARENA_SIZE);
-    g_arena_lo = g_arena;
-    g_arena_hi = g_arena + ARENA_SIZE;
+    void *want = (void *) (unsigned long) MEM1_BASE;
+    void *got = ::mmap(want, MEM1_SIZE, PROT_READ | PROT_WRITE,
+                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+    if (got == MAP_FAILED || got != want) {
+        // Sans MEM1 a la bonne adresse, rien de ce qui suit n a de sens : le jeu ecrirait
+        // aussitot hors de toute zone valide. Mieux vaut le dire ici que laisser une faute de
+        // segmentation sans explication trois appels plus loin.
+        std::printf("[PORT] OSInit : impossible de reserver MEM1 a 0x%08X\n", MEM1_BASE);
+        std::fflush(stdout);
+        std::abort();
+    }
+    std::memset(got, 0, MEM1_SIZE);
+    g_arena = (u8 *) got;
+    g_arena_lo = (u8 *) (unsigned long) ARENA_LO;
+    g_arena_hi = (u8 *) (unsigned long) ARENA_HI;
 }
 
 // ---------------------------------------------------------------- tas
@@ -245,3 +283,48 @@ void OSPanic(const char *file, int line, const char *msg, ...)
     std::fflush(stdout);
     std::abort();
 }
+
+// ---------------------------------------------------------------- cache verrouille
+
+// Le Gekko sait verrouiller 16 Ko de son cache L1 et les exposer comme de la memoire adressable
+// a 0xE0000000. RE4 y range sa **palette de matrices** de skinning (une matrice 4x3 de 0x30
+// octets par os), puis la lit depuis le code de transformation.
+//
+// Sur ARM il n'y a rien a verrouiller, et il n'y a surtout pas besoin : c'est de la memoire
+// ordinaire, simplement rapide parce que petite et constamment relue - donc deja dans le cache.
+// Ce tampon en tient lieu. Ce qui compte est qu'il soit **le meme** pour l'ecriture (trans.cpp
+// range les matrices) et pour la lecture (CalcSk1_x), d'ou le point d'acces unique ci-dessous.
+static u8 g_locked_cache[16 * 1024] __attribute__((aligned(32)));
+
+extern "C" void *port_lc_base(void) { return g_locked_cache; }
+
+void LCEnable(void) {}
+void LCDisable(void) {}
+u32 LCQueueLength(void) { return 0; }
+void LCQueueWait(u32) {}
+void LCFlushQueue(void) {}
+
+// ---------------------------------------------------------------- cache et MSR
+
+// Le GameCube expose son cache a la main : le jeu vide une plage avant de la donner au GPU, et
+// l'invalide avant de la relire. Sur ARM avec un GPU **coherent** en memoire partagee (et sans
+// DMA ecrit a la main ici), il n'y a rien a faire - mais il faut quand meme les definir, sinon
+// c'est le lien qui echoue, pas le rendu.
+void DCFlushRange(void *, u32) {}
+void DCFlushRangeNoSync(void *, u32) {}
+void DCStoreRange(void *, u32) {}
+void DCStoreRangeNoSync(void *, u32) {}
+void DCInvalidateRange(void *, u32) {}
+void DCZeroRange(void *addr, u32 n) { std::memset(addr, 0, n); }
+void DCTouchRange(void *, u32) {}
+void ICInvalidateRange(void *, u32) {}
+void ICFlashInvalidate(void) {}
+
+// Le registre d'etat machine du PowerPC. Le jeu s'en sert pour basculer les interruptions et le
+// mode flottant ; les deux sont deja pris en charge ailleurs dans le portage.
+void PPCMtmsr(u32) {}
+u32 PPCMfmsr(void) { return 0; }
+void PPCSync(void) {}
+void PPCHalt(void) { std::abort(); }
+
+BOOL DBIsDebuggerPresent(void) { return FALSE; }

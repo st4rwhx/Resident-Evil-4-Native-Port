@@ -22,6 +22,8 @@
 
 extern "C" unsigned int port_gx_bound_texture(int unit);
 
+
+
 #include <cstdio>
 #include <cstring>
 
@@ -29,6 +31,8 @@ extern "C" unsigned int port_gx_bound_texture(int unit);
 #include <GLES3/gl3.h>
 
 #include <dolphin.h>
+
+#include "wgpipe.h"
 
 namespace {
 
@@ -66,6 +70,54 @@ bool g_ztest = true, g_zwrite = true;
 GXCompare g_zfunc = GX_LEQUAL;
 bool g_blend = false;
 GXColor g_clear = {0, 0, 0, 255};
+
+u8 g_frac_pos = 0, g_frac_tex = 0;   // bits fractionnaires des attributs entiers
+
+GXAttrType g_desc[GX_VA_MAX_ATTR] = { GX_NONE };
+u8 g_ncomp[GX_VA_MAX_ATTR] = { 0 };      // composantes par attribut, depuis GXSetVtxAttrFmt
+
+int g_stream_attr = -1;                  // attribut en cours dans le flux direct
+int g_stream_comp = 0;                   // composante en cours dans cet attribut
+float g_stream_val[4] = { 0, 0, 0, 0 };
+
+// L'ordre du materiel, celui dans lequel les composantes arrivent.
+const GXAttr STREAM_ORDER[] = {
+    GX_VA_PNMTXIDX, GX_VA_TEX0MTXIDX, GX_VA_TEX1MTXIDX, GX_VA_TEX2MTXIDX,
+    GX_VA_TEX3MTXIDX, GX_VA_TEX4MTXIDX, GX_VA_TEX5MTXIDX, GX_VA_TEX6MTXIDX,
+    GX_VA_TEX7MTXIDX, GX_VA_POS, GX_VA_NRM, GX_VA_CLR0, GX_VA_CLR1,
+    GX_VA_TEX0, GX_VA_TEX1, GX_VA_TEX2, GX_VA_TEX3,
+    GX_VA_TEX4, GX_VA_TEX5, GX_VA_TEX6, GX_VA_TEX7
+};
+const int STREAM_N = (int) (sizeof(STREAM_ORDER) / sizeof(STREAM_ORDER[0]));
+
+int comps_of(GXAttr a)
+{
+    if (g_ncomp[a])
+        return g_ncomp[a];
+    // Valeurs par defaut du materiel quand le jeu n'a pas appele GXSetVtxAttrFmt.
+    if (a == GX_VA_POS) return 3;
+    if (a == GX_VA_NRM) return 3;
+    if (a == GX_VA_CLR0 || a == GX_VA_CLR1) return 4;
+    if (a >= GX_VA_TEX0 && a <= GX_VA_TEX7) return 2;
+    return 1;
+}
+
+// Avance jusqu'au prochain attribut **direct** du descripteur, en repartant du debut quand le
+// sommet est complet.
+void stream_next(int from)
+{
+    for (int i = from; i < STREAM_N; ++i) {
+        const GXAttr a = STREAM_ORDER[i];
+        if (g_desc[a] == GX_DIRECT) {
+            g_stream_attr = i;
+            g_stream_comp = 0;
+            return;
+        }
+    }
+    g_stream_attr = -1;
+}
+
+inline float fixed_to_f(int v, u8 frac) { return (float) v / (float) (1 << frac); }
 
 GLuint g_prog = 0, g_vao = 0, g_vbo = 0, g_ibo = 0;
 GLint g_u_mvp = -1, g_u_tex = -1, g_u_texon = -1;
@@ -246,10 +298,48 @@ GXFifoObj *GXInit(void *base, u32 size)
     return nullptr;   // le jeu ne fait que le ranger ; il n'y a pas de FIFO ici
 }
 
-void GXClearVtxDesc(void) {}
-void GXSetVtxDesc(GXAttr attr, GXAttrType type) { (void)attr; (void)type; }
+// ------------------------------------------------- descripteur de sommet et flux direct
+//
+// Une partie du jeu - le rendu de texte, le module de debogage - n'appelle pas les fonctions
+// d'attribut : elle ecrit les composantes **a la suite** dans le write-gather pipe, et le
+// materiel les repartit selon le descripteur courant. Il faut donc tenir ce descripteur et
+// refaire la repartition. Sans cela, ces unites ne dessinent rien du tout, en silence.
+
+void GXClearVtxDesc(void)
+{
+    for (int i = 0; i < GX_VA_MAX_ATTR; ++i)
+        g_desc[i] = GX_NONE;
+}
+
+void GXSetVtxDesc(GXAttr attr, GXAttrType type)
+{
+    if (attr >= 0 && attr < GX_VA_MAX_ATTR)
+        g_desc[attr] = type;
+}
+
+// Le nombre de bits fractionnaires des attributs entiers. Sans lui, une position s16 arrive
+// 2^frac fois trop grande : le modele est la, mais a l'echelle d'un immeuble.
 void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType type, u8 frac)
-{ (void)vtxfmt; (void)attr; (void)cnt; (void)type; (void)frac; }
+{
+    (void)vtxfmt; (void)type;
+    if (attr < 0 || attr >= GX_VA_MAX_ATTR)
+        return;
+    // GXCompCnt est un enum par famille d'attribut : pour une position, 0 = XY et 1 = XYZ ;
+    // pour une couleur, 0 = RGB et 1 = RGBA ; pour une coordonnee de texture, 0 = S et 1 = ST.
+    if (attr == GX_VA_POS) {
+        g_ncomp[attr] = (u8) (cnt == GX_POS_XY ? 2 : 3);
+        g_frac_pos = frac;
+    } else if (attr == GX_VA_NRM) {
+        g_ncomp[attr] = 3;
+    } else if (attr == GX_VA_CLR0 || attr == GX_VA_CLR1) {
+        g_ncomp[attr] = (u8) (cnt == GX_CLR_RGB ? 3 : 4);
+    } else if (attr >= GX_VA_TEX0 && attr <= GX_VA_TEX7) {
+        g_ncomp[attr] = (u8) (cnt == GX_TEX_S ? 1 : 2);
+        g_frac_tex = frac;
+    } else {
+        g_ncomp[attr] = 1;
+    }
+}
 
 void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts)
 {
@@ -259,6 +349,7 @@ void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts)
     g_cur_open = false;
     std::memset(&g_cur, 0, sizeof(g_cur));
     g_cur.r = g_cur.g = g_cur.b = g_cur.a = 255;
+    stream_next(0);   // arme le flux direct pour les unites qui ecrivent dans le pipe
 }
 
 // La position ouvre un sommet : une nouvelle position valide le precedent.
@@ -274,6 +365,103 @@ void GXPosition3f32(f32 x, f32 y, f32 z)
 void GXColor4u8(u8 r, u8 g, u8 b, u8 a) { g_cur.r = r; g_cur.g = g; g_cur.b = b; g_cur.a = a; }
 void GXTexCoord2f32(f32 u, f32 v) { g_cur.u = u; g_cur.v = v; }
 void GXNormal3f32(f32 x, f32 y, f32 z) { (void)x; (void)y; (void)z; }
+
+// Les memes attributs en virgule fixe. RE4 s'en sert partout ou il peut : c'est par la que
+// passe la geometrie des salles et des personnages, pas par les variantes flottantes.
+void GXPosition3s16(s16 x, s16 y, s16 z)
+{
+    GXPosition3f32(fixed_to_f(x, g_frac_pos), fixed_to_f(y, g_frac_pos), fixed_to_f(z, g_frac_pos));
+}
+
+void GXPosition2u16(u16 x, u16 y)
+{
+    GXPosition3f32(fixed_to_f((int) x, g_frac_pos), fixed_to_f((int) y, g_frac_pos), 0.0f);
+}
+
+void GXTexCoord2s16(s16 s, s16 t)
+{
+    g_cur.u = fixed_to_f(s, g_frac_tex);
+    g_cur.v = fixed_to_f(t, g_frac_tex);
+}
+
+// Les normales s8 sont toujours en 1.7 : le bit de signe et sept bits de fraction, donc 127
+// vaut presque 1. Elles ne servent pas encore (l'eclairage viendra avec TEV), mais il faut les
+// consommer : une normale laissee dans le flux decalerait l'attribut suivant.
+void GXNormal3s8(s8 x, s8 y, s8 z) { (void)x; (void)y; (void)z; }
+
+// L'indice de matrice par sommet, pour la palette de skinning. Il sera lu quand le portage
+// gerera les matrices multiples ; pour l'instant tout passe par la matrice courante.
+void GXMatrixIndex1u8(u8 idx) { (void)idx; }
+
+// ------------------------------------------------- flux direct : le pipe
+//
+// Toutes les ecritures du jeu dans le write-gather pipe arrivent ici. On accumule les
+// composantes de l'attribut courant, et quand il est complet on le pose dans le sommet en
+// cours ; quand le dernier attribut du descripteur est pose, le sommet est valide.
+namespace {
+
+void stream_flush_attr()
+{
+    const GXAttr a = STREAM_ORDER[g_stream_attr];
+    switch (a) {
+    case GX_VA_POS:
+        // La position ouvre le sommet, comme pour la voie par fonctions.
+        commit_vertex();
+        g_cur.x = g_stream_val[0];
+        g_cur.y = g_stream_val[1];
+        g_cur.z = (comps_of(a) >= 3) ? g_stream_val[2] : 0.0f;
+        g_cur_open = true;
+        break;
+    case GX_VA_CLR0:
+    case GX_VA_CLR1:
+        g_cur.r = (unsigned char) g_stream_val[0];
+        g_cur.g = (unsigned char) g_stream_val[1];
+        g_cur.b = (unsigned char) g_stream_val[2];
+        g_cur.a = (comps_of(a) >= 4) ? (unsigned char) g_stream_val[3] : 255;
+        break;
+    case GX_VA_TEX0:
+        g_cur.u = g_stream_val[0];
+        g_cur.v = (comps_of(a) >= 2) ? g_stream_val[1] : 0.0f;
+        break;
+    default:
+        break;   // normales, indices de matrice, autres jeux de coordonnees : plus tard
+    }
+    stream_next(g_stream_attr + 1);
+    if (g_stream_attr < 0)
+        stream_next(0);   // sommet complet : le suivant recommence au debut du descripteur
+}
+
+void stream_push(float v, bool fixed_point)
+{
+    if (g_stream_attr < 0)
+        return;
+    const GXAttr a = STREAM_ORDER[g_stream_attr];
+    float x = v;
+    if (fixed_point) {
+        if (a == GX_VA_POS)
+            x = v / (float) (1 << g_frac_pos);
+        else if (a >= GX_VA_TEX0 && a <= GX_VA_TEX7)
+            x = v / (float) (1 << g_frac_tex);
+    }
+    if (g_stream_comp < 4)
+        g_stream_val[g_stream_comp] = x;
+    if (++g_stream_comp >= comps_of(a))
+        stream_flush_attr();
+}
+
+} // namespace
+
+extern "C" {
+void port_wg_push_u8(u8 v) { stream_push((float) v, false); }
+void port_wg_push_s8(s8 v) { stream_push((float) v, false); }
+void port_wg_push_u16(u16 v) { stream_push((float) v, true); }
+void port_wg_push_s16(s16 v) { stream_push((float) v, true); }
+void port_wg_push_u32(u32 v) { stream_push((float) v, true); }
+void port_wg_push_s32(s32 v) { stream_push((float) v, true); }
+void port_wg_push_f32(f32 v) { stream_push(v, false); }
+}
+
+PortWGPipe port_wg_pipe;
 
 void port_gx_end(void)
 {
@@ -446,3 +634,7 @@ void GXSetNumTexGens(u8 n) { (void)n; }
 void GXSetNumTevStages(u8 n) { (void)n; }
 void GXSetTevOrder(GXTevStageID stage, GXTexCoordID coord, GXTexMapID map, GXChannelID color)
 { (void)stage; (void)coord; (void)map; (void)color; }
+
+// Masque des etages de texture indirecte. Le portage ne fait pas encore d'indirect texturing
+// (id_sys s'en sert pour ses deformations), mais le symbole est interne au SDK et doit exister.
+extern "C" void __GXSetIndirectMask(u32 mask) { (void) mask; }

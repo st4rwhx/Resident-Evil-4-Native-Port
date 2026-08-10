@@ -269,8 +269,16 @@ static void move(FE_WORK* t)
             // the mask into x (r30) and gives y r29. With the mask pinned, `cur >> 6` still loses r0
             // to the mask's dependents in sched1 (m has two consumers, u one) unless it is pinned
             // too. Both pins are codeless.
+            #ifdef RE4_PORT
+            u32 m;   // portage : epinglage sur r11, sans objet hors PowerPC
+            #else
             register u32 m asm("r11");
+            #endif
+            #ifdef RE4_PORT
+            u32 u;   // portage : epinglage sur r0, sans objet hors PowerPC
+            #else
             register u32 u asm("r0");
+            #endif
             u = cur >> 6;
             int y = ((cur >> 4) + u + 6) * 14;
             m = cur & 0xF;

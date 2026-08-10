@@ -467,3 +467,10 @@ void cManager<T>::destroyNow(T* p)
     destroy(p);
     flag = f;
 }
+
+#ifdef RE4_PORT
+// Portage : pl_wep.cpp appelle cManager<cObj>::destroyNow, dont la definition est ici. Le
+// destructeur qui l'instanciait implicitement est elimine avant la fin de l'unite, donc plus
+// rien ne la fait naitre : on la demande explicitement.
+template void cManager<cObj>::destroyNow(cObj*);
+#endif

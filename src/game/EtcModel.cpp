@@ -211,7 +211,12 @@ int EspGetEfmTplAddr(int id, void** tpl);   // game/eff_sys.cpp
 // cRoomData::getRoomSavePtr(u16) called with GetEtcFlgPtr's int room: the original passes the
 // register through unmasked (narrow-argument compiler difference, see docs/matching.md), so it is called
 // through an int-parameter alias.
+#ifdef RE4_PORT
+static inline u8* RoomDataGetRoomSavePtr(cRoomData* r, int room)
+{ return r->getRoomSavePtr((u16) room); }
+#else
 u8* RoomDataGetRoomSavePtr(cRoomData* r, int room) asm("getRoomSavePtr__9cRoomDataUs");
+#endif
 
 // One slot of the room etc table.
 class cEtcTbl {
@@ -2904,7 +2909,12 @@ int GetEtcAmbType()
     } else if (pG->room_id >= 0x10C && pG->room_id <= 0x11E) {
         return 1;
     } else {
+        #ifdef RE4_PORT
+        // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+        // operandes contraignaient l ordonnancement du compilateur d origine
+        #else
         asm volatile("");
+        #endif
         u32 room = pG->room_id;
         if (room >= 0x200 && room <= 0x22A) {
             return 3;

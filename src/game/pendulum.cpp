@@ -59,7 +59,12 @@ static inline void penWindScale(Vec* wind, f32 rate)
 // each penClothAtCk call so find_basic_blocks does not put its `(use 0)` nop between the call and the
 // label. Empty `asm("" : "+r"(hit))` statements are such insns and emit nothing; they must all come
 // from one source line because find_cross_jump compares the asms' line numbers, hence the macro.
+#ifdef RE4_PORT
+// Portage : ancre sans instruction, elle n'existait que pour l'ordonnanceur de 2001.
+#define PEN_ANCHOR(v) ((void) (v))
+#else
 #define PEN_ANCHOR(v) asm("" : "+r"(v))
+#endif
 #define PEN_AT_CK_DIAMOND(c, w, uw, parts, at, hit)                                       \
     if (uw) {                                                                             \
         if ((c)->flags & 0x80) {                                                          \
@@ -319,12 +324,33 @@ void PenClothMove(cModel* m, PenCloth* c)
                 // plain hard-register copy `pv = pa` survives (r5 is still live for the call, so combine
                 // cannot fold it and regmove stops at the call); the codeless asm reading pv with r3/r4
                 // inputs puts the copy after the last argument move in sched2, the target's issue order.
+                #ifdef RE4_PORT
+                Vec* pa = &v;   // portage : epinglage sur r5, sans objet hors PowerPC
+                #else
                 register Vec* pa asm("r5") = &v;
+                #endif
+                #ifdef RE4_PORT
+                Vec* pw = &w->pos;   // portage : epinglage sur r3, sans objet hors PowerPC
+                #else
                 register Vec* pw asm("r3") = &w->pos;
+                #endif
+                #ifdef RE4_PORT
+                Vec* pm = &mpos;   // portage : epinglage sur r4, sans objet hors PowerPC
+                #else
                 register Vec* pm asm("r4") = &mpos;
+                #endif
+                #ifdef RE4_PORT
+                Vec* pv;   // portage : epinglage sur r28, sans objet hors PowerPC
+                #else
                 register Vec* pv asm("r28");
+                #endif
                 pv = pa;
+                #ifdef RE4_PORT
+                // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                // operandes contraignaient l ordonnancement du compilateur d origine
+                #else
                 asm("" : "+r"(pv) : "r"(pm), "r"(pw));
+                #endif
                 PSVECSubtract(pw, pm, pa);
                 v.y = 0.0f;
                 if (v.x != 0.0f && v.z != 0.0f) {
@@ -335,7 +361,12 @@ void PenClothMove(cModel* m, PenCloth* c)
                     // from cse1 so the `+ 1.0f` below stays a pool load: with the wind block's `+ 1.0f` it
                     // is then loop.c's combined (savings 2) constant movable, re-emitted in the preheader
                     // through emit_move_insn with a fresh high (`lis r9; lfs f30`), which is the original.
+                    #ifdef RE4_PORT
+                    // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
+                    // operandes contraignaient l ordonnancement du compilateur d origine
+                    #else
                     asm("" : "+f"(ang));
+                    #endif
                     if (c->x2C) {
                         ang = sinf(LIMIT_ANGLE(c->x48 + c->x2C[i])) + 1.0f;
                         PSVECScale(pv, pv, ang);
@@ -557,7 +588,11 @@ void PenClothMove2(cModel* m, PenCloth* c)
     PenParts* w;
     PenParts* uw;
     cModel* np;   // neighbour parts (one variable for every lookup: r7 in the original)
+    #ifdef RE4_PORT
+    const u8* pp;   // portage : epinglage sur r21, sans objet hors PowerPC
+#else
     register const u8* pp asm("r21");   // COMPILER-DIFF: #17 (register pin): pp above i in global-alloc
+#endif
     u32 i;
     u32 k;
     int hit;
