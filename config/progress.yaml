@@ -1,7 +1,10 @@
 # Function-by-function matching ledger for the main DOL.
 # Status values: matched (byte-identical, verified), equivalent (logic
-# confirmed correct via hand-tracing + compile, not yet byte-exact),
-# not_started.
+# confirmed correct via hand-tracing + compile, not yet byte-exact,
+# remaining gaps fully understood/categorized), in_progress (compiles,
+# real objdiff match % against ground truth, call sequence/logic verified
+# correct, but remaining gaps not yet fully chased down/categorized one by
+# one the way `equivalent` requires), not_started.
 #
 # This is the source of truth `tools/scripts/progress_report.py` reads to
 # compute the honest completion percentage in README.md - update this file
@@ -359,3 +362,21 @@ functions:
   - name: Event::GetActBtnCount
     status: matched
     bytes: 8
+  - name: systemStartInit
+    status: in_progress
+    bytes: 356
+  - name: memclr_asm
+    status: matched
+    bytes: 88
+  - name: RndInit
+    status: matched
+    bytes: 8
+  - name: LCEnable
+    status: equivalent
+    bytes: 56
+  - name: systemVISetBlack
+    status: equivalent
+    bytes: 84
+  - name: postVSyncCallback
+    status: equivalent
+    bytes: 76
