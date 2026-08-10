@@ -15,7 +15,9 @@ struct HermiteParam {
 extern "C" void HermiteInterpolation(HermiteParam* p, void* result, void* work);
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 int ShapeMove(cModelInfo* info);
 void SetOriginalShape(cModelInfo* info);
 void ClrShape(cModel* m);

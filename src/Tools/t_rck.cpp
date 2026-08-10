@@ -19,7 +19,9 @@
 // lines), computes the next-hop table with Dijkstra and saves the room's .rtp file.
 
 extern "C" int sprintf(char* s, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 
 #define RCK_POINT_MAX 128
 

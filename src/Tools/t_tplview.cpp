@@ -14,7 +14,9 @@
 #include "tools.h"
 
 extern "C" int sprintf(char* s, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" char* strcpy(char* dst, const char* src);
+#endif
 
 // TPL viewer debug tool (Tools/t_tplview.cpp): lists the sub-screen viewer TPLs, draws the selected one
 // and lets the pad move / resize it.

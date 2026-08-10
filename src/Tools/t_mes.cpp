@@ -6,7 +6,9 @@
 #include "mes.h"
 #include "t_util.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" unsigned int strlen(const char* s);
+#endif
 
 // Message debug tool (Tools/t_mes.cpp): shows one message of the current message data set, lets the pad
 // move it and edit the message colour table.

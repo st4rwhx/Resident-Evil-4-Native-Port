@@ -7,8 +7,12 @@
 extern "C" {
 f32 asinf(f32 x);
 f32 acosf(f32 x);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : declare par <cstdio>, et avec la liaison C
 int printf(const char* fmt, ...);
+#endif
 #ifdef RE4_PORT
 #include <cstdio>
 #else

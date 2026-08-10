@@ -4,8 +4,12 @@
 #include "types.h"
 #include "db_log.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" char* strcpy(char* dst, const char* src);
+#endif
 
 // Debug tool window/button base (D:/Bio4/Prog/db_toolbase.h; bodies in Tools/db_toolbase.cpp, the same
 // object is t_event's db_filelist.cpp and most of Sscrn's ss_term.cpp). The string-returning inlines

@@ -21,9 +21,15 @@
 
 extern "C" {
 int sprintf(char* s, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strncmp(const char* a, const char* b, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strncpy(char* dst, const char* src, unsigned int n);
+#endif
 }
 
 // Scroll (room model placement) editor of the t_light REL (t_scroll.cpp; the file name is not in

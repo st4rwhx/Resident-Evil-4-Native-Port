@@ -36,8 +36,12 @@ asm(".comm common_" T_ID_STR(REL_MODULE) ",52,4");
 
 extern "C" {
 int sprintf(char*, const char*, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char*);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strncpy(char*, const char*, u32);
+#endif
 void qsort(void* base, u32 n, u32 size, int (*cmp)(const void*, const void*));
 double strtod(const char*, char**);
 float tanf(float);

@@ -65,12 +65,24 @@
 
 extern "C" {
 void OSReport(const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strncmp(const char* a, const char* b, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
 char* strchr(const char* s, int c);
 char* strstr(const char* s, const char* sub);
 // game/eff_sys.cpp

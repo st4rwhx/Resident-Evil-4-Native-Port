@@ -18,7 +18,9 @@
 void RotMatrix(Mtx m, Vec* rot);  // game/math_sub.cpp
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 f32 sinf(f32 x);
 f32 cosf(f32 x);
 f32 SQRTF(f32 x);

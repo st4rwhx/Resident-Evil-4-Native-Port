@@ -2,9 +2,15 @@
 #include "cString.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
 }
 
 cString::cString()

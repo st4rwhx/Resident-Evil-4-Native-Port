@@ -29,7 +29,9 @@
 #include "mercenaries.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 static void IdSetColLoop(IDSystem* id, int no, u8 type, int on);
 }
 

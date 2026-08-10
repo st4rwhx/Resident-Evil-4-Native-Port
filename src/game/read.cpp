@@ -23,7 +23,9 @@
 extern "C" {
 void OSReport(const char* fmt, ...);
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 u32 Yz2DecodeSet(char* str, void* buf);   // game/yz2code.cpp
 void Yz2DecodeExec(void* dst);
 void SpecularInit(void* a, void* b, void* c, void* d);   // game/trans.cpp

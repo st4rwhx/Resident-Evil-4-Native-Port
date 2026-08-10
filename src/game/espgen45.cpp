@@ -510,7 +510,7 @@ void Espgen45_TransSub(EspgenWork* w)
     GXSetCullMode(0);
     GXSetZMode(1, 3, 1);
     cModel model;
-    u8 modelPad[0x320 - sizeof(cModel)];
+    u8 modelPad[0x320 > sizeof(cModel) ? 0x320 - sizeof(cModel) : 1];   // borne : negatif des que les pointeurs font huit octets
     PSMTXIdentity(model.mat);
     {
         static const Vec p0 = {0.0f, 0.0f, 0.0f};

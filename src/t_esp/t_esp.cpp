@@ -12,7 +12,9 @@
 
 extern "C" {
 int sprintf(char* s, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
 void memclr_asm(void* p, u32 size);
 // db_port.cpp
 int DB_GetStageNo();

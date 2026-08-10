@@ -3,7 +3,9 @@
 #include "eprintf.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
 }
 
 // Sound test of the t_movie REL (snd_test.cpp; the file name is not in the binary). Plays ISS / stream

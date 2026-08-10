@@ -22,7 +22,9 @@
 extern "C" {
 void OSReport(const char* fmt, ...);
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 char* strchr(const char* s, int c);
 int DBIsDebuggerPresent();
 void PPCMtmsr(u32 msr);

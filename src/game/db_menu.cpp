@@ -13,10 +13,18 @@
 #include "dvd.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 u32 GetGameTime(int* h, int* m, int* s); // returns a value (main_sub.h): the call sets r3, so `addi r3,&h` loses its output dependence and issues last
 void DLL_Link(void* module, void* bss);
 void DLL_Unlink(void* module);

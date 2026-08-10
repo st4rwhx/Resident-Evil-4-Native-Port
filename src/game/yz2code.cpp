@@ -1,7 +1,9 @@
 #include "types.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 unsigned long strtoul(const char* s, char** end, int base);
 void yz2Decode_Decode(void* ctx, void* dst, u32 size, void* ev);
 u32 Yz2DecodeSet(char* str, void* buf);

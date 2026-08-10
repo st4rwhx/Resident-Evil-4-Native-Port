@@ -49,7 +49,9 @@ void* __builtin_new(unsigned int size);
 void __builtin_delete(void* p);
 int sprintf(char* dst, const char* fmt, ...);
 int vsprintf(char* dst, const char* fmt, va_list ap);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 void SubScreenWait(int frames);
 }
 

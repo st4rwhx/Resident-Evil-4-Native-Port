@@ -7,10 +7,22 @@
 
 extern "C" {
 void OSReport(const char* fmt, ...);
+#ifdef RE4_PORT
+#include <cstdio>   // la redeclaration locale entrerait en conflit avec celle de l hote
+using std::printf;
+using std::vsprintf;
+#else
 int printf(const char* fmt, ...);
+#endif
+#ifndef RE4_PORT   // portage : <cstdio> le declare deja, ci-dessus
 int vsprintf(char* buf, const char* fmt, va_list ap);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strncpy(char* dst, const char* src, unsigned int n);
+#endif
 }
 
 #define HALT()                                                    \

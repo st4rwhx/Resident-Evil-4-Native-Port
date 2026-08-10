@@ -20,7 +20,9 @@
 
 extern "C" {
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
 }
 int SetToolLight(int no);  // db_light_tools.cpp
 

@@ -18,8 +18,12 @@
 #include "joy.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strncmp(const char* a, const char* b, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 void OSReport(const char* fmt, ...);
 f32 sinf(f32);
 f32 cosf(f32);

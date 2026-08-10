@@ -7,12 +7,22 @@
 
 extern "C" {
 void OSReport(const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
 char* strstr(const char* s, const char* sub);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strncpy(char* dst, const char* src, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
 }
 
 extern char* pUser_name;

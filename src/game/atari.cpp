@@ -19,7 +19,9 @@ void PPCMtpmc4(u32 v);
 void PPCMtmmcr0(u32 v);
 void PPCMtmmcr1(u32 v);
 u32 PPCMfpmc1();
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 }
 
 // at_sub attribute filter bypass mode (cSatMgr::seCk of the manager running the check)

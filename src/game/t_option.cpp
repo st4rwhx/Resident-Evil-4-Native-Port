@@ -14,7 +14,9 @@
 #include "main_mem.h"
 #include "t_util.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 void DrawGage(int x, int y, int h, int w, int val, int max, int color);
 void CamStick2World(Camera* cam, JOY* joy, Vec* out);

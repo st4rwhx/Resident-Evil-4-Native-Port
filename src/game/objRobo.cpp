@@ -42,7 +42,9 @@ public:
 
 extern "C" {
 int MotionMove(cModel* m, int a);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* p, int c, unsigned int n);
+#endif
 }
 cObj* SetObjRobo(void* bin, void* tpl, Vec* pos, Vec* rot);
 void MotionSetCore(cModel* m, void* work, void* mot, int a, int b, int c, int d);

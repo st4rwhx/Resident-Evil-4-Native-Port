@@ -19,10 +19,16 @@
 
 extern "C" {
 void OSReport(const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 void DCFlushRange(void* addr, u32 nBytes);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 }
 
 // Not the do { } while (0) form of the other units: the OSReport stays in the caller's block and

@@ -7,7 +7,9 @@
 
 extern "C" {
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
 }
 
 // game/xml.cpp: minimal XML reader/writer used by the debug tools (XSDSchemaSof documents).

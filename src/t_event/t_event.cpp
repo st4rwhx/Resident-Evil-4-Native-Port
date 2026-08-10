@@ -32,10 +32,16 @@
 
 extern "C" {
 void memclr_asm(void* p, u32 size);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* p, int c, unsigned int n);
+#endif
 int sscanf(const char* s, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 }
 
 void DbMenuSetExecTool(const char* name);

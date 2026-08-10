@@ -8,7 +8,9 @@
 #include "main_mem.h"
 
 void* GetDataExt(void* arc, const char* tag, int no);   // game/read.cpp
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" int strcmp(const char* a, const char* b);
+#endif
 
 FlrSys FlrAt_sys;
 FlrSys* pFlrSys;

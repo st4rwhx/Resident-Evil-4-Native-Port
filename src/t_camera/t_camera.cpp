@@ -22,7 +22,9 @@
 
 extern "C" {
 void memclr_asm(void* p, u32 size);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* p, int c, unsigned int n);
+#endif
 }
 
 static inline void LdatSet(TcLdat*& d, TcLdat* v) { d = v; }

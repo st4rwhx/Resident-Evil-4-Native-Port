@@ -4,7 +4,9 @@
 #include "camera.h"
 #include "quake.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 QuakeWork Quake;
 static Vec QuakeOfsOld[2];

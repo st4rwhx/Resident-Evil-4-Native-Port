@@ -50,7 +50,9 @@ extern "C" void OSReport(const char* fmt, ...);
 int GetWepDmVal(cEm* em, u32 a, int b);   // em10.h (not included: it pulls emwep.h's global plemBackjump)
 extern void (*EmInitFunc)(cEm* em);   // game/em.cpp
 extern FootShadowTbl Em32_fs_tbl;     // game/foot_shadow.cpp
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 extern "C" cObj* SetObaModel(cObj* parent, int partsNo, Vec* ofs, f32 rad, u8 type, f32 h);   // game/obj20.cpp
 
 // motion.h declares the one-argument form; the enemies pass a second argument.

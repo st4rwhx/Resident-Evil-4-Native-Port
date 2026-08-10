@@ -23,7 +23,9 @@ extern "C" {
 void ReleaseWepData();                         // game/read.cpp
 void ReadPlayerData(int type, int costume);    // game/read.cpp
 void AddWaterPower(Vec* pos, f32 power);       // game/Espgen42.cpp
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 }
 f32 GetDistance(Vec& a, Vec& b);               // game/sub2.cpp (second overload)
 

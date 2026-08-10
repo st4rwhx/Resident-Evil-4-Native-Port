@@ -6,7 +6,9 @@
 #include "room_data.h"
 #include "t_util.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" int strcmp(const char* a, const char* b);
+#endif
 
 // Flag editor tool: pages of bit flags with names.
 

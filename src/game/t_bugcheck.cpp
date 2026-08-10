@@ -10,7 +10,9 @@
 #include "player.h"
 #include "t_util.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 int lifeLevel(int levels, s16 max, int base);
 void DrawGage(int x, int y, int h, int w, int val, int max, int color);

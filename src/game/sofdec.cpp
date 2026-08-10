@@ -16,7 +16,9 @@ extern "C" {
 void DCFlushRangeNoSync(void* addr, u32 nBytes);
 void OSReport(const char* fmt, ...);
 int sprintf(char* dst, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 #ifdef RE4_PORT
 // Portage : `u32` est `unsigned long`, distinct de `size_t` meme quand les deux font 32 bits ;
 // la declaration du prelude fait alors foi et celle-ci deviendrait un conflit.

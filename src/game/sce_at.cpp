@@ -49,9 +49,13 @@
 // run time, checked against the player, the partner and the enemies every frame.
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
 int sprintf(char* dst, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 void OSReport(const char* fmt, ...);
 int SubCharHideCheck();                                  // game/pl_npc.cpp
 int getRoomEtcBreak(int no, cEm** em, int a);            // game/EtcModel.cpp

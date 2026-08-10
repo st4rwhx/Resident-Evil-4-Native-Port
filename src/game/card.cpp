@@ -43,7 +43,9 @@ struct OSCalendarTime {
 extern "C" {
 void OSReport(const char* fmt, ...);
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 void DCFlushRange(void* addr, u32 nBytes);
 OSTime OSGetTime();
 void OSTicksToCalendarTime(OSTime ticks, OSCalendarTime* td);

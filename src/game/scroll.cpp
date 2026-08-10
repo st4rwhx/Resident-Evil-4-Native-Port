@@ -9,7 +9,9 @@
 #include "obj.h"
 #include "scroll.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 int MotionSetCore(cModel* m, void* work, void* mot, int a, int b, int c, int d);
 void slideModelAddr(u32 addr, int ofs);
 void slideTplAddr(void* tpl, int ofs);

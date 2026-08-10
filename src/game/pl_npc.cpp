@@ -36,7 +36,9 @@
 extern "C" {
 double atan2(double y, double x);
 f32 sinf(f32 x);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 void ShapeMove(void* p);
 u16 MotionMoveF(cModel* m, int flag) asm("MotionMove");   // motion.h declares the one-argument form
 int SubLadderClimbCk(cModel* m);

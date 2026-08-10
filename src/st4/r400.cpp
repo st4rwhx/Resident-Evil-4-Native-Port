@@ -24,7 +24,9 @@
 #include "mercenaries.h"
 #include "rnd.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 // Room 4-00 (D:/Bio4/Prog/r400.cpp): the Mercenaries village; the enemy resets per area, the
 // bosses after enough kills and the three treasure boxes.

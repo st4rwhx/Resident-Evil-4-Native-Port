@@ -15,11 +15,19 @@
 // records, file-name strings). The tool entry is gone from tools.cpp; the routine table and the
 // routines remain.
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" int strcmp(const char* a, const char* b);
+#endif
 extern "C" char* strrchr(const char* s, int c);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 int SetToolLight(int no);  // db_light_tools.cpp
 extern "C" int sprintf(char* s, const char* fmt, ...);
 

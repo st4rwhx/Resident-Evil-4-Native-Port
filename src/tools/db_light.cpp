@@ -41,8 +41,12 @@ asm(".comm common_" DB_LIGHT_STR(REL_MODULE) ",52,4");
 
 extern "C" {
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 f32 atan2f(f32 y, f32 x);
 f64 atan2(f64 y, f64 x);
 f32 asinf(f32 x);

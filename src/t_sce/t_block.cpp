@@ -23,8 +23,12 @@
 
 extern "C" {
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 // the tool passes the world position by value (the caller copies it and passes the address)
 int GetScreenPosV(Vec pos, Vec* scr) asm("GetScreenPos");
 }

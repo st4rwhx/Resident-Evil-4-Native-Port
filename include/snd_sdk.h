@@ -42,9 +42,13 @@ void AXSetCompressor(u32 switch_);
 void AIInit(u8* stack);
 void AIReset(void);
 void memclr_asm(void* dst, u32 n);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 f64 pow(f64 x, f64 y);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
 void AXFXSetHooks(void* (*alloc)(u32), void (*free)(void*));
 
 // The SDK's dolphin/gx/GXGeometry.h is included by every sound unit through dolphin.h. Its

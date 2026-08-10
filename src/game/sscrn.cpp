@@ -37,11 +37,17 @@
 
 extern "C" {
 void OSReport(const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 char* strchr(const char* s, int c);
 char* strrchr(const char* s, int c);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strncpy(char* dst, const char* src, unsigned int n);
+#endif
 }
 
 // The original cUnit::beginEvent takes an int (every caller passes one: sce_com's

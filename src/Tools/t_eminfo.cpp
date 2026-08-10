@@ -18,7 +18,9 @@
 // routes/areas some enemies build from them.
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 int sprintf(char* dst, const char* fmt, ...);
 f32 LIMIT_ANGLE(f32 x);
 // game/sub2.cpp; really takes Vec*, declared by value here (same ABI) so the caller copies its Vec.

@@ -16,7 +16,9 @@
 // debug heap; every frame the image is rebuilt and handed to LightAreaDataLoad so the game shows it.
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 // game/sub2.cpp; really takes Vec*, declared by value here (same ABI) so the caller copies its Vec.
 int GetScreenPos(Vec pos, Vec* scr);
 int LightAreaDataLoad(void* data);

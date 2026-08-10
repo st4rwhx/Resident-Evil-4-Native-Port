@@ -24,11 +24,17 @@ void DbMenuExitAfterCheck();                        // game/db_menu.cpp
 extern "C" {
 u32 OSGetTick();
 void OSReport(const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
 unsigned int strcspn(const char* s, const char* reject);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strncmp(const char* a, const char* b, unsigned int n);
+#endif
 long strtol(const char* s, char** end, int base);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 }
 extern u8 PlMode;       // game/player.cpp
 extern u8 PlFormMode;   // game/player.cpp

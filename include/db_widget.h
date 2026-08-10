@@ -12,8 +12,12 @@
 // t_esp/db_window.cpp (DB_MOUSE/DB_KEYBORD/DB_PRIM_ARRAY). The drawing/input bridge (DB_DrawBox,
 // DB_DrawString, DB_GetKeybordData...) is t_esp/db_port.cpp. Field names are ours.
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" char* strcpy(char* dst, const char* src);
+#endif
 extern "C" void exit(int) __attribute__((noreturn));
 
 void DB_DrawBox(f32 x, f32 y, f32 w, f32 h, f32 r, f32 g, f32 b, f32 a);

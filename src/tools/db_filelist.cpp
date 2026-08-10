@@ -10,8 +10,12 @@
 // sits inside Sscrn's ss_term.cpp. t_event's object is Tools' db_toolbase.cpp followed by this file.
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 char* strchr(const char* s, int c);
 char* strstr(const char* s, const char* sub);
 }

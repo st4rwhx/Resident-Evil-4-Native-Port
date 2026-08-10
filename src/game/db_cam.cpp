@@ -17,7 +17,9 @@
 #include "db_cam.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 void CameraSetOrientationZeroRoll(Camera* cam);
 void CameraCamposDistance(Camera* cam, f32 dist);
 void CameraRotAxisPosRad(Camera* cam, Vec* axis, Vec* pos, f32 rad);

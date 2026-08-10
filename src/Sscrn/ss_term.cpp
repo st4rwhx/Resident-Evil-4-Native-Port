@@ -54,11 +54,17 @@ static void ssTermWidgetKill(Widget<SUB_SCREEN>* w)
 
 extern "C" {
 int sprintf(char* s, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* p, int c, unsigned int n);
+#endif
 char* strchr(const char* s, int c);
 char* strstr(const char* s, const char* k);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char* s);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* d, const char* s);
+#endif
 // game/shape.cpp
 int ShapeMove(cModelInfo* info);
 void ClrShape(cModel* m);

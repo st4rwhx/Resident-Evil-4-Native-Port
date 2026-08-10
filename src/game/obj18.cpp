@@ -15,7 +15,9 @@ public:
 
 extern "C" {
 int MotionMove(cModel* m, int a);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* p, int c, unsigned int n);
+#endif
 void obj18SetOya(cObj18* obj);
 void Em34ClothSet1(cModel* m, PlCloth* c);
 void Em34ClothSet2(cModel* m, PlCloth* c);

@@ -22,11 +22,17 @@ void OSFreeToHeap(int heap, void* p);
 s32 OSCheckHeap(int heap);
 void OSSetSaveRegion(void* start, void* end);
 extern int __OSCurrHeap;
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char* dst, const char* src);
+#endif
 char* strrchr(const char* s, int c);
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 }
 
 extern char* pRK;

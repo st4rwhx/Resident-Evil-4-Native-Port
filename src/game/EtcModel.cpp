@@ -69,7 +69,9 @@ struct EtcAmbRgb {
 extern "C" {
 void EspDataLoad(void* data, int a, int b);    // game/eff_sys.cpp
 cObj* SetLadder(void* bin, void* tpl, Vec* pos, Vec* rot, int no);   // game/obj13.cpp
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
 
 // game/et00.cpp: the window models
 int Et00_init(void* arc, EtcSetData* d, cModel** out, int flag);

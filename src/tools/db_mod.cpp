@@ -26,12 +26,22 @@
 extern "C" {
 int sscanf(const char*, const char*, ...);
 int sprintf(char*, const char*, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcpy(char*, const char*);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 unsigned int strlen(const char*);
+#endif
 void OSReport(const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char*, const char*);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strncmp(const char*, const char*, u32);
+#endif
 char* strchr(const char*, int);
 char* strstr(const char*, const char*);
 u32 strspn(const char*, const char*);

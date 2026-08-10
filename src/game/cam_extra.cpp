@@ -22,7 +22,9 @@
 #define WEP_ARC_PTR(no) PL_ARC_PTR((PlArc*) pG->pWepArc, no)
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 f32 atan2f(f32, f32);
 void Filter01SetParam(int mode, int z, u8 type, f32 level);
 void IdTexRelease(int id);

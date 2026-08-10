@@ -30,7 +30,9 @@
 #include "TexRender.h"
 #include "db_log.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 // Room 4-03 (D:/Bio4/Prog/r403.cpp): the Mercenaries castle; the enemy resets per area, the two
 // gatling gunners after enough kills, the slide down the banister and the three treasure cases.

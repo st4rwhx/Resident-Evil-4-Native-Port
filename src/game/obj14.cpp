@@ -7,7 +7,9 @@
 #include "math_sub.h"
 #include "snd.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 
 // Bell: a pendulum model with a hit-receiving enemy work; a shot swings it, rings it (reported to
 // pG for 90 frames) and setBreak() lets it fall.

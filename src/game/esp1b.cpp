@@ -1,7 +1,9 @@
 #include "atari.h"
 #include "esp.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 
 struct Esp1bWork {
     int n;   // 0x00 number of points

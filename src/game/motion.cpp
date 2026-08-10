@@ -7,7 +7,9 @@
 #include "eprintf.h"
 
 extern const Vec vecZero;
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 // Matrix copy written out as loops (the original never calls PSMTXCopy for these).
 // Shape matters (all four sites byte-identical only this way): dst pointer first, the row

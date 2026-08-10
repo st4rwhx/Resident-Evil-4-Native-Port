@@ -35,14 +35,22 @@
 // the effect generators and the .cfg model set loader).
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strcmp(const char* a, const char* b);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 int strncmp(const char* a, const char* b, unsigned int n);
+#endif
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strcat(char* dst, const char* src);
+#endif
 int atoi(const char* s);
 long strtol(const char* s, char** end, int base);
 int sprintf(char* s, const char* fmt, ...);
 f32 tanf(f32 x);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* p, int c, unsigned int n);
+#endif
 void OSReport(const char* fmt, ...);
 void memclr_asm(void* p, u32 size);
 }

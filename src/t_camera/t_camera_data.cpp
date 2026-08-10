@@ -16,7 +16,9 @@
 
 extern "C" {
 int sprintf(char* buf, const char* fmt, ...);
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 char* strncpy(char* dst, const char* src, unsigned int n);
+#endif
 }
 
 // Camera tool: room camera data export/import, game camera bridge, drawing primitives (t_camera REL).

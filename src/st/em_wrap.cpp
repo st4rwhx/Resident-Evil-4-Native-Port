@@ -7,7 +7,9 @@
 #include "player.h"
 #include "math_sub.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 // int store through a reference (keeps the following loads below it, like global.h BitOn)
 static inline void IntSet(int& d, int v) { d = v; }

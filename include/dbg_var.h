@@ -64,6 +64,15 @@ cVarRange<T>::operator int()
 template <class T>
 class cVarLoop : public cVarRange<T> {
 public:
+#ifdef RE4_PORT
+    // Les membres herites d une classe de base dependante ne sont pas trouves par la
+    // recherche en deux temps de GCC - la regle du standard, que clang contournait par ses
+    // extensions. Les nommer une fois ici evite un `this->` sur chaque usage.
+    using cVarRange<T>::val;
+    using cVarRange<T>::lower;
+    using cVarRange<T>::upper;
+    using cVarRange<T>::init;
+#endif
     cVarLoop(const T& lo, const T& hi, const T& v);
     virtual int limitUpper(int d);
     virtual int limitLower(int d);

@@ -6,7 +6,9 @@
 #include "main_mem.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memset(void* dst, int c, unsigned int n);
+#endif
 }
 
 #define PI 3.1415927f

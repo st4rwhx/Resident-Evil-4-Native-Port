@@ -29,7 +29,9 @@
 #include "TexRender.h"
 #include "db_log.h"
 
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 extern "C" void* memset(void* dst, int c, unsigned int n);
+#endif
 
 // Room 4-04 (D:/Bio4/Prog/r404.cpp): the Mercenaries castle courtyard; the enemy waves per area, the
 // chainsaw sister after enough kills, the banister slide and the three treasure cases.

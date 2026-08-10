@@ -9,7 +9,9 @@
 #include "db_log.h"
 
 extern "C" {
+#ifndef RE4_PORT   // portage : port/port_prelude.h le declare deja, avec la bonne taille
 void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 }
 
 #line 40 "D:/Bio4/Prog/roomdata.cpp"
