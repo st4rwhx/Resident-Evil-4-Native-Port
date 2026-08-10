@@ -125,8 +125,15 @@ void test_dvd(const char *dir, const char *probe)
     // Comparaison avec le fichier reel : une couche disque qui rend des zeros passerait tous
     // les tests precedents.
     char host[512];
-    std::snprintf(host, sizeof(host), "%s/files/%s", dir, probe);
+    // Trois sources possibles pour la reference, dans l ordre : un fichier temoin depose a cote
+    // (le cas d une image disque, ou il n y a pas de fichier hote a comparer), puis les deux
+    // dispositions d un disque extrait.
+    std::snprintf(host, sizeof(host), "%s", "/data/local/tmp/re4/probe.bin");
     std::FILE *f = std::fopen(host, "rb");
+    if (!f) {
+        std::snprintf(host, sizeof(host), "%s/files/%s", dir, probe);
+        f = std::fopen(host, "rb");
+    }
     if (!f) {
         std::snprintf(host, sizeof(host), "%s/%s", dir, probe);
         f = std::fopen(host, "rb");
