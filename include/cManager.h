@@ -44,7 +44,11 @@ public:
     void operator delete(void*) {}
     void operator delete(void*, decltype(sizeof(0))) {}
 #else
+    #ifdef RE4_PORT
+    void operator delete(void*, PORT_SIZE_T) {}
+#else
     void operator delete(void*, unsigned int) {}
+#endif
 #endif
     // addListBack's `p->next = 0` goes through this: the argument copy gives the zero register a
     // lifetime of 2 luids, which is what makes loop.c hoist `li rN, 0` out of createBack's loop

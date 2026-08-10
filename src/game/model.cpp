@@ -38,7 +38,11 @@ int MotionMoveF(cModel* m, int flag) asm("MotionMove");
 // Portage : cAtariInfo vit dans une union de cModel, donc aucun constructeur n est appele par
 // le compilateur : le jeu le fait a la main, par le nom mange du constructeur. Ici, une
 // construction sur place explicite.
+#ifdef RE4_PORT
+static inline cAtariInfo* AtariInfoConstruct(cAtariInfo* p) { p->ctorClear(); return p; }
+#else
 static inline cAtariInfo* AtariInfoConstruct(cAtariInfo* p) { return new (p) cAtariInfo(); }
+#endif
 #else
 cAtariInfo* AtariInfoConstruct(cAtariInfo* p) asm("__10cAtariInfo");
 #endif

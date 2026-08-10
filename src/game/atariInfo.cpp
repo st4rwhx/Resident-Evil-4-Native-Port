@@ -6,7 +6,11 @@
 #include "dbmodule.h"
 #include "main_mem.h"
 
+#ifdef RE4_PORT
+void cAtariInfo::ctorClear()
+#else
 cAtariInfo::cAtariInfo()
+#endif
 {
     memclr_asm(this, sizeof(cAtariInfo));
 }

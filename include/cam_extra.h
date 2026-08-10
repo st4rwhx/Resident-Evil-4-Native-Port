@@ -21,7 +21,11 @@ class cCamera : public Camera {
 public:
     virtual ~cCamera() {}
     virtual void move() = 0;
+    #ifdef RE4_PORT
+    void operator delete(void*, PORT_SIZE_T) {}
+#else
     void operator delete(void*, unsigned int) {}
+#endif
 };
 
 // Screen-id (widget) application base: init/move/quit driven by the owning camera.
@@ -31,7 +35,11 @@ public:
     virtual void init(void* p) {}
     virtual void move(void* p) {}
     virtual void quit(void* p) {}
+    #ifdef RE4_PORT
+    void operator delete(void*, PORT_SIZE_T) {}
+#else
     void operator delete(void*, unsigned int) {}
+#endif
 };
 
 // Class declaration order below = the DOL's .text order of cam_extra.cpp. Vtables are emitted in

@@ -45,7 +45,13 @@ public:
     f32 rad;              // 0x10
     EmHitInfo* part;      // 0x14  hit part
 
+#ifdef RE4_PORT
+    // Portage : pas de constructeur, sinon GCC refuse ce type dans les unions anonymes de
+    // cEm et cPl14. Il n appelait que clear() - deux champs a zero - et le seul objet
+    // concerne, SceSys.dmg, est global : il est deja nul au chargement.
+#else
     cDmgInfo();
+#endif
     void set(int a, int b, u8 kind, Vec* pos, f32 rad, EmHitInfo* part);
     void set(int a, int b);   // stores the two bytes at 0/1 (pl_sub: set(0, 10), set(0, 0x80))
     void clear();

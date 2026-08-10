@@ -401,6 +401,9 @@ int cameraHitCheck(Vec* pos, Vec* nrm, Vec* from, Vec* to)
     }
     if (pSubEm && pSubEm->id == 3) {
         cAtariInfo atBuf;
+#ifdef RE4_PORT
+        atBuf.ctorClear();   // le constructeur qui l effacait a ete retire, voir atariInfo.h
+#endif
         // The target reads/writes the info through a pointer register (lha 0x18(r29), stfs 0x4(r29)) that is
         // a copy of the constructor's `this` register (`mr r29,r30`), and the 76-byte copy below increments
         // that `this` register in place. A plain `cAtariInfo& at = atBuf;` cannot produce this: cse makes the

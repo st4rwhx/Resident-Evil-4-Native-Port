@@ -32,7 +32,13 @@ public:
         cAtariInfo* next;    // 0x48  next info of the chain (at_mod DrawOba)
     };
 
+#ifdef RE4_PORT
+    // Portage : pas de constructeur, sinon GCC refuse ce type dans les unions anonymes de
+    // cModel. Il n effacait que l objet ; les trois appelants le font maintenant a la main.
+    void ctorClear();
+#else
     cAtariInfo();
+#endif
     void init0(int parts, int cnt, int flags, f32 x, f32 y, f32 z, f32 rx, f32 rz, f32 w, f32 h);
     // init(parts, flags, cnt, ...) = init0(parts, cnt, flags, ...); flags |= 1
     void init(int parts, int flags, int cnt, f32 x, f32 y, f32 z, f32 rx, f32 rz, f32 w, f32 h);

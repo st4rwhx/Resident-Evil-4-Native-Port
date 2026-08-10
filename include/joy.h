@@ -44,7 +44,13 @@ extern JOY Joy[4];
 // game/debug.cpp: pad used by the debug tools (currently &Joy[0])
 JOY* GetBugCheckController();
 
+#ifdef RE4_PORT
+// La taille est `size_t`, pas `unsigned int` : les deux coincident sur GameCube et sur ARM
+// 32 bits, plus des que les pointeurs font huit octets. PORT_SIZE_T vient du prelude.
+extern "C" void* memcpy(void* dst, const void* src, PORT_SIZE_T n);
+#else
 extern "C" void* memcpy(void* dst, const void* src, unsigned int n);
+#endif
 
 // Pad snapshot used by the debug tools: copies Joy[no] into the tool work at byte offset `ofs`.
 // The destination is byte-pointer arithmetic on purpose: only then does GCC 2.95 treat the

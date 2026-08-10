@@ -413,10 +413,12 @@ int cEm::initWork()
     return 1;
 }
 
+#ifndef RE4_PORT
 cDmgInfo::cDmgInfo()
 {
     clear();
 }
+#endif
 
 void cDmgInfo::set(int a, int b, u8 kind, Vec* p, f32 r, EmHitInfo* prt)
 {
