@@ -42,7 +42,11 @@ struct MojiWork {
 
 MojiWork Moji;
 GXTexObj fontTexObj;
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+Mtx fontTMtx;
+#else
 static Mtx fontTMtx;
+#endif
 int eprintf_init = 0;
 static char* mess_ptr_buff;  // MESS_PTR_NUM message pointers
 #define MESS_PTR(i) (((char**) mess_ptr_buff)[i])

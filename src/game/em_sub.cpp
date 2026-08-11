@@ -2490,8 +2490,13 @@ static void EmSubDead1(f32* p)
 }
 
 // EmCatchPLSet for the partner `sub`, in the enemy's frame.
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+void EmCatchSubSet(cEm* em, cEm* sub, u32 type, int a, f32 ang, f32 x, f32 y, f32 z)
+{
+#else
 static void EmCatchSubSet(cEm* em, cEm* sub, u32 type, int a, f32 ang, f32 x, f32 y, f32 z)
 {
+#endif
     Mtx m;
     Vec p;
     Vec d;

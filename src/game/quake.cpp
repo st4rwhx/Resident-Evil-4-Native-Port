@@ -53,8 +53,13 @@ void QuakeExec(u8 id, u16 delay, s16 time, f32 power, u8 axis)
     }
 }
 
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+void QuakeKill(u8 id)
+{
+#else
 static void QuakeKill(u8 id)
 {
+#endif
     int i;
     QuakeEntry* e = Quake.ent;
 

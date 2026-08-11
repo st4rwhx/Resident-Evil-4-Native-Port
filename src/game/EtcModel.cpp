@@ -193,7 +193,11 @@ int EtcModelSet(EtcSetData* d);
 int EtcGetDasAddr(int id, void** out);
 int getRoomEtcBreak(int no, cEm** out, int flag);
 int setRoomEtcDisp(int no, int on, int flag);
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+int setRoomEtcBreakDisp(int no, int on, int flag);
+#else
 static int setRoomEtcBreakDisp(int no, int on, int flag);
+#endif
 int getRoomEtcWindow(int no, cEm** out, int flag);
 int getRoomEtcBox(int no, cEm** out, int flag);
 int getRoomEtcDoor(int no, cEm** out, int flag);
@@ -2466,8 +2470,13 @@ int setRoomEtcDisp(int no, int on, int flag)
     return 0;
 }
 
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+int setRoomEtcBreakDisp(int no, int on, int flag)
+{
+#else
 static int setRoomEtcBreakDisp(int no, int on, int flag)
 {
+#endif
     cEm* em;
 
     if (getRoomEtcBreak(no, &em, 0)) {

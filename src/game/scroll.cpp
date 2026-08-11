@@ -23,7 +23,12 @@ struct ScrIdRef {
 };
 
 static u32 DmyZeroTpl[3] = {0x0020AF30, 0, 0x0000000C};
-static ScrIdRef ScrIdRefTbl[16] = {
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+#define SCR_TBL_STATIC
+#else
+#define SCR_TBL_STATIC static
+#endif
+SCR_TBL_STATIC ScrIdRef ScrIdRefTbl[16] = {
     {2, "NORMAL"}, {3, "ROTATE"}, {6, "SWING ROT"}, {2, "----"}, {2, "----"}, {2, "----"},
     {2, "----"},   {2, "----"},   {2, "----"},      {2, "----"}, {2, "----"}, {2, "----"},
     {2, "----"},   {2, "----"},   {2, "----"},      {2, "MIRROR"},
@@ -35,7 +40,11 @@ static cSmx* pSmx;
 static cObj** scrObjTbl;   // 250 entries, indexed by scroll object id
 static cObj** scrTbl;      // one entry per SMD work
 int nScrWork;
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+extern const u8 ScrObjIdNum = 16;
+#else
 static const u8 ScrObjIdNum = 16;
+#endif
 
 // Never called in this build; keeps ScrIdRefTbl alive (GCC 2.95 emits statics an inline body
 // mentions).

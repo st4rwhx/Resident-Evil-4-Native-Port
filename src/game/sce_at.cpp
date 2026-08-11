@@ -228,7 +228,11 @@ struct SceAtFuncTbl {
 };
 
 static SceAtSysWork* pS;
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+SceAtSysWork SceAtSys;
+#else
 static SceAtSysWork SceAtSys;
+#endif
 // Struct-member view of pS (the pLog trick): keeps its load below preceding stores through a work.
 struct SceAtSysPtr {
     SceAtSysWork* p;

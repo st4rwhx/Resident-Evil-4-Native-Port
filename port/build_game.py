@@ -43,7 +43,7 @@ CONLY = ['-std=gnu99', '-fdeclspec']
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing']
 
 
 # Unites du jeu volontairement **exclues** du portage.

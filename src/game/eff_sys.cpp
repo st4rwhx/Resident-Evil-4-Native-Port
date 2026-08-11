@@ -143,7 +143,11 @@ u8 g_EspCommonDisplayList[0x60] __attribute__((aligned(32)));
 u32 g_nLoop = 0;
 cCoord* pEffParentWorld;
 cEspSystem* g_pEspSys;
+#ifdef RE4_PORT   // portage : reclame par nom par les modules REL
+void* g_EspToolSeqHedAddr;
+#else
 static void* g_EspToolSeqHedAddr;
+#endif
 
 // never called (keeps the static alive)
 static inline void EffSetToolSeqHedAddr(void* p)
