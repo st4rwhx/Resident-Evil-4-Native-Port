@@ -62,7 +62,11 @@ static inline u32 RefU32(u32& x)
 
 #define SND_FILE "D:/Bio4/Prog/snd.cpp"
 #define ALIGN32(x) (((x) + 0x1F) & ~0x1F)
+#ifdef RE4_PORT
+#define SND_DATA_TOP PORT_MEM1(0x80370000)
+#else
 #define SND_DATA_TOP 0x80370000
+#endif
 #define LOOP_IDX(x, max) ((x) < 0 ? (max) : ((x) > (max) ? 0 : (x)))
 #define CLAMP(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
 

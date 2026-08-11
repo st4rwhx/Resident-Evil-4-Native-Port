@@ -119,12 +119,28 @@ ReadModule WepReadModule __attribute__((aligned(32)));
 
 #define READ_BUFF_OFS 0x142800
 #define ROOM_ARC_SIZE 0x300000
+#ifdef RE4_PORT
+#define CORE_DATA_ADDR ((void*) PORT_MEM1(0x80578000))
+#else
 #define CORE_DATA_ADDR ((void*) 0x80578000)
+#endif
 #define CORE_DATA_MAX 0x234000
+#ifdef RE4_PORT
+#define OPTION_DATA_ADDR ((void*) PORT_MEM1(0x807AC000))
+#else
 #define OPTION_DATA_ADDR ((void*) 0x807AC000)
+#endif
 #define OPTION_DATA_MAX 0x40000
+#ifdef RE4_PORT
+#define PL_DATA_ADDR PORT_MEM1(0x807EC000)
+#else
 #define PL_DATA_ADDR 0x807EC000
+#endif
+#ifdef RE4_PORT
+#define WEP_DATA_ADDR ((void*) PORT_MEM1(0x80904000))
+#else
 #define WEP_DATA_ADDR ((void*) 0x80904000)
+#endif
 #define WEP_DATA_MAX 0x70000
 #define DLL_BSS_MAX 0x80
 

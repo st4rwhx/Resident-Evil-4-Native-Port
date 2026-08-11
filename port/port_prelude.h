@@ -56,6 +56,25 @@ extern int port_event_mode;
 // avertissement, et le programme compile en lisant des valeurs fausses. C est le pire des
 // comportements possibles, donc on refuse explicitement de compiler ces structures avec un
 // compilateur qui ne sait pas les traiter, plutot que de produire un binaire qui ment.
+// Les quatre adresses en dur de RE4.
+//
+// Le jeu place quatre de ses tampons a des adresses ecrites en clair dans le code
+// (core.das, les options, le joueur, les armes ; voir src/game/read.cpp et snd.cpp). Sur le
+// telephone ce n'est pas un probleme : port/os.cpp reserve MEM1 a son adresse d'origine,
+// 0x80000000, que l'espace utilisateur 32 bits laisse libre. Sur PC, aurora alloue MEM1 ou
+// elle peut - sa documentation le dit : « it will not be allocated at the exact 0x80000000
+// address, as that cannot be guaranteed » - et publie la base dans OSBaseAddress.
+//
+// On rebase donc ces quatre adresses, et seulement elles. On passe par une fonction plutot
+// que par OSBaseAddress directement pour ne pas redeclarer un symbole d'aurora dans un
+// en-tete force-inclus partout, y compris dans du C.
+#if defined(RE4_PORT_AURORA)
+unsigned long port_mem1_base(void);
+#define PORT_MEM1(a) (port_mem1_base() + ((unsigned long) (a) - 0x80000000ul))
+#else
+#define PORT_MEM1(a) ((unsigned long) (a))
+#endif
+
 #if defined(RE4_PORT)
 #  if defined(__GNUC__) && !defined(__clang__)
 #    define DISC_STRUCT __attribute__((scalar_storage_order("big-endian")))
