@@ -66,12 +66,20 @@ bool swap_tpl(const Span &s, u32 at)
     if (!s.has(at, 12))
         return false;
     u8 *pal = s.base + at;
+    if (read_le32(pal) == 0x0020AF30u)
+        return true;    // deja retourne (le meme TPL est parfois liste deux fois)
     if (read_be32(pal) != 0x0020AF30u)
         return false;   // pas un TPL : on ne touche a rien
 
     const u32 ndesc = read_be32(pal + 4);
     const u32 desc_ofs = read_be32(pal + 8);
-    if (ndesc == 0 || ndesc > 4096 || !s.has(at + desc_ofs, ndesc * 8))
+    if (ndesc == 0) {   // TPL vide (marqueur)
+        swap_u32(pal);
+        swap_u32(pal + 4);
+        swap_u32(pal + 8);
+        return true;
+    }
+    if (ndesc > 4096 || !s.has(at + desc_ofs, ndesc * 8))
         return false;
 
     swap_u32(pal);
@@ -700,3 +708,339 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         PORT_TODO(dot);
 }
 
+
+// ---------------------------------------------------------------- archives de salle
+//
+// Une salle (`stN/rXXX.das`) est un paquet compresse (yz2) qui, une fois decompresse, ressemble a
+// `DataExtHeader` (src/game/read.cpp) : un compte, trois mots de remplissage, `num` decalages, puis
+// `num` etiquettes de quatre octets ("RTP", "MDT", "EMI"...). Chaque etiquette a son propre format
+// interne : on retourne l'en-tete ici, puis chaque morceau par son convertisseur.
+//
+// Le **journal de couverture** (`RE4_TRACE_ENDIAN=1`) dit pour chaque etiquette demandee par le jeu
+// si elle a un convertisseur : un morceau lu sans convertisseur se paie en plantages tres loin de
+// la cause, donc il se lit ici d'abord.
+namespace {
+
+struct TagConv {
+    const char *tag;
+    bool (*fn)(const Span &s, u32 at, u32 end);
+};
+// ---- TPL (tag TPL) : textures de la salle
+bool conv_tpl(const Span &s, u32 at, u32 end) { (void) end; return swap_tpl(s, at); }
+
+// ---- BIN : un modele (ModelData, src/game/model.h)
+//
+// L'en-tete, les tableaux de sommets/normales/coordonnees de texture, les poids de peau, les
+// enregistrements de parties et l'en-tete de chaque morceau d'instructions sont lus par le code
+// du jeu : on les retourne. Les listes d'affichage elles-memes (le flux GX apres chaque entete de
+// morceau) restent telles quelles - c'est la couche GX qui les lira gros-boutistes.
+bool conv_model_bin(const Span &s, u32 at, u32 end)
+{
+    if (!s.has(at, 0x40))
+        return false;
+    u8 *h = s.base + at;
+    const u32 version = read_be32(h + 0x3C);
+    {
+        const u32 v = read_le32(h + 0x3C);
+        if (v == 0x20010801u || v == 0x20030817u || v == 0x20030818u)
+            return true;    // deja retourne (modele partage par plusieurs travaux)
+    }
+    if (version != 0x20010801u && version != 0x20030817u && version != 0x20030818u) {
+        std::printf("[PORT] endian : BIN a +0x%x : version inattendue %08x\n", (unsigned) at, (unsigned) version);
+        return false;
+    }
+    if (end > s.size)
+        end = s.size;
+    const u32 pHead = read_be32(h + 0x00), pClr = read_be32(h + 0x0C), pTex = read_be32(h + 0x10);
+    const u32 pWeight = read_be32(h + 0x14), pParts = read_be32(h + 0x1C), vtxOrig = read_be32(h + 0x30);
+    const u32 nrmOrig = read_be32(h + 0x34);
+    const bool ext = version > 0x20030817u && s.has(at, 0x48);
+    const u32 blendTbl = ext ? read_be32(h + 0x40) : 0, flipTbl = ext ? read_be32(h + 0x44) : 0;
+    const u32 flags = read_be32(h + 0x20);
+    const u32 nParts = (u32) ((h[0x1A] << 8) | h[0x1B]);
+    const u32 x2A = (u32) ((h[0x2A] << 8) | h[0x2B]);
+    const u32 nVtx = (u32) ((h[0x38] << 8) | h[0x39]);
+    const u32 nNrm = (u32) ((h[0x3A] << 8) | h[0x3B]);
+    const u32 size_all = end - at;
+
+    // Bornes de chaque region : la suivante dans le fichier.
+    const u32 offs[10] = { pHead, pClr, pTex, pWeight, pParts, vtxOrig, nrmOrig, blendTbl, flipTbl, size_all };
+    auto region_end = [&](u32 o) {
+        u32 e = size_all;
+        for (u32 k = 0; k < 10; ++k)
+            if (offs[k] > o && offs[k] < e)
+                e = offs[k];
+        return e;
+    };
+    auto ok = [&](u32 o, u32 n) { return o >= 0x40 && (u64) o + n <= size_all; };
+
+    // Verifications d'abord : on ne touche a rien si une region deborde.
+    if (!ok(pHead, nParts * 16) || !ok(vtxOrig, nVtx * 8) || !ok(pParts, 0x20)) {
+        std::printf("[PORT] endian : BIN a +0x%x : regions incoherentes (taille %u, nParts %u pHead %x, nVtx %u vtx %x, pParts %x, nNrm %u nrm %x, flags %08x)\n",
+                    (unsigned) at, (unsigned) size_all, (unsigned) nParts, (unsigned) pHead, (unsigned) nVtx, (unsigned) vtxOrig,
+                    (unsigned) pParts, (unsigned) nNrm, (unsigned) nrmOrig, (unsigned) flags);
+        return false;
+    }
+    const bool nrm8 = (flags & 0x20000000u) != 0;
+    if (!ok(nrmOrig, nNrm * (nrm8 ? 4u : 8u))) {
+        std::printf("[PORT] endian : BIN a +0x%x : normales hors du fichier\n", (unsigned) at);
+        return false;
+    }
+
+    // en-tete
+    static const u32 words[] = { 0x00u, 0x04u, 0x08u, 0x0Cu, 0x10u, 0x14u, 0x1Cu, 0x20u, 0x24u, 0x2Cu, 0x30u, 0x34u, 0x3Cu };
+    for (u32 w : words)
+        swap_u32(h + w);
+    if (ext) {
+        swap_u32(h + 0x40);
+        swap_u32(h + 0x44);
+    }
+    swap_u16(h + 0x1A);
+    swap_u16(h + 0x2A);
+    swap_u16(h + 0x38);
+    swap_u16(h + 0x3A);
+
+    // enregistrements de parties : 4 octets d'indices puis la position
+    for (u32 i = 0; i < nParts; ++i) {
+        u8 *r = h + pHead + i * 16;
+        for (int k = 1; k < 4; ++k)
+            swap_u32(r + 4 * k);
+    }
+    // positions des sommets : s16 x, y, z puis l'indice de matrice
+    for (u32 i = 0; i < nVtx * 4; ++i)
+        swap_u16(h + vtxOrig + i * 2);
+    // normales : s8 x4, ou s16 x4
+    if (!nrm8)
+        for (u32 i = 0; i < nNrm * 4; ++i)
+            swap_u16(h + nrmOrig + i * 2);
+    // coordonnees de texture : f32 par paires, ou s16 par paires
+    if (pTex >= 0x40) {
+        const u32 te = region_end(pTex);
+        if (te > pTex) {
+            if (flags & 0x80000000u) {
+                for (u32 o = pTex; o + 2 <= te; o += 2)
+                    swap_u16(h + o);
+            } else {
+                for (u32 o = pTex; o + 4 <= te; o += 4)
+                    swap_u32(h + o);
+            }
+        }
+    }
+    // poids de peau etendus (les petits sont des octets : rien a retourner)
+    if (pWeight >= 0x40 && x2A > 0xFF) {
+        for (u32 i = 0; i < x2A && pWeight + (i + 1) * 12 <= size_all; ++i) {
+            u8 *w = h + pWeight + i * 12;
+            for (int k = 0; k < 4; ++k)
+                swap_u16(w + 2 * k);
+        }
+    }
+    // tables de fusion de mouvement (version 0x20030818)
+    if (version > 0x20030817u) {
+        if (blendTbl >= 0x40) {
+            const u32 be = region_end(blendTbl);
+            for (u32 o = blendTbl; o + 2 <= be; o += 2)
+                swap_u16(h + o);
+        }
+        if (flipTbl >= 0x40) {
+            const u32 fe = region_end(flipTbl);
+            if (flipTbl + 4 <= fe) {
+                swap_u32(h + flipTbl);
+                for (u32 o = flipTbl + 4; o + 2 <= fe; o += 2)
+                    swap_u16(h + o);
+            }
+        }
+    }
+    // morceaux : 0x20 octets d'en-tete puis `size` octets de liste d'affichage
+    u32 po = pParts;
+    for (u32 i = 0; i < nParts; ++i) {
+        if (!ok(po, 0x20))
+            break;
+        u8 *p = h + po;
+        const u32 sz = read_be32(p + 0x18);
+        swap_u32(p + 0x18);
+        swap_u32(p + 0x1C);
+        if (!ok(po + 0x20, sz))
+            break;
+        po += 0x20 + sz;
+    }
+    return true;
+}
+
+// ---- SMD : la carte de decor de la salle (src/game/scroll.cpp, include/scroll.h)
+bool conv_smd(const Span &s, u32 at, u32 end)
+{
+    if (!s.has(at, 0x14))
+        return false;
+    u8 *h = s.base + at;
+    const u8 flags = h[1];
+    const u32 nWork = (u32) ((h[2] << 8) | h[3]);
+    const u32 ofsBin = read_be32(h + 4), ofsTpl = read_be32(h + 8), ofsMot = read_be32(h + 0xC);
+    swap_u16(h + 2);
+    for (int k = 1; k <= 3; ++k)
+        swap_u32(h + 4 * k);
+
+    u32 total = nWork;
+    u32 wofs = 0x10;
+    if (flags & 1) {
+        const u32 ng = read_be32(h + 0x10);
+        if (ng > 0x100 || !s.has(at + 0x14, ng * 4))
+            return false;
+        swap_u32(h + 0x10);
+        for (u32 i = 0; i < ng; ++i) {
+            swap_u32(h + 0x14 + 4 * i);
+        }
+        wofs = 0x14 + ng * 4;
+    }
+    u32 maxBin = 0, maxTpl = 0, maxMot = 0;
+    for (u32 i = 0; i < total; ++i) {
+        const u32 o = wofs + i * 0x48;
+        if (!s.has(at + o, 0x48))
+            return false;
+        u8 *w = h + o;
+        const u8 id = w[0x27];
+        const u32 f = read_be32(w + 0x44);
+        for (int k = 0; k < 9; ++k)
+            swap_u32(w + 4 * k);
+        swap_u32(w + 0x44);
+        if (id == 0xFF || (f & 0x10))
+            continue;
+        if (w[0x24] < 0xFE && (u32) w[0x24] + 1 > maxBin) maxBin = (u32) w[0x24] + 1;
+        if (w[0x25] < 0xFE && (u32) w[0x25] + 1 > maxTpl) maxTpl = (u32) w[0x25] + 1;
+        if (w[0x26] < 0xFE && (u32) w[0x26] + 1 > maxMot) maxMot = (u32) w[0x26] + 1;
+    }
+    // Tables d'adresses : pour la carte commune (sans travaux propres) le nombre vient du premier
+    // decalage, qui pointe juste apres la table.
+    auto table_n = [&](u32 ofs, u32 used) -> u32 {
+        if (!ofs || !s.has(at + ofs, 4))
+            return 0u;
+        const u32 first = read_be32(s.base + at + ofs);
+        u32 n = first / 4;
+        if ((first & 3) || n == 0 || n > 0x200)
+            n = used;
+        return n < used ? used : n;
+    };
+    const u32 nb = table_n(ofsBin, maxBin), nt = table_n(ofsTpl, maxTpl), nm = table_n(ofsMot, maxMot);
+    if (std::getenv("RE4_TRACE_ENDIAN"))
+        std::printf("[ARC] SMD a +0x%x : %u travaux (+%u), tables bin %u@%x tpl %u@%x mot %u@%x\n", (unsigned) at, (unsigned) total, (unsigned) nWork,
+                    (unsigned) nb, (unsigned) ofsBin, (unsigned) nt, (unsigned) ofsTpl, (unsigned) nm, (unsigned) ofsMot);
+    bool all = true;
+    auto fix_table = [&](u32 ofs, u32 n, int kind) {
+        if (!ofs || !n || !s.has(at + ofs, n * 4))
+            return;
+        for (u32 i = 0; i < n; ++i) {
+            u8 *e = s.base + at + ofs + i * 4;
+            const u32 o = read_be32(e);
+            swap_u32(e);
+            if (!o || !s.has(at + ofs + o, 4))
+                continue;
+            bool r = true;
+            if (kind == 0)
+                r = conv_model_bin(s, at + ofs + o, end);
+            else if (kind == 1)
+                r = swap_tpl(s, at + ofs + o);
+            if (!r) {
+                all = false;
+                std::printf("[PORT] endian : SMD a +0x%x : entree %s %u (+0x%x) refusee\n", (unsigned) at, kind == 0 ? "BIN" : "TPL", (unsigned) i, (unsigned) (at + ofs + o));
+            }
+        }
+    };
+    fix_table(ofsBin, nb, 0);
+    fix_table(ofsTpl, nt, 1);
+    fix_table(ofsMot, nm, 2);   // les mouvements attendent leur convertisseur
+    return all;
+}
+
+// ---- SMX : parametres par objet du decor
+bool conv_smx(const Span &s, u32 at, u32 end)
+{
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = h[1];
+    if (!s.has(at + 0x10, n * 0x90))
+        return false;
+    for (u32 i = 0; i < n; ++i) {
+        u8 *w = h + 0x10 + i * 0x90;
+        static const u32 offs[] = { 0x04u, 0x08u, 0x0Cu, 0x84u, 0x88u, 0x8Cu };
+        for (u32 o : offs)
+            swap_u32(w + o);
+    }
+    return true;
+}
+
+const TagConv kRoomTags[] = {
+    { "TPL", conv_tpl },
+    { "BIN", conv_model_bin },
+    { "SMD", conv_smd },
+    { "SMX", conv_smx },
+    { nullptr, nullptr }
+};
+
+bool room_tag_converted(const char *tag)
+{
+    for (const TagConv *c = kRoomTags; c->tag; ++c)
+        if (!std::strncmp(c->tag, tag, 3))
+            return true;
+    return false;
+}
+
+} // namespace
+
+extern "C" void port_room_arc_fix(void *arc, u32 size)
+{
+    const Span s = { (u8 *) arc, size };
+    if (!arc || !s.has(0, 0x10)) {
+        std::printf("[PORT] endian : archive de salle vide\n");
+        return;
+    }
+    const u32 n = read_be32(s.base);
+    if (n == 0 || n > 0x400 || !s.has(0x10, n * 8)) {
+        std::printf("[PORT] endian : archive de salle illisible (num=%08x)\n", (unsigned) n);
+        return;
+    }
+    for (int k = 0; k < 4; ++k)
+        swap_u32(s.base + 4 * k);
+    for (u32 i = 0; i < n; ++i)
+        swap_u32(s.base + 0x10 + 4 * i);
+
+    static const bool trace = std::getenv("RE4_TRACE_ENDIAN") != 0;
+    for (u32 i = 0; i < n; ++i) {
+        const u8 *tg = s.base + 0x10 + n * 4 + i * 4;
+        const u32 at = read_le32(s.base + 0x10 + 4 * i);
+        u32 end = size;
+        for (u32 j = 0; j < n; ++j) {
+            const u32 o = read_le32(s.base + 0x10 + 4 * j);
+            if (o > at && o < end)
+                end = o;
+        }
+        bool done = false;
+        for (const TagConv *c = kRoomTags; c->tag; ++c) {
+            if (!std::strncmp(c->tag, (const char *) tg, 3)) {
+                done = c->fn(s, at, end);
+                break;
+            }
+        }
+        if (trace)
+            std::printf("[ARC] entree %u : %.3s a +0x%x (%u octets) %s\n", (unsigned) i,
+                        (const char *) tg, (unsigned) at, (unsigned) (end - at), done ? "converti" : "NON converti");
+    }
+}
+
+// Appele par GetDataExt : chaque etiquette demandee, une fois, avec son etat de conversion.
+extern "C" void port_arc_access(void *arc, const char *tag, int no, void *result)
+{
+    static const bool trace = std::getenv("RE4_TRACE_ENDIAN") != 0;
+    if (!trace)
+        return;
+    static char seen[64][4];
+    static int nseen = 0;
+    char key[4] = { tag[0], tag[1], tag[2], (char) no };
+    for (int i = 0; i < nseen; ++i)
+        if (!std::memcmp(seen[i], key, 4))
+            return;
+    if (nseen < 64)
+        std::memcpy(seen[nseen++], key, 4);
+    std::printf("[ARC] jeu demande %.3s #%d : %s, %s\n", tag, no,
+                result ? "present" : "absent", room_tag_converted(tag) ? "converti" : "NON converti");
+}

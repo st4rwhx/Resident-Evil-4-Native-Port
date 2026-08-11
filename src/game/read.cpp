@@ -96,6 +96,11 @@ void ReadWepData(u32 no, u32 type);
 void ContinueWepData();
 }
 void* GetDataExt(void* arc, const char* tag, int no);
+#ifdef RE4_PORT
+extern "C" void port_room_arc_fix(void* arc, u32 size);
+extern "C" void port_arc_access(void* arc, const char* tag, int no, void* result);
+static u32 port_room_real_size;
+#endif
 
 static void* in_data_addr;
 u32 out_data_size;
@@ -168,6 +173,9 @@ static void decodeData()
     u32 used;
 
     out_data_size = Yz2DecodeSet((char*) in_data_addr, (void*) (MemGetHeapEndAddr(MemGetCurrentHeap()) - READ_BUFF_OFS));
+#ifdef RE4_PORT
+    port_room_real_size = out_data_size;
+#endif
 #line 59 "D:/Bio4/Prog/read.cpp"
     PSet(pG->pRoomArc, MEM_ALLOC(ROOM_ARC_SIZE, 1, 0xD));
     used = (u32) pG->pRoomArc - (u32) pG->pStageFont;
@@ -188,6 +196,9 @@ static void decodeData()
         HALT();
     }
     Yz2DecodeExec(pG->pRoomArc);
+#ifdef RE4_PORT   // l'archive decompressee est gros-boutiste : on la retourne (port/endian.cpp)
+    port_room_arc_fix(pG->pRoomArc, port_room_real_size);
+#endif
     iTaskExit();
 }
 
@@ -1017,11 +1028,17 @@ void* GetDataExt(void* arc, const char* tag, int no)
         p += 4;
         if (p[0] == tag[0] && p[1] == tag[1] && p[2] == tag[2]) {
             if (cnt == no) {
+#ifdef RE4_PORT
+                port_arc_access(arc, tag, no, (void*) (*(u32*) (i * 4 + (u32) arc + 0x10) + (u32) arc));
+#endif
                 return (void*) (*(u32*) (i * 4 + (u32) arc + 0x10) + (u32) arc);
             }
             cnt++;
         }
     }
+#ifdef RE4_PORT
+    port_arc_access(arc, tag, no, NULL);
+#endif
     return NULL;
 }
 
