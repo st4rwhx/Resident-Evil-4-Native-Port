@@ -43,7 +43,7 @@ CONLY = ['-std=gnu99', '-fdeclspec']
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks']
 
 
 # Unites du jeu volontairement **exclues** du portage.
@@ -84,6 +84,8 @@ EXCLUDED = {
     'game/strcat.c', 'game/strchr.c', 'game/strcmp.c', 'game/strcpy.c', 'game/strlen.c',
     'game/strncmp.c', 'game/strncpy.c', 'game/strncat.c', 'game/strpbrk.c', 'game/strrchr.c',
     'game/strspn.c', 'game/strcspn.c', 'game/strstr.c',
+    # Assembleur PowerPC brut, remplace par port/memfill.cpp et port/yz2.cpp.
+    'game/memset_2.s', 'game/yz2asm.s',
 }
 
 
