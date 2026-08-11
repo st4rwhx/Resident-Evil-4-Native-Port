@@ -382,12 +382,41 @@ bool swap_id_tex(const Span &s, u32 at)
 // 0xFFFF se lit pareil dans les deux sens : on peut donc parcourir un texte avant de le
 // retourner. Plusieurs langues peuvent pointer le meme texte, d'ou le releve des adresses deja
 // traitees - le retourner deux fois le remettrait a l envers.
-bool swap_mes_tbl(const Span &s, u32 at)
+// Fin du morceau d'archive qui commence a `at` : le plus petit decalage superieur, sinon la
+// fin du fichier. La table des decalages est deja retournee quand on arrive ici.
+u32 arc_chunk_end(const Span &s, u32 at)
 {
-    if (!s.has(at, 8))
+    u32 end = s.size;
+    if (!s.has(0, 0x10))
+        return end;
+    const u32 n = read_le32(s.base);
+    if (n == 0 || n > 0x400 || !s.has(0x10, n * 4))
+        return end;
+    for (u32 i = 0; i < n; ++i) {
+        const u32 o = read_le32(s.base + 0x10 + i * 4);
+        if (o > at && o < end)
+            end = o;
+    }
+    return end;
+}
+
+// `end` borne la table. Sans lui, un decalage aberrant envoie le parcours de texte n'importe ou
+// dans le fichier, et il y retourne jusqu'a huit kilo-octets d'autre chose : c'est exactement ce
+// qui ecrasait le TPL speculaire de core.das.
+bool mes_trace(void)
+{
+    static const bool t = std::getenv("RE4_TRACE_ENDIAN") != 0;
+    return t;
+}
+
+bool swap_mes_tbl(const Span &s, u32 at, u32 end)
+{
+    if (end > s.size)
+        end = s.size;
+    if (at + 8 > end)
         return false;
     const u32 first = read_be32(s.base + at + 4);
-    if (first < 8 || (first & 3) || !s.has(at + first, 8))
+    if (first < 8 || (first & 3) || at + first + 8 > end)
         return false;
     const u32 nlang = first / 4 - 1;
     if (nlang == 0 || nlang > 16)
@@ -396,9 +425,17 @@ bool swap_mes_tbl(const Span &s, u32 at)
     // Verification avant toute ecriture : un seul decalage aberrant et on ne touche a rien.
     for (u32 k = 0; k < nlang; ++k) {
         const u32 b = read_be32(s.base + at + 4 + k * 4);
-        if (b < first || !s.has(at + b, 8))
+        if (b < first || at + b + 8 > end)
             return false;
     }
+
+    // Chaque langue occupe une tranche contigue de la table : ses textes s'arretent au plus tard
+    // la ou commence la langue suivante. Sans cette borne, un texte sans terminateur deborde sur
+    // l'en-tete du bloc voisin et le retourne - c'est le `count=2d` devenu `count=2d00` qu'on
+    // lisait sur memcard.das.
+    u32 bofs[16];
+    for (u32 k = 0; k < nlang; ++k)
+        bofs[k] = read_be32(s.base + at + 4 + k * 4);
 
     u32 done[4096];
     u32 ndone = 0;
@@ -406,12 +443,19 @@ bool swap_mes_tbl(const Span &s, u32 at)
     swap_u32(s.base + at);
     for (u32 k = 0; k < nlang; ++k) {
         u8 *pb = s.base + at + 4 + k * 4;
-        const u32 b = read_be32(pb);
+        const u32 b = bofs[k];
         swap_u32(pb);
+
+        u32 blk_end = end;
+        for (u32 j = 0; j < nlang; ++j) {
+            const u32 o = at + bofs[j];
+            if (o > at + b && o < blk_end)
+                blk_end = o;
+        }
 
         u8 *blk = s.base + at + b;
         const u32 count = read_be32(blk + 4);
-        if (count > 0x4000 || !s.has(at + b + 8, count * 4))
+        if (count > 0x4000 || at + b + 8 + count * 4 > blk_end)
             continue;
         swap_u32(blk);
         swap_u32(blk + 4);
@@ -421,7 +465,9 @@ bool swap_mes_tbl(const Span &s, u32 at)
             const u32 mo = read_be32(pe);
             swap_u32(pe);
             const u32 abs = at + b + mo;
-            if (!mo || !s.has(abs, 2))
+            // Un texte est un tableau de u16 dans le bloc de sa langue : adresse paire, apres le
+            // tableau de decalages, et avant le bloc suivant.
+            if (!mo || (abs & 1) || abs < at + b + 8 + count * 4 || abs + 2 > blk_end)
                 continue;
 
             bool seen = false;
@@ -433,9 +479,9 @@ bool swap_mes_tbl(const Span &s, u32 at)
             if (ndone < 4096)
                 done[ndone++] = abs;
 
-            for (u32 w = 0; w < 4096; ++w) {
+            for (u32 w = 0;; ++w) {
                 u8 *c = s.base + abs + w * 2;
-                if (!s.has(abs + w * 2, 2))
+                if (abs + w * 2 + 2 > blk_end)
                     break;
                 const u16 v = (u16) ((c[0] << 8) | c[1]);
                 swap_u16(c);
@@ -518,9 +564,9 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         if (ok) {
             const u32 mes012 = read_le32(s.base + 0x28);   // ArcFile::ofs_28, deja retourne
             const u32 mes3 = read_le32(s.base + 0x54);     // ArcFile::ofs_54
-            if (mes012 && !swap_mes_tbl(s, mes012))
+            if (mes012 && !swap_mes_tbl(s, mes012, arc_chunk_end(s, mes012)))
                 std::printf("[PORT] endian : table de messages 0x28 inattendue\n");
-            if (mes3 && mes3 != mes012 && !swap_mes_tbl(s, mes3))
+            if (mes3 && mes3 != mes012 && !swap_mes_tbl(s, mes3, arc_chunk_end(s, mes3)))
                 std::printf("[PORT] endian : table de messages 0x54 inattendue\n");
         }
         return;
@@ -531,7 +577,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     if (ends_with(name, "memcard.das")) {
         if (swap_arc(s)) {
             const u32 mes = read_le32(s.base + 0x14);   // CardArc::ofs[1]
-            if (mes && !swap_mes_tbl(s, mes))
+            if (mes && !swap_mes_tbl(s, mes, arc_chunk_end(s, mes)))
                 std::printf("[PORT] endian : table de messages de memcard.das inattendue\n");
         }
         return;

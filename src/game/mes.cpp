@@ -254,6 +254,7 @@ u16* MessageData::getAddr(int no, int type)
     {
         const u32 a = (u32) (unsigned long long) tbl;
         if (a < 0x80000000u || a >= 0x82000000u) {
+            pLog->err(0, 0, "[MES] getAddr(no=%d type=%d) table absente tbl=%08x", no, type, a);
             return NULL;
         }
     }
@@ -264,13 +265,24 @@ u16* MessageData::getAddr(int no, int type)
     {
         const u32 b = (u32) (unsigned long long) blk;
         if (b < 0x80000000u || b >= 0x82000000u || blk->count > 0x4000u) {
+            pLog->err(0, 0, "[MES] getAddr(no=%d type=%d) bloc invraisemblable lang=%d tbl=%08x blk=%08x",
+                      no, type, lang, (u32) (unsigned long long) tbl, b);
             return NULL;
         }
     }
 #endif
+#ifdef RE4_PORT
+    if (no > (int) blk->count - 1) {
+        pLog->err(0, 0, "[MES] getAddr(no=%d type=%d) lang=%d tbl=%08x blk=%08x count=%d",
+                  no, type, lang, (u32) (unsigned long long) tbl,
+                  (u32) (unsigned long long) blk, (int) blk->count);
+        return NULL;
+    }
+#else
     if (no > (int) blk->count - 1) {
         return NULL;
     }
+#endif
     return (u16*) ((u8*) blk + blk->ofs[no]);
 }
 
