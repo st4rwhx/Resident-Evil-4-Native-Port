@@ -16,17 +16,6 @@
 
 extern "C" {
 
-// Le journal de la console de developpement. RE4 l'appelle pour ses messages d'erreur, et les
-// perdre reviendrait a se priver du peu que le jeu dit de lui-meme au demarrage.
-void OSReport(const char *msg, ...)
-{
-    std::va_list ap;
-    va_start(ap, msg);
-    std::vprintf(msg, ap);
-    va_end(ap);
-    std::fflush(stdout);
-}
-
 // Pas de debogueur materiel ici. Le jeu s'en sert pour decider s'il peut s'arreter sur un
 // point d'arret ; repondre non est la reponse juste, pas un pis-aller.
 BOOL DBIsDebuggerPresent(void) { return FALSE; }
@@ -69,17 +58,6 @@ u32 OSGetConsoleSimulatedMemSize(void) { return 24u * 1024u * 1024u; }
 // Pas de bouton reset sur un PC.
 BOOL OSGetResetButtonState(void) { return FALSE; }
 
-void OSPanic(const char *file, int line, const char *msg, ...)
-{
-    std::va_list ap;
-    va_start(ap, msg);
-    std::fprintf(stderr, "[PANIC] %s:%d ", file, line);
-    std::vfprintf(stderr, msg, ap);
-    std::fputc('\n', stderr);
-    va_end(ap);
-    std::fflush(stderr);
-    std::abort();
-}
 
 // Le locked cache : 16 Ko de SRAM du Gekko que RE4 utilise comme brouillon rapide. Ici, de la
 // memoire ordinaire alignee. Le jeu n'en attend aucune propriete particuliere hors la vitesse.
@@ -150,14 +128,4 @@ extern "C" void port_mark_game_thread(void)
 extern "C" int port_on_game_thread(void)
 {
     return (!g_game_thread_set || std::this_thread::get_id() == g_game_thread) ? 1 : 0;
-}
-
-// Un mot sur la sortie standard pour le code du jeu, qui ne peut pas inclure <stdio.h> : ses
-// propres en-tetes declarent deja printf et sprintf, autrement.
-extern "C" void port_note(const char *fmt, ...)
-{
-    std::va_list ap;
-    va_start(ap, fmt);
-    std::vprintf(fmt, ap);
-    va_end(ap);
 }

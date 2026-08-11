@@ -40,7 +40,13 @@ struct CardStat {
 typedef void (*CardCallback)(s32 chan, s32 result);
 
 extern "C" {
+#ifdef RE4_PORT_AURORA
+// Portage : voir src/game/card.cpp. La carte memoire vient d aurora, et son CARDInit veut le
+// code du disque et celui de l editeur.
+void CARDInit(const char* game, const char* maker);
+#else
 void CARDInit();
+#endif
 s32 CARDGetResultCode(s32 chan);
 s32 CARDCheckAsync(s32 chan, CardCallback callback);
 s32 CARDFreeBlocks(s32 chan, s32* byteNotUsed, s32* filesNotUsed);

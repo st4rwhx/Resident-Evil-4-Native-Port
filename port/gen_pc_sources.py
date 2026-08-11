@@ -49,7 +49,7 @@ import build_game  # noqa: E402  (meme EXCLUDED, meme lecture de objects.py)
 # fournit, et son interpreteur de listes d'affichage est precisement ce qui manquait pour que
 # les modeles s'affichent.
 PORT_UNITS = ['dvd', 'memfill', 'yz2', 'misc', 'aram', 'thread', 'endian',
-              'prodg_rt', 'port_log', 'vi_pc', 'psmtx_pc', 'pc_glue', 'stubs_generated', 'stubs_link', 'main_pc']
+              'prodg_rt', 'port_log', 'vi_pc', 'psmtx_pc', 'pc_glue', 'osreport_pc', 'stubs_generated', 'stubs_link', 'main_pc']
 
 
 # Les talons ne peuvent pas etre lies tels quels : 66 des fonctions GX qu'ils definissent sont

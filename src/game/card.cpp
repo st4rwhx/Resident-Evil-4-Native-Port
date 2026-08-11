@@ -298,7 +298,15 @@ cCard::~cCard()
 
 void CardInit()
 {
+#ifdef RE4_PORT_AURORA
+    // aurora nomme le fichier de carte d'apres le jeu, donc son CARDInit prend le code du
+    // disque et celui de l'editeur - ceux de l'en-tete du GameCube. Le SDK d'origine les
+    // lisait dans la ROM de demarrage et ne prenait aucun argument ; appeler la version
+    // d aurora sans rien lui passer lui faisait lire des registres au hasard.
+    CARDInit("G4BE", "08");
+#else
     CARDInit();
+#endif
     CRCInit();
     pG->card_serial = 1;
 }

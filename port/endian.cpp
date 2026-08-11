@@ -37,6 +37,8 @@ inline void swap_u16(void *p) { *(u16 *) p = bswap16(*(u16 *) p); }
 inline void swap_u32(void *p) { *(u32 *) p = bswap32(*(u32 *) p); }
 
 inline u32 read_be32(const void *p) { return bswap32(*(const u32 *) p); }
+// Apres conversion, les memes octets se lisent dans le sens de la machine.
+inline u32 read_le32(const void *p) { return *(const u32 *) p; }
 
 // Bornes : un fichier tronque ou mal identifie ne doit pas nous faire ecrire ailleurs.
 struct Span {
@@ -361,6 +363,90 @@ bool swap_id_tex(const Span &s, u32 at)
     return true;
 }
 
+
+// ---------------------------------------------------------------- tables de messages
+//
+// Les textes du jeu sont dans `etc/core.das`, a deux entrees de l'archive : celle de l'offset
+// 0x28 (types 0 a 2) et celle de 0x54 (type 3). Voir src/game/mes.cpp, MessageData::setPtr.
+//
+// La forme est :
+//
+//   u32 x0
+//   u32 langue[N]        decalages, depuis le debut de la table, vers un bloc par langue
+//   bloc : u32 x0 ; u32 count ; u32 ofs[count] ; puis les textes
+//   texte : des u16, termines par 0xFFFF
+//
+// N n'est ecrit nulle part - mais le premier decalage marque la fin du tableau de decalages,
+// donc N = langue[0] / 4 - 1. La table se decrit elle-meme.
+//
+// 0xFFFF se lit pareil dans les deux sens : on peut donc parcourir un texte avant de le
+// retourner. Plusieurs langues peuvent pointer le meme texte, d'ou le releve des adresses deja
+// traitees - le retourner deux fois le remettrait a l envers.
+bool swap_mes_tbl(const Span &s, u32 at)
+{
+    if (!s.has(at, 8))
+        return false;
+    const u32 first = read_be32(s.base + at + 4);
+    if (first < 8 || (first & 3) || !s.has(at + first, 8))
+        return false;
+    const u32 nlang = first / 4 - 1;
+    if (nlang == 0 || nlang > 16)
+        return false;
+
+    // Verification avant toute ecriture : un seul decalage aberrant et on ne touche a rien.
+    for (u32 k = 0; k < nlang; ++k) {
+        const u32 b = read_be32(s.base + at + 4 + k * 4);
+        if (b < first || !s.has(at + b, 8))
+            return false;
+    }
+
+    u32 done[4096];
+    u32 ndone = 0;
+
+    swap_u32(s.base + at);
+    for (u32 k = 0; k < nlang; ++k) {
+        u8 *pb = s.base + at + 4 + k * 4;
+        const u32 b = read_be32(pb);
+        swap_u32(pb);
+
+        u8 *blk = s.base + at + b;
+        const u32 count = read_be32(blk + 4);
+        if (count > 0x4000 || !s.has(at + b + 8, count * 4))
+            continue;
+        swap_u32(blk);
+        swap_u32(blk + 4);
+
+        for (u32 i = 0; i < count; ++i) {
+            u8 *pe = blk + 8 + i * 4;
+            const u32 mo = read_be32(pe);
+            swap_u32(pe);
+            const u32 abs = at + b + mo;
+            if (!mo || !s.has(abs, 2))
+                continue;
+
+            bool seen = false;
+            for (u32 j = 0; j < ndone; ++j) {
+                if (done[j] == abs) { seen = true; break; }
+            }
+            if (seen)
+                continue;
+            if (ndone < 4096)
+                done[ndone++] = abs;
+
+            for (u32 w = 0; w < 4096; ++w) {
+                u8 *c = s.base + abs + w * 2;
+                if (!s.has(abs + w * 2, 2))
+                    break;
+                const u16 v = (u16) ((c[0] << 8) | c[1]);
+                swap_u16(c);
+                if (v == 0xFFFF)
+                    break;
+            }
+        }
+    }
+    return true;
+}
+
 bool ends_with(const char *name, const char *suffix)
 {
     const size_t n = std::strlen(name), m = std::strlen(suffix);
@@ -417,6 +503,21 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     if (ends_with(name, ".fnt")) {
         if (!swap_fnt(s))
             std::printf("[PORT] endian : %s n a pas la forme attendue d une police\n", name);
+        return;
+    }
+    // Les tables de messages n'ont aucune signature : rien ne permet de les reconnaitre parmi
+    // les entrees d'une archive. Mais on sait ou elles sont - le decompile le documente - donc
+    // on les nomme plutot que de les deviner. C'est la seule conversion ciblee par fichier.
+    if (ends_with(name, "core.das")) {
+        const bool ok = swap_arc(s);
+        if (ok) {
+            const u32 mes012 = read_le32(s.base + 0x28);   // ArcFile::ofs_28, deja retourne
+            const u32 mes3 = read_le32(s.base + 0x54);     // ArcFile::ofs_54
+            if (mes012 && !swap_mes_tbl(s, mes012))
+                std::printf("[PORT] endian : table de messages 0x28 inattendue\n");
+            if (mes3 && mes3 != mes012 && !swap_mes_tbl(s, mes3))
+                std::printf("[PORT] endian : table de messages 0x54 inattendue\n");
+        }
         return;
     }
     if (ends_with(name, ".das") || ends_with(name, ".dat")) {
