@@ -74,7 +74,11 @@ static inline u32 omkFlagChk(u32 no)
 }
 
 // stage_prev/room_prev written as one u16 through a plain pointer (aliases pG like G_ROOM_ID).
+#ifdef RE4_PORT
+#define G_ROOM_ID_PREV (pG->room_id_prev)
+#else
 #define G_ROOM_ID_PREV (*(u16*) &pG->stage_prev)
+#endif
 
 // Sub-file of the core archive (pG->pArc): `ofs + (u32) arc` (integer arithmetic, ofs first).
 #define G_ARC_PTR(field) ((void*) (pG->pArc->field + (u32) pG->pArc))
@@ -1342,6 +1346,9 @@ int stageSelect(TitleWork* w)
 }
 
 static cRoomJmp* pRj;
+#ifdef RE4_PORT
+extern "C" unsigned port_start_room(void);
+#endif
 
 void titleExit(TitleWork* w)
 {
@@ -1364,6 +1371,11 @@ void titleExit(TitleWork* w)
             TaskSleep(1);
         }
         G_ROOM_ID = pRj->getRoomInfo(w->dbgStage, w->dbgRoom[w->dbgStage] + w->dbgPoint)->room_id;
+#ifdef RE4_PORT   // banc d'essai : RE4_START_ROOM=0x100 saute le menu de salles (le disque de revue n'a pas toutes les salles)
+        if (u32 r = port_start_room()) {
+            G_ROOM_ID = (u16) r;
+        }
+#endif
         pG->x4F9F = w->dbgPoint;
         pG->emlist_no = w->dbgEmList;
         if (pG->emlist_no > 3) {

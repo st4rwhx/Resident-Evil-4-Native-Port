@@ -366,7 +366,7 @@ void R209Init()
     SmdGetObjPtr(2)->be_flag &= ~2;
     SmdGetObjPtr(3)->be_flag &= ~2;
     r209_work.p->sat2 = SatMgr.create(ROOM_ARC_PTR(pGS->pRoomArc, 5), 0, &r209_zeroVec, &r209_zeroVec, 3);
-    if (RsfCheck(*(u16*) &pGS->stage_no, 8) == 0) {
+    if (RsfCheck(G_ROOM_ID_S_, 8) == 0) {
         SmdGetObjPtr(0xAD)->pos.z = 0.0f;
         SmdGetObjPtr(0xAD)->matUpdate();
     } else {
@@ -404,7 +404,7 @@ void R209Main()
     u32 atNum = 8;
 
     r209_work.p->snipeCnt = 0;
-    if (RsfCheck(*(u16*) &pGS->stage_no, 3)) {
+    if (RsfCheck(G_ROOM_ID_S_, 3)) {
         for (i = 0; i < 8; i++) {
             w = &r209_work.p->em[r209_snipeEmNo[i]];
             if (w->active == 1 && w->w.isActive() == 1 && w->w.ckParasite() == 0) {

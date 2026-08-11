@@ -291,6 +291,10 @@ void setWepTrans(cPlayer* pl, int on);
 // (u32) view of pG->wep_no/wep_type (`(G_WEP_ID & 0xFFFF0000) == 0x0D020000`: rocket launcher)
 #define G_WEP_ID (*(u32*) &pG->wep_no)
 // (u32) view of pG->stage_no/room_no
+#ifdef RE4_PORT
+#define G_ROOM_ID32 (pG->room_id32)
+#else
 #define G_ROOM_ID32 (*(u32*) &pG->stage_no)
+#endif
 
 #endif

@@ -14,3 +14,43 @@ extern "C" void port_note(const char *fmt, ...)
     __android_log_vprint(ANDROID_LOG_INFO, "RE4", fmt, ap);
     va_end(ap);
 }
+
+// Le jeu reecrit en place l'extension de certains noms de FileTbl (SET_DRS_NAME : ".das" -> ".drs")
+// - sur GameCube ces chaines vivent en memoire inscriptible. Sur ARM ce sont des litteraux en
+// lecture seule, et l'ecriture tuait le jeu des le chargement du joueur. On rend donc inscriptible
+// le segment de donnees en lecture seule de notre propre binaire (copie privee : le fichier n'est
+// pas touche).
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <dlfcn.h>
+extern "C" void port_rodata_writable(void)
+{
+    Dl_info di;
+    if (!dladdr((void *) &port_rodata_writable, &di) || !di.dli_fbase)
+        return;
+    FILE *f = fopen("/proc/self/maps", "r");
+    if (!f)
+        return;
+    char line[512];
+    while (fgets(line, sizeof(line), f)) {
+        unsigned long lo = 0, hi = 0, off = 0;
+        char perms[8] = {0};
+        if (sscanf(line, "%lx-%lx %7s %lx", &lo, &hi, perms, &off) != 4)
+            continue;
+        if (lo < (unsigned long) di.dli_fbase || lo >= (unsigned long) di.dli_fbase + 0x1000000)
+            continue;
+        if (strcmp(perms, "r--p") == 0)
+            mprotect((void *) lo, hi - lo, PROT_READ | PROT_WRITE);
+    }
+    fclose(f);
+}
+
+#include <stdlib.h>
+// RE4_START_ROOM=0x100 : salle de depart imposee (banc d'essai uniquement).
+extern "C" unsigned port_start_room(void)
+{
+    static const char *e = getenv("RE4_START_ROOM");
+    return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
+}

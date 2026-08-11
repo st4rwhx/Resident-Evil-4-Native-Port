@@ -248,7 +248,11 @@ inline void cDbgOkCancelWindow::Init(int wx, int wy, const char* name)
     do { } while (0); // COMPILER-DIFF: #13 (sched region split)
     {
         cDbgButton* z;
+#ifdef RE4_PORT
+        z = 0;   // portage : l'asm PowerPC ne faisait que produire un zero
+#else
         asm("li %0,0" : "=r"(z) : "m"(w)); // COMPILER-DIFF: #13 (asm-emitted zero, reload-placed li)
+#endif
         pBottom = pTop = pCur = z;
     }
     AddButton(1, 2, " [OK] ", 0, 0, 0, 0);

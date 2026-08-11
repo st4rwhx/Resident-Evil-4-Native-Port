@@ -108,3 +108,11 @@ extern "C" int port_on_game_thread(void)
 {
     return (!g_game_thread_set || std::this_thread::get_id() == g_game_thread) ? 1 : 0;
 }
+
+// Interrupteur de la sonde de tas (src/game/main_mem.cpp).
+extern "C" int port_heap_trace(void)
+{
+    static const char *v = std::getenv("RE4_TRACE_HEAP");
+    static const int on = v ? std::atoi(v) : 0;
+    return on;
+}

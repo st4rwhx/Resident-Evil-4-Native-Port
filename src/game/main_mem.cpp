@@ -122,20 +122,49 @@ extern "C" int port_on_game_thread(void);
 // declarent deja sprintf et consorts, et les deux jeux de declarations se contredisent.
 extern "C" void port_note(const char* fmt, ...);
 
-static bool in_game_heap(void* q)
+// Le tas du jeu n'est pas "MEM1" : c'est la plage d'un tas vivant de `Heap[]`. La difference
+// compte, parce que MEM1 contient aussi les zones fixes du jeu et les tampons du DVD, et rendre
+// une de leurs adresses a OSFreeToHeap insere dans la liste chainee une cellule qui n'en est pas
+// une. La sonde RE4_TRACE_HEAP a montre exactement cela : un free de 0x80994a40 alors que le
+// seul tas vivant commence a 0x80a03ea0.
+//
+// `heap_owner_of` rend l'indice du tas qui contient reellement le pointeur - le plus etroit, au
+// cas ou un tas serait taille dans un autre - ou -1.
+static int heap_owner_of(const void* q)
 {
     const u32 a = (u32) (uintptr_t) q;
-    return a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x82000000);
+    int best = -1;
+    u32 best_span = 0xFFFFFFFFu;
+    for (int k = 0; k < MEM_HEAP_NUM; ++k) {
+        if (Heap[k].handle < 0 || Heap[k].end <= Heap[k].start)
+            continue;
+        if (a < Heap[k].start || a >= Heap[k].end)
+            continue;
+        const u32 span = Heap[k].end - Heap[k].start;
+        if (span < best_span) {
+            best_span = span;
+            best = k;
+        }
+    }
+    return best;
 }
 
+static bool in_game_heap(void* q) { return heap_owner_of(q) >= 0; }
+
+// Trois provenances possibles, trois sorties. Confondre les deux dernieres passe une adresse de
+// MEM1 a la libc, ce qui la fait tomber aussitot.
 static void port_free(void* q)
 {
     if (q == NULL)
         return;
-    if (in_game_heap(q))
+    if (in_game_heap(q)) {
         Mem_free(q);
-    else
-        free(q);
+        return;
+    }
+    const u32 a = (u32) (uintptr_t) q;
+    if (a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x82000000))
+        return;                      // zone fixe de MEM1 : rien a rendre a personne
+    free(q);
 }
 
 void* operator new(unsigned int size)
@@ -445,6 +474,50 @@ void MemClearAllHeap()
     }
 }
 
+#ifdef RE4_PORT
+// Sonde de tas, sous RE4_TRACE_HEAP=1 : OSCheckHeap apres chaque allocation et chaque
+// liberation. Le tas se corrompt de facon non deterministe (les plantages tombent tantot dans
+// le moniteur de tas, tantot sur une allocation refusee) ; seule la premiere operation fautive
+// designe le coupable.
+extern "C" int port_heap_trace(void);
+
+// Le bloc est-il vivant ? OSFreeToHeap suppose que la cellule qu'on lui rend est dans la liste
+// des blocs alloues ; lui en rendre une autre - un bloc deja libere, ou une adresse qui n'a
+// jamais ete allouee - detruit la liste sans un mot. La console ne s'en protegeait pas, mais
+// elle n'avait pas non plus nos deux allocateurs.
+static bool port_cell_allocated(int heap, const void* p)
+{
+    if (heap < 0 || heap >= MEM_HEAP_NUM || Heap[heap].handle < 0 || HeapHead == NULL)
+        return false;
+    const OSHeapDescriptor* hd = HeapHead + Heap[heap].handle;
+    const void* want = (const u8*) p - 0x20;
+    int n = 0;
+    for (const OSHeapCell* c = hd->allocated; c != NULL; c = c->next) {
+        if (++n > 0x40000)
+            return false;
+        if ((const void*) c == want)
+            return true;
+    }
+    return false;
+}
+
+static void port_heap_probe(const char* what, const char* file, int line, u32 size, int heap)
+{
+    static bool broken = false;
+    if (!port_heap_trace() || broken)
+        return;
+    if (heap == MEM_HEAP_CURRENT)
+        heap = CurrentHeap;
+    if (heap < 0 || heap >= MEM_HEAP_NUM || Heap[heap].handle < 0)
+        return;
+    if (OSCheckHeap(Heap[heap].handle) < 0) {
+        broken = true;
+        port_note("[HEAP] casse apres %s %x octets, tas %d, %s(%d)\n",
+                  what, size, heap, file ? file : "?", line);
+    }
+}
+#endif
+
 void* mem_alloc(u32 size, const char* file, int line, int flag, int heap)
 {
     char str[64] = "";
@@ -494,6 +567,12 @@ void* mem_alloc(u32 size, const char* file, int line, int flag, int heap)
 #endif
         pLog->err(0, 0, "alloc[%x]:free[%x] %s", size, OSCheckHeap(Heap[heap].handle), str);
     }
+#ifdef RE4_PORT
+    if (port_heap_trace() > 1)
+        port_note("[HEAP] alloc p=%08x taille=%x %s(%d)\n",
+                  (u32) (unsigned long long) p, size, file ? file : "?", line);
+    port_heap_probe("alloc", file, line, size, heap);
+#endif
     return p;
 }
 
@@ -518,7 +597,67 @@ void Mem_free_h(void* p, int heap)
         heap = CurrentHeap;
     }
     if (memCheckHeapActive(heap)) {
+#ifdef RE4_PORT
+        // Deux ecarts avec la console, tous deux mesures par la sonde RE4_TRACE_HEAP.
+        //
+        // 1. Un pointeur venu d'ailleurs. Quand `operator new` est appele avant que le tas du
+        //    jeu n'existe - ou depuis un thread d'aurora - il rend un bloc de la libc. Le jeu le
+        //    libere ensuite par Mem_free comme n'importe quel autre, et OSFreeToHeap insere dans
+        //    sa liste chainee une cellule qui n'en est pas une. Le tas est mort a cet instant,
+        //    mais il ne tombe que bien plus tard, ailleurs : d'ou les plantages non
+        //    deterministes du moniteur de tas.
+        //
+        // 2. `__OSCurrHeap` vaut -1. OSDestroyHeap le remet a -1 quand on detruit le tas
+        //    courant, et MemDestroyHeap(0) le fait au demarrage ; plus rien ne le repositionne.
+        //    Sur console MemSetCurrentHeap le tient egal a Heap[CurrentHeap].handle, donc rendre
+        //    le bloc a Heap[heap].handle y est exactement equivalent - et ici c'est le seul
+        //    handle qui soit juste.
+        const int owner = heap_owner_of(p);
+        if (owner < 0) {
+            // Pas un bloc de tas : soit la libc (operator new avant l'existence du tas, ou
+            // depuis un thread d'aurora), soit une zone fixe de MEM1. Dans le second cas on ne
+            // peut que laisser le bloc tranquille - le perdre coute moins cher que corrompre le
+            // tas, et la trace le dit.
+            const u32 a = (u32) (unsigned long long) p;
+            if (a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x82000000)) {
+                if (port_heap_trace())
+                    port_note("[HEAP] free ignore : %08x hors de tout tas\n", a);
+                return;
+            }
+            free(p);
+            return;
+        }
+        heap = owner;
+        if (!port_cell_allocated(heap, p)) {
+            // Bloc mort ou inconnu : ne pas le rendre. Ce n'est pas de la prudence gratuite -
+            // la sonde a compte jusqu'a seize liberations de ce genre par demarrage, dont
+            // quatre fois la meme adresse.
+            if (port_heap_trace())
+                port_note("[HEAP] free refuse : %08x n'est pas un bloc vivant du tas %d\n",
+                          (u32) (unsigned long long) p, heap);
+            return;
+        }
+        if (port_heap_trace()) {
+            const int before = OSCheckHeap(Heap[heap].handle);
+            OSFreeToHeap(Heap[heap].handle, p);
+            const int after = OSCheckHeap(Heap[heap].handle);
+            if (before >= 0 && after < 0) {
+                const u8* tag = (const u8*) p - 0x20;
+                port_note("[HEAP] casse par free p=%08x tas=%d\n",
+                          (u32) (unsigned long long) p, heap);
+                for (int k = 0; k < MEM_HEAP_NUM; ++k)
+                    if (Heap[k].handle >= 0)
+                        port_note("[HEAP]   tas %d : handle %d  %08x - %08x\n",
+                                  k, Heap[k].handle, Heap[k].start, Heap[k].end);
+                (void) tag;
+            }
+        } else {
+            OSFreeToHeap(Heap[heap].handle, p);
+        }
+        port_heap_probe("free", "Mem_free_h", 0, 0, heap);
+#else
         OSFreeToHeap(__OSCurrHeap, p);
+#endif
     }
 }
 

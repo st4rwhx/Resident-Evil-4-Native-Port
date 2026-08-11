@@ -11,9 +11,12 @@ void port_set_game_dir(const char *dir);
 extern "C" void port_install_crash_handler(void);
 int re4_main();   // liaison C++ : defini dans src/game/main.cpp
 
+extern "C" void port_rodata_writable(void);
+
 int main(int argc, char **argv)
 {
     port_install_crash_handler();
+    port_rodata_writable();
 
     const char *dir = (argc > 1) ? argv[1] : std::getenv("RE4_GAME_DIR");
     if (!dir) {

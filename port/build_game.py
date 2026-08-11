@@ -43,7 +43,7 @@ CONLY = ['-std=gnu99', '-fdeclspec']
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel']
 
 
 # Unites du jeu volontairement **exclues** du portage.
@@ -200,10 +200,24 @@ def main():
     if not args.link:
         return
 
+    # Modules REL compiles a l'avance (port/build_rel.py) : un objet par module + le registre.
+    rel_objs = []
+    reldir = os.path.join(args.out, 'rel')
+    reg = os.path.join(reldir, 'rel_registry.cpp')
+    if os.path.exists(reg):
+        regobj = os.path.join(reldir, 'rel_registry.o')
+        rr = subprocess.run([cxx] + CXXONLY + COMMON + ['-o', os.path.relpath(regobj, ROOT).replace(os.sep, '/'),
+                             os.path.relpath(reg, ROOT).replace(os.sep, '/')], capture_output=True, text=True, cwd=ROOT)
+        if rr.returncode != 0:
+            print('registre des modules : ' + rr.stderr[:300])
+            sys.exit(1)
+        rel_objs = [regobj] + sorted(p for p in (os.path.join(reldir, f) for f in os.listdir(reldir))
+                                     if p.endswith('.o') and not p.endswith(('.merged.o', '.merged2.o', '.alias.o')) and p != regobj)
+
     rsp = os.path.join(args.out, 'game.rsp')
     with open(rsp, 'w') as fh:
-        for o in ok:
-            fh.write('"%s"\n' % o.replace('\\', '/'))
+        for o in ok + rel_objs:
+            fh.write('"%s"\n' % os.path.relpath(o, ROOT).replace('\\', '/'))
     exe = os.path.join(args.out, 're4')
     cmd = [cxx, '@' + rsp, '-o', exe, '-lEGL', '-lGLESv3', '-llog', '-static-libstdc++',
            # sans cela lld s'arrete a 20 erreurs, et on decouvre les symboles manquants

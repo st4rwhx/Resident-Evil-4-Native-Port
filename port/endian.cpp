@@ -605,6 +605,7 @@ extern "C" void port_endian_fix_headers(void *block, u32 size)
 
 // Appele par la couche DVD quand un fichier vient d'arriver entier en memoire principale.
 // `name` est le chemin que le jeu a demande.
+extern "C" const void *port_rel_prepare(void *hdr);
 extern "C" void port_endian_fix(const char *name, void *data, u32 size)
 {
     if (!name || !data || size < 8)
@@ -654,6 +655,21 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
             const u32 mes = read_le32(s.base + 0x14);   // CardArc::ofs[1]
             if (mes && !swap_mes_tbl(s, mes, arc_chunk_end(s, mes)))
                 std::printf("[PORT] endian : table de messages de memcard.das inattendue\n");
+        }
+        return;
+    }
+    // Modules REL : l'en-tete donne l'identifiant, le code est deja dans le binaire (port/rel.cpp).
+    if (ends_with(name, ".rel")) {
+        port_rel_prepare(s.base);
+        return;
+    }
+    // .drs : archive de donnees suivie d'un module REL ; le mot 1 donne le decalage du module.
+    if (ends_with(name, ".drs")) {
+        if (s.has(4, 4)) {
+            const u32 ofs = read_be32(s.base + 4);
+            swap_u32(s.base + 4);
+            if (ofs && s.has(ofs, 0x40))
+                port_rel_prepare(s.base + ofs);
         }
         return;
     }

@@ -168,6 +168,31 @@ struct GlobalWork {
     u8 x4F93;              // 0x4F93
     u32 play_time;         // 0x4F94  seconds (SetGameTime accumulates into it)
     u32 x4F98;             // 0x4F98  (pl_sub PlSelect swaps it with x832C)
+#ifdef RE4_PORT
+    // Portage ARM (petit-boutiste) : ces unions superposent des octets a des mots, et leur ordre
+    // est celui du PowerPC. On renverse donc les octets - stage_no/room_no deviennent les octets de
+    // poids fort du mot, et la demi-valeur `room_id` (stage << 8 | room) est celle du mot haut.
+    union {
+        u32 room_id32;     // stage/room puis les deux octets suivants, lus comme un mot
+        struct {
+            u16 room_lo16_unused;
+            u16 room_id;   // stage << 8 | room
+        };
+        struct {
+            u8 x4F9F;
+            u8 x4F9E;
+            u8 room_no;
+            u8 stage_no;
+        };
+    };
+    union {
+        u16 room_id_prev;
+        struct {
+            u8 room_prev;
+            u8 stage_prev;
+        };
+    };
+#else
     union {
         u32 room_id32;     // 0x4F9C  stage/room and the two bytes after them as one word (em_set EmSetDie: `& 0xFFFF0000`)
         u16 room_id;       // 0x4F9C  stage << 8 | room as one halfword (obj14: room 004 test)
@@ -185,6 +210,7 @@ struct GlobalWork {
             u8 room_prev;  // 0x4FA1
         };
     };
+#endif
     u8 x4FA2;              // 0x4FA2  copy of x4F9E (room_jmp)
     s8 emlist_no;          // 0x4FA3  enemy list currently loaded (stage.cpp), -1 = none
     u16 pl_life;           // 0x4FA4  (compared as s16 by the debug tools)
@@ -270,7 +296,13 @@ struct SystemSaveWork {
 extern SystemSaveWork SystemSave;
 
 // stage_no/room_no read as one u16 (stage << 8 | room), as cRoomData::getRoomSavePtr wants it.
+#ifdef RE4_PORT
+#define G_ROOM_ID (pG->room_id)
+#define G_ROOM_ID_S_ (pGS->room_id)
+#else
 #define G_ROOM_ID (*(u16*) &pG->stage_no)
+#define G_ROOM_ID_S_ (*(u16*) &pGS->stage_no)
+#endif
 
 // Flag helpers. The original sets/clears bits through an inline helper taking a reference: the
 // store is then a plain scalar access, so GCC 2.95 assumes it may clobber `pG` and reloads it

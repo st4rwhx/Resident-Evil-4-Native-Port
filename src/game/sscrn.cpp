@@ -34,6 +34,9 @@
 #include "motion.h"
 #include "model.h"
 #include "sscrn.h"
+#ifdef RE4_PORT
+extern "C" const void* port_rel_prepare(void* hdr);
+#endif
 
 extern "C" {
 void OSReport(const char* fmt, ...);
@@ -555,6 +558,9 @@ void SubScreenExec()
             }
             {
                 void* bss;
+#ifdef RE4_PORT   // module copie depuis l'ARAM : son en-tete est encore gros-boutiste
+                port_rel_prepare(wk->pModule);
+#endif
                 if (wk->pModule->bssSize == 0) {
                     bss = 0;
                 } else {

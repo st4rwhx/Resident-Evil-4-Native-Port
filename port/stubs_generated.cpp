@@ -123,7 +123,6 @@ u32 OSGetSoundMode() { PORT_TODO("OSGetSoundMode"); return 0; }   // include\dol
 void OSInitAlarm() { PORT_TODO("OSInitAlarm"); }   // include\dolphin\os\OSAlarm.h
 BOOL OSInitFont(OSFontHeader* fontData) { PORT_TODO("OSInitFont"); return 0; }   // include\dolphin\os\OSFont.h
 void OSInitStopwatch(OSStopwatch* sw, char* name) { PORT_TODO("OSInitStopwatch"); }   // include\dolphin\os.h
-BOOL OSLink(OSModuleInfo* newModule, void* bss) { PORT_TODO("OSLink"); return 0; }   // include\dolphin\os\OSModule.h
 void* OSPhysicalToCached(u32 paddr) { PORT_TODO("OSPhysicalToCached"); return nullptr; }   // include\dolphin\os.h
 void OSResetStopwatch(OSStopwatch* sw) { PORT_TODO("OSResetStopwatch"); }   // include\dolphin\os.h
 void OSResetSystem(int reset, u32 resetCode, BOOL forceMenu) { PORT_TODO("OSResetSystem"); }   // include\dolphin\os\OSReset.h
@@ -134,4 +133,3 @@ void OSSetSoundMode(u32 mode) { PORT_TODO("OSSetSoundMode"); }   // include\dolp
 void OSStartStopwatch(OSStopwatch* sw) { PORT_TODO("OSStartStopwatch"); }   // include\dolphin\os.h
 void OSStopStopwatch(OSStopwatch* sw) { PORT_TODO("OSStopStopwatch"); }   // include\dolphin\os.h
 void OSTicksToCalendarTime(OSTime ticks, OSCalendarTime* td) { PORT_TODO("OSTicksToCalendarTime"); }   // include\dolphin\os.h
-BOOL OSUnlink(OSModuleInfo* oldModule) { PORT_TODO("OSUnlink"); return 0; }   // include\dolphin\os\OSModule.h
