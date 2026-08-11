@@ -25,6 +25,7 @@ extern "C" unsigned int port_gx_bound_texture(int unit);
 
 
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -44,14 +45,16 @@ EGLDisplay g_dpy = EGL_NO_DISPLAY;
 EGLSurface g_surf = EGL_NO_SURFACE;
 EGLContext g_ctx = EGL_NO_CONTEXT;
 bool g_gl_ready = false;
+void tev_reset();
 u32 g_fb_w = 640, g_fb_h = 448;
 
 // ---------------------------------------------------------------- etat GX
 
 struct Vertex {
     float x, y, z;
-    unsigned char r, g, b, a;
-    float u, v;
+    unsigned char r, g, b, a;       // couleur 0
+    unsigned char r1, g1, b1, a1;   // couleur 1
+    float uv[4][2];                 // coordonnees de texture 0..3
 };
 
 const int MAX_VERTS = 65536;
@@ -65,6 +68,7 @@ bool g_cur_open = false;   // une position a ete recue depuis le dernier commit
 GXPrimitive g_prim = GX_TRIANGLES;
 int g_prim_first = 0;      // premier sommet de la primitive en cours
 int g_prim_want = 0;       // sommets annonces par GXBegin ; 0 = pas de primitive ouverte
+int g_tex_seq = 0, g_clr_seq = 0;   // rang du prochain attribut texture / couleur du sommet
 int g_last_attr = -1;      // dernier attribut du descripteur : celui qui clot un sommet
 
 float g_proj[16];
@@ -72,6 +76,7 @@ float g_modelview[16];
 bool g_proj_ortho = false;
 
 GXCullMode g_cull = GX_CULL_NONE;
+unsigned char g_blend_type = 0, g_blend_src = 4, g_blend_dst = 5;   // GX_BL_SRCALPHA, GX_BL_INVSRCALPHA
 bool g_ztest = true, g_zwrite = true;
 GXCompare g_zfunc = GX_LEQUAL;
 bool g_blend = false;
@@ -308,10 +313,15 @@ extern "C" bool port_gx_init_offscreen(u32 w, u32 h)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void *)12);
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)16);
+    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void *)16);
+    for (int i = 0; i < 4; ++i) {
+        glEnableVertexAttribArray(3 + i);
+        glVertexAttribPointer(3 + i, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(20 + 8 * i));
+    }
 
     mtx_identity(g_proj);
     mtx_identity(g_modelview);
+    tev_reset();
     g_gl_ready = true;
     std::printf("[PORT] GX : %s, %ux%u hors ecran\n", (const char *)glGetString(GL_RENDERER), w, h);
     return true;
@@ -392,6 +402,8 @@ void GXBegin(GXPrimitive type, GXVtxFmt vtxfmt, u16 nverts)
     g_cur_open = false;
     std::memset(&g_cur, 0, sizeof(g_cur));
     g_cur.r = g_cur.g = g_cur.b = g_cur.a = 255;
+    g_cur.r1 = g_cur.g1 = g_cur.b1 = g_cur.a1 = 255;
+    g_tex_seq = g_clr_seq = 0;
     stream_next(0);   // arme le flux direct pour les unites qui ecrivent dans le pipe
 }
 
@@ -400,18 +412,39 @@ void GXPosition3f32(f32 x, f32 y, f32 z)
 {
     commit_vertex();
     g_cur.x = x; g_cur.y = y; g_cur.z = z;
-    g_cur.u = g_cur.v = 0.0f;
+    std::memset(g_cur.uv, 0, sizeof(g_cur.uv));
     g_cur.r = g_cur.g = g_cur.b = g_cur.a = 255;
+    g_cur.r1 = g_cur.g1 = g_cur.b1 = g_cur.a1 = 255;
+    g_tex_seq = g_clr_seq = 0;
     g_cur_open = true;
     attr_done(GX_VA_POS);
 }
 
+// Les appels GXColor/GXTexCoord n'annoncent pas quel attribut ils remplissent : c'est le rang dans
+// le descripteur (le premier attribut couleur present, puis le suivant...) qui le dit.
+static GXAttr next_attr(GXAttr first, int count, int &seq)
+{
+    int k = seq++;
+    for (int i = 0; i < count; ++i)
+        if (g_desc[first + i] != GX_NONE && k-- == 0)
+            return (GXAttr)(first + i);
+    return first;
+}
+
 void GXColor4u8(u8 r, u8 g, u8 b, u8 a)
 {
-    g_cur.r = r; g_cur.g = g; g_cur.b = b; g_cur.a = a;
-    attr_done(GX_VA_CLR0);
+    const GXAttr at = next_attr(GX_VA_CLR0, 2, g_clr_seq);
+    if (at == GX_VA_CLR1) { g_cur.r1 = r; g_cur.g1 = g; g_cur.b1 = b; g_cur.a1 = a; }
+    else                  { g_cur.r = r; g_cur.g = g; g_cur.b = b; g_cur.a = a; }
+    attr_done(at);
 }
-void GXTexCoord2f32(f32 u, f32 v) { g_cur.u = u; g_cur.v = v; attr_done(GX_VA_TEX0); }
+void GXTexCoord2f32(f32 u, f32 v)
+{
+    const GXAttr at = next_attr(GX_VA_TEX0, 8, g_tex_seq);
+    const int k = at - GX_VA_TEX0;
+    if (k < 4) { g_cur.uv[k][0] = u; g_cur.uv[k][1] = v; }
+    attr_done(at);
+}
 void GXNormal3f32(f32 x, f32 y, f32 z) { (void)x; (void)y; (void)z; attr_done(GX_VA_NRM); }
 
 // Les memes attributs en virgule fixe. RE4 s'en sert partout ou il peut : c'est par la que
@@ -428,9 +461,10 @@ void GXPosition2u16(u16 x, u16 y)
 
 void GXTexCoord2s16(s16 s, s16 t)
 {
-    g_cur.u = fixed_to_f(s, g_frac_tex);
-    g_cur.v = fixed_to_f(t, g_frac_tex);
-    attr_done(GX_VA_TEX0);
+    const GXAttr at = next_attr(GX_VA_TEX0, 8, g_tex_seq);
+    const int k = at - GX_VA_TEX0;
+    if (k < 4) { g_cur.uv[k][0] = fixed_to_f(s, g_frac_tex); g_cur.uv[k][1] = fixed_to_f(t, g_frac_tex); }
+    attr_done(at);
 }
 
 // Les normales s8 sont toujours en 1.7 : le bit de signe et sept bits de fraction, donc 127
@@ -462,15 +496,20 @@ void stream_flush_attr()
         g_cur_open = true;
         break;
     case GX_VA_CLR0:
-    case GX_VA_CLR1:
         g_cur.r = (unsigned char) g_stream_val[0];
         g_cur.g = (unsigned char) g_stream_val[1];
         g_cur.b = (unsigned char) g_stream_val[2];
         g_cur.a = (comps_of(a) >= 4) ? (unsigned char) g_stream_val[3] : 255;
         break;
-    case GX_VA_TEX0:
-        g_cur.u = g_stream_val[0];
-        g_cur.v = (comps_of(a) >= 2) ? g_stream_val[1] : 0.0f;
+    case GX_VA_CLR1:
+        g_cur.r1 = (unsigned char) g_stream_val[0];
+        g_cur.g1 = (unsigned char) g_stream_val[1];
+        g_cur.b1 = (unsigned char) g_stream_val[2];
+        g_cur.a1 = (comps_of(a) >= 4) ? (unsigned char) g_stream_val[3] : 255;
+        break;
+    case GX_VA_TEX0: case GX_VA_TEX1: case GX_VA_TEX2: case GX_VA_TEX3:
+        g_cur.uv[a - GX_VA_TEX0][0] = g_stream_val[0];
+        g_cur.uv[a - GX_VA_TEX0][1] = (comps_of(a) >= 2) ? g_stream_val[1] : 0.0f;
         break;
     default:
         break;   // normales, indices de matrice, autres jeux de coordonnees : plus tard
@@ -538,12 +577,466 @@ void port_gx_end(void)
     g_last_attr = -1;
 }
 
+// ---------------------------------------------------------------- TEV, canaux, texgen
+//
+// Le materiel GX enchaine jusqu'a 16 etages de melange (TEV) ; chaque etage calcule
+//   sortie = (d +/- ((1-c)*a + c*b) + biais) * echelle
+// sur la couleur puis sur l'alpha, a partir d'entrees fixes (couleur rasterisee, texture, registres,
+// constantes). Le portage genere un shader par configuration distincte et le garde en cache ;
+// les couleurs (registres, constantes, materiaux) sont des uniformes, donc les changer ne
+// recompile rien. Reference de comportement : Dolphin.
+namespace {
+
+struct TevStageCfg {
+    unsigned char ci[4], ai[4];
+    unsigned char cop, cbias, cscale, cclamp, cout_;
+    unsigned char aop, abias, ascale, aclamp, aout;
+    unsigned char coord, map, chan, kcs, kas;
+};
+struct TexGenCfg { unsigned char func, src, mtx, pad; };
+struct ChanCfg { unsigned char en, amb, mat, diff, attn, pad[3]; unsigned lmask; };
+
+// La partie "statique" : tout ce qui change le code du shader. Hachee telle quelle.
+struct TevStatic {
+    unsigned char nstage, nchan, ntexgen, pad0;
+    TevStageCfg st[16];
+    TexGenCfg tg[8];
+    ChanCfg ch[4];                       // couleur0, alpha0, couleur1, alpha1
+    unsigned char acomp0, acomp1, aop, pad1;
+};
+// La partie "dynamique" : valeurs seulement, envoyees en uniformes.
+struct TevDyn {
+    float reg[4][4];     // TEVPREV, REG0, REG1, REG2
+    float k[4][4];       // KCOLOR0..3
+    float mat[2][4];
+    float amb[2][4];
+    float aref[2];
+    unsigned char cmask, amask, pad[2];
+    float tm[10][16];    // GX_TEXMTX0..9, en 4x4 colonne par colonne
+};
+struct TevCfg { TevStatic s; TevDyn d; };
+
+TevCfg g_tevcur;                 // etat courant, modifie par GXSetTev*
+const int kMaxCfg = 4096;
+TevCfg g_cfgpool[kMaxCfg];
+int g_ncfg = 0;
+bool g_cfg_dirty = true;
+
+inline void tev_dirty() { g_cfg_dirty = true; }
+
+float c8(unsigned char v) { return (float)v / 255.0f; }
+
+unsigned hash_bytes(const void *p, size_t n)
+{
+    const unsigned char *b = (const unsigned char *)p;
+    unsigned h = 2166136261u;
+    for (size_t i = 0; i < n; ++i)
+        h = (h ^ b[i]) * 16777619u;
+    return h;
+}
+
+struct Prog {
+    unsigned key;
+    GLuint prog;
+    GLint u_mvp, u_reg, u_k, u_mat, u_aref, u_tm;
+};
+Prog g_progs[256];
+int g_nprogs = 0;
+
+struct Buf {
+    char *p; size_t n, cap;
+    void add(const char *fmt, ...) __attribute__((format(printf, 2, 3)))
+    {
+        va_list ap; va_start(ap, fmt);
+        n += (size_t)std::vsnprintf(p + n, cap - n, fmt, ap);
+        va_end(ap);
+        if (n >= cap) n = cap - 1;
+    }
+};
+
+const char *cc_in(int sel)   // GXTevColorArg
+{
+    static const char *t[16] = {
+        "r0.rgb", "vec3(r0.a)", "r1.rgb", "vec3(r1.a)", "r2.rgb", "vec3(r2.a)", "r3.rgb", "vec3(r3.a)",
+        "texc.rgb", "vec3(texc.a)", "ras.rgb", "vec3(ras.a)", "vec3(1.0)", "vec3(0.5)", "KC", "vec3(0.0)" };
+    return t[sel & 15];
+}
+const char *ca_in(int sel)   // GXTevAlphaArg
+{
+    static const char *t[8] = { "r0.a", "r1.a", "r2.a", "r3.a", "texc.a", "ras.a", "KA", "0.0" };
+    return t[sel & 7];
+}
+
+// Selection de constante : fractions fixes, ou KCOLORi (composantes pour l'alpha).
+void kconst(char *out, size_t n, int sel, bool alpha)
+{
+    static const char *frac[8] = { "1.0", "0.875", "0.75", "0.625", "0.5", "0.375", "0.25", "0.125" };
+    static const char comp[4] = { 'r', 'g', 'b', 'a' };
+    if (sel < 8) {
+        std::snprintf(out, n, alpha ? "%s" : "vec3(%s)", frac[sel]);
+    } else if (!alpha && sel >= 12 && sel < 16) {
+        std::snprintf(out, n, "uK[%d].rgb", sel - 12);
+    } else if (sel >= 16 && sel < 32) {
+        const int k = (sel - 16) & 3, c = ((sel - 16) >> 2) & 3;
+        std::snprintf(out, n, alpha ? "uK[%d].%c" : "vec3(uK[%d].%c)", k, comp[c]);
+    } else {
+        std::snprintf(out, n, alpha ? "1.0" : "vec3(1.0)");
+    }
+}
+
+const char *cmp_expr(int f)   // GXCompare, sur a (0..255) et ref
+{
+    static const char *t[8] = { "false", "(a8 < REF)", "(a8 == REF)", "(a8 <= REF)",
+                                "(a8 > REF)", "(a8 != REF)", "(a8 >= REF)", "true" };
+    return t[f & 7];
+}
+
+GLuint build_program(const TevStatic &s)
+{
+    static char vsb[8192], fsb[32768];
+    Buf v = { vsb, 0, sizeof(vsb) }, f = { fsb, 0, sizeof(fsb) };
+
+    v.add("#version 300 es\n"
+          "layout(location=0) in vec3 aPos;\n"
+          "layout(location=1) in vec4 aC0;\n"
+          "layout(location=2) in vec4 aC1;\n"
+          "layout(location=3) in vec2 aT0;\n"
+          "layout(location=4) in vec2 aT1;\n"
+          "layout(location=5) in vec2 aT2;\n"
+          "layout(location=6) in vec2 aT3;\n"
+          "uniform mat4 uMVP;\n"
+          "uniform mat4 uTM[10];\n"
+          "out vec4 vC0; out vec4 vC1;\n"
+          "out vec3 vT[8];\n"
+          "void main(){\n"
+          "  vC0 = aC0; vC1 = aC1;\n"
+          "  vec2 t[4]; t[0]=aT0; t[1]=aT1; t[2]=aT2; t[3]=aT3;\n"
+          "  vec4 p4 = vec4(aPos, 1.0);\n");
+    for (int i = 0; i < s.ntexgen && i < 8; ++i) {
+        const TexGenCfg &g = s.tg[i];
+        const char *src;
+        char tmp[64];
+        if (g.src >= 4 && g.src <= 7)        { std::snprintf(tmp, sizeof(tmp), "vec4(t[%d], 1.0, 1.0)", g.src - 4); src = tmp; }
+        else if (g.src == 0)                 src = "p4";
+        else                                 src = "vec4(0.0, 0.0, 1.0, 1.0)";   // normales : pas encore
+        if (g.mtx >= 30 && g.mtx <= 57 && ((g.mtx - 30) % 3) == 0)
+            v.add("  { vec4 q = uTM[%d] * %s; vT[%d] = vec3(q.xy, %s); }\n", (g.mtx - 30) / 3, src, i,
+                  g.func == 1 ? "1.0" : "q.z");
+        else
+            v.add("  { vec4 q = %s; vT[%d] = vec3(q.xy, 1.0); }\n", src, i);
+    }
+    v.add("  gl_Position = uMVP * p4;\n}\n");
+
+    f.add("#version 300 es\nprecision highp float;\n"
+          "in vec4 vC0; in vec4 vC1; in vec3 vT[8];\n"
+          "uniform vec4 uReg[4]; uniform vec4 uK[4]; uniform vec4 uMat[2]; uniform float uARef[2];\n"
+          "uniform sampler2D uTex0; uniform sampler2D uTex1; uniform sampler2D uTex2; uniform sampler2D uTex3;\n"
+          "uniform sampler2D uTex4; uniform sampler2D uTex5; uniform sampler2D uTex6; uniform sampler2D uTex7;\n"
+          "out vec4 oCol;\n"
+          "void main(){\n"
+          "  vec4 r0 = uReg[0], r1 = uReg[1], r2 = uReg[2], r3 = uReg[3];\n"
+          "  vec4 ras0 = vec4(1.0), ras1 = vec4(1.0);\n");
+    // Canaux sans eclairage : couleur du sommet ou couleur de materiau (l'eclairage viendra apres).
+    f.add("  ras0 = vec4(%s, %s);\n", s.ch[0].mat ? "vC0.rgb" : "uMat[0].rgb", s.ch[1].mat ? "vC0.a" : "uMat[0].a");
+    f.add("  ras1 = vec4(%s, %s);\n", s.ch[2].mat ? "vC1.rgb" : "uMat[1].rgb", s.ch[3].mat ? "vC1.a" : "uMat[1].a");
+    // Les chaines : un canal non declare (nchan==0) rend du blanc, comme le materiel.
+    for (int i = 0; i < s.nstage && i < 16; ++i) {
+        const TevStageCfg &t = s.st[i];
+        f.add("  {\n    vec4 ras = %s;\n", t.chan == 4 ? "ras0" : t.chan == 5 ? "ras1" : "vec4(0.0)");
+        if (t.map < 8 && t.coord < 8)
+            f.add("    vec4 texc = texture(uTex%d, vT[%d].xy / (vT[%d].z != 0.0 ? vT[%d].z : 1.0));\n",
+                  t.map, t.coord, t.coord, t.coord);
+        else
+            f.add("    vec4 texc = vec4(1.0);\n");
+        char kc[48], ka[48];
+        kconst(kc, sizeof(kc), t.kcs, false);
+        kconst(ka, sizeof(ka), t.kas, true);
+        // Couleur
+        const char *cb = t.cbias == 1 ? " + 0.5" : t.cbias == 2 ? " - 0.5" : "";
+        const char *cs = t.cscale == 1 ? "2.0" : t.cscale == 2 ? "4.0" : t.cscale == 3 ? "0.5" : "1.0";
+        auto csel = [&](int k, char *dst, size_t n) {
+            const char *x = cc_in(t.ci[k]);
+            if (std::strcmp(x, "KC") == 0) std::snprintf(dst, n, "%s", kc); else std::snprintf(dst, n, "%s", x);
+        };
+        char a[48], b[48], c[48], d[48];
+        csel(0, a, sizeof(a)); csel(1, b, sizeof(b)); csel(2, c, sizeof(c)); csel(3, d, sizeof(d));
+        f.add("    vec3 cres = (%s %s mix(%s, %s, %s)%s) * %s;\n", d, t.cop == 1 ? "-" : "+", a, b, c, cb, cs);
+        if (t.cclamp) f.add("    cres = clamp(cres, 0.0, 1.0);\n");
+        // Alpha
+        auto asel = [&](int k, char *dst, size_t n) {
+            const char *x = ca_in(t.ai[k]);
+            if (std::strcmp(x, "KA") == 0) std::snprintf(dst, n, "%s", ka); else std::snprintf(dst, n, "%s", x);
+        };
+        char aa[48], ab[48], ac[48], ad[48];
+        asel(0, aa, sizeof(aa)); asel(1, ab, sizeof(ab)); asel(2, ac, sizeof(ac)); asel(3, ad, sizeof(ad));
+        const char *ab_ = t.abias == 1 ? " + 0.5" : t.abias == 2 ? " - 0.5" : "";
+        const char *as_ = t.ascale == 1 ? "2.0" : t.ascale == 2 ? "4.0" : t.ascale == 3 ? "0.5" : "1.0";
+        f.add("    float ares = (%s %s mix(%s, %s, %s)%s) * %s;\n", ad, t.aop == 1 ? "-" : "+", aa, ab, ac, ab_, as_);
+        if (t.aclamp) f.add("    ares = clamp(ares, 0.0, 1.0);\n");
+        f.add("    r%d.rgb = cres; r%d.a = ares;\n  }\n", t.cout_ & 3, t.aout & 3);
+    }
+    f.add("  vec4 col = r0;\n"
+          "  float a8 = floor(col.a * 255.0 + 0.5);\n"
+          "  float ref0 = floor(uARef[0] + 0.5), ref1 = floor(uARef[1] + 0.5);\n");
+    {
+        char e0[64], e1[64];
+        std::snprintf(e0, sizeof(e0), "%s", cmp_expr(s.acomp0));
+        std::snprintf(e1, sizeof(e1), "%s", cmp_expr(s.acomp1));
+        auto subst = [](char *e, const char *ref) {
+            char *p = std::strstr(e, "REF");
+            if (!p) return;
+            char tail[64]; std::snprintf(tail, sizeof(tail), "%s", p + 3);
+            *p = 0; std::strcat(e, ref); std::strcat(e, tail);
+        };
+        subst(e0, "ref0"); subst(e1, "ref1");
+        const char *op = s.aop == 0 ? "&&" : s.aop == 1 ? "||" : s.aop == 2 ? "!=" : "==";
+        if (s.acomp0 == 7 && s.acomp1 == 7 && s.aop == 0) { /* toujours : rien a faire */ }
+        else f.add("  if (!((%s) %s (%s))) discard;\n", e0, op, e1);
+    }
+    f.add("  oCol = col;\n}\n");
+
+    GLuint vs = make_shader(GL_VERTEX_SHADER, vsb);
+    GLuint fs = make_shader(GL_FRAGMENT_SHADER, fsb);
+    GLuint p = glCreateProgram();
+    glAttachShader(p, vs);
+    glAttachShader(p, fs);
+    glLinkProgram(p);
+    GLint ok = 0;
+    glGetProgramiv(p, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char log[1024] = { 0 };
+        glGetProgramInfoLog(p, sizeof(log) - 1, nullptr, log);
+        std::printf("[PORT] GX : programme refuse : %s\n", log);
+    }
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    return p;
+}
+
+Prog *get_prog(const TevStatic &s)
+{
+    const unsigned key = hash_bytes(&s, sizeof(s));
+    for (int i = 0; i < g_nprogs; ++i)
+        if (g_progs[i].key == key)
+            return &g_progs[i];
+    if (g_nprogs >= 256)
+        return &g_progs[0];
+    Prog &pr = g_progs[g_nprogs++];
+    pr.key = key;
+    pr.prog = build_program(s);
+    pr.u_mvp = glGetUniformLocation(pr.prog, "uMVP");
+    pr.u_reg = glGetUniformLocation(pr.prog, "uReg");
+    pr.u_k = glGetUniformLocation(pr.prog, "uK");
+    pr.u_mat = glGetUniformLocation(pr.prog, "uMat");
+    pr.u_aref = glGetUniformLocation(pr.prog, "uARef");
+    pr.u_tm = glGetUniformLocation(pr.prog, "uTM");
+    glUseProgram(pr.prog);
+    for (int i = 0; i < 8; ++i) {
+        char nm[16];
+        std::snprintf(nm, sizeof(nm), "uTex%d", i);
+        glUniform1i(glGetUniformLocation(pr.prog, nm), i);
+    }
+    std::printf("[PORT] GX : shader TEV %d (%d etages, %d texgen)\n", g_nprogs, s.nstage, s.ntexgen);
+    return &pr;
+}
+
+// Etat initial du materiel : un etage "passe la couleur du sommet", une texture, pas d'alpha test.
+void tev_reset()
+{
+    std::memset(&g_tevcur, 0, sizeof(g_tevcur));
+    g_tevcur.s.nstage = 1;
+    g_tevcur.s.nchan = 1;
+    g_tevcur.s.ntexgen = 1;
+    for (int i = 0; i < 16; ++i) {
+        TevStageCfg &t = g_tevcur.s.st[i];
+        t.ci[0] = 15; t.ci[1] = 15; t.ci[2] = 15; t.ci[3] = 10;   // RASC
+        t.ai[0] = 7; t.ai[1] = 7; t.ai[2] = 7; t.ai[3] = 5;       // RASA
+        t.cscale = t.ascale = 0; t.cclamp = t.aclamp = 1;
+        t.cout_ = t.aout = 0;
+        t.coord = t.map = t.chan = 0xFF;
+        t.kcs = 0; t.kas = 0;
+    }
+    g_tevcur.s.tg[0].func = 1; g_tevcur.s.tg[0].src = 4; g_tevcur.s.tg[0].mtx = 60;
+    for (int i = 0; i < 4; ++i) { g_tevcur.s.ch[i].mat = 1; g_tevcur.s.ch[i].amb = 0; }
+    g_tevcur.s.acomp0 = g_tevcur.s.acomp1 = 7;
+    g_tevcur.d.cmask = g_tevcur.d.amask = 1;
+    for (int i = 0; i < 10; ++i) {
+        std::memset(g_tevcur.d.tm[i], 0, sizeof(g_tevcur.d.tm[i]));
+        g_tevcur.d.tm[i][0] = g_tevcur.d.tm[i][5] = g_tevcur.d.tm[i][10] = g_tevcur.d.tm[i][15] = 1.0f;
+    }
+    tev_dirty();
+}
+
+// Rend l'indice de la configuration courante dans le pool, en la creant si elle a change.
+int tev_snapshot()
+{
+    if (!g_cfg_dirty && g_ncfg > 0)
+        return g_ncfg - 1;
+    if (g_ncfg >= kMaxCfg)
+        return g_ncfg - 1;
+    g_cfgpool[g_ncfg] = g_tevcur;
+    g_cfg_dirty = false;
+    return g_ncfg++;
+}
+
+} // namespace
+
+void GXSetNumChans(u8 n) { g_tevcur.s.nchan = n; tev_dirty(); }
+void GXSetNumTexGens(u8 n) { g_tevcur.s.ntexgen = n; tev_dirty(); }
+void GXSetNumTevStages(u8 n) { g_tevcur.s.nstage = n; tev_dirty(); }
+void GXSetNumIndStages(u8 n) { (void)n; }
+void GXSetTevOrder(GXTevStageID stage, GXTexCoordID coord, GXTexMapID map, GXChannelID color)
+{
+    if ((unsigned)stage >= 16) return;
+    TevStageCfg &t = g_tevcur.s.st[stage];
+    t.coord = (unsigned char)coord; t.map = (unsigned char)map; t.chan = (unsigned char)color;
+    tev_dirty();
+}
+
+void GXSetTevColorIn(GXTevStageID stage, GXTevColorArg a, GXTevColorArg b, GXTevColorArg c, GXTevColorArg d)
+{
+    if ((unsigned)stage >= 16) return;
+    TevStageCfg &t = g_tevcur.s.st[stage];
+    t.ci[0] = (unsigned char)a; t.ci[1] = (unsigned char)b; t.ci[2] = (unsigned char)c; t.ci[3] = (unsigned char)d;
+    tev_dirty();
+}
+void GXSetTevAlphaIn(GXTevStageID stage, GXTevAlphaArg a, GXTevAlphaArg b, GXTevAlphaArg c, GXTevAlphaArg d)
+{
+    if ((unsigned)stage >= 16) return;
+    TevStageCfg &t = g_tevcur.s.st[stage];
+    t.ai[0] = (unsigned char)a; t.ai[1] = (unsigned char)b; t.ai[2] = (unsigned char)c; t.ai[3] = (unsigned char)d;
+    tev_dirty();
+}
+void GXSetTevColorOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg)
+{
+    if ((unsigned)stage >= 16) return;
+    TevStageCfg &t = g_tevcur.s.st[stage];
+    t.cop = (unsigned char)op; t.cbias = (unsigned char)bias; t.cscale = (unsigned char)scale;
+    t.cclamp = clamp ? 1 : 0; t.cout_ = (unsigned char)out_reg;
+    tev_dirty();
+}
+void GXSetTevAlphaOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg)
+{
+    if ((unsigned)stage >= 16) return;
+    TevStageCfg &t = g_tevcur.s.st[stage];
+    t.aop = (unsigned char)op; t.abias = (unsigned char)bias; t.ascale = (unsigned char)scale;
+    t.aclamp = clamp ? 1 : 0; t.aout = (unsigned char)out_reg;
+    tev_dirty();
+}
+
+// Les modes predefinis, tels que le SDK les definit : l'etage 0 lit la couleur rasterisee, les
+// suivants lisent le resultat de l'etage precedent.
+void GXSetTevOp(GXTevStageID id, GXTevMode mode)
+{
+    const int carg = (id == GX_TEVSTAGE0) ? GX_CC_RASC : GX_CC_CPREV;
+    const int aarg = (id == GX_TEVSTAGE0) ? GX_CA_RASA : GX_CA_APREV;
+    switch (mode) {
+    case GX_MODULATE:
+        GXSetTevColorIn(id, GX_CC_ZERO, GX_CC_TEXC, (GXTevColorArg)carg, GX_CC_ZERO);
+        GXSetTevAlphaIn(id, GX_CA_ZERO, GX_CA_TEXA, (GXTevAlphaArg)aarg, GX_CA_ZERO);
+        break;
+    case GX_DECAL:
+        GXSetTevColorIn(id, (GXTevColorArg)carg, GX_CC_TEXC, GX_CC_TEXA, GX_CC_ZERO);
+        GXSetTevAlphaIn(id, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, (GXTevAlphaArg)aarg);
+        break;
+    case GX_BLEND:
+        GXSetTevColorIn(id, (GXTevColorArg)carg, GX_CC_ONE, GX_CC_TEXC, GX_CC_ZERO);
+        GXSetTevAlphaIn(id, GX_CA_ZERO, GX_CA_TEXA, (GXTevAlphaArg)aarg, GX_CA_ZERO);
+        break;
+    case GX_REPLACE:
+        GXSetTevColorIn(id, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_TEXC);
+        GXSetTevAlphaIn(id, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_TEXA);
+        break;
+    default:   // GX_PASSCLR
+        GXSetTevColorIn(id, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, (GXTevColorArg)carg);
+        GXSetTevAlphaIn(id, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, (GXTevAlphaArg)aarg);
+        break;
+    }
+    GXSetTevColorOp(id, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevAlphaOp(id, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+}
+
+static void set_reg(float *dst, float r, float g, float b, float a) { dst[0] = r; dst[1] = g; dst[2] = b; dst[3] = a; tev_dirty(); }
+void GXSetTevColor(GXTevRegID id, GXColor c) { if ((unsigned)id < 4) set_reg(g_tevcur.d.reg[id], c8(c.r), c8(c.g), c8(c.b), c8(c.a)); }
+void GXSetTevColorS10(GXTevRegID id, GXColorS10 c)
+{ if ((unsigned)id < 4) set_reg(g_tevcur.d.reg[id], (float)c.r / 255.0f, (float)c.g / 255.0f, (float)c.b / 255.0f, (float)c.a / 255.0f); }
+void GXSetTevKColor(GXTevKColorID id, GXColor c) { if ((unsigned)id < 4) set_reg(g_tevcur.d.k[id], c8(c.r), c8(c.g), c8(c.b), c8(c.a)); }
+void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel sel) { if ((unsigned)stage < 16) { g_tevcur.s.st[stage].kcs = (unsigned char)sel; tev_dirty(); } }
+void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel sel) { if ((unsigned)stage < 16) { g_tevcur.s.st[stage].kas = (unsigned char)sel; tev_dirty(); } }
+void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel ras_sel, GXTevSwapSel tex_sel) { (void)stage; (void)ras_sel; (void)tex_sel; }
+void GXSetTevSwapModeTable(GXTevSwapSel table, GXTevColorChan red, GXTevColorChan green, GXTevColorChan blue, GXTevColorChan alpha)
+{ (void)table; (void)red; (void)green; (void)blue; (void)alpha; }
+void GXSetTevDirect(GXTevStageID stage) { (void)stage; }
+
+void GXSetAlphaCompare(GXCompare comp0, u8 ref0, GXAlphaOp op, GXCompare comp1, u8 ref1)
+{
+    g_tevcur.s.acomp0 = (unsigned char)comp0; g_tevcur.s.acomp1 = (unsigned char)comp1; g_tevcur.s.aop = (unsigned char)op;
+    g_tevcur.d.aref[0] = (float)ref0; g_tevcur.d.aref[1] = (float)ref1;
+    tev_dirty();
+}
+void GXSetColorUpdate(GXBool e) { g_tevcur.d.cmask = e ? 1 : 0; tev_dirty(); }
+void GXSetAlphaUpdate(GXBool e) { g_tevcur.d.amask = e ? 1 : 0; tev_dirty(); }
+
+void GXSetTexCoordGen2(GXTexCoordID dst, GXTexGenType func, GXTexGenSrc src, u32 mtx, GXBool normalize, u32 pt)
+{
+    (void)normalize; (void)pt;
+    if ((unsigned)dst >= 8) return;
+    TexGenCfg &g = g_tevcur.s.tg[dst];
+    g.func = (unsigned char)func; g.src = (unsigned char)src; g.mtx = (unsigned char)mtx;
+    tev_dirty();
+}
+
+void GXLoadTexMtxImm(const f32 mtx[][4], u32 id, GXTexMtxType type)
+{
+    if (id < 30 || id > 57) return;
+    float *m = g_tevcur.d.tm[(id - 30) / 3];
+    const int rows = (type == GX_MTX2x4) ? 2 : 3;
+    std::memset(m, 0, 16 * sizeof(float));
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < rows; ++r)
+            m[c * 4 + r] = mtx[r][c];
+    if (rows == 2) m[10] = 1.0f;   // z passe tel quel
+    m[15] = 1.0f;
+    tev_dirty();
+}
+
+void GXSetChanCtrl(GXChannelID chan, GXBool enable, GXColorSrc amb_src, GXColorSrc mat_src, u32 light_mask, GXDiffuseFn diff_fn, GXAttnFn attn_fn)
+{
+    int idx[2], n = 0;
+    switch (chan) {
+    case 0: idx[n++] = 0; break;                        // GX_COLOR0
+    case 1: idx[n++] = 2; break;                        // GX_COLOR1
+    case 2: idx[n++] = 1; break;                        // GX_ALPHA0
+    case 3: idx[n++] = 3; break;                        // GX_ALPHA1
+    case 4: idx[n++] = 0; idx[n++] = 1; break;          // GX_COLOR0A0
+    case 5: idx[n++] = 2; idx[n++] = 3; break;          // GX_COLOR1A1
+    default: return;
+    }
+    for (int i = 0; i < n; ++i) {
+        ChanCfg &c = g_tevcur.s.ch[idx[i]];
+        c.en = enable ? 1 : 0; c.amb = (unsigned char)amb_src; c.mat = (unsigned char)mat_src;
+        c.lmask = light_mask; c.diff = (unsigned char)diff_fn; c.attn = (unsigned char)attn_fn;
+    }
+    tev_dirty();
+}
+void GXSetChanMatColor(GXChannelID chan, GXColor c)
+{
+    const int k = (chan == 1 || chan == 3 || chan == 5) ? 1 : 0;
+    set_reg(g_tevcur.d.mat[k], c8(c.r), c8(c.g), c8(c.b), c8(c.a));
+}
+void GXSetChanAmbColor(GXChannelID chan, GXColor c)
+{
+    const int k = (chan == 1 || chan == 3 || chan == 5) ? 1 : 0;
+    set_reg(g_tevcur.d.amb[k], c8(c.r), c8(c.g), c8(c.b), c8(c.a));
+}
+
 struct Cmd {
     int type;                 // 0 dessin, 1 viewport, 2 scissor
     unsigned int ioff, ni;
-    GLuint tex;
+    GLuint tex[8];
+    int cfg;                  // indice dans g_cfgpool
     float mvp[16];
-    unsigned char zt, zf, zw, cull, blend;
+    unsigned char zt, zf, zw, cull, blend, bsrc, bdst, btype;
     int v[4];
     float nz, fz;
 };
@@ -556,32 +1049,61 @@ unsigned g_pni = 0;
 
 // Rejoue les commandes enregistrees : un seul envoi de sommets et d'indices, puis les dessins avec
 // un etat GL memorise (un appel redondant coute cher dans le pilote Adreno).
+static GLenum gl_factor(int f)
+{
+    switch (f) {   // GXBlendFactor
+    case 0: return GL_ZERO;
+    case 1: return GL_ONE;
+    case 2: return GL_SRC_COLOR;            // GX_BL_SRCCLR / DSTCLR selon la voie
+    case 3: return GL_ONE_MINUS_SRC_COLOR;
+    case 4: return GL_SRC_ALPHA;
+    case 5: return GL_ONE_MINUS_SRC_ALPHA;
+    case 6: return GL_DST_ALPHA;
+    default: return GL_ONE_MINUS_DST_ALPHA;
+    }
+}
+
 static void gx_replay()
 {
-    if (g_ncmd == 0) { g_pni = 0; return; }
+    if (g_ncmd == 0) { g_pni = 0; g_ncfg = 0; g_cfg_dirty = true; return; }
     glBindVertexArray(g_vao);
     glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)((size_t)g_nverts * sizeof(Vertex)), g_verts, GL_STREAM_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)((size_t)g_pni * sizeof(unsigned short)), g_ipool, GL_STREAM_DRAW);
-    glUseProgram(g_prog);
-    glActiveTexture(GL_TEXTURE0);
-    glUniform1i(g_u_tex, 0);
 
-    int s_texon = -1, s_zt = -1, s_zf = -1, s_zw = -1, s_cull = -1, s_blend = -1;
-    GLuint s_tex = 0xFFFFFFFFu;
+    int s_zt = -1, s_zf = -1, s_zw = -1, s_cull = -1, s_blend = -1, s_bsrc = -1, s_bdst = -1, s_cfg = -1, s_cm = -1, s_am = -1;
+    GLuint s_tex[8];
+    for (int k = 0; k < 8; ++k) s_tex[k] = 0xFFFFFFFFu;
+    Prog *pr = nullptr, *s_pr = nullptr;
     float s_mvp[16]; bool s_mvp_ok = false;
     for (int i = 0; i < g_ncmd; ++i) {
         const Cmd &c = g_cmd[i];
         if (c.type == 1) { glViewport(c.v[0], c.v[1], c.v[2], c.v[3]); glDepthRangef(c.nz, c.fz); continue; }
         if (c.type == 2) { glEnable(GL_SCISSOR_TEST); glScissor(c.v[0], c.v[1], c.v[2], c.v[3]); continue; }
+        const TevCfg &cfg = g_cfgpool[c.cfg];
+        if (c.cfg != s_cfg) {
+            pr = get_prog(cfg.s);
+            if (pr != s_pr) { glUseProgram(pr->prog); s_pr = pr; s_mvp_ok = false; }
+            glUniform4fv(pr->u_reg, 4, &cfg.d.reg[0][0]);
+            glUniform4fv(pr->u_k, 4, &cfg.d.k[0][0]);
+            glUniform4fv(pr->u_mat, 2, &cfg.d.mat[0][0]);
+            glUniform1fv(pr->u_aref, 2, cfg.d.aref);
+            glUniformMatrix4fv(pr->u_tm, 10, GL_FALSE, &cfg.d.tm[0][0]);
+            const int cm = cfg.d.cmask, am = cfg.d.amask;
+            if (cm != s_cm || am != s_am) { glColorMask(cm, cm, cm, am); s_cm = cm; s_am = am; }
+            s_cfg = c.cfg;
+        }
         if (!s_mvp_ok || std::memcmp(s_mvp, c.mvp, sizeof(s_mvp)) != 0) {
-            glUniformMatrix4fv(g_u_mvp, 1, GL_FALSE, c.mvp);
+            glUniformMatrix4fv(pr->u_mvp, 1, GL_FALSE, c.mvp);
             std::memcpy(s_mvp, c.mvp, sizeof(s_mvp)); s_mvp_ok = true;
         }
-        const int texon = c.tex ? 1 : 0;
-        if (s_texon != texon) { glUniform1i(g_u_texon, texon); s_texon = texon; }
-        if (c.tex && s_tex != c.tex) { glBindTexture(GL_TEXTURE_2D, c.tex); s_tex = c.tex; }
+        for (int k = 0; k < 8; ++k)
+            if (c.tex[k] != s_tex[k]) {
+                glActiveTexture(GL_TEXTURE0 + k);
+                glBindTexture(GL_TEXTURE_2D, c.tex[k]);
+                s_tex[k] = c.tex[k];
+            }
         if (s_zt != c.zt) { if (c.zt) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST); s_zt = c.zt; }
         if (c.zt && s_zf != c.zf) { glDepthFunc(gl_compare((GXCompare)c.zf)); s_zf = c.zf; }
         if (s_zw != c.zw) { glDepthMask(c.zw ? GL_TRUE : GL_FALSE); s_zw = c.zw; }
@@ -594,15 +1116,22 @@ static void gx_replay()
             default:            glEnable(GL_CULL_FACE); glCullFace(GL_FRONT_AND_BACK); break;
             }
         }
-        if (s_blend != c.blend) {
-            s_blend = c.blend;
-            if (c.blend) { glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); }
-            else glDisable(GL_BLEND);
+        if (s_blend != c.blend || s_bsrc != c.bsrc || s_bdst != c.bdst) {
+            s_blend = c.blend; s_bsrc = c.bsrc; s_bdst = c.bdst;
+            if (c.blend) {
+                glEnable(GL_BLEND);
+                if (c.btype == GX_BM_SUBTRACT) { glBlendEquation(GL_FUNC_REVERSE_SUBTRACT); glBlendFunc(GL_ONE, GL_ONE); }
+                else { glBlendEquation(GL_FUNC_ADD); glBlendFunc(gl_factor(c.bsrc), gl_factor(c.bdst)); }
+            } else glDisable(GL_BLEND);
         }
         glDrawElements(GL_TRIANGLES, (GLsizei)c.ni, GL_UNSIGNED_SHORT, (const void *)(size_t)(c.ioff * sizeof(unsigned short)));
     }
+    glActiveTexture(GL_TEXTURE0);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     g_ncmd = 0;
     g_pni = 0;
+    g_ncfg = 0;
+    g_cfg_dirty = true;
 }
 
 static void port_gx_flush_prim(void)
@@ -665,7 +1194,7 @@ static void port_gx_flush_prim(void)
     // Enregistre le dessin ; il est rejoue en bloc par gx_replay() (GXCopyDisp). Avant, chaque dessin
     // renvoyait au pilote TOUS les sommets accumules depuis le debut de l'image : le cout croissait
     // avec le carre du nombre de dessins (mesure : 0,15 ms par dessin, 86 % du temps dans le pilote).
-    if (g_ncmd >= kMaxCmd || g_pni + (unsigned)ni > kMaxPoolIdx)
+    if (g_ncmd >= kMaxCmd || g_pni + (unsigned)ni > kMaxPoolIdx || g_ncfg >= kMaxCfg - 2)
         gx_replay();
     Cmd &c = g_cmd[g_ncmd++];
     c.type = 0;
@@ -674,7 +1203,10 @@ static void port_gx_flush_prim(void)
     std::memcpy(g_ipool + g_pni, g_idx, (size_t)ni * sizeof(unsigned short));
     g_pni += (unsigned)ni;
     mtx_mul(g_proj, g_modelview, c.mvp);
-    c.tex = port_gx_bound_texture(0);
+    for (int k = 0; k < 8; ++k)
+        c.tex[k] = port_gx_bound_texture(k);
+    c.cfg = tev_snapshot();
+    c.bsrc = g_blend_src; c.bdst = g_blend_dst; c.btype = g_blend_type;
     c.zt = g_ztest ? 1 : 0;
     c.zf = (unsigned char)g_zfunc;
     c.zw = g_zwrite ? 1 : 0;
@@ -727,8 +1259,11 @@ void GXSetZMode(GXBool compare_enable, GXCompare func, GXBool update_enable)
 
 void GXSetBlendMode(GXBlendMode type, GXBlendFactor src, GXBlendFactor dst, GXLogicOp op)
 {
-    (void)src; (void)dst; (void)op;
-    g_blend = (type == GX_BM_BLEND);
+    (void)op;
+    g_blend = (type == GX_BM_BLEND || type == GX_BM_SUBTRACT);
+    g_blend_type = (unsigned char)type;
+    g_blend_src = (unsigned char)src;
+    g_blend_dst = (unsigned char)dst;
 }
 
 void GXSetCopyClear(GXColor clear_clr, u32 clear_z) { (void)clear_z; g_clear = clear_clr; }
@@ -809,11 +1344,6 @@ void GXCopyDisp(void *dest, GXBool clear)
     g_tris = 0;
 }
 
-void GXSetNumChans(u8 n) { (void)n; }
-void GXSetNumTexGens(u8 n) { (void)n; }
-void GXSetNumTevStages(u8 n) { (void)n; }
-void GXSetTevOrder(GXTevStageID stage, GXTexCoordID coord, GXTexMapID map, GXChannelID color)
-{ (void)stage; (void)coord; (void)map; (void)color; }
 
 // Masque des etages de texture indirecte. Le portage ne fait pas encore d'indirect texturing
 // (id_sys s'en sert pour ses deformations), mais le symbole est interne au SDK et doit exister.

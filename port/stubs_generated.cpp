@@ -103,17 +103,10 @@ void GXInitLightSpot(GXLightObj* lt_obj, f32 cutoff, GXSpotFn spot_func) { PORT_
 void GXInvalidateVtxCache() { PORT_TODO("GXInvalidateVtxCache"); }   // include\dolphin\gx\GXGeometry.h
 void GXLoadLightObjImm(const GXLightObj* lt_obj, GXLightID light) { PORT_TODO("GXLoadLightObjImm"); }   // include\dolphin\gx\GXLighting.h
 void GXLoadNrmMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadNrmMtxImm"); }   // include\dolphin\gx\GXTransform.h
-void GXLoadTexMtxImm(const f32 mtx[][4], u32 id, GXTexMtxType type) { PORT_TODO("GXLoadTexMtxImm"); }   // include\dolphin\gx\GXTransform.h
 void GXPeekZ(u16 x, u16 y, u32* z) { PORT_TODO("GXPeekZ"); }   // include\dolphin\gx\GXCpu2Efb.h
 void GXPixModeSync() { PORT_TODO("GXPixModeSync"); }   // include\dolphin\gx\GXManage.h
 void GXProject(f32 x, f32 y, f32 z, const f32 mtx[3][4], const f32* pm, const f32* vp, f32* sx, f32* sy, f32* sz) { PORT_TODO("GXProject"); }   // include\dolphin\gx\GXTransform.h
-void GXSetAlphaCompare(GXCompare comp0, u8 ref0, GXAlphaOp op, GXCompare comp1, u8 ref1) { PORT_TODO("GXSetAlphaCompare"); }   // include\dolphin\gx\GXTev.h
-void GXSetAlphaUpdate(GXBool update_enable) { PORT_TODO("GXSetAlphaUpdate"); }   // include\dolphin\gx\GXPixel.h
 void GXSetArray(GXAttr attr, void* base_ptr, u8 stride) { PORT_TODO("GXSetArray"); }   // include\dolphin\gx\GXGeometry.h
-void GXSetChanAmbColor(GXChannelID chan, GXColor amb_color) { PORT_TODO("GXSetChanAmbColor"); }   // include\dolphin\gx\GXLighting.h
-void GXSetChanCtrl(GXChannelID chan, GXBool enable, GXColorSrc amb_src, GXColorSrc mat_src, u32 light_mask, GXDiffuseFn diff_fn, GXAttnFn attn_fn) { PORT_TODO("GXSetChanCtrl"); }   // include\dolphin\gx\GXLighting.h
-void GXSetChanMatColor(GXChannelID chan, GXColor mat_color) { PORT_TODO("GXSetChanMatColor"); }   // include\dolphin\gx\GXLighting.h
-void GXSetColorUpdate(GXBool update_enable) { PORT_TODO("GXSetColorUpdate"); }   // include\dolphin\gx\GXPixel.h
 void GXSetCopyFilter(GXBool aa, const u8 sample_pattern[12][2], GXBool vf, const u8 vfilter[7]) { PORT_TODO("GXSetCopyFilter"); }   // include\dolphin\gx\GXFrameBuffer.h
 OSThread* GXSetCurrentGXThread() { PORT_TODO("GXSetCurrentGXThread"); return nullptr; }   // include\dolphin\gx\GXFifo.h
 void GXSetCurrentMtx(u32 id) { PORT_TODO("GXSetCurrentMtx"); }   // include\dolphin\gx\GXTransform.h
@@ -130,24 +123,9 @@ void GXSetIndTexCoordScale(GXIndTexStageID ind_state, GXIndTexScale scale_s, GXI
 void GXSetIndTexMtx(GXIndTexMtxID mtx_id, const f32 offset[2][3], s8 scale_exp) { PORT_TODO("GXSetIndTexMtx"); }   // include\dolphin\gx\GXBump.h
 void GXSetIndTexOrder(GXIndTexStageID ind_stage, GXTexCoordID tex_coord, GXTexMapID tex_map) { PORT_TODO("GXSetIndTexOrder"); }   // include\dolphin\gx\GXBump.h
 void GXSetLineWidth(u8 width, GXTexOffset texOffsets) { PORT_TODO("GXSetLineWidth"); }   // include\dolphin\gx\GXGeometry.h
-void GXSetNumIndStages(u8 nIndStages) { PORT_TODO("GXSetNumIndStages"); }   // include\dolphin\gx\GXBump.h
 void GXSetPixelFmt(GXPixelFmt pix_fmt, GXZFmt16 z_fmt) { PORT_TODO("GXSetPixelFmt"); }   // include\dolphin\gx\GXPixel.h
-void GXSetTevAlphaIn(GXTevStageID stage, GXTevAlphaArg a, GXTevAlphaArg b, GXTevAlphaArg c, GXTevAlphaArg d) { PORT_TODO("GXSetTevAlphaIn"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevAlphaOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg) { PORT_TODO("GXSetTevAlphaOp"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevColor(GXTevRegID id, GXColor color) { PORT_TODO("GXSetTevColor"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevColorIn(GXTevStageID stage, GXTevColorArg a, GXTevColorArg b, GXTevColorArg c, GXTevColorArg d) { PORT_TODO("GXSetTevColorIn"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevColorOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, GXBool clamp, GXTevRegID out_reg) { PORT_TODO("GXSetTevColorOp"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevColorS10(GXTevRegID id, GXColorS10 color) { PORT_TODO("GXSetTevColorS10"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevDirect(GXTevStageID tev_stage) { PORT_TODO("GXSetTevDirect"); }   // include\dolphin\gx\GXBump.h
 void GXSetTevIndBumpXYZ(GXTevStageID tev_stage, GXIndTexStageID ind_stage, GXIndTexMtxID matrix_sel) { PORT_TODO("GXSetTevIndBumpXYZ"); }   // include\dolphin\gx\GXBump.h
 void GXSetTevIndWarp(GXTevStageID tev_stage, GXIndTexStageID ind_stage, u8 signed_offset, u8 replace_mode, GXIndTexMtxID matrix_sel) { PORT_TODO("GXSetTevIndWarp"); }   // include\dolphin\gx\GXBump.h
-void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel sel) { PORT_TODO("GXSetTevKAlphaSel"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevKColor(GXTevKColorID id, GXColor color) { PORT_TODO("GXSetTevKColor"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel sel) { PORT_TODO("GXSetTevKColorSel"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevOp(GXTevStageID id, GXTevMode mode) { PORT_TODO("GXSetTevOp"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel ras_sel, GXTevSwapSel tex_sel) { PORT_TODO("GXSetTevSwapMode"); }   // include\dolphin\gx\GXTev.h
-void GXSetTevSwapModeTable(GXTevSwapSel table, GXTevColorChan red, GXTevColorChan green, GXTevColorChan blue, GXTevColorChan alpha) { PORT_TODO("GXSetTevSwapModeTable"); }   // include\dolphin\gx\GXTev.h
-void GXSetTexCoordGen2(GXTexCoordID dst_coord, GXTexGenType func, GXTexGenSrc src_param, u32 mtx, GXBool normalize, u32 pt_texmtx) { PORT_TODO("GXSetTexCoordGen2"); }   // include\dolphin\gx\GXGeometry.h
 void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap) { PORT_TODO("GXSetTexCopyDst"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetTexCopySrc"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXSetViewportJitter(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz, u32 field) { PORT_TODO("GXSetViewportJitter"); }   // include\dolphin\gx\GXTransform.h
