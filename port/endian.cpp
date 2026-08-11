@@ -221,6 +221,7 @@ bool swap_id_data(const Span &s, u32 at);
 bool swap_eff_data(const Span &s, u32 at);
 bool conv_lit(const Span &s, u32 at, u32 end);
 bool swap_vib_tbl(const Span &s, u32 at);
+bool conv_cam(const Span &s, u32 at, u32 end);
 bool conv_motion(const Span &s, u32 at, u32 end);
 u32 conv_ofs_archive(const Span &s, const char *name);
 bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind);
@@ -277,6 +278,11 @@ bool swap_arc(const Span &s, bool core = false)
         if (core && i == 7) {                   // ofs_2C : lumieres du decor commun (cLit)
             if (!conv_lit(s, o, s.size))
                 std::printf("[PORT] endian : lumieres communes a +0x%x inattendues\n", (unsigned) o);
+            continue;
+        }
+        if (core && i == 8) {                   // ofs_30 : cameras communes
+            if (!conv_cam(s, o, s.size))
+                std::printf("[PORT] endian : cameras communes a +0x%x inattendues\n", (unsigned) o);
             continue;
         }
         if (core && i == 3) {                   // ofs_1C : vibrations
@@ -1557,6 +1563,155 @@ bool conv_eff_tag(const Span &s, u32 at, u32 end)
     return swap_eff_data(s, at);
 }
 
+// ---- CAM : cameras de la salle (src/game/cam_ctrl.cpp, include/cam_ctrl.h ; "B40x")
+//
+// En-tete de 0x10 (version en quatre lettres, nombres de coupes / zones / liens), puis
+// CameraAreaRec[0x10], CameraAreaInfo[0x30], CameraCut[0x34], CameraLerp[0x10]. Les decalages sont
+// relatifs a l'en-tete (calcAddr les transforme en pointeurs) ; les tableaux de points, positions,
+// visees, roulis, champ de vue et images viennent apres. Les versions B400/B401 ne sont pas
+// relogees par le jeu : elles gardent un autre format, laisse tel quel.
+bool conv_cam(const Span &s, u32 at, u32 end)
+{
+    track_label("CAM");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    if (h[0] == 'E' && h[1] == 'M' && h[2] == 'P')
+        return true;                               // entree vide ("EMPTY")
+    if (h[0] != 'B' || h[1] != '4' || h[2] != '0') {
+        std::printf("[PORT] endian : CAM a +0x%x : version %02x %02x %02x %02x\n", (unsigned) at, h[0], h[1], h[2], h[3]);
+        return false;
+    }
+    if (h[3] < '2')
+        return true;                               // anciennes versions : pas de relogement
+    const u32 nCut = h[4], nArea = h[5], nLerp = h[6];
+    const u32 recs = 0x10, infos = recs + nArea * 0x10, cuts = infos + nArea * 0x30, lerps = cuts + nCut * 0x34;
+    if (!s.has(at, lerps + nLerp * 0x10))
+        return false;
+    auto vec_arr = [&](u32 ofs, u32 n) {
+        if (ofs && s.has(at + ofs, n * 12))
+            for (u32 k = 0; k < n * 3; ++k)
+                swap_u32_once(h + ofs + 4 * k);
+    };
+    auto f32_arr = [&](u32 ofs, u32 n) {
+        if (ofs && s.has(at + ofs, n * 4))
+            for (u32 k = 0; k < n; ++k)
+                swap_u32_once(h + ofs + 4 * k);
+    };
+    for (u32 i = 0; i < nArea; ++i) {
+        u8 *r = h + recs + i * 0x10;
+        swap_u32(r + 8);
+        swap_u32(r + 0xC);
+        u8 *a = h + infos + i * 0x30;
+        const u32 num = read_be32(a + 0x28), pts = read_be32(a + 0x2C);
+        swap_u32(a + 4);
+        swap_u32(a + 0x20);
+        swap_u32(a + 0x24);
+        swap_u32(a + 0x28);
+        swap_u32(a + 0x2C);
+        vec_arr(pts, num);
+    }
+    for (u32 i = 0; i < nCut; ++i) {
+        u8 *c = h + cuts + i * 0x34;
+        const u32 num = read_be32(c + 0x20), frames = read_be32(c + 0x10);
+        const u32 pos = read_be32(c + 0x24), tgt = read_be32(c + 0x28), roll = read_be32(c + 0x2C), fovy = read_be32(c + 0x30);
+        for (u32 k = 1; k <= 3; ++k)                // aim_ofs
+            swap_u32(c + 4 * k);
+        swap_u32(c + 0x10);
+        swap_u32(c + 0x14);
+        static const u32 cw[] = { 0x20u, 0x24u, 0x28u, 0x2Cu, 0x30u };
+        for (u32 o : cw)
+            swap_u32(c + o);
+        vec_arr(pos, num);
+        vec_arr(tgt, num);
+        f32_arr(roll, num);
+        f32_arr(fovy, num);
+        if (frames && s.has(at + frames, num * 2))
+            for (u32 k = 0; k < num; ++k)
+                swap_u16_once(h + frames + 2 * k);
+    }
+    for (u32 i = 0; i < nLerp; ++i)
+        swap_u32(h + lerps + i * 0x10 + 8);
+    return true;
+}
+
+// ---- STB : en-tete sonore de la salle (src/game/snd.cpp, include/snd.h : SndRoomHdr)
+//
+// Deux blocs de reverberation (4 x u16 puis 6 flottants), puis quatre tableaux de 32 decalages
+// (selection de courbes, volume, hauteur, filtre) vers des SndCurveTbl : u32 compte, f32 echelle,
+// entrees de 8 octets (f32 distance, u16, u16 valeur). La valeur est lue comme s16 pour la hauteur
+// mais comme **un octet a +7** pour le volume et le filtre : on ne la retourne que pour la hauteur.
+bool conv_stb(const Span &s, u32 at, u32 end)
+{
+    track_label("STB");
+    (void) end;
+    if (!s.has(at, 0x240))
+        return false;
+    u8 *h = s.base + at;
+    for (int e = 0; e < 2; ++e) {
+        u8 *p = h + e * 0x20;
+        for (int k = 0; k < 4; ++k)
+            swap_u16(p + 2 * k);
+        for (int k = 2; k < 8; ++k)
+            swap_u32(p + 4 * k);
+    }
+    u32 offs[4][32];
+    for (int t = 0; t < 4; ++t)
+        for (int i = 0; i < 32; ++i)
+            offs[t][i] = read_be32(h + 0x40 + t * 0x80 + i * 4);
+    for (int k = 0; k < 128; ++k)
+        swap_u32(h + 0x40 + 4 * k);
+    bool ok = true;
+    for (int t = 1; t < 4; ++t) {                  // 1 volume, 2 hauteur, 3 filtre
+        for (int i = 0; i < 32; ++i) {
+            const u32 o = offs[t][i];
+            if (!o)
+                continue;
+            if (!s.has(at + o, 8)) {
+                ok = false;
+                continue;
+            }
+            u8 *c = h + o;
+            const u32 n = read_be32(c);
+            if (n > 0x400 || !s.has(at + o + 8, n * 8)) {
+                ok = false;
+                continue;
+            }
+            if (was_swapped(c, 4))
+                continue;                          // courbe partagee par plusieurs entrees
+            swap_u32(c);
+            swap_u32(c + 4);
+            for (u32 k = 0; k < n; ++k) {
+                u8 *en = c + 8 + k * 8;
+                swap_u32(en);
+                swap_u16(en + 4);
+                if (t == 2)
+                    swap_u16(en + 6);
+            }
+        }
+    }
+    return ok;
+}
+
+// ---- DSE : numeros de bruitage des portes (SndDoorSe : u32 nombre, puis (u16 salle, u16 porte[5]))
+bool conv_dse(const Span &s, u32 at, u32 end)
+{
+    track_label("DSE");
+    (void) end;
+    if (!s.has(at, 4))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = read_be32(h);
+    if (n > 0x400 || !s.has(at + 4, n * 12))
+        return false;
+    swap_u32(h);
+    for (u32 i = 0; i < n * 6; ++i)
+        swap_u16(h + 4 + i * 2);
+    return true;
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -1754,6 +1909,9 @@ const TagConv kRoomTags[] = {
     { "SMX", conv_smx },
     { "LIT", conv_lit },
     { "SHD", conv_shd },
+    { "STB", conv_stb },
+    { "DSE", conv_dse },
+    { "CAM", conv_cam },
     { "ITM", conv_itm },
     { "ETM", conv_etm },
     { "ETS", conv_ets },
