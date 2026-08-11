@@ -5,4 +5,5 @@
 #include <cstdio>
 
 void port_todo(const char *fn);
-#define PORT_TODO(name) port_todo(name)
+// Un drapeau par site d'appel : la table de port_todo() se parcourt avec strcmp (20 % de l'ecran titre).
+#define PORT_TODO(name) do { static bool port_todo_once_; if (!port_todo_once_) { port_todo_once_ = true; port_todo(name); } } while (0)
