@@ -62,8 +62,10 @@ struct CacheEntry {
     unsigned int fmt, tlut_name;
     unsigned short w, h;
     GLuint gl;
+    unsigned int hash, gen;   // empreinte du contenu, et generation de la derniere verification
 };
 CacheEntry g_cache[MAX_CACHE];
+unsigned int g_gen = 1;       // incremente par GXInvalidateTex* : voir upload()
 int g_ncache = 0;
 
 GLuint g_bound[8] = { 0 };
@@ -86,13 +88,38 @@ GLenum gl_filter(unsigned char f)
     return (f == GX_NEAR || f == GX_NEAR_MIP_NEAR || f == GX_NEAR_MIP_LIN) ? GL_NEAREST : GL_LINEAR;
 }
 
+// Empreinte du contenu d'une texture. Les petites sont lues en entier ; au-dela, 1024 mots repartis
+// sur toute la zone (changer une texture change presque toujours bien plus que quelques mots :
+// chargement d'un autre fichier, copie de l'image). Un octet isole modifie pourrait echapper.
+unsigned int tex_hash(const void *img, u32 bytes)
+{
+    const unsigned int *p = (const unsigned int *)img;
+    const u32 nw = bytes / 4;
+    const u32 step = nw > 1024 ? nw / 1024 : 1;
+    unsigned int h = 2166136261u ^ bytes;
+    for (u32 i = 0; i < nw; i += step)
+        h = (h ^ p[i]) * 16777619u;
+    return h;
+}
+
 GLuint upload(const PortTexObj *t)
 {
     for (int i = 0; i < g_ncache; ++i) {
-        const CacheEntry &c = g_cache[i];
+        CacheEntry &c = g_cache[i];
         if (c.img == t->img && c.fmt == t->fmt && c.w == t->w && c.h == t->h &&
-            c.tlut_name == t->tlut_name)
-            return c.gl;
+            c.tlut_name == t->tlut_name) {
+            if (c.gen == g_gen)
+                return c.gl;
+            // Le jeu a invalide le cache depuis : on ne jette plus la texture, on verifie que son
+            // contenu a vraiment change.
+            if (tex_hash(t->img, GXGetTexBufferSize(t->w, t->h, t->fmt, 0, 0)) == c.hash) {
+                c.gen = g_gen;
+                return c.gl;
+            }
+            glDeleteTextures(1, &c.gl);
+            c = g_cache[--g_ncache];   // l'entree perimee disparait, la texture est re-decodee
+            break;
+        }
     }
 
     const int w = t->w, h = t->h;
@@ -124,6 +151,8 @@ GLuint upload(const PortTexObj *t)
         c.h = (unsigned short)h;
         c.tlut_name = t->tlut_name;
         c.gl = id;
+        c.hash = tex_hash(t->img, GXGetTexBufferSize(t->w, t->h, t->fmt, 0, 0));
+        c.gen = g_gen;
     }
     return id;
 }
@@ -256,14 +285,13 @@ void GXLoadTexObjPreLoaded(GXTexObj *obj, GXTexRegion *region, GXTexMapID id)
 
 void GXInvalidateTexAll(void)
 {
-    for (int i = 0; i < g_ncache; ++i)
-        glDeleteTextures(1, &g_cache[i].gl);
-    g_ncache = 0;
-    for (int i = 0; i < 8; ++i)
-        g_bound[i] = 0;
+    // Sur la console c'est un vidage du cache de texture (TMEM), pas une destruction : les octets
+    // en memoire principale restent la verite. Detruire toutes les textures GL ici obligeait a
+    // tout redecoder et renvoyer a chaque appel (mesure : 11 % du temps de l'ecran titre).
+    ++g_gen;
 }
 
-void GXInvalidateTexRegion(GXTexRegion *region) { (void)region; GXInvalidateTexAll(); }
+void GXInvalidateTexRegion(GXTexRegion *region) { (void)region; ++g_gen; }
 
 // ---------------------------------------------------------------- taille memoire
 

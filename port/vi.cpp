@@ -15,6 +15,8 @@
 //
 // La callback de post-retrace est appelee ici. RE4 s'en sert pour son propre comptage de temps
 // et pour armer la lecture des manettes ; l'oublier donne un jeu qui tourne mais n'avance pas.
+#include <cstdlib>
+#include <cstdio>
 #include "port_log.h"
 
 #include <cstdio>
@@ -90,7 +92,19 @@ void VIWaitForRetrace(void)
     // Base de temps absolue : on vise le prochain instant de champ au lieu de dormir une duree
     // fixe, sinon le cout de l'image s'ajoute a l'attente et le jeu derive lentement.
     const u64 t = now_ns();
-    if (g_next_ns > t) {
+    // Mesure (N1) : RE4_NOPACE=1 supprime l'attente du retrace pour voir le cout reel de la logique;
+    // toutes les 120 images on imprime le temps moyen par retrace.
+    static const bool nopace = getenv("RE4_NOPACE") != nullptr;
+    static u64 t_mark = 0; static u32 n_mark = 0;
+    if (t_mark == 0) t_mark = t;
+    if (++n_mark == 120) {
+        std::printf("[PERF] %u retraces : %.2f ms chacun\n", n_mark, (double)(t - t_mark) / 1e6 / n_mark);
+        std::fflush(stdout);
+        t_mark = t; n_mark = 0;
+    }
+    if (nopace) {
+        g_next_ns = t + FIELD_NS;
+    } else if (g_next_ns > t) {
         const u64 wait = g_next_ns - t;
         timespec ts;
         ts.tv_sec = (time_t)(wait / 1000000000ull);

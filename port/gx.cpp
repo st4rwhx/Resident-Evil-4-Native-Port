@@ -18,6 +18,7 @@
 //
 //  * **GX_QUADS n'existe pas en ES.** On le convertit en deux triangles a l'indexation, pas en
 //    dupliquant les sommets : le jeu en emet beaucoup pour l'interface.
+#include <time.h>
 #include "port_log.h"
 
 extern "C" unsigned int port_gx_bound_texture(int unit);
@@ -717,7 +718,19 @@ void GXCopyDisp(void *dest, GXBool clear)
     (void)dest;
     if (!g_gl_ready)
         return;
-    glFinish();
+    {
+        static struct timespec t0; static unsigned n = 0; static double tgl = 0;
+        struct timespec a1, a2; clock_gettime(CLOCK_MONOTONIC, &a1);
+        glFinish();
+        clock_gettime(CLOCK_MONOTONIC, &a2);
+        tgl += (a2.tv_sec - a1.tv_sec) * 1e3 + (a2.tv_nsec - a1.tv_nsec) / 1e6;
+        if (n == 0) t0 = a2;
+        if (++n == 30) {
+            double ms = (a2.tv_sec - t0.tv_sec) * 1e3 + (a2.tv_nsec - t0.tv_nsec) / 1e6;
+            std::printf("[PERF] 30 images GX en %.0f ms (%.1f ms/image, dont glFinish %.1f), %ld dessins, %ld tri\n", ms, ms / 30, tgl / 30, g_draws, g_tris);
+            std::fflush(stdout); n = 0; tgl = 0;
+        }
+    }
     port_dump_frame();
     if (clear) {
         glClearColor(g_clear.r / 255.0f, g_clear.g / 255.0f, g_clear.b / 255.0f, g_clear.a / 255.0f);
