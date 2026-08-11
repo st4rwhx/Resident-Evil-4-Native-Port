@@ -126,6 +126,18 @@ void stream_next(int from)
 inline float fixed_to_f(int v, u8 frac) { return (float) v / (float) (1 << frac); }
 
 GLuint g_prog = 0, g_vao = 0, g_vbo = 0, g_ibo = 0;
+const size_t kVboBytes = 2u << 20, kIboBytes = 1u << 20;
+size_t g_voff = 0, g_ioff = 0;   // remplissage des grands tampons pendant l'image
+
+// Rend les tampons au pilote (nouvel espace, sans attendre que le GPU ait fini l'ancien) et repart de 0.
+void port_gx_orphan()
+{
+    glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)kVboBytes, nullptr, GL_STREAM_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)kIboBytes, nullptr, GL_STREAM_DRAW);
+    g_voff = g_ioff = 0;
+}
 GLint g_u_mvp = -1, g_u_tex = -1, g_u_texon = -1;
 unsigned short g_idx[MAX_VERTS * 3];
 
@@ -287,6 +299,10 @@ extern "C" bool port_gx_init_offscreen(u32 w, u32 h)
     glGenBuffers(1, &g_ibo);
     glBindVertexArray(g_vao);
     glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)kVboBytes, nullptr, GL_STREAM_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)kIboBytes, nullptr, GL_STREAM_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
     glEnableVertexAttribArray(1);
@@ -301,8 +317,11 @@ extern "C" bool port_gx_init_offscreen(u32 w, u32 h)
     return true;
 }
 
+static void gx_replay();
+
 extern "C" void port_gx_read_pixels(int x, int y, int w, int h, void *dst)
 {
+    gx_replay();
     glFinish();
     glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, dst);
 }
@@ -519,6 +538,73 @@ void port_gx_end(void)
     g_last_attr = -1;
 }
 
+struct Cmd {
+    int type;                 // 0 dessin, 1 viewport, 2 scissor
+    unsigned int ioff, ni;
+    GLuint tex;
+    float mvp[16];
+    unsigned char zt, zf, zw, cull, blend;
+    int v[4];
+    float nz, fz;
+};
+const int kMaxCmd = 4096;
+const unsigned kMaxPoolIdx = 1u << 20;
+Cmd g_cmd[kMaxCmd];
+int g_ncmd = 0;
+unsigned short g_ipool[kMaxPoolIdx];
+unsigned g_pni = 0;
+
+// Rejoue les commandes enregistrees : un seul envoi de sommets et d'indices, puis les dessins avec
+// un etat GL memorise (un appel redondant coute cher dans le pilote Adreno).
+static void gx_replay()
+{
+    if (g_ncmd == 0) { g_pni = 0; return; }
+    glBindVertexArray(g_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)((size_t)g_nverts * sizeof(Vertex)), g_verts, GL_STREAM_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)((size_t)g_pni * sizeof(unsigned short)), g_ipool, GL_STREAM_DRAW);
+    glUseProgram(g_prog);
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(g_u_tex, 0);
+
+    int s_texon = -1, s_zt = -1, s_zf = -1, s_zw = -1, s_cull = -1, s_blend = -1;
+    GLuint s_tex = 0xFFFFFFFFu;
+    float s_mvp[16]; bool s_mvp_ok = false;
+    for (int i = 0; i < g_ncmd; ++i) {
+        const Cmd &c = g_cmd[i];
+        if (c.type == 1) { glViewport(c.v[0], c.v[1], c.v[2], c.v[3]); glDepthRangef(c.nz, c.fz); continue; }
+        if (c.type == 2) { glEnable(GL_SCISSOR_TEST); glScissor(c.v[0], c.v[1], c.v[2], c.v[3]); continue; }
+        if (!s_mvp_ok || std::memcmp(s_mvp, c.mvp, sizeof(s_mvp)) != 0) {
+            glUniformMatrix4fv(g_u_mvp, 1, GL_FALSE, c.mvp);
+            std::memcpy(s_mvp, c.mvp, sizeof(s_mvp)); s_mvp_ok = true;
+        }
+        const int texon = c.tex ? 1 : 0;
+        if (s_texon != texon) { glUniform1i(g_u_texon, texon); s_texon = texon; }
+        if (c.tex && s_tex != c.tex) { glBindTexture(GL_TEXTURE_2D, c.tex); s_tex = c.tex; }
+        if (s_zt != c.zt) { if (c.zt) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST); s_zt = c.zt; }
+        if (c.zt && s_zf != c.zf) { glDepthFunc(gl_compare((GXCompare)c.zf)); s_zf = c.zf; }
+        if (s_zw != c.zw) { glDepthMask(c.zw ? GL_TRUE : GL_FALSE); s_zw = c.zw; }
+        if (s_cull != c.cull) {
+            s_cull = c.cull;
+            switch (c.cull) {
+            case GX_CULL_NONE:  glDisable(GL_CULL_FACE); break;
+            case GX_CULL_FRONT: glEnable(GL_CULL_FACE); glCullFace(GL_FRONT); break;
+            case GX_CULL_BACK:  glEnable(GL_CULL_FACE); glCullFace(GL_BACK); break;
+            default:            glEnable(GL_CULL_FACE); glCullFace(GL_FRONT_AND_BACK); break;
+            }
+        }
+        if (s_blend != c.blend) {
+            s_blend = c.blend;
+            if (c.blend) { glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); }
+            else glDisable(GL_BLEND);
+        }
+        glDrawElements(GL_TRIANGLES, (GLsizei)c.ni, GL_UNSIGNED_SHORT, (const void *)(size_t)(c.ioff * sizeof(unsigned short)));
+    }
+    g_ncmd = 0;
+    g_pni = 0;
+}
+
 static void port_gx_flush_prim(void)
 {
     commit_vertex();
@@ -576,53 +662,24 @@ static void port_gx_flush_prim(void)
     ++g_draws;
     g_tris += ni / 3;
 
-    float mvp[16];
-    mtx_mul(g_proj, g_modelview, mvp);
-
-    glBindVertexArray(g_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(g_nverts * sizeof(Vertex)), g_verts, GL_STREAM_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(ni * sizeof(unsigned short)), g_idx, GL_STREAM_DRAW);
-
-    glUseProgram(g_prog);
-    glUniformMatrix4fv(g_u_mvp, 1, GL_FALSE, mvp);
-
-    // La texture liee sur l unite 0 decide de l echantillonnage. GXLoadTexObj l a
-    // deja rendue courante ; ici on ne fait que dire au shader si elle existe.
-    const GLuint tex = port_gx_bound_texture(0);
-    glUniform1i(g_u_texon, tex ? 1 : 0);
-    if (tex) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glUniform1i(g_u_tex, 0);
-    }
-
-    if (g_ztest) { glEnable(GL_DEPTH_TEST); glDepthFunc(gl_compare(g_zfunc)); }
-    else glDisable(GL_DEPTH_TEST);
-    glDepthMask(g_zwrite ? GL_TRUE : GL_FALSE);
-
-    // Sens des faces : GX definit la face avant en **horaire**, OpenGL en anti-horaire
-    // (confirme par opengx, le wrapper GL->GX de davidgfnet : "CCW is front for OpenGL while
-    // front facing is defined CW in GX"). Cela appellerait une inversion... mais la projection
-    // du GameCube a Y vers le bas, alors que le framebuffer GL a Y vers le haut : ce
-    // retournement inverse deja le sens apparent. **Les deux inversions s'annulent**, et la
-    // correspondance est donc directe.
-    //
-    // Mesure : avec une inversion manuelle en plus, le quadrilatere en bande disparaissait
-    // entierement - trois inversions valent une. C'est le genre d'erreur qui ne produit aucune
-    // erreur GL et se lit seulement comme "la scene est vide".
-    switch (g_cull) {
-    case GX_CULL_NONE:  glDisable(GL_CULL_FACE); break;
-    case GX_CULL_FRONT: glEnable(GL_CULL_FACE); glCullFace(GL_FRONT); break;
-    case GX_CULL_BACK:  glEnable(GL_CULL_FACE); glCullFace(GL_BACK); break;
-    default:            glEnable(GL_CULL_FACE); glCullFace(GL_FRONT_AND_BACK); break;
-    }
-
-    if (g_blend) { glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); }
-    else glDisable(GL_BLEND);
-
-    glDrawElements(GL_TRIANGLES, ni, GL_UNSIGNED_SHORT, nullptr);
+    // Enregistre le dessin ; il est rejoue en bloc par gx_replay() (GXCopyDisp). Avant, chaque dessin
+    // renvoyait au pilote TOUS les sommets accumules depuis le debut de l'image : le cout croissait
+    // avec le carre du nombre de dessins (mesure : 0,15 ms par dessin, 86 % du temps dans le pilote).
+    if (g_ncmd >= kMaxCmd || g_pni + (unsigned)ni > kMaxPoolIdx)
+        gx_replay();
+    Cmd &c = g_cmd[g_ncmd++];
+    c.type = 0;
+    c.ioff = g_pni;
+    c.ni = (unsigned)ni;
+    std::memcpy(g_ipool + g_pni, g_idx, (size_t)ni * sizeof(unsigned short));
+    g_pni += (unsigned)ni;
+    mtx_mul(g_proj, g_modelview, c.mvp);
+    c.tex = port_gx_bound_texture(0);
+    c.zt = g_ztest ? 1 : 0;
+    c.zf = (unsigned char)g_zfunc;
+    c.zw = g_zwrite ? 1 : 0;
+    c.cull = (unsigned char)g_cull;
+    c.blend = g_blend ? 1 : 0;
 }
 
 // ---------------------------------------------------------------- transformations
@@ -640,16 +697,21 @@ void GXSetViewport(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz)
     if (!g_gl_ready)
         return;
     // L'origine de l'ecran est en haut a gauche sur GameCube, en bas a gauche en OpenGL.
-    glViewport((GLint)left, (GLint)((float)g_fb_h - top - ht), (GLsizei)wd, (GLsizei)ht);
-    glDepthRangef(nearz, farz);
+    if (g_ncmd >= kMaxCmd) gx_replay();
+    Cmd &c = g_cmd[g_ncmd++];
+    c.type = 1;
+    c.v[0] = (GLint)left; c.v[1] = (GLint)((float)g_fb_h - top - ht); c.v[2] = (GLsizei)wd; c.v[3] = (GLsizei)ht;
+    c.nz = nearz; c.fz = farz;
 }
 
 void GXSetScissor(u32 left, u32 top, u32 wd, u32 ht)
 {
     if (!g_gl_ready)
         return;
-    glEnable(GL_SCISSOR_TEST);
-    glScissor((GLint)left, (GLint)(g_fb_h - top - ht), (GLsizei)wd, (GLsizei)ht);
+    if (g_ncmd >= kMaxCmd) gx_replay();
+    Cmd &c = g_cmd[g_ncmd++];
+    c.type = 2;
+    c.v[0] = (GLint)left; c.v[1] = (GLint)(g_fb_h - top - ht); c.v[2] = (GLsizei)wd; c.v[3] = (GLsizei)ht;
 }
 
 // ---------------------------------------------------------------- etat pixel
@@ -720,10 +782,12 @@ void GXCopyDisp(void *dest, GXBool clear)
     (void)dest;
     if (!g_gl_ready)
         return;
+    gx_replay();
     {
         static struct timespec t0; static unsigned n = 0; static double tgl = 0;
         struct timespec a1, a2; clock_gettime(CLOCK_MONOTONIC, &a1);
-        glFinish();
+        static const bool fin = getenv("RE4_FINISH") != nullptr;
+        if (fin) glFinish();
         clock_gettime(CLOCK_MONOTONIC, &a2);
         tgl += (a2.tv_sec - a1.tv_sec) * 1e3 + (a2.tv_nsec - a1.tv_nsec) / 1e6;
         if (n == 0) t0 = a2;
