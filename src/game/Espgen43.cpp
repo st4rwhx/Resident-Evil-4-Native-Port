@@ -579,4 +579,12 @@ int Espgen43_SetFreeWork(EspgenWork* w, EspGenWork* rec, EspSeqData* head, cMode
     return 1;
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif

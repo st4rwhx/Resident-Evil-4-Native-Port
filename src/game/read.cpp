@@ -1025,4 +1025,12 @@ void* GetDataExt(void* arc, const char* tag, int no)
     return NULL;
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .bss; .balign 32");
+#endif
+#endif
+#endif
+#endif

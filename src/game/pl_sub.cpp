@@ -1081,4 +1081,12 @@ void PlDataRelease()
 }
 
 // the split object's .sdata is padded to 8 bytes after the three floats
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif

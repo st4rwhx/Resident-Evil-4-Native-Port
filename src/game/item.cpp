@@ -3223,4 +3223,12 @@ void cItemMgr::debugWeapon(int id)
 }
 
 // the split object pads .sdata to 8 bytes (lbl_80313F4C)
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif

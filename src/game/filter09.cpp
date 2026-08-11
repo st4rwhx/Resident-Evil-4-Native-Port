@@ -186,10 +186,9 @@ int Filter09GetbUse()
     return g_bUse;
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 32\n\t.text");
-#ifdef RE4_PORT
-// Portage : le prefixe du type de section est @ sur PowerPC et % sur ARM.
-asm(".section .sbss,\"aw\",%nobits\n\t.balign 8\n\t.text");
-#else
+#endif
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sbss,\"aw\",@nobits\n\t.balign 8\n\t.text");
 #endif

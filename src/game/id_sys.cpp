@@ -1503,4 +1503,12 @@ void* g_pIdBuff = 0;
 int IdBuffType;
 
 // The split object's .sdata is 8-aligned (the linker pads 0x80314BB4 -> 0x80314BB8 before it).
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif

@@ -480,4 +480,6 @@ void Filter02DrawBuffer2()
     GXSetAlphaUpdate(1);
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 32\n\t.text");
+#endif

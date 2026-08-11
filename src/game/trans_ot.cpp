@@ -44,7 +44,15 @@ static int Ot_max_tbl[OT_MAX] = {
 OtWork g_OtWork[OT_MAX];
 OtMirrorWork g_OtMirrirWk[2];
 f32 OT_MUL = 0.05f;
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif
 int g_NowExecOtType;
 
 void InitOt()

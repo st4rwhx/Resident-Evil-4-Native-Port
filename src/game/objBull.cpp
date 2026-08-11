@@ -1323,4 +1323,6 @@ int SubCkNearEm()
 }
 
 // The next unit's .sdata starts 8-byte aligned in the original link.
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 8\n\t.text");
+#endif

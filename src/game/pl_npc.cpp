@@ -2828,7 +2828,11 @@ int cSubChar::checkBackEm()
 // The damage routine handler (routine 4): pl_sub's SetSubDamage passes it in r4.
 void cSubChar::setEmFunc()
 {
+    #ifdef RE4_PORT
+    void (*func)();   // portage : epinglage sur r4, sans objet hors PowerPC
+    #else
     register void (*func)() asm("r4");
+    #endif
 
     subFunc = func;
 }

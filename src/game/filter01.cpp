@@ -347,4 +347,6 @@ void Filter01SetParam(int mode, int z, u8 type, f32 level)
 }
 
 // The next unit's .sdata (filter06: 32-byte aligned vfilter tables) starts 32-byte aligned.
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 32\n\t.text");
+#endif

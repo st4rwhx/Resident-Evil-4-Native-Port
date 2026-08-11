@@ -559,4 +559,12 @@ int EspgenSeqSet(EspSeqData* head, int no, EspInfo* info, cModel* model, u16 par
 }
 
 // the split object pads .rodata to 8 bytes
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .rodata; .balign 8");
+#endif
+#endif
+#endif
+#endif

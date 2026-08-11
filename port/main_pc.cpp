@@ -26,6 +26,7 @@ extern uintptr_t OSBaseAddress;
 #include <cstring>
 
 void port_set_game_dir(const char *dir);
+extern "C" void port_mark_game_thread(void);
 extern "C" void port_vi_first_frame(void);
 int re4_main();   // liaison C++ : defini dans src/game/main.cpp
 
@@ -48,6 +49,12 @@ static void log_callback(AuroraLogLevel level, const char *module, const char *m
 
 int main(int argc, char *argv[])
 {
+    // Sortie non tamponnee. Un plantage emporte tout ce qui attend dans le tampon, et c est
+    // precisement a ce moment-la que les dernieres lignes comptent : elles disent ou on en
+    // etait. Le cout est nul a l echelle du jeu, qui n ecrit qu au demarrage.
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
+
     // Le dossier du jeu : le premier argument qui n'est pas une option d'aurora.
     const char *dir = nullptr;
     for (int i = 1; i < argc; ++i) {
@@ -68,14 +75,19 @@ int main(int argc, char *argv[])
     config.windowWidth = 640;
     config.windowHeight = 480;
     config.vsync = true;
-    // 24 Mo de MEM1, comme le GameCube. Pas de MEM2 : notre couche ARAM (port/aram.cpp) gere
-    // deja les 16 Mo d'ARAM et les transferts ARQ que RE4 attend.
-    config.mem1Size = 24 * 1024 * 1024;
+    // 32 Mo de MEM1. Le GameCube de detail n'en a que 24, mais RE4 place ses zones USB et de
+    // debogage a 0x81800000 et 0x8181FB00 - soit juste au-dela - parce qu'il est bati pour une
+    // station de developpement. Rogner la ici ferait ecrire hors de la region des le demarrage.
+    // Pas de MEM2 : notre couche ARAM (port/aram.cpp) couvre deja les transferts ARQ.
+    config.mem1Size = 32 * 1024 * 1024;
     config.mem2Size = 0;
 
     AuroraInfo info = aurora_initialize(argc, argv, &config);
     std::printf("[PORT] aurora prete : fenetre %ux%u\n", info.windowSize.width,
                 info.windowSize.height);
+
+    // A partir d ici, seul ce fil alloue dans le tas du jeu (voir port/pc_glue.cpp).
+    port_mark_game_thread();
 
     port_vi_first_frame();
 

@@ -309,7 +309,14 @@ inline int cModel::isTrans()
 
 // Parts `no` (-1: the model itself); NULL and a log when the chain is shorter. Defined here so
 // that the callers below inline it while setPartsParent above calls it.
+#ifdef RE4_PORT
+// Portage : sans `inline`. Le mot-cle etait la pour reproduire le choix du compilateur
+// d origine ; avec -O3, gcc l integre partout et n emet aucune definition, alors que
+// d autres unites appellent cette methode - l edition de liens echoue.
+cModel* cModel::getPartsPtr(int no)
+#else
 inline cModel* cModel::getPartsPtr(int no)
+#endif
 {
     cModel* p = pParts;
     int cnt;

@@ -1073,4 +1073,12 @@ void RoomEfmRegist(void* model, void* tpl, u8 id)
     efmRegist(model, tpl, NULL, NULL, id, 1);
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif

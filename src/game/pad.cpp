@@ -462,4 +462,12 @@ void Pad_test()
 }
 
 // The split object's .rodata is 8-aligned and 4 bytes longer (padding after the last string).
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .rodata; .balign 8");
+#endif
+#endif
+#endif
+#endif

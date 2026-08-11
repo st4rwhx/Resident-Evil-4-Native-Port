@@ -27,6 +27,13 @@
 // l image disque sans rien dire d autre. `open`/`pread` ne sont pas redefinis, et `pread` porte
 // sa position en argument : pas d etat partage, pas de seek a oublier.
 #include <fcntl.h>
+
+// Windows : sans O_BINARY, la libc traduit les fins de ligne et arrete la lecture sur un
+// 0x1A. Sur une image disque, qui est du binaire pur, cela donne des lectures courtes
+// silencieuses - ici l'en-tete de la FST revenait faux et le jeu ne trouvait aucun fichier.
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 #include <unistd.h>
 
 #include <cstdio>
@@ -122,6 +129,26 @@ u32 be32_at(const unsigned char *d)
     return ((u32) d[0] << 24) | ((u32) d[1] << 16) | ((u32) d[2] << 8) | (u32) d[3];
 }
 
+
+// MinGW n'a pas pread. On le recompose, parce que la version en deux temps est correcte ici :
+// l'acces a l'image est mono-fil (nos OSThread sont des coroutines a jeton unique, voir
+// port/thread.cpp), donc le decalage partage du descripteur ne peut pas etre deplace entre le
+// positionnement et la lecture. Le decalage est pris en 64 bits : une image GameCube tient sur
+// 32 bits de justesse, et rien ne justifie de compter dessus.
+#if defined(_WIN32)
+static ssize_t port_pread(int fd, void *buf, size_t n, long long off)
+{
+    if (::_lseeki64(fd, off, SEEK_SET) < 0)
+        return -1;
+    return (ssize_t) ::read(fd, buf, (unsigned int) n);
+}
+#else
+static ssize_t port_pread(int fd, void *buf, size_t n, long long off)
+{
+    return ::pread(fd, buf, n, (off_t) off);
+}
+#endif
+
 // Lit la FST d une image GameCube et en tire la liste des fichiers.
 //
 // La FST est un tableau d entrees de 12 octets suivi d un tas de chaines. Chaque entree dit si
@@ -130,12 +157,12 @@ u32 be32_at(const unsigned char *d)
 // ce qui evite de tenir une pile de noms.
 bool load_image(const char *path)
 {
-    const int f = ::open(path, O_RDONLY);
+    const int f = ::open(path, O_RDONLY | O_BINARY);
     if (f < 0)
         return false;
 
     unsigned char hdr[8];
-    if (::pread(f, hdr, 8, 0x424) != 8) {
+    if (port_pread(f, hdr, 8, 0x424) != 8) {
         ::close(f);
         return false;
     }
@@ -149,9 +176,9 @@ bool load_image(const char *path)
         ::close(f);
         return false;
     }
-    if (::pread(f, &g_disk_id, sizeof(g_disk_id), 0) == (ssize_t) sizeof(g_disk_id))
+    if (port_pread(f, &g_disk_id, sizeof(g_disk_id), 0) == (ssize_t) sizeof(g_disk_id))
         g_disk_id_ok = true;
-    if (::pread(f, fst, fst_sz, (off_t) fst_off) != (ssize_t) fst_sz) {
+    if (port_pread(f, fst, fst_sz, (off_t) fst_off) != (ssize_t) fst_sz) {
         std::free(fst);
         ::close(f);
         return false;
@@ -202,7 +229,9 @@ bool load_image(const char *path)
     // pour en deduire la memoire libre restante, et une adresse hors MEM1 y donnerait une
     // taille absurde. C est ce calcul qui donnait "FST Address = 0x0" au premier essai.
     {
-        const u32 MEM1_TOP = 0x81800000u;
+        // PORT_MEM1 : sur PC, aurora alloue MEM1 ailleurs qu a 0x80000000 (voir
+        // port/port_prelude.h). Ecrire a l adresse GameCube brute plantait ici meme.
+        const u32 MEM1_TOP = (u32) PORT_MEM1(0x81800000u);
         const u32 sz = (fst_sz + 31u) & ~31u;
         g_fst_in_mem1 = (u8 *) (unsigned long) (MEM1_TOP - sz);
         g_fst_size = fst_sz;
@@ -368,9 +397,9 @@ BOOL DVDReadAsyncPrio(DVDFileInfo *fileInfo, void *addr, s32 length, s32 offset,
     s32 got = 0;
     const Entry &en = g_files[idx];
     if (en.host[0]) {
-        const int f = ::open(en.host, O_RDONLY);
+        const int f = ::open(en.host, O_RDONLY | O_BINARY);
         if (f >= 0) {
-            const ssize_t n = ::pread(f, addr, (size_t) length, (off_t) offset);
+            const ssize_t n = port_pread(f, addr, (size_t) length, (off_t) offset);
             got = (n > 0) ? (s32) n : 0;
             ::close(f);
         }
@@ -384,7 +413,7 @@ BOOL DVDReadAsyncPrio(DVDFileInfo *fileInfo, void *addr, s32 length, s32 offset,
         // **erreur** toute lecture qui rend moins que demande, et le chargement des polices
         // tournait en boucle sur "DVD: Read Error!!!" tant que la couche rognait.
         if (offset >= 0) {
-            const ssize_t r = ::pread(g_image, addr, (size_t) length,
+            const ssize_t r = port_pread(g_image, addr, (size_t) length,
                                       (off_t) (en.offset + (u32) offset));
             got = (r > 0) ? (s32) r : 0;
         }

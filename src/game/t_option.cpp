@@ -280,10 +280,22 @@ void tp_pl_flag()
             // this-argument after the `li` constants in both arms; a codeless asm reading the num() result
             // in r3 gives the addi an anti-dependence (one cycle in the dump arm, two chained in the get arm).
             if (ItemMgr.num(0xFE)) {
+                #ifndef RE4_PORT   // portage : epinglage PowerPC et asm vides, ne produisent rien
+                #ifndef RE4_PORT   // portage : epinglage PowerPC et asm vides, ne produisent rien
+                #ifndef RE4_PORT   // portage : epinglage PowerPC et asm vides, ne produisent rien
                 { register int n3 asm("r3"); asm("" : "=m"(PlKaiou) : "r"(n3)); }
+                #endif
+                #endif
+                #endif
                 ItemMgr.dump(0xFE);
             } else {
+                #ifndef RE4_PORT   // portage : epinglage PowerPC et asm vides, ne produisent rien
+                #ifndef RE4_PORT   // portage : epinglage PowerPC et asm vides, ne produisent rien
+                #ifndef RE4_PORT   // portage : epinglage PowerPC et asm vides, ne produisent rien
                 { register int n3 asm("r3"); asm("" : "=m"(PlKaiou) : "r"(n3)); asm("" : "=m"(PlDbFlag) : "r"(n3), "m"(PlKaiou)); }
+                #endif
+                #endif
+                #endif
                 ItemMgr.get(0xFE, 0);
             }
             PlSetCostume();
@@ -887,4 +899,6 @@ void printCursor(int x, int y)
 }
 
 // .sdata is 8-aligned in the split object (4-byte pad after the last static).
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 8\n\t.text");
+#endif

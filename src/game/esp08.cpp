@@ -803,4 +803,12 @@ int cEsp08::SetFreeWork(EspGenWork* gen, u32* seed)
 }
 
 // The split object's .sdata is 8-aligned and 0x10 bytes (prm1..prm3 + 4 pad).
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 8");
+#endif
+#endif
+#endif
+#endif

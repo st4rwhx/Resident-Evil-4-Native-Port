@@ -1816,4 +1816,6 @@ int Merchant::levelupPrice(ItemWork* item, int type, int lv)
     return levelupPrice(item->id, type, lv);
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 8\n\t.text");
+#endif

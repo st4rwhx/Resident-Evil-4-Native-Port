@@ -73,6 +73,20 @@ OSHeapCell* cell_dll = NULL;
 static u8 Dalloc_flg = 0;
 u32 _epy_base = 40;
 
+// La carte memoire ci-dessous est ecrite en adresses absolues du GameCube. Sur le telephone
+// elles sont justes : port/os.cpp reserve MEM1 a 0x80000000. Sur PC c'est aurora qui alloue
+// MEM1, et pas a cette adresse - sa documentation le dit explicitement. PORT_MEM1 ramene
+// chaque constante sur la base reelle ; hors portage, la macro est l'identite et le binaire
+// ne change pas.
+#ifdef RE4_PORT
+#include <stdlib.h>
+#include <stdint.h>
+#endif
+
+#ifndef PORT_MEM1
+#define PORT_MEM1(a) (a)
+#endif
+
 static OSHeapDescriptor* HeapHead;
 u32 arenaLo;
 u32 arenaHi;
@@ -81,6 +95,66 @@ static u8 CurrentDbgHeap;
 void* pMemTile;
 static u32 _epy;
 
+#ifdef RE4_PORT
+// RE4 remplace l'operateur new global. Sur GameCube c'etait sans risque : rien d'autre que le
+// jeu ne tournait dans le processus. Ici, les initialiseurs statiques de la bibliotheque hote
+// s'executent **avant** SystemMemInit et passent par ce meme operateur, alors que le tas du jeu
+// n'existe pas encore - ni le journal, d'ou une violation d'acces avant meme main().
+//
+// Ces allocations-la vont donc a la libc. Ce qui oblige a rendre `delete` capable de choisir,
+// et le critere ne peut pas etre un drapeau temporel : un objet cree avant l'initialisation est
+// souvent detruit apres. Le critere sur (dans MEM1 ou pas) est, lui, toujours vrai.
+//
+// Il faut aussi definir les formes **dimensionnees** de delete (C++14). La bibliotheque hote est
+// compilee en C++20 et les emet ; sans elles, le compilateur appelle celle par defaut, qui rend
+// au tas du systeme un pointeur venu du tas du jeu - ou l inverse. C est exactement le plantage
+// qu'on observait : corruption de tas dans un destructeur statique d'aurora.
+static bool MemReady = false;
+
+// Le tas du jeu appartient au jeu. La bibliotheque hote a ses propres fils - celui de rendu,
+// par exemple - et les y laisser allouer serait faux deux fois : ils consommeraient la memoire
+// dimensionnee pour RE4, et ils le feraient sans verrou, alors que ce tas n'en a aucun (sur
+// GameCube il suffisait de couper les interruptions). Tout ce qui ne vient pas du fil du jeu
+// va donc a la libc.
+extern "C" int port_on_game_thread(void);
+
+// Un mot sur la sortie standard, sans passer par <stdio.h> : les en-tetes du jeu
+// declarent deja sprintf et consorts, et les deux jeux de declarations se contredisent.
+extern "C" void port_note(const char* fmt, ...);
+
+static bool in_game_heap(void* q)
+{
+    const u32 a = (u32) (uintptr_t) q;
+    return a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x82000000);
+}
+
+static void port_free(void* q)
+{
+    if (q == NULL)
+        return;
+    if (in_game_heap(q))
+        Mem_free(q);
+    else
+        free(q);
+}
+
+void* operator new(unsigned int size)
+{
+    if (!MemReady || !port_on_game_thread())
+        return calloc(size ? size : 1, 1);
+    return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
+}
+
+void* operator new[](unsigned int size)
+{
+    if (!MemReady || !port_on_game_thread())
+        return calloc(size ? size : 1, 1);
+    return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
+}
+
+void operator delete(void* q, unsigned long long) { port_free(q); }
+void operator delete[](void* q, unsigned long long) { port_free(q); }
+#else
 void* operator new(unsigned int size)
 {
     return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
@@ -90,33 +164,42 @@ void* operator new[](unsigned int size)
 {
     return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
 }
+#endif
 
 void operator delete(void* p)
 {
+#ifdef RE4_PORT
+    port_free(p);
+#else
     Mem_free(p);
+#endif
 }
 
 void operator delete[](void* p)
 {
+#ifdef RE4_PORT
+    port_free(p);
+#else
     Mem_free(p);
+#endif
 }
 
 void SystemMemInit()
 {
-    SysMem.heap_end = 0x817F4000;
-    SysMem.elf_end = 0x80350000;
-    SysMem.dvd = 0x80370000;
-    SysMem.sound = 0x803F0000;
-    SysMem.fifo = 0x80460000;
-    SysMem.xfb = 0x80578000;
-    SysMem.core = 0x807AC000;
-    SysMem.option = 0x807EC000;
-    SysMem.player = 0x80904000;
-    SysMem.weapon = 0x80974000;
-    SysMem.usb = 0x81800000;
-    SysMem.debug = 0x8181FB00;
+    SysMem.heap_end = (u32) PORT_MEM1(0x817F4000);
+    SysMem.elf_end = (u32) PORT_MEM1(0x80350000);
+    SysMem.dvd = (u32) PORT_MEM1(0x80370000);
+    SysMem.sound = (u32) PORT_MEM1(0x803F0000);
+    SysMem.fifo = (u32) PORT_MEM1(0x80460000);
+    SysMem.xfb = (u32) PORT_MEM1(0x80578000);
+    SysMem.core = (u32) PORT_MEM1(0x807AC000);
+    SysMem.option = (u32) PORT_MEM1(0x807EC000);
+    SysMem.player = (u32) PORT_MEM1(0x80904000);
+    SysMem.weapon = (u32) PORT_MEM1(0x80974000);
+    SysMem.usb = (u32) PORT_MEM1(0x81800000);
+    SysMem.debug = (u32) PORT_MEM1(0x8181FB00);
     SysMem.arena_lo = (u32) OSGetArenaLo();
-    if (SysMem.arena_lo > 0x8034FFFF) {
+    if (SysMem.arena_lo > (u32) PORT_MEM1(0x8034FFFF)) {
         OSReport("ELF size overflow\n");
 #line 100 "D:/Bio4/Prog/main_mem.cpp"
         HALT();
@@ -144,6 +227,10 @@ void SystemMemInit()
         strcpy(pRK, "_reset_keep_");
         OSReport("RESET_KEEP_WORK memory clear...\n");
     }
+#ifdef RE4_PORT
+    // A partir d ici le tas du jeu existe : l operateur new reprend son chemin normal.
+    MemReady = true;
+#endif
 }
 
 void memInitHeapTbl()
@@ -397,6 +484,14 @@ void* mem_alloc(u32 size, const char* file, int line, int flag, int heap)
         }
     }
     if (flag == 1 && p == NULL) {
+#ifdef RE4_PORT
+        // pLog n existe pas encore pendant l initialisation, et une allocation ratee est
+        // precisement le moment ou l on veut lire le message plutot qu un plantage de plus.
+        if (pLog.p == NULL) {
+            port_note("[PORT] allocation refusee : %x octets, tas %d (%s)\n",
+                      size, heap, str);
+        } else
+#endif
         pLog->err(0, 0, "alloc[%x]:free[%x] %s", size, OSCheckHeap(Heap[heap].handle), str);
     }
     return p;
@@ -853,4 +948,12 @@ static void memSetCheck()
 }
 
 // main_sub's .bss starts 8-aligned; the split object carries the 4-byte pad.
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .bss; .balign 8");
+#endif
+#endif
+#endif
+#endif

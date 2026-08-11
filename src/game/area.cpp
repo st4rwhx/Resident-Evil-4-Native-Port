@@ -368,7 +368,9 @@ void AreaDataEdit(AreaData* area, u32 color, int flag, Mtx mtx, f32 rate)
 }
 
 // The split object's .sdata (sel/Rcnt below) is 8-byte aligned.
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 8\n\t.text");
+#endif
 
 void area_xz4_Edit(AreaXZ4* a, u32 color, int flag, Mtx mtx, u32 mode, Vec vx, Vec vy, f32 dx, f32 dy, f32 rate)
 {

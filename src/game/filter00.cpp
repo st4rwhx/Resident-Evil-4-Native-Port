@@ -351,4 +351,6 @@ void Filter00RenderContrast()
     GXTexCoord2f32(0.0f, 1.0f);
 }
 
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata,\"aw\"\n\t.balign 32\n\t.text");
+#endif

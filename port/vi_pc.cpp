@@ -29,6 +29,9 @@ typedef int BOOL;
 #define FALSE 0
 typedef void (*VIRetraceCallback)(u32 retraceCount);
 
+// Liaison C : include/dolphin/vi/vifuncs.h place tout VI sous `extern "C"`, et c est ce nom-la
+// que le reste du jeu appelle.
+extern "C" {
 void VISetNextFrameBuffer(void *fb);
 void VISetBlack(BOOL black);
 u32 VIGetNextField(void);
@@ -36,6 +39,8 @@ u32 VIGetDTVStatus(void);
 VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb);
 VIRetraceCallback VISetPreRetraceCallback(VIRetraceCallback cb);
 void VIWaitForRetrace(void);
+}
+
 
 namespace {
 
@@ -98,10 +103,10 @@ extern "C" void port_vi_first_frame()
 extern "C" void *port_vi_framebuffer() { return g_fb_current; }
 extern "C" u32 port_vi_retrace_count() { return g_retrace; }
 
-void VISetNextFrameBuffer(void *fb) { g_fb_pending = fb; }
-void VISetBlack(BOOL black) { g_black = black; }
-u32 VIGetNextField(void) { return g_retrace & 1u; }
-u32 VIGetDTVStatus(void) { return 0; }   // pas de sortie composante : le jeu reste en 4:3
+extern "C" void VISetNextFrameBuffer(void *fb) { g_fb_pending = fb; }
+extern "C" void VISetBlack(BOOL black) { g_black = black; }
+extern "C" u32 VIGetNextField(void) { return g_retrace & 1u; }
+extern "C" u32 VIGetDTVStatus(void) { return 0; }   // pas de sortie composante : le jeu reste en 4:3
 
 VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb)
 {
@@ -117,7 +122,7 @@ VIRetraceCallback VISetPreRetraceCallback(VIRetraceCallback cb)
     return old;
 }
 
-void VIWaitForRetrace(void)
+extern "C" void VIWaitForRetrace(void)
 {
     if (g_pre_cb)
         g_pre_cb(g_retrace);

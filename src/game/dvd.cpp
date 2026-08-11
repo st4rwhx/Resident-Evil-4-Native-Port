@@ -2077,4 +2077,12 @@ void cDvd::DiscReadInfo()
 }
 
 // The original's .rodata is 8-aligned (0x1D98: 4 bytes of end padding after the last pool).
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .rodata; .balign 8");
+#endif
+#endif
+#endif
+#endif

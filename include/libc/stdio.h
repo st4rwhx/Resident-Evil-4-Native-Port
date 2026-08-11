@@ -1,6 +1,16 @@
 #ifndef _STDIO_H_
 #define _STDIO_H_
 
+#ifdef RE4_PORT
+// Portage : sur une plateforme hote, la libc est celle du systeme, et on delegue plutot que de
+// redeclarer. Redeclarer ne marche pas : MinGW ne declare pas printf avec une liaison C en C++
+// mais comme une surcharge en ligne (ANSI stdio), et la moindre redeclaration la contredit,
+// quelle que soit la liaison choisie. Le corps ci-dessous reste pour le build matching, ou ces
+// fonctions viennent de la libc de ProDG - et ou la disposition de FILE compte vraiment.
+#include <stdio.h>
+#else
+
+
 #include <stdarg.h>
 
 typedef struct
@@ -30,5 +40,7 @@ int printf(const char *, ...);
 int sprintf(char *s, const char *format, ...);
 int vprintf(const char *format, va_list arg);
 int vsprintf(char *s, const char *format, va_list arg);
+
+#endif   // RE4_PORT
 
 #endif

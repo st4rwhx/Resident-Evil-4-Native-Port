@@ -293,4 +293,12 @@ void Filter06Render()
     }
     GXEnableTexOffsets(0, 0, 0);
 }
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
+#ifndef RE4_PORT   // portage : placement en sections, sans objet hors du build matching
 asm(".section .sdata; .balign 32");
+#endif
+#endif
+#endif
+#endif
