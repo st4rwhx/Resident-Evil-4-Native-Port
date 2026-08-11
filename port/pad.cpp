@@ -16,6 +16,7 @@
 #include "port_log.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include <dolphin.h>
@@ -74,6 +75,15 @@ u32 PADRead(PADStatus *status)
         PADInit();
 
     status[0] = g_state;
+    // Banc d'essai : RE4_AUTOPAD=1 appuie sur Start puis sur A a intervalles reguliers, pour faire
+    // avancer le jeu sans manette (utilise par les mesures sur appareil, jamais dans une diffusion).
+    static const bool autopad = getenv("RE4_AUTOPAD") != nullptr;
+    if (autopad) {
+        static unsigned cnt = 0;
+        const unsigned k = cnt++ % 300;
+        if (k >= 100 && k < 106) status[0].button |= PAD_BUTTON_START;
+        if (k >= 200 && k < 206) status[0].button |= PAD_BUTTON_A;
+    }
 
     // Les trois autres canaux sont vides. `PAD_ERR_NO_CONTROLLER` plutot que des zeros : avec
     // err = PAD_ERR_NONE le jeu croirait trois manettes branchees au repos.
