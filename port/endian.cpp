@@ -16,6 +16,7 @@
 // materiel. Retourner les pixels ici les casserait deux fois. Ce fichier ne touche qu'aux
 // **en-tetes** - ce que le code du jeu lit, lui, avec des acces natifs.
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include <dolphin.h>
@@ -405,6 +406,13 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     if (!name || !data || size < 8)
         return;
     const Span s = { (u8 *) data, size };
+
+    // RE4_TRACE_ENDIAN=1 : dire ce qui passe ici. Un fichier qui n atteint jamais ce point se
+    // lit ensuite a l envers, et le symptome apparait tres loin de la cause - c est la panne la
+    // plus couteuse a diagnostiquer de tout le portage, donc elle merite son interrupteur.
+    static const bool trace = std::getenv("RE4_TRACE_ENDIAN") != 0;
+    if (trace)
+        std::printf("[ENDIAN] %s  %u octets a %p\n", name, (unsigned) size, data);
 
     if (ends_with(name, ".fnt")) {
         if (!swap_fnt(s))

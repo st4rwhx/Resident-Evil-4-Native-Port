@@ -15,6 +15,8 @@
 #ifndef PORT_PRELUDE_H
 #define PORT_PRELUDE_H
 
+#include "disc_ptr.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

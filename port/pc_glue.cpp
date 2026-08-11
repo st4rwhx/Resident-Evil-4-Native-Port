@@ -104,6 +104,11 @@ void *port_lc_base(void)
 // attendue et delimitee : le texte du jeu ne s'affichera pas tant que ce chemin n'est pas
 // rebranche sur la soumission de sommets d'aurora. Rien d'autre ne passe par ici.
 #include "port_log.h"
+#include "wgpipe.h"
+
+// L objet mandataire lui-meme : le jeu ecrit GXWGFifo->s16 = v, ce qui appelle les fonctions
+// ci-dessous. A -O3 il disparait entierement ; a -O0 il doit exister.
+PortWGPipe port_wg_pipe;
 
 extern "C" {
 
