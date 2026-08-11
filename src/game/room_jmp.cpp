@@ -98,7 +98,11 @@ s8 cRoomJmp::getIndexNum(s8 stage)
     if (ofs == 0) {
         return 0;
     }
+#ifdef RE4_PORT   // portage : le compte est un mot converti, son octet de poids faible est a +0 (et non +3)
+    return (s8) *(u32*) ((u8*) p + ofs);
+#else
     return *((s8*) p + ofs + 3);
+#endif
 }
 
 s8 cRoomJmp::getPointNum(s8 stage, s8 room)

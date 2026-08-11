@@ -334,6 +334,9 @@ void ensure_index()
     // ou un dossier deja extrait (sys/ + files/), plus pratique pour travailler.
     if (load_image(g_root)) {
         std::printf("[PORT] DVD : %d fichiers dans l image %s\n", g_count, g_root);
+        if (std::getenv("RE4_DVDLIST"))
+            for (int i = 0; i < g_count; ++i)
+                std::printf("[DVDLIST] %s %u\n", g_files[i].disc, (unsigned)g_files[i].size);
         return;
     }
     char sub[512];

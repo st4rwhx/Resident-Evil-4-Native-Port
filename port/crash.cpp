@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <dlfcn.h>
 #include <unwind.h>
 #include <ucontext.h>
 #include <unistd.h>
@@ -39,6 +40,17 @@ char g_module[256] = {0};
 // immediat, instruction incapable d en provoquer une.
 void compute_load_bias(unsigned long pc)
 {
+    // dladdr rend la base de chargement du module (adresse virtuelle 0). Le calcul par /proc/self/maps
+    // ci-dessous se trompe de 0x1000 quand le segment de code est decale dans le fichier (c'est le
+    // cas de notre ELF) : toutes les adresses imprimees etaient alors fausses, et les piles
+    // symbolisees designaient une autre fonction.
+    Dl_info di;
+    if (dladdr((void *) pc, &di) && di.dli_fbase) {
+        g_load_bias = (unsigned long) di.dli_fbase;
+        const char *base = di.dli_fname ? std::strrchr(di.dli_fname, '/') : nullptr;
+        std::snprintf(g_module, sizeof(g_module), "%s", base ? base + 1 : (di.dli_fname ? di.dli_fname : "?"));
+        return;
+    }
     std::FILE *f = std::fopen("/proc/self/maps", "r");
     if (!f)
         return;
@@ -120,6 +132,14 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
         g_load_bias = save;
         std::memcpy(g_module, save_mod, sizeof(g_module));
     }
+    std::printf("[PORT] r0-r12 : %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx  sp=%lx\n",
+                (unsigned long) uc->uc_mcontext.arm_r0, (unsigned long) uc->uc_mcontext.arm_r1,
+                (unsigned long) uc->uc_mcontext.arm_r2, (unsigned long) uc->uc_mcontext.arm_r3,
+                (unsigned long) uc->uc_mcontext.arm_r4, (unsigned long) uc->uc_mcontext.arm_r5,
+                (unsigned long) uc->uc_mcontext.arm_r6, (unsigned long) uc->uc_mcontext.arm_r7,
+                (unsigned long) uc->uc_mcontext.arm_r8, (unsigned long) uc->uc_mcontext.arm_r9,
+                (unsigned long) uc->uc_mcontext.arm_r10, (unsigned long) uc->uc_mcontext.arm_fp,
+                (unsigned long) uc->uc_mcontext.arm_ip, (unsigned long) uc->uc_mcontext.arm_sp);
     std::printf("[PORT] pile :\n");
     g_depth = 0;
     _Unwind_Backtrace(on_frame, nullptr);

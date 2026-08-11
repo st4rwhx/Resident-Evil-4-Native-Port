@@ -314,6 +314,78 @@ bool swap_ofs_tbl(const Span &s, u32 at, bool tpl)
     return true;
 }
 
+// Table des vibrations (VibDataTbl, include/pad.h) : u32 nombre, u32 decalages ; chaque VibData =
+// u32 nombre puis des VibDataEntry de 8 octets (3 x u16, puis deux octets de niveau - sans
+// ordre). Lue par VibSetData des l'ecran titre : non convertie, elle envoie le jeu hors memoire.
+bool swap_vib_tbl(const Span &s, u32 at)
+{
+    if (!s.has(at, 4))
+        return false;
+    const u32 n = read_be32(s.base + at);
+    if (n > 0x100 || !s.has(at + 4, n * 4))
+        return false;
+    swap_u32(s.base + at);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = s.base + at + 4 + i * 4;
+        const u32 o = read_be32(e);
+        swap_u32(e);
+        if (!o || !s.has(at + o, 4))
+            continue;
+        const u32 m = read_be32(s.base + at + o);
+        if (m > 0x40 || !s.has(at + o + 4, m * 8))
+            continue;
+        swap_u32(s.base + at + o);
+        for (u32 k = 0; k < m; ++k) {
+            u8 *v = s.base + at + o + 4 + k * 8;
+            swap_u16(v);
+            swap_u16(v + 2);
+            swap_u16(v + 4);
+        }
+    }
+    return true;
+}
+
+// debug/roomInfo.dat (cRoomJmp, src/game/room_jmp.cpp) : u32 nombre d'etages, u32 decalages par
+// etage ; chaque etage = u32 nombre de pieces puis des CRoomInfo de 0x20 octets
+// (u16 drapeaux, u16 salle, 4 x f32 position+angle, 3 decalages de chaine). Les chaines restent
+// des octets ; leurs decalages sont des mots a retourner.
+bool swap_room_info(const Span &s)
+{
+    if (!s.has(0, 4))
+        return false;
+    const u32 n = read_be32(s.base);
+    if (n == 0 || n > 0x40 || !s.has(4, n * 4))
+        return false;
+    for (u32 st = 0; st < n; ++st) {
+        const u32 o = read_be32(s.base + 4 + st * 4);
+        if (!o)
+            continue;
+        if (!s.has(o, 4))
+            return false;
+        const u32 cnt = read_be32(s.base + o);
+        if (cnt > 0x100 || !s.has(o + 4, cnt * 0x20))
+            return false;
+    }
+    swap_u32(s.base);
+    for (u32 st = 0; st < n; ++st) {
+        u8 *po = s.base + 4 + st * 4;
+        const u32 o = read_be32(po);
+        swap_u32(po);
+        if (!o)
+            continue;
+        const u32 cnt = read_be32(s.base + o);
+        swap_u32(s.base + o);
+        for (u32 i = 0; i < cnt; ++i) {
+            u8 *e = s.base + o + 4 + i * 0x20;
+            swap_u16(e);
+            swap_u16(e + 2);
+            for (int k = 4; k < 0x20; k += 4)
+                swap_u32(e + k);
+        }
+    }
+    return true;
+}
+
 bool swap_id_tex(const Span &s, u32 at)
 {
     if (!s.has(at, 0x20))
@@ -562,6 +634,9 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
                         q[0], q[1], q[2], q[3], q[4], q[5]);
         }
         if (ok) {
+            const u32 vib = read_le32(s.base + 0x1C);      // ArcFile::ofs_1C : table des vibrations
+            if (vib && !swap_vib_tbl(s, vib))
+                std::printf("[PORT] endian : table de vibrations inattendue\n");
             const u32 mes012 = read_le32(s.base + 0x28);   // ArcFile::ofs_28, deja retourne
             const u32 mes3 = read_le32(s.base + 0x54);     // ArcFile::ofs_54
             if (mes012 && !swap_mes_tbl(s, mes012, arc_chunk_end(s, mes012)))
@@ -580,6 +655,11 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
             if (mes && !swap_mes_tbl(s, mes, arc_chunk_end(s, mes)))
                 std::printf("[PORT] endian : table de messages de memcard.das inattendue\n");
         }
+        return;
+    }
+    if (ends_with(name, "roominfo.dat")) {
+        if (!swap_room_info(s))
+            std::printf("[PORT] endian : %s n a pas la forme attendue\n", name);
         return;
     }
     if (ends_with(name, ".das") || ends_with(name, ".dat")) {
