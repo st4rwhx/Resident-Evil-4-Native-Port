@@ -106,7 +106,7 @@ struct OSLowMem {
         *(volatile u32*) 0x11111111 = 0;                          \
     }
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
+#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
 
 #line 30 "D:/Bio4/Prog/main_sub.cpp"
 
@@ -475,7 +475,7 @@ void DrawTpl(TEXPalette* tpl, int x, int y, int w, int h)
     CLUTHeader* clut;
     u32 addr = (u32) tpl;
 
-    if (addr < 0x80000000 || addr > 0x82FFFFFF) {
+    if (addr < 0x80000000 || addr > PORT_PTR_MAX) {
         return;
     }
     desc = (TEXDescriptor*) (tpl + 1);
@@ -495,7 +495,7 @@ void DrawTpl(TEXPalette* tpl, int x, int y, int w, int h)
         }
     }
     hdr = desc->textureHeader;
-    if ((u32) hdr > 0x82FFFFFF) {
+    if ((u32) hdr > PORT_PTR_MAX) {
         return;
     }
     if (hdr->format - 8 <= 1) {

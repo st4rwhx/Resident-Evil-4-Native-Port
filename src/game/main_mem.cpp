@@ -864,7 +864,7 @@ void MemCheckUsedHeap()
         y1 = (u32) ((f32) ((u32) cell + cell->size - start) * 400.0f / (f32) size) + 1;
 
         u8* tag = (u8*) cell + cell->size - 0x20;
-        if ((s32) tag >= 0 || (u32) tag > 0x82FFFFFF) {
+        if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
             break;
         }
         if (MEM_TAG_OK(tag)) {
@@ -878,7 +878,7 @@ void MemCheckUsedHeap()
         ey += 14;
         next = cell->next;
         if (next != NULL && next->next != NULL &&
-            ((s32) next->next >= 0 || (u32) next->next > 0x82FFFFFF)) {
+            ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
             pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
             pLog->err(0, 0, "next addr    : %08x", cell->next);
 #line 770
@@ -940,7 +940,7 @@ void MemCheckUsedHeap()
     if (CurrentHeap == 4) {
         for (cell = cell_dll; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > 0x82FFFFFF) {
+            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -954,7 +954,7 @@ void MemCheckUsedHeap()
             }
             next = cell->next;
             if (next != NULL && next->next != NULL &&
-                ((s32) next->next >= 0 || (u32) next->next > 0x82FFFFFF)) {
+                ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
                 pLog->err(0, 0, "next addr    : %08x", cell->next);
 #line 870
@@ -963,7 +963,7 @@ void MemCheckUsedHeap()
         }
         for (cell = cell_stage; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > 0x82FFFFFF) {
+            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -977,7 +977,7 @@ void MemCheckUsedHeap()
             }
             next = cell->next;
             if (next != NULL && next->next != NULL &&
-                ((s32) next->next >= 0 || (u32) next->next > 0x82FFFFFF)) {
+                ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
                 pLog->err(0, 0, "next addr    : %08x", cell->next);
 #line 904
@@ -986,7 +986,7 @@ void MemCheckUsedHeap()
         }
         for (cell = cell_game; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > 0x82FFFFFF) {
+            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -1000,7 +1000,7 @@ void MemCheckUsedHeap()
             ey += 14;
             next = cell->next;
             if (next != NULL && next->next != NULL &&
-                ((s32) next->next >= 0 || (u32) next->next > 0x82FFFFFF)) {
+                ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
                 pLog->err(0, 0, "next addr    : %08x", cell->next);
 #line 938
@@ -1009,7 +1009,7 @@ void MemCheckUsedHeap()
         }
         for (cell = cell_main; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > 0x82FFFFFF) {
+            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -1023,7 +1023,7 @@ void MemCheckUsedHeap()
             ey += 14;
             next = cell->next;
             if (next != NULL && next->next != NULL &&
-                ((s32) next->next >= 0 || (u32) next->next > 0x82FFFFFF)) {
+                ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
                 pLog->err(0, 0, "next addr    : %08x", cell->next);
 #line 974

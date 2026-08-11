@@ -10,7 +10,7 @@
 #include "pad.h"
 #include "rnd.h"
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
+#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
 
 void PlHandgunMove(cPlayer* pl);   // wep/pl_handgun.cpp
 cObjWep* equipWeapon(cPlayer* pl);

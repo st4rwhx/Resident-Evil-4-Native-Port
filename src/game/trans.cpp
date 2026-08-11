@@ -103,11 +103,11 @@ struct Weight {
     u8 weight[4]; // 0x04  percent
 };
 
-#define PTR_INVALID(p) ((s32) (p) >= 0 || (u32) (p) > 0x82FFFFFF)
+#define PTR_INVALID(p) ((s32) (p) >= 0 || (u32) (p) > PORT_PTR_MAX)
 // Written as shifts, not `& ~0x1F`: combine folds (x >> 5) << 5 into an AND whose mask is narrowed by
 // nonzero_bits (u16 * 6 -> rlwinm 0,12,26), which a literal `& ~0x1F` never gets.
 #define ALIGN32(x) ((((x) + 0x1F) >> 5) << 5)
-#define PTR_INVALID2(p) ((u32) (p) - 0x80000000 > 0x02FFFFFF)
+#define PTR_INVALID2(p) ((u32) (p) - 0x80000000 > PORT_PTR_SPAN)
 #define HALT()                                                    \
     {                                                             \
         OSReport("HALT %s(%d)\n", __FILE__, __LINE__);            \

@@ -1,8 +1,8 @@
 #include "lightPath.h"
 #include "db_log.h"
 
-// pointer to game memory (0x80000000 .. 0x82FFFFFF)
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
+// pointer to game memory (0x80000000 .. PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
 
 u32 cLightPathHeader::getSize()
 {

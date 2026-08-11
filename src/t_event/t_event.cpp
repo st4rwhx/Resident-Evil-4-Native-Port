@@ -1054,7 +1054,7 @@ void ToolEvt::SubToolLightMove(ToolEvt* /*t*/)
 {
     cLightTool* lt = pLightTool;
 
-    if ((u32) lt >= 0x80000000 && (u32) lt <= 0x82FFFFFF) {
+    if ((u32) lt >= 0x80000000 && (u32) lt <= PORT_PTR_MAX) {
         if (lt->move() == 0) {
             SubToolLightInit(this, 0);
         }

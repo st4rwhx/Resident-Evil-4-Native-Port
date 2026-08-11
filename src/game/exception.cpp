@@ -289,13 +289,13 @@ void excepLoadSymbol()
     }
     if (SubScreenWk.pModule) {
         OSModuleHeader* mod = SubScreenWk.pModule;
-        if ((s32) mod < 0 && (u32) mod <= 0x82FFFFFF && (s32) mod->sectionInfo < 0) {
+        if ((s32) mod < 0 && (u32) mod <= PORT_PTR_MAX && (s32) mod->sectionInfo < 0) {
             symbol_err = excepLoadSymbolSub("Bio4.Sscrn.sym", mod);
         }
     }
     if (RoomData.pModule) {
         OSModuleHeader* mod = RoomData.pModule;
-        if ((s32) mod < 0 && (u32) mod <= 0x82FFFFFF && (s32) mod->sectionInfo < 0) {
+        if ((s32) mod < 0 && (u32) mod <= PORT_PTR_MAX && (s32) mod->sectionInfo < 0) {
             strcpy(buf, FileTbl[RoomData.x1C].name + 4);
             *strchr(buf, '.') = 0;
             sprintf(tmp_str, "Bio4.%s.sym", buf);

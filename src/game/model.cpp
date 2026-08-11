@@ -20,7 +20,7 @@
     }
 
 // A relocated pointer into main memory.
-#define PTR_OK(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
+#define PTR_OK(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
 
 extern "C" {
 void OSReport(const char* fmt, ...);

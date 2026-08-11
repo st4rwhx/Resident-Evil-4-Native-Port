@@ -410,7 +410,7 @@ int cManager<T>::dispWorkNum(int x, int y, int col, int sub)
     u32 n;
     u32 i;
 
-    if ((u32) pArray < 0x80000000 || (u32) pArray > 0x82FFFFFF) {
+    if ((u32) pArray < 0x80000000 || (u32) pArray > PORT_PTR_MAX) {
         return 0;
     }
     n = 0;

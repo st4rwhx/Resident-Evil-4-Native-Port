@@ -29,7 +29,7 @@ int MotionMove(cModel* m, int flag);               // game/motion.cpp
 int MotionCheckCrossFrame(void* work, f32 frame);  // game/motion.cpp
 }
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
+#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
 
 static void knife_r2_ready(cPlayer* pl);
 static void knife_r2_set(cPlayer* pl);

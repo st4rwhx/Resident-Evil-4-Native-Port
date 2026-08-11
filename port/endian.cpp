@@ -1335,15 +1335,19 @@ u32 conv_ofs_archive(const Span &s, const char *name)
     // taille de la table : elle s'arrete au plus petit decalage
     u32 limit = s.size;
     u32 n = 0;
-    while (n < 0x100 && (n * 4 + 4) <= limit && s.has(n * 4, 4)) {
+    while (n < 0x800 && (n * 4 + 4) <= limit && s.has(n * 4, 4)) {
         const u32 w = read_be32(s.base + n * 4);
         if (n >= 1 && w && w >= 8 && w < limit)     // le mot 0 est un compte, pas un decalage
             limit = w;
         ++n;
     }
-    if (n < 2 || limit > 0x1000)
+    if (n < 2 || limit > 0x4000) {
+        if (g_trace_on)
+            std::printf("[ARC] %s : table de decalages non reconnue (n=%u, limite=%x, octets %02x %02x %02x %02x %02x %02x %02x %02x)\n", name,
+                        (unsigned) n, (unsigned) limit, s.base[0], s.base[1], s.base[2], s.base[3], s.base[4], s.base[5], s.base[6], s.base[7]);
         return 0;
-    u32 offs[0x100];
+    }
+    u32 offs[0x800];
     for (u32 i = 0; i < n; ++i)
         offs[i] = read_be32(s.base + i * 4);
     for (u32 i = 0; i < n; ++i)
@@ -1712,6 +1716,115 @@ bool conv_dse(const Span &s, u32 at, u32 end)
     return true;
 }
 
+// ---- SAT / EAT : collisions fixes (src/game/atari.cpp, include/atari.h : cSatHeader / cSatFile)
+//
+// Une table (octet 0 avec le bit 7 : u32 decalages des fichiers a partir de +4) ou directement un
+// fichier : 0xFF, un octet, neuf demi-mots (nombres de sommets, normales, aretes, polygones...),
+// puis Vec vtx[], nrm[], edge[], AtPoly[] de 0x14 octets, puis le partitionnement spatial :
+// cSatBlock (six flottants, quatre demi-mots, un decalage `next`, des indices u16 ou - bit 0 de
+// `flag` - un bloc fils), chaines par `next` relatif.
+static bool conv_sat_blocks(const Span &s, u32 at, u32 end, int depth)
+{
+    if (depth > 8)
+        return false;
+    u32 guard = 0;
+    for (;;) {
+        if (!s.has(at, 0x24) || at + 0x24 > end || ++guard > 100000)
+            return false;
+        u8 *b = s.base + at;
+        const u32 n0 = (u32) ((b[0x18] << 8) | b[0x19]), n1 = (u32) ((b[0x1A] << 8) | b[0x1B]);
+        const u32 n2 = (u32) ((b[0x1C] << 8) | b[0x1D]), flag = (u32) ((b[0x1E] << 8) | b[0x1F]);
+        const u32 next = read_be32(b + 0x20);
+        for (int k = 0; k < 6; ++k)
+            swap_u32(b + 4 * k);
+        for (int k = 0; k < 4; ++k)
+            swap_u16(b + 0x18 + 2 * k);
+        swap_u32(b + 0x20);
+        if (flag & 1) {
+            if (!conv_sat_blocks(s, at + 0x24, end, depth + 1))
+                return false;
+        } else {
+            const u32 n = n0 + n1 + n2;
+            if (!s.has(at + 0x24, n * 2))
+                return false;
+            for (u32 i = 0; i < n; ++i)
+                swap_u16(b + 0x24 + 2 * i);
+        }
+        if (next == 0)
+            return true;
+        if (at + next >= end)
+            return false;
+        at += next;
+    }
+}
+
+static bool conv_sat_file(const Span &s, u32 at, u32 end)
+{
+    track_label("SAT");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 0x14))
+        return false;
+    u8 *h = s.base + at;
+    if (h[0] != 0xFF)
+        return false;
+    u32 v[9];
+    for (int k = 0; k < 9; ++k)
+        v[k] = (u32) ((h[2 + 2 * k] << 8) | h[3 + 2 * k]);
+    const u32 nVtx = v[0], nNrm = v[1], nEdge = v[2], nPoly = v[4];
+    const u32 vecs = nVtx + nNrm + nEdge;
+    if (nPoly > 0x2000 || !s.has(at + 0x14, vecs * 12 + nPoly * 0x14)) {
+        std::printf("[PORT] endian : SAT a +0x%x : %u sommets %u polygones hors du fichier\n", (unsigned) at, (unsigned) nVtx, (unsigned) nPoly);
+        return false;
+    }
+    for (int k = 0; k < 9; ++k)
+        swap_u16(h + 2 + 2 * k);
+    for (u32 i = 0; i < vecs * 3; ++i)
+        swap_u32(h + 0x14 + 4 * i);
+    u8 *poly = h + 0x14 + vecs * 12;
+    for (u32 i = 0; i < nPoly; ++i) {
+        u8 *p = poly + i * 0x14;
+        for (int k = 0; k < 7; ++k)
+            swap_u16(p + 2 * k);
+        swap_u32(p + 0x10);
+    }
+    return conv_sat_blocks(s, at + 0x14 + vecs * 12 + nPoly * 0x14, end, 0);
+}
+
+bool conv_sat(const Span &s, u32 at, u32 end)
+{
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 8))
+        return false;
+    u8 *h = s.base + at;
+    if (h[0] == 0xFF)
+        return conv_sat_file(s, at, end);
+    if (!(h[0] & 0x80))
+        return false;
+    const u32 first = read_be32(h + 4);
+    if (first < 8 || (first & 3) || first > 0x100)
+        return false;
+    const u32 n = (first - 4) / 4;
+    u32 offs[64];
+    if (n > 64 || !s.has(at + 4, n * 4))
+        return false;
+    for (u32 i = 0; i < n; ++i)
+        offs[i] = read_be32(h + 4 + 4 * i);
+    for (u32 i = 0; i < n; ++i)
+        swap_u32(h + 4 + 4 * i);
+    bool ok = true;
+    for (u32 i = 0; i < n; ++i) {
+        u32 e = end;
+        for (u32 j = 0; j < n; ++j)
+            if (at + offs[j] > at + offs[i] && at + offs[j] < e)
+                e = at + offs[j];
+        if (!conv_sat_file(s, at + offs[i], e))
+            ok = false;
+    }
+    return ok;
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -1909,6 +2022,8 @@ const TagConv kRoomTags[] = {
     { "SMX", conv_smx },
     { "LIT", conv_lit },
     { "SHD", conv_shd },
+    { "SAT", conv_sat },
+    { "EAT", conv_sat },
     { "STB", conv_stb },
     { "DSE", conv_dse },
     { "CAM", conv_cam },

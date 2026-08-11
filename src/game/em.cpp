@@ -233,7 +233,7 @@ void cEmMgr::move()
 
 void cEmMgr::destroy(cEm* p)
 {
-    if ((u32) p < 0x80000000 || (u32) p > 0x82FFFFFF || (p->be_flag & 0x201) != 1) {
+    if ((u32) p < 0x80000000 || (u32) p > PORT_PTR_MAX || (p->be_flag & 0x201) != 1) {
         pLog->err(0, 0, "cEmMgr::destroy() WORK IS ALREADY DEAD. %08X", p);
         return;
     }

@@ -50,7 +50,7 @@ int getFallPos(cSubChar* pl, Vec* pos, Vec* rot);
 void waterProc(cSubChar* pl);
 }
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= 0x82FFFFFF)
+#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
 
 // Motion data `no` of the partner's motion archive.
 #define SUB_MOT(pl, no) PL_ARC_PTR((pl)->subArc, no)

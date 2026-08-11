@@ -180,7 +180,7 @@ extern int DebugMenuSelected;
 cModel* getRoomEtcOnLight(int no);
 
 // Debug heap pointers are checked for the MEM1 range before use.
-#define PTR_OK(p) (!((u32)(p) < 0x80000000 || (u32)(p) > 0x82FFFFFF))
+#define PTR_OK(p) (!((u32)(p) < 0x80000000 || (u32)(p) > PORT_PTR_MAX))
 // Error messages go through pLog when bit 5 is set.
 #define TOOL_ERR(args...)            \
     if (pTool->flags & 0x20) {       \

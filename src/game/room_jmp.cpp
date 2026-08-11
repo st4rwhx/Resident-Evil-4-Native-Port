@@ -80,7 +80,7 @@ cRoomJmp::cRoomJmp(void* p)
             if (info == 0) {
                 continue;
             }
-            if ((u32) info->name >= 0x80000000 && (u32) info->name <= 0x82FFFFFF) {
+            if ((u32) info->name >= 0x80000000 && (u32) info->name <= PORT_PTR_MAX) {
                 return;
             }
             info->name = (char*) ((u32) tbl + (u32) info->name);

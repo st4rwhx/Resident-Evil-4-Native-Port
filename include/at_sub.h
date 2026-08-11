@@ -21,8 +21,13 @@ struct AtPoly {
     u8 pad_E[2];
     union {
         struct {
+#ifdef RE4_PORT   // portage : le demi-mot de poids fort est a l'adresse haute
+            u16 attrLo;  // 0x10
+            u16 attrHi;  // 0x12  attribute word high half
+#else
             u16 attrHi;  // 0x10  attribute word high half
             u16 attrLo;  // 0x12
+#endif
         };
         u32 attr;        // 0x10  the attribute word (atari createSat)
     };
