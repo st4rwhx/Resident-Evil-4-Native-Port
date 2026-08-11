@@ -510,6 +510,11 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     // on les nomme plutot que de les deviner. C'est la seule conversion ciblee par fichier.
     if (ends_with(name, "core.das")) {
         const bool ok = swap_arc(s);
+        if (trace && s.has(0x17dde0, 32)) {
+            const u32 *q = (const u32 *) (s.base + 0x17dde0);
+            std::printf("[ENDIAN] apres swap_arc, ofs_48 : %08x %08x %08x %08x %08x %08x\n",
+                        q[0], q[1], q[2], q[3], q[4], q[5]);
+        }
         if (ok) {
             const u32 mes012 = read_le32(s.base + 0x28);   // ArcFile::ofs_28, deja retourne
             const u32 mes3 = read_le32(s.base + 0x54);     // ArcFile::ofs_54
