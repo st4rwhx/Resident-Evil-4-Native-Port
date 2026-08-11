@@ -94,6 +94,9 @@ _Unwind_Reason_Code on_frame(struct _Unwind_Context *ctx, void *)
 
 void on_fault(int sig, siginfo_t *info, void *ctx)
 {
+    // Les messages du jeu (printf de cLog, erreurs d'allocation...) sont dans le tampon de stdout :
+    // sans ce vidage ils disparaissent avec le processus, et ce sont eux qui disent la cause.
+    std::fflush(stdout);
     const ucontext_t *uc = (const ucontext_t *) ctx;
     const unsigned long pc = (unsigned long) uc->uc_mcontext.arm_pc;
     const unsigned long fault = (unsigned long) uc->uc_mcontext.fault_address;

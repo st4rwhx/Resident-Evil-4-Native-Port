@@ -592,6 +592,7 @@ struct TevStageCfg {
     unsigned char cop, cbias, cscale, cclamp, cout_;
     unsigned char aop, abias, ascale, aclamp, aout;
     unsigned char coord, map, chan, kcs, kas;
+    unsigned char rswap, tswap;    // table d'echange de canaux (0..3) pour la couleur rasterisee / la texture
 };
 struct TexGenCfg { unsigned char func, src, mtx, pad; };
 struct ChanCfg { unsigned char en, amb, mat, diff, attn, pad[3]; unsigned lmask; };
@@ -603,6 +604,7 @@ struct TevStatic {
     TexGenCfg tg[8];
     ChanCfg ch[4];                       // couleur0, alpha0, couleur1, alpha1
     unsigned char acomp0, acomp1, aop, pad1;
+    unsigned char swp[4][4];             // tables d'echange : swp[t][c] = canal source (0=R 1=G 2=B 3=A)
 };
 // La partie "dynamique" : valeurs seulement, envoyees en uniformes.
 struct TevDyn {
@@ -743,11 +745,23 @@ GLuint build_program(const TevStatic &s)
     for (int i = 0; i < s.nstage && i < 16; ++i) {
         const TevStageCfg &t = s.st[i];
         f.add("  {\n    vec4 ras = %s;\n", t.chan == 4 ? "ras0" : t.chan == 5 ? "ras1" : "vec4(0.0)");
+        {
+            static const char sw[4] = { 'r', 'g', 'b', 'a' };
+            const unsigned char *rt = s.swp[t.rswap & 3];
+            if (!(rt[0] == 0 && rt[1] == 1 && rt[2] == 2 && rt[3] == 3))
+                f.add("    ras = ras.%c%c%c%c;\n", sw[rt[0] & 3], sw[rt[1] & 3], sw[rt[2] & 3], sw[rt[3] & 3]);
+        }
         if (t.map < 8 && t.coord < 8)
             f.add("    vec4 texc = texture(uTex%d, vT[%d].xy / (vT[%d].z != 0.0 ? vT[%d].z : 1.0));\n",
                   t.map, t.coord, t.coord, t.coord);
         else
             f.add("    vec4 texc = vec4(1.0);\n");
+        {
+            static const char sw[4] = { 'r', 'g', 'b', 'a' };
+            const unsigned char *tt = s.swp[t.tswap & 3];
+            if (!(tt[0] == 0 && tt[1] == 1 && tt[2] == 2 && tt[3] == 3))
+                f.add("    texc = texc.%c%c%c%c;\n", sw[tt[0] & 3], sw[tt[1] & 3], sw[tt[2] & 3], sw[tt[3] & 3]);
+        }
         char kc[48], ka[48];
         kconst(kc, sizeof(kc), t.kcs, false);
         kconst(ka, sizeof(ka), t.kas, true);
@@ -794,6 +808,10 @@ GLuint build_program(const TevStatic &s)
         else f.add("  if (!((%s) %s (%s))) discard;\n", e0, op, e1);
     }
     f.add("  oCol = col;\n}\n");
+    if (std::getenv("RE4_SHADERLOG")) {
+        static int shown = 0;
+        if (shown++ < 14) std::printf("[SHADER %d]\n%s\n", shown, fsb);
+    }
 
     GLuint vs = make_shader(GL_VERTEX_SHADER, vsb);
     GLuint fs = make_shader(GL_FRAGMENT_SHADER, fsb);
@@ -855,6 +873,14 @@ void tev_reset()
         t.cout_ = t.aout = 0;
         t.coord = t.map = t.chan = 0xFF;
         t.kcs = 0; t.kas = 0;
+        t.rswap = t.tswap = 0;
+    }
+    // Les quatre tables par defaut du SDK : identite, rouge, vert, bleu (avec l'alpha d'origine).
+    for (int t = 0; t < 4; ++t) {
+        g_tevcur.s.swp[t][0] = (unsigned char)(t == 0 ? 0 : t - 1);
+        g_tevcur.s.swp[t][1] = (unsigned char)(t == 0 ? 1 : t - 1);
+        g_tevcur.s.swp[t][2] = (unsigned char)(t == 0 ? 2 : t - 1);
+        g_tevcur.s.swp[t][3] = 3;
     }
     g_tevcur.s.tg[0].func = 1; g_tevcur.s.tg[0].src = 4; g_tevcur.s.tg[0].mtx = 60;
     for (int i = 0; i < 4; ++i) { g_tevcur.s.ch[i].mat = 1; g_tevcur.s.ch[i].amb = 0; }
@@ -963,9 +989,21 @@ void GXSetTevColorS10(GXTevRegID id, GXColorS10 c)
 void GXSetTevKColor(GXTevKColorID id, GXColor c) { if ((unsigned)id < 4) set_reg(g_tevcur.d.k[id], c8(c.r), c8(c.g), c8(c.b), c8(c.a)); }
 void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel sel) { if ((unsigned)stage < 16) { g_tevcur.s.st[stage].kcs = (unsigned char)sel; tev_dirty(); } }
 void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel sel) { if ((unsigned)stage < 16) { g_tevcur.s.st[stage].kas = (unsigned char)sel; tev_dirty(); } }
-void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel ras_sel, GXTevSwapSel tex_sel) { (void)stage; (void)ras_sel; (void)tex_sel; }
+void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel ras_sel, GXTevSwapSel tex_sel)
+{
+    if ((unsigned)stage < 16) {
+        g_tevcur.s.st[stage].rswap = (unsigned char)(ras_sel & 3);
+        g_tevcur.s.st[stage].tswap = (unsigned char)(tex_sel & 3);
+        tev_dirty();
+    }
+}
 void GXSetTevSwapModeTable(GXTevSwapSel table, GXTevColorChan red, GXTevColorChan green, GXTevColorChan blue, GXTevColorChan alpha)
-{ (void)table; (void)red; (void)green; (void)blue; (void)alpha; }
+{
+    if ((unsigned)table >= 4) return;
+    unsigned char *t = g_tevcur.s.swp[table];
+    t[0] = (unsigned char)red; t[1] = (unsigned char)green; t[2] = (unsigned char)blue; t[3] = (unsigned char)alpha;
+    tev_dirty();
+}
 void GXSetTevDirect(GXTevStageID stage) { (void)stage; }
 
 void GXSetAlphaCompare(GXCompare comp0, u8 ref0, GXAlphaOp op, GXCompare comp1, u8 ref1)
@@ -1278,6 +1316,35 @@ void GXSetCopyClear(GXColor clear_clr, u32 clear_z) { (void)clear_z; g_clear = c
 // C est le meme principe que les harnais de verification : on relit ce que GLES a produit.
 static void port_dump_frame(void)
 {
+    // RE4_DUMP_EVERY=N : une image toutes les N images, dans dump_<numero>.ppm, sans arreter le jeu
+    // (40 images au plus). Sert a suivre un parcours scripte par RE4_PADFILE.
+    static long every = -2, nseen = 0, ndump = 0;
+    if (every == -2) {
+        const char *e = std::getenv("RE4_DUMP_EVERY");
+        every = e ? std::strtol(e, nullptr, 10) : -1;
+    }
+    if (every > 0) {
+        if ((nseen++ % every) != 0 || ndump >= 40)
+            return;
+        const int w = (int) g_fb_w, h = (int) g_fb_h;
+        unsigned char *px = (unsigned char *) std::malloc((size_t) w * h * 4);
+        if (!px)
+            return;
+        port_gx_read_pixels(0, 0, w, h, px);
+        char name[64];
+        std::snprintf(name, sizeof(name), "dump_%05ld.ppm", nseen - 1);
+        std::FILE *f = std::fopen(name, "wb");
+        if (f) {
+            std::fprintf(f, "P6\n%d %d\n255\n", w, h);
+            for (int y = h - 1; y >= 0; --y)
+                for (int x = 0; x < w; ++x)
+                    std::fwrite(px + ((size_t) y * w + x) * 4, 1, 3, f);
+            std::fclose(f);
+            ++ndump;
+        }
+        std::free(px);
+        return;
+    }
     static long want = -2;
     static long seen = 0;
     if (want == -2) {

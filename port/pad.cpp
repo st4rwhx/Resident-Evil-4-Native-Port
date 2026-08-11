@@ -77,6 +77,37 @@ u32 PADRead(PADStatus *status)
     status[0] = g_state;
     // Banc d'essai : RE4_AUTOPAD=1 appuie sur Start puis sur A a intervalles reguliers, pour faire
     // avancer le jeu sans manette (utilise par les mesures sur appareil, jamais dans une diffusion).
+    // RE4_PADFILE=<fichier> : un parcours scripte, une ligne par appui :
+    //   <lecture de depart> <nombre de lectures> <masque hex> [stickX stickY]
+    // (une lecture = un appel de PADRead, soit une image de jeu). Les masques sont ceux de PAD_BUTTON_*.
+    static unsigned long reads = 0;
+    static int nscript = -1;
+    struct Step { unsigned long start, len; unsigned mask; int sx, sy; };
+    static Step script[256];
+    if (nscript < 0) {
+        nscript = 0;
+        const char *pf = getenv("RE4_PADFILE");
+        std::FILE *f = pf ? std::fopen(pf, "r") : nullptr;
+        if (f) {
+            char line[128];
+            while (nscript < 256 && std::fgets(line, sizeof(line), f)) {
+                Step st = { 0, 0, 0, 0, 0 };
+                if (std::sscanf(line, "%lu %lu %x %d %d", &st.start, &st.len, &st.mask, &st.sx, &st.sy) >= 3)
+                    script[nscript++] = st;
+            }
+            std::fclose(f);
+            std::printf("[PORT] PAD : %d etapes scriptees\n", nscript);
+        }
+    }
+    if (nscript > 0) {
+        for (int i = 0; i < nscript; ++i)
+            if (reads >= script[i].start && reads < script[i].start + script[i].len) {
+                status[0].button |= (u16)script[i].mask;
+                status[0].stickX = (s8)script[i].sx;
+                status[0].stickY = (s8)script[i].sy;
+            }
+        ++reads;
+    }
     static const bool autopad = getenv("RE4_AUTOPAD") != nullptr;
     if (autopad) {
         static unsigned cnt = 0;
