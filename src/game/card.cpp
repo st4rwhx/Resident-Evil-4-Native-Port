@@ -2870,10 +2870,25 @@ void cCard::createSysfile()
     sprintf(fileName, "bh4_system");
     switch (step) {
     case 0:
+#ifdef RE4_PORT
+        // Portage : pas de dialogue. Sur une console, cette question a un sens - l'utilisateur
+        // peut refuser et retirer sa carte. Ici la carte est un fichier que l'application gere
+        // elle-meme, et il est vide au premier lancement : demander la permission de creer le
+        // fichier systeme reviendrait a demander la permission de demarrer. On passe donc
+        // directement a la creation, comme si la reponse etait oui.
+        //
+        // Accessoirement, ce dialogue arrive avant que les tables de messages ne soient posees
+        // (MessageControl::gameInit ne tourne qu une partie lancee), donc il ne pourrait pas
+        // meme s afficher.
+        BitOn(pG->flags_54, 0x200);
+        step = 2;
+        break;
+#else
         cardMesSet(0x2C, 0, 0x800000);
         cMes.mes[0].cursor = 1;
         step++;
         // fallthrough
+#endif
     case 1:
         if (ret == -3) {
             noCard = 1;

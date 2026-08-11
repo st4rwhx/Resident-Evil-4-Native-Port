@@ -242,8 +242,32 @@ struct MesTblBlock {
 u16* MessageData::getAddr(int no, int type)
 {
     u32* tbl = (u32*) ptr[type];
+#ifdef RE4_PORT
+    // Une table absente ou invraisemblable rend un message vide plutot que de faire tomber le
+    // processus.
+    //
+    // Sur console la situation ne se presente pas : les tables sont posees par gameInit() ou
+    // roomInit() avant que quoi que ce soit ne demande un texte. Ici, la tache carte tourne des
+    // le demarrage - et sur une carte vierge elle a plusieurs ecrans a montrer - alors que
+    // l'initialisation des messages n'est pas terminee. Plutot que de forcer un ordre que le jeu
+    // ne garantit pas, on verifie ce que la table contient avant de la suivre.
+    {
+        const u32 a = (u32) (unsigned long long) tbl;
+        if (a < 0x80000000u || a >= 0x82000000u) {
+            return NULL;
+        }
+    }
+#endif
     MesTblBlock* blk = (MesTblBlock*) ((u8*) tbl + tbl[lang + 1]);
 
+#ifdef RE4_PORT
+    {
+        const u32 b = (u32) (unsigned long long) blk;
+        if (b < 0x80000000u || b >= 0x82000000u || blk->count > 0x4000u) {
+            return NULL;
+        }
+    }
+#endif
     if (no > (int) blk->count - 1) {
         return NULL;
     }
@@ -385,6 +409,25 @@ void MessageControl::init()
     loadCommonFont();
     loadSystemFont();
     setLanguage(pSys->language);
+#ifdef RE4_PORT
+    // Portage : poser les tables de messages des maintenant.
+    //
+    // Elles ne sont posees que par gameInit() et roomInit(), qui ne tournent qu'une fois une
+    // partie lancee. Or la tache carte, elle, tourne des le demarrage et affiche plusieurs
+    // dialogues - fichier systeme a creer, carte absente, carte pleine - qui passent tous par
+    // MessageData::getAddr. Sur console la question ne se pose pas souvent : une carte deja
+    // utilisee ne declenche aucun de ces ecrans. Ici la carte est un fichier vide au premier
+    // lancement, donc on les rencontre tous.
+    //
+    // Les tables sont dans etc/core.das, deja en memoire a ce stade : il n'y a rien a attendre.
+    // gameInit() refera exactement les memes affectations plus tard, sans effet de bord.
+    if (pG != NULL && pG->pArc != NULL) {
+        MesData.setPtr(0, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
+        MesData.setPtr(1, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
+        MesData.setPtr(2, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
+        MesData.setPtr(3, (u8*) (pG->pArc->ofs_54 + (u32) pG->pArc));
+    }
+#endif
     x11F8 = 0;
     state = 0;
     m = mes;
@@ -692,6 +735,15 @@ void Message::init(int no, int x, int y, u32 attr, int col, MessageFont* fnt)
         pMsg = MesData.getAddr(0, 0);
         pLog->err(0, 0, "Message::init() Msg[%02d] Address Error", no);
     }
+#ifdef RE4_PORT
+    // Le repli du jeu suppose que le message 0 existe toujours. Quand la table entiere manque -
+    // voir MessageData::getAddr - il rend NULL a son tour, et move() le suit. Un message vide
+    // tient la promesse que le reste du code attend : pMsg n est jamais nul.
+    if (pMsg == NULL) {
+        static u16 EmptyMsg[1] = { 0xFFFF };
+        pMsg = EmptyMsg;
+    }
+#endif
     ot = 0x15;
     otNo = 1;
 }

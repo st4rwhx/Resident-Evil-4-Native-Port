@@ -520,6 +520,17 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         }
         return;
     }
+    // etc/memcard.das : l archive de l ecran de carte memoire. Son entree 1 est une table de
+    // messages (src/game/card.cpp, cCard::initSub), sans plus de signature que celles de
+    // core.das - donc nommee elle aussi.
+    if (ends_with(name, "memcard.das")) {
+        if (swap_arc(s)) {
+            const u32 mes = read_le32(s.base + 0x14);   // CardArc::ofs[1]
+            if (mes && !swap_mes_tbl(s, mes))
+                std::printf("[PORT] endian : table de messages de memcard.das inattendue\n");
+        }
+        return;
+    }
     if (ends_with(name, ".das") || ends_with(name, ".dat")) {
         // La meme table sert a plusieurs extensions : `etc/core.das`, mais aussi les ecrans
         // `SS/<langue>/title.dat` et `option.dat` (`TitleArc`, qui indexe a partir de zero et

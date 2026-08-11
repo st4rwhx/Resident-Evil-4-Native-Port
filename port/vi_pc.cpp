@@ -93,17 +93,26 @@ void sleep_ns(u64 ns)
 
 // La premiere image doit etre ouverte avant que le jeu ne dessine quoi que ce soit : main_port
 // l'appelle juste apres aurora_initialize.
+static void present(void);
+
 extern "C" void port_vi_first_frame()
 {
     poll_events();
     g_frame_open = aurora_begin_frame();
+    std::printf("[PORT] premiere image : %s\n", g_frame_open ? "ouverte" : "REFUSEE");
     g_next_ns = now_ns() + FIELD_NS;
 }
 
 extern "C" void *port_vi_framebuffer() { return g_fb_current; }
 extern "C" u32 port_vi_retrace_count() { return g_retrace; }
 
-extern "C" void VISetNextFrameBuffer(void *fb) { g_fb_pending = fb; }
+// Le hameçon de fin d image cote boucle principale : Render_swap appelle cette fonction puis
+// VIFlush, qui appartient a aurora.
+extern "C" void VISetNextFrameBuffer(void *fb)
+{
+    g_fb_pending = fb;
+    present();
+}
 extern "C" void VISetBlack(BOOL black) { g_black = black; }
 extern "C" u32 VIGetNextField(void) { return g_retrace & 1u; }
 extern "C" u32 VIGetDTVStatus(void) { return 0; }   // pas de sortie composante : le jeu reste en 4:3
@@ -122,12 +131,24 @@ VIRetraceCallback VISetPreRetraceCallback(VIRetraceCallback cb)
     return old;
 }
 
-extern "C" void VIWaitForRetrace(void)
+// La presentation d une image : fermer celle d aurora, prendre les evenements, attendre la
+// cadence, puis en ouvrir une autre.
+//
+// Le point d'appel a demande deux essais. VIWaitForRetrace semble le candidat evident - c'est
+// la que le jeu se bloque sur console - mais **la boucle principale de RE4 ne l appelle pas** :
+// elle termine son image par Render_swap (src/game/main_sub.cpp), qui fait VISetNextFrameBuffer
+// puis VIFlush, et se synchronise sur son propre compteur de vsync. VIWaitForRetrace ne sert
+// qu'a l'initialisation. Tant que la pompe etait la, tout le jeu dessinait dans une seule image
+// d'aurora, dont le tampon d uniformes finissait par deborder - 24 Mo, soit quelque quinze
+// mille appels de dessin.
+//
+// On pompe donc aux deux endroits. VIFlush appartient a aurora, donc le hameçon cote
+// Render_swap est VISetNextFrameBuffer, appele juste avant.
+static void present(void)
 {
     if (g_pre_cb)
         g_pre_cb(g_retrace);
 
-    // Fin de l'image : tout ce que le jeu a soumis a GX depuis le dernier retrace part ici.
     if (g_frame_open) {
         aurora_end_frame();
         g_frame_open = false;
@@ -135,16 +156,16 @@ extern "C" void VIWaitForRetrace(void)
 
     poll_events();
     if (g_exiting) {
-        // Fermer la fenetre doit arreter le jeu. Le decompile n'a aucun chemin de sortie
-        // propre - sa boucle principale est infinie - donc on sort d'ici.
-        std::printf("[PORT] fenetre fermee, arret apres %u images\n", g_retrace);
+        // Fermer la fenetre doit arreter le jeu. Le decompile n a aucun chemin de sortie
+        // propre - sa boucle principale est infinie - donc on sort d ici.
+        std::printf("[PORT] fenetre fermee, arret apres %u images\n", (unsigned) g_retrace);
         std::fflush(stdout);
         aurora_shutdown();
         std::_Exit(0);
     }
 
     // Plafond de cadence, sur base de temps absolue : viser le prochain instant de champ
-    // plutot que dormir une duree fixe, sinon le cout de l'image s'ajoute a l'attente.
+    // plutot que dormir une duree fixe, sinon le cout de l image s ajoute a l attente.
     const u64 t = now_ns();
     if (g_next_ns > t) {
         sleep_ns(g_next_ns - t);
@@ -154,15 +175,18 @@ extern "C" void VIWaitForRetrace(void)
     }
 
     ++g_retrace;
+    if ((g_retrace % 60u) == 0u) {
+        std::printf("[PORT] image %u\n", (unsigned) g_retrace);
+    }
     if (g_fb_pending)
         g_fb_current = g_fb_pending;
 
-    // RE4 compte son temps et arme la lecture des manettes ici : l'oublier donne un jeu qui
-    // tourne mais n'avance pas.
+    // RE4 compte son temps et arme la lecture des manettes ici : l oublier donne un jeu qui
+    // tourne mais n avance pas.
     if (g_post_cb)
         g_post_cb(g_retrace);
 
-    // Image suivante. En pause, aurora refuse d'en ouvrir une ; le jeu continuerait alors a
+    // Image suivante. En pause, aurora refuse d en ouvrir une ; le jeu continuerait alors a
     // tourner sans rien presenter, donc on attend ici que la fenetre revienne.
     while (!g_exiting) {
         if (!g_paused) {
@@ -174,3 +198,5 @@ extern "C" void VIWaitForRetrace(void)
         poll_events();
     }
 }
+
+extern "C" void VIWaitForRetrace(void) { present(); }

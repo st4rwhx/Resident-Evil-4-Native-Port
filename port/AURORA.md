@@ -108,3 +108,34 @@ rendu :
 ```
 
 Tout le chemin tient donc : GCC -> Dawn depuis les sources -> aurora -> Vulkan.
+
+## Les correctifs locaux apportes a aurora
+
+Ils sont peu nombreux et tous du meme genre : revenir au comportement du SDK Nintendo, ou
+tenir compte du fait que le jeu vient d une machine 32 bits. Aucun ne change ce qu aurora
+fait, seulement ce qu elle refuse.
+
+| ou | quoi | pourquoi |
+|---|---|---|
+| `lib/dolphin/os/OSMemory.cpp` | MEM1 demande a `0x80000000`, sinon sous 4 Go | RE4 range des pointeurs dans des `u32`. Au-dessus de 4 Go, chaque aller-retour perd les bits hauts. |
+| `lib/card/DolphinCardPath.cpp` | `shlobj.h` au lieu de `shlobj_core.h` | MinGW ne livre pas le second, un decoupage recent du SDK Windows. |
+| `lib/dolphin/card.cpp` | callback nulle acceptee (10 endroits) | Le SDK la traite comme une requete synchrone. RE4 s en sert. |
+| `lib/dolphin/card.cpp` | `CARDProbeEx` accepte des pointeurs de sortie nuls | Idem le SDK ; RE4 le fait dans `createSysfile`. |
+| `lib/gx/texture.cpp` | refuse une texture de taille invraisemblable au lieu d avorter | Le jeu peut lier un `GXTexObj` jamais initialise. Sur GameCube cela dessinait du bruit ; `abort()` est bien plus severe que le materiel. |
+| `lib/gx/fifo.cpp` | `ProcessingMode::Drain` au lieu de `Thread` | Le fil d analyse pouvait tourner entre deux images, hors enregistrement. A revoir quand la cadence le demandera. |
+| `lib/main.cpp` | `SDL_MAIN_HANDLED` + `SDL_SetMainReady()` | `SDL_main.h` renomme `main` et reclame une bibliotheque au format Visual Studio. |
+
+## Ou se branche le portage
+
+Trois points, et le troisieme a demande deux essais :
+
+1. **`port/main_pc.cpp`** initialise aurora avant `re4_main`.
+2. **`port/wgpipe_pc.cpp`** relie le write-gather pipe du Gekko a `aurora::gx::fifo::write_*`.
+   Sans lui, `GXBegin` annonce n sommets dont les octets ne suivent jamais et tout le flux de
+   commandes glisse - le symptome etait un « unsupported primitive type 240 ».
+3. **`port/vi_pc.cpp`** pompe les images. Le piege : la boucle principale de RE4 **n appelle
+   pas `VIWaitForRetrace`**. Elle termine son image par `Render_swap`, soit
+   `VISetNextFrameBuffer` puis `VIFlush`, et se synchronise sur son propre compteur de vsync.
+   `VIWaitForRetrace` ne sert qu au demarrage. Tant que la pompe etait la, tout le jeu
+   dessinait dans une seule image d aurora, dont les 24 Mo de tampon d uniformes finissaient
+   par deborder.

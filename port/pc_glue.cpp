@@ -70,39 +70,18 @@ void *port_lc_base(void)
 } // extern "C"
 
 // ---------------------------------------------------------------------------------------
-// Le write-gather pipe, sur la cible PC.
-//
-// Une partie du jeu - le rendu de texte (mes.cpp) et le module de debogage - n'appelle pas de
-// fonction pour poser un sommet : elle ecrit les composantes a la suite dans une fenetre
-// materielle du Gekko, et le GPU les interprete selon le descripteur de sommet courant
-// (voir port/wgpipe.h). Reproduire cette machine a etats demande de connaitre le descripteur,
-// ce que sait l'interpreteur d'aurora et pas nous.
-//
-// Ces ecritures tombent donc dans un puits pour l'instant, en le disant une fois. Consequence
-// attendue et delimitee : le texte du jeu ne s'affichera pas tant que ce chemin n'est pas
-// rebranche sur la soumission de sommets d'aurora. Rien d'autre ne passe par ici.
-#include "port_log.h"
+// L'objet mandataire du write-gather pipe : le jeu ecrit `GXWGFifo->s16 = v`, ce qui appelle
+// les fonctions port_wg_push_*, definies dans port/wgpipe_pc.cpp. A -O3 il disparait
+// entierement ; a -O0 il doit exister.
 #include "wgpipe.h"
 
-// L objet mandataire lui-meme : le jeu ecrit GXWGFifo->s16 = v, ce qui appelle les fonctions
-// ci-dessous. A -O3 il disparait entierement ; a -O0 il doit exister.
 PortWGPipe port_wg_pipe;
 
 extern "C" {
 
-void port_wg_push_u8(u8 v) { (void) v; PORT_TODO("write-gather pipe (u8)"); }
-void port_wg_push_s8(s8 v) { (void) v; PORT_TODO("write-gather pipe (s8)"); }
-void port_wg_push_u16(u16 v) { (void) v; PORT_TODO("write-gather pipe (u16)"); }
-void port_wg_push_s16(s16 v) { (void) v; PORT_TODO("write-gather pipe (s16)"); }
-void port_wg_push_u32(u32 v) { (void) v; PORT_TODO("write-gather pipe (u32)"); }
-void port_wg_push_s32(s32 v) { (void) v; PORT_TODO("write-gather pipe (s32)"); }
-void port_wg_push_f32(f32 v) { (void) v; PORT_TODO("write-gather pipe (f32)"); }
-
-// Deux fonctions GX qu'aurora n'a pas. L'index de matrice par sommet appartient au meme
-// chemin de soumission directe que ci-dessus ; le masque indirect gouverne les etages de
-// texture indirecte, que RE4 configure mais dont l'absence ne bloque aucun rendu de base.
-void GXMatrixIndex1u8(u8 idx) { (void) idx; PORT_TODO("GXMatrixIndex1u8"); }
-void __GXSetIndirectMask(u32 mask) { (void) mask; PORT_TODO("__GXSetIndirectMask"); }
+// Le masque des etages de texture indirecte. RE4 le configure, mais son absence ne bloque
+// aucun rendu de base ; aurora ne le fournit pas.
+void __GXSetIndirectMask(u32 mask) { (void) mask; }
 
 } // extern "C"
 

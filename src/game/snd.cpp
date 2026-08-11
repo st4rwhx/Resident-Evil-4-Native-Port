@@ -161,9 +161,14 @@ void SndInit()
         SndMem.str_buf[i] = adr + 0x10000 + i * 0x8000;
     }
     SndMem.sub_adr = SndMem.str_buf[3] + 0x8000;
-    SndMem.sub_end = SndMem.sub_adr;
-    (void) len;
-    (void) r;
+
+    // Cette lecture-ci reste, meme avec l audio inerte : etc/memcard.das n est pas un fichier
+    // de son. C est l archive de l ecran de carte memoire - son image de banniere et sa propre
+    // table de messages - et cCard::initSub la lit a SndMem.sub_adr. La sauter laissait le
+    // systeme de carte suivre des octets quelconques des le demarrage.
+    r = DvdRead(0x59, (void*) SndMem.sub_adr, 0, 0, 0, 0x8001, __FILE__, __LINE__);
+    Dvd.ReadCheck(r, &len, 0, 0);
+    SndMem.sub_end = SndMem.sub_adr + len;
 #else
 #line 120 SND_FILE
     r = DvdRead(0, (void*) SND_DATA_TOP, 0, 0, 0, 0x11, __FILE__, __LINE__);
