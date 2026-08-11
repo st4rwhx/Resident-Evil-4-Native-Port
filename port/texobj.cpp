@@ -51,6 +51,7 @@ struct TlutSlot {
     unsigned char rgba[16384 * 4];
     int count;
     bool used;
+    unsigned int hash;   // empreinte du contenu de la palette
 };
 TlutSlot *g_tluts[MAX_TLUTS] = { nullptr };
 
@@ -59,12 +60,15 @@ TlutSlot *g_tluts[MAX_TLUTS] = { nullptr };
 const int MAX_CACHE = 2048;
 struct CacheEntry {
     const void *img;
-    unsigned int fmt, tlut_name;
+    unsigned int fmt, tlut_name, tlut_hash;
     unsigned short w, h;
     GLuint gl;
     unsigned int hash, gen;   // empreinte du contenu, et generation de la derniere verification
+    unsigned int vframe;      // retrace de la derniere verification
 };
 CacheEntry g_cache[MAX_CACHE];
+extern "C" unsigned int port_vi_retrace_count();
+unsigned g_decodes = 0, g_decode_bytes = 0;
 unsigned int g_gen = 1;       // incremente par GXInvalidateTex* : voir upload()
 int g_ncache = 0;
 
@@ -91,6 +95,14 @@ GLenum gl_filter(unsigned char f)
 // Empreinte du contenu d'une texture. Les petites sont lues en entier ; au-dela, 1024 mots repartis
 // sur toute la zone (changer une texture change presque toujours bien plus que quelques mots :
 // chargement d'un autre fichier, copie de l'image). Un octet isole modifie pourrait echapper.
+// Une texture indexee depend du CONTENU de sa palette, pas de son numero : le jeu recharge sous le
+// meme numero des palettes differentes d'un dessin a l'autre. Les textures non indexees : 0.
+unsigned int cur_tlut_hash(const PortTexObj *t)
+{
+    const TlutSlot *ts = (t->tlut_name < MAX_TLUTS) ? g_tluts[t->tlut_name] : nullptr;
+    return ts ? ts->hash : 0;
+}
+
 unsigned int tex_hash(const void *img, u32 bytes)
 {
     const unsigned int *p = (const unsigned int *)img;
@@ -107,15 +119,23 @@ GLuint upload(const PortTexObj *t)
     for (int i = 0; i < g_ncache; ++i) {
         CacheEntry &c = g_cache[i];
         if (c.img == t->img && c.fmt == t->fmt && c.w == t->w && c.h == t->h &&
-            c.tlut_name == t->tlut_name) {
+            c.tlut_hash == cur_tlut_hash(t)) {
             if (c.gen == g_gen)
                 return c.gl;
             // Le jeu a invalide le cache depuis : on ne jette plus la texture, on verifie que son
             // contenu a vraiment change.
+            // Une verification par texture et par image au plus : lire 1024 mots repartis sur
+            // une grande texture coute des centaines de defauts de cache, et le jeu invalide
+            // a chaque dessin.
+            const unsigned int vf = port_vi_retrace_count();
+            if (c.vframe == vf)
+                return c.gl;
+            c.vframe = vf;
             if (tex_hash(t->img, GXGetTexBufferSize(t->w, t->h, t->fmt, 0, 0)) == c.hash) {
                 c.gen = g_gen;
                 return c.gl;
             }
+            { static int dbg = 0; if (dbg++ < 25) std::printf("[TEXDBG] img=%p fmt=%u %ux%u tlut=%u hash %08x -> changed\n", t->img, t->fmt, t->w, t->h, t->tlut_name, c.hash); }
             glDeleteTextures(1, &c.gl);
             c = g_cache[--g_ncache];   // l'entree perimee disparait, la texture est re-decodee
             break;
@@ -128,6 +148,8 @@ GLuint upload(const PortTexObj *t)
         return 0;
     }
 
+    ++g_decodes;
+    g_decode_bytes += (unsigned)(w * h * 4);
     unsigned char *rgba = (unsigned char *)std::malloc((size_t)w * h * 4);
     if (!rgba)
         return 0;
@@ -150,9 +172,11 @@ GLuint upload(const PortTexObj *t)
         c.w = (unsigned short)w;
         c.h = (unsigned short)h;
         c.tlut_name = t->tlut_name;
+        c.tlut_hash = cur_tlut_hash(t);
         c.gl = id;
         c.hash = tex_hash(t->img, GXGetTexBufferSize(t->w, t->h, t->fmt, 0, 0));
         c.gen = g_gen;
+        c.vframe = port_vi_retrace_count();
     }
     return id;
 }
@@ -234,21 +258,17 @@ void GXLoadTlut(GXTlutObj *tlut_obj, u32 tlut_name)
             return;
     }
     TlutSlot *s = g_tluts[tlut_name];
-    s->count = (t->n > 16384) ? 16384 : t->n;
-    port_tlut_expand(t->fmt, t->lut, s->count, s->rgba);
+    const int count = (t->n > 16384) ? 16384 : t->n;
+    port_tlut_expand(t->fmt, t->lut, count, s->rgba);
+    s->count = count;
     s->used = true;
-
-    // Une palette rechargee sous le meme nom change ce que valent les textures deja mises en
-    // cache pour ce nom : il faut les oublier, sinon une salle garde les couleurs de la
-    // precedente. C'est exactement ce que fait le materiel en invalidant son TMEM.
-    int k = 0;
-    for (int i = 0; i < g_ncache; ++i) {
-        if (g_cache[i].tlut_name == tlut_name)
-            glDeleteTextures(1, &g_cache[i].gl);
-        else
-            g_cache[k++] = g_cache[i];
-    }
-    g_ncache = k;
+    unsigned int h = 2166136261u ^ (unsigned)count;
+    const unsigned int *w = (const unsigned int *)s->rgba;
+    for (int i = 0; i < count; ++i)
+        h = (h ^ w[i]) * 16777619u;
+    // Les textures deja en cache gardent la palette dont elles sont issues (cle = empreinte) : plus
+    // rien a oublier ici, et une palette qui revient retrouve ses textures.
+    s->hash = h;
 }
 
 // ---------------------------------------------------------------- liaison
@@ -337,3 +357,6 @@ extern "C" TEXDescriptorPtr TEXGet(TEXPalettePtr pal, u32 id)
         return (TEXDescriptorPtr) 0;
     return &pal->descriptorArray[id];
 }
+
+extern "C" int port_tex_cache_count() { return g_ncache; }
+extern "C" void port_tex_stats(unsigned *n, unsigned *b) { *n = g_decodes; *b = g_decode_bytes; g_decodes = 0; g_decode_bytes = 0; }

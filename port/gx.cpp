@@ -713,6 +713,8 @@ static void port_dump_frame(void)
     std::_Exit(0);
 }
 
+extern "C" int port_tex_cache_count();
+extern "C" void port_tex_stats(unsigned *n, unsigned *b);
 void GXCopyDisp(void *dest, GXBool clear)
 {
     (void)dest;
@@ -726,8 +728,9 @@ void GXCopyDisp(void *dest, GXBool clear)
         tgl += (a2.tv_sec - a1.tv_sec) * 1e3 + (a2.tv_nsec - a1.tv_nsec) / 1e6;
         if (n == 0) t0 = a2;
         if (++n == 30) {
+            unsigned dn, db; port_tex_stats(&dn, &db);
             double ms = (a2.tv_sec - t0.tv_sec) * 1e3 + (a2.tv_nsec - t0.tv_nsec) / 1e6;
-            std::printf("[PERF] 30 images GX en %.0f ms (%.1f ms/image, dont glFinish %.1f), %ld dessins, %ld tri\n", ms, ms / 30, tgl / 30, g_draws, g_tris);
+            std::printf("[PERF] 30 images GX en %.0f ms (%.1f ms/image, dont glFinish %.1f), %ld dessins, %ld tri, cache %d, decodes %u (%u Ko)\n", ms, ms / 30, tgl / 30, g_draws, g_tris, port_tex_cache_count(), dn, db / 1024);
             std::fflush(stdout); n = 0; tgl = 0;
         }
     }
