@@ -43,7 +43,7 @@ CONLY = ['-std=gnu99', '-fdeclspec']
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card']
 
 
 # Unites du jeu volontairement **exclues** du portage.
@@ -209,7 +209,11 @@ def main():
            # sans cela lld s'arrete a 20 erreurs, et on decouvre les symboles manquants
            # vingt par vingt au lieu d'une seule fois.
            '-Wl,--error-limit=0']
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    # Le .cmd de clang coupe les arguments aux espaces : chemins relatifs, depuis la racine du depot
+    # ("RE4 PROJECT" contient une espace, c'etait la cause du faux "lien en echec").
+    cmd[1] = '@' + os.path.relpath(rsp, ROOT).replace(os.sep, '/')
+    cmd[cmd.index('-o') + 1] = os.path.relpath(exe, ROOT).replace(os.sep, '/')
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
     if r.returncode != 0:
         und = [l for l in r.stderr.splitlines() if 'undefined symbol' in l]
         dup = [l for l in r.stderr.splitlines() if 'duplicate symbol' in l]

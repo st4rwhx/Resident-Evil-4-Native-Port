@@ -58,22 +58,6 @@ void AXSetVoiceSrcRatio(AXVPB* p, f32 ratio) { PORT_TODO("AXSetVoiceSrcRatio"); 
 void AXSetVoiceSrcType(AXVPB* p, u32 type) { PORT_TODO("AXSetVoiceSrcType"); }   // include\dolphin\ax.h
 void AXSetVoiceState(AXVPB* p, u16 state) { PORT_TODO("AXSetVoiceState"); }   // include\dolphin\ax.h
 void AXSetVoiceType(AXVPB* p, u16 type) { PORT_TODO("AXSetVoiceType"); }   // include\dolphin\ax.h
-s32 CARDCheckAsync(s32 chan, CARDCallback callback) { PORT_TODO("CARDCheckAsync"); return 0; }   // include\dolphin\card.h
-s32 CARDClose(CARDFileInfo* fileInfo) { PORT_TODO("CARDClose"); return 0; }   // include\dolphin\card.h
-s32 CARDCreateAsync(s32 chan, const char* fileName, u32 size, CARDFileInfo* fileInfo, CARDCallback callback) { PORT_TODO("CARDCreateAsync"); return 0; }   // include\dolphin\card.h
-s32 CARDDeleteAsync(s32 chan, const char* fileName, CARDCallback callback) { PORT_TODO("CARDDeleteAsync"); return 0; }   // include\dolphin\card.h
-s32 CARDFreeBlocks(s32 chan, s32* byteNotUsed, s32* filesNotUsed) { PORT_TODO("CARDFreeBlocks"); return 0; }   // include\dolphin\card.h
-s32 CARDGetResultCode(s32 chan) { PORT_TODO("CARDGetResultCode"); return 0; }   // include\dolphin\card.h
-s32 CARDGetSerialNo(s32 chan, u64* serialNo) { PORT_TODO("CARDGetSerialNo"); return 0; }   // include\dolphin\card.h
-s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat* stat) { PORT_TODO("CARDGetStatus"); return 0; }   // include\dolphin\card.h
-void CARDInit() { PORT_TODO("CARDInit"); }   // include\dolphin\card.h
-s32 CARDMountAsync(s32 chan, void* workArea, CARDCallback detachCallback, CARDCallback attachCallback) { PORT_TODO("CARDMountAsync"); return 0; }   // include\dolphin\card.h
-s32 CARDOpen(s32 chan, const char* fileName, CARDFileInfo* fileInfo) { PORT_TODO("CARDOpen"); return 0; }   // include\dolphin\card.h
-s32 CARDProbeEx(s32 chan, s32* memSize, s32* sectorSize) { PORT_TODO("CARDProbeEx"); return 0; }   // include\dolphin\card.h
-s32 CARDReadAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CARDCallback callback) { PORT_TODO("CARDReadAsync"); return 0; }   // include\dolphin\card.h
-s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CARDStat* stat, CARDCallback callback) { PORT_TODO("CARDSetStatusAsync"); return 0; }   // include\dolphin\card.h
-s32 CARDUnmount(s32 chan) { PORT_TODO("CARDUnmount"); return 0; }   // include\dolphin\card.h
-s32 CARDWriteAsync(CARDFileInfo*  fileInfo, void* buf, s32 length, s32 offset, CARDCallback callback) { PORT_TODO("CARDWriteAsync"); return 0; }   // include\dolphin\card.h
 int DVDCancelAsync(DVDCommandBlock* block, DVDCBCallback callback) { PORT_TODO("DVDCancelAsync"); return 0; }   // include\dolphin\dvd.h
 int DVDChangeDiskAsync(DVDCommandBlock* block, DVDDiskID* id, DVDCBCallback callback) { PORT_TODO("DVDChangeDiskAsync"); return 0; }   // include\dolphin\dvd.h
 int DVDCloseDir(DVDDir* dir) { PORT_TODO("DVDCloseDir"); return 0; }   // include\dolphin\dvd.h

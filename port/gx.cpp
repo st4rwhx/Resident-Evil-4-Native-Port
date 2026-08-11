@@ -1228,6 +1228,7 @@ void GXSetViewport(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz)
 {
     if (!g_gl_ready)
         return;
+    { static int n = 0; if (getenv("RE4_GXLOG") && n++ < 12) std::printf("[GXLOG] viewport %.0f %.0f %.0f %.0f z %.2f %.2f\n", left, top, wd, ht, nearz, farz); }
     // L'origine de l'ecran est en haut a gauche sur GameCube, en bas a gauche en OpenGL.
     if (g_ncmd >= kMaxCmd) gx_replay();
     Cmd &c = g_cmd[g_ncmd++];
@@ -1240,6 +1241,7 @@ void GXSetScissor(u32 left, u32 top, u32 wd, u32 ht)
 {
     if (!g_gl_ready)
         return;
+    { static int n = 0; if (getenv("RE4_GXLOG") && n++ < 12) std::printf("[GXLOG] scissor %u %u %u %u\n", left, top, wd, ht); }
     if (g_ncmd >= kMaxCmd) gx_replay();
     Cmd &c = g_cmd[g_ncmd++];
     c.type = 2;
