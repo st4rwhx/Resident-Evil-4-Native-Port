@@ -1373,18 +1373,30 @@ int HermiteInterpolation(HermitePrm* prm, Vec* out, u16* hist)
 typedef union {
     f32 f;
     struct {
+#ifdef RE4_PORT   // portage : octets de poids fort en dernier (petit-boutiste)
+        u8 b3;
+        u8 b2;
+        u8 b1;
+        u8 b0;
+#else
         u8 b0;
         u8 b1;
         u8 b2;
         u8 b3;
+#endif
     } b;
 } FccF32;
 
 typedef union {
     s16 s;
     struct {
+#ifdef RE4_PORT
+        u8 lo;
+        u8 hi;
+#else
         u8 hi;
         u8 lo;
+#endif
     } b;
 } FccS16;
 

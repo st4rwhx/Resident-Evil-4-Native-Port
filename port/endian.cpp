@@ -23,6 +23,8 @@
 
 #include "port_log.h"
 
+extern "C" int Fcc_next_axis_addr(int type, int n);   // src/game/motion.cpp
+
 namespace {
 
 inline u16 bswap16(u16 v) { return (u16) ((v >> 8) | (v << 8)); }
@@ -219,6 +221,9 @@ bool swap_id_data(const Span &s, u32 at);
 bool swap_eff_data(const Span &s, u32 at);
 bool conv_lit(const Span &s, u32 at, u32 end);
 bool swap_vib_tbl(const Span &s, u32 at);
+bool conv_motion(const Span &s, u32 at, u32 end);
+u32 conv_ofs_archive(const Span &s, const char *name);
+bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind);
 
 // ---------------------------------------------------------------- archive a table d offsets
 //
@@ -791,7 +796,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     if (ends_with(name, ".drs")) {
         if (s.has(4, 4)) {
             const u32 ofs = read_be32(s.base + 4);
-            swap_u32(s.base + 4);
+            conv_ofs_archive(s, name);                  // retourne la table (dont le mot 1)
             if (ofs && s.has(ofs, 0x40))
                 port_rel_prepare(s.base + ofs);
         }
@@ -1121,6 +1126,244 @@ bool swap_eff_data(const Span &s, u32 at)
     return true;
 }
 
+// ---- MOT : un mouvement (MotionData, include/model.h ; flux de cles lu par HermiteInterpolation)
+//
+//   u16 maxFrame (14 bits) ; u8 nParts ; u16 infos[nParts] (octets 3.., non alignes) ;
+//   u8 numeros[nParts] ; remplissage a 4 ; u32 mot de tete ; u32 cles[nParts] (decalages)
+// Chaque cle est trois axes : u16 n ; u16 images[n] ; n valeurs dont la taille depend du type
+// (bits 12 a 15 de l'info de la partie). Les **valeurs** sont lues octet par octet par le jeu
+// (Fcc_get_data_*), donc laissees telles quelles : seuls n et la table des images se retournent.
+bool conv_motion(const Span &s, u32 at, u32 end)
+{
+    track_label("MOT");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 4))
+        return false;
+    u8 *h = s.base + at;
+    if (h[0] == 0 && h[1] == 0 && h[2] == 0 && h[3] == 0)
+        return true;                               // entree vide
+    const u32 nParts = h[2];
+    u32 tbl = 3 + nParts * 2 + nParts;
+    tbl = (tbl + 3) & ~3u;
+    if (nParts == 0 || at + tbl + 4 + nParts * 4 > end) {
+        std::printf("[PORT] endian : MOT a +0x%x : %u parties, en-tete deborde\n", (unsigned) at, (unsigned) nParts);
+        return false;
+    }
+    // verification : chaque flux doit tenir et se terminer a l'interieur de l'entree
+    u16 infos[256];
+    if (nParts > 256)
+        return false;
+    for (u32 i = 0; i < nParts; ++i)
+        infos[i] = (u16) ((h[3 + i * 2] << 8) | h[4 + i * 2]);
+    u32 keys[256];
+    for (u32 i = 0; i < nParts; ++i) {
+        keys[i] = read_be32(h + tbl + 4 + i * 4);
+        if (keys[i] + 2 > end - at) {
+            std::printf("[PORT] endian : MOT a +0x%x : cle %u hors de l'entree\n", (unsigned) at, (unsigned) i);
+            return false;
+        }
+    }
+    swap_u16(h);
+    for (u32 i = 0; i < nParts; ++i)
+        swap_u16(h + 3 + i * 2);
+    for (u32 i = 0; i < nParts + 1; ++i)
+        swap_u32(h + tbl + i * 4);
+    for (u32 i = 0; i < nParts; ++i) {
+        const int type = (infos[i] >> 12) & 0xF;
+        u32 p = keys[i];
+        for (int axis = 0; axis < 3; ++axis) {
+            if (p + 2 > end - at)
+                break;
+            const u32 n = (u32) ((h[p] << 8) | h[p + 1]);
+            if (p + 2 + n * 2 > end - at)
+                break;
+            swap_u16_once(h + p);
+            for (u32 k = 0; k < n; ++k)
+                swap_u16_once(h + p + 2 + k * 2);
+            const int sz = Fcc_next_axis_addr(type, (int) n);
+            if (sz < 0)
+                break;
+            p += 2 + n * 2 + (u32) sz;
+        }
+    }
+    return true;
+}
+
+// ---- Archive a table de decalages (pl*.drs, em*.drs, wep*.drs : PlArc, include/global.h)
+//
+// u32 ofs[n] au debut du fichier ; le mot 1 est le module REL (code, deja dans le binaire). Les
+// autres entrees sont des modeles (BIN), des TPL, des mouvements (MOT) ou des donnees propres au
+// personnage (visages, tables). Aucune etiquette : on reconnait le TPL et le BIN a leur numero de
+// version, le mouvement a la coherence de son en-tete ; le reste est signale, entree par entree.
+bool looks_like_motion(const Span &s, u32 at, u32 end)
+{
+    if (!s.has(at, 8) || end > s.size || at + 8 >= end)
+        return false;
+    const u8 *h = s.base + at;
+    const u32 nParts = h[2];
+    if (nParts == 0 || nParts > 200)
+        return false;
+    u32 tbl = (3 + nParts * 3 + 3) & ~3u;
+    if (at + tbl + 4 + nParts * 4 > end)
+        return false;
+    const u32 maxFrame = (u32) ((h[0] << 8) | h[1]) & 0x3FFF;
+    if (maxFrame == 0 || maxFrame > 20000)
+        return false;
+    for (u32 i = 0; i < nParts; ++i) {
+        const u32 k = read_be32(h + tbl + 4 + i * 4);
+        if (k < tbl + 4 + nParts * 4 || k + 2 > end - at)
+            return false;
+    }
+    return true;
+}
+
+// Table de sequence d'un mouvement (MotionSeqKey, include/model.h) : u16 compte, deux octets, puis
+// `compte` cles de quatre octets (u16 image en 10.6, deux octets).
+bool looks_like_seqtbl(const Span &s, u32 at, u32 end)
+{
+    if (!s.has(at, 8) || end > s.size || at + 8 > end)
+        return false;
+    const u8 *h = s.base + at;
+    const u32 n = (u32) ((h[0] << 8) | h[1]);
+    if (n == 0 || n > 2000 || 4 + n * 4 > end - at || h[2] > 1)
+        return false;
+    if (h[4] != 0 || h[5] != 0)                 // la premiere cle est a l'image 0
+        return false;
+    u32 prev = 0;
+    for (u32 i = 0; i < n; ++i) {
+        const u32 fr = (u32) ((h[4 + i * 4] << 8) | h[5 + i * 4]);
+        if (fr < prev)
+            return false;
+        prev = fr;
+    }
+    return true;
+}
+
+bool conv_seqtbl(const Span &s, u32 at)
+{
+    track_label("SEQ");
+    u8 *h = s.base + at;
+    const u32 n = (u32) ((h[0] << 8) | h[1]);
+    swap_u16_once(h);
+    for (u32 i = 0; i < n; ++i)
+        swap_u16_once(h + 4 + i * 4);
+    return true;
+}
+
+// Table de decalages : u32 compte puis `compte` decalages croissants, relatifs a la table.
+bool looks_like_ofstbl(const Span &s, u32 at, u32 end)
+{
+    if (!s.has(at, 8) || end > s.size)
+        return false;
+    const u32 n = read_be32(s.base + at);
+    if (n == 0 || n > 0x100 || at + 4 + n * 4 > end)
+        return false;
+    u32 prev = 0;
+    for (u32 i = 0; i < n; ++i) {
+        const u32 o = read_be32(s.base + at + 4 + i * 4);
+        if (o < 4 + n * 4 || o >= end - at || o < prev)
+            return false;
+        prev = o;
+    }
+    return true;
+}
+
+// Reconnait un bloc a sa forme et le convertit ; rend vrai si c'est fait.
+bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind)
+{
+    const char *k = "?";
+    bool done = false;
+    u32 allz = 1;
+    for (u32 i = 0; i < 16 && at + i < s.size; ++i)
+        if (s.base[at + i] != 0 && s.base[at + i] != 0xCD)
+            allz = 0;
+    if (allz) {
+        k = "vide";
+        done = true;
+    } else if (s.has(at, 12) && (read_be32(s.base + at) == 0x0020AF30u || read_le32(s.base + at) == 0x0020AF30u)) {
+        k = "TPL";
+        done = swap_tpl(s, at);
+    } else if (s.has(at, 0x40) && (read_be32(s.base + at + 0x3C) == 0x20010801u || read_be32(s.base + at + 0x3C) == 0x20030817u ||
+                                   read_be32(s.base + at + 0x3C) == 0x20030818u)) {
+        k = "BIN";
+        done = conv_model_bin(s, at, end);
+    } else if (looks_like_motion(s, at, end)) {
+        k = "MOT";
+        done = conv_motion(s, at, end);
+    } else if (looks_like_seqtbl(s, at, end)) {
+        k = "SEQ";
+        done = conv_seqtbl(s, at);
+    } else if (depth < 3 && looks_like_ofstbl(s, at, end)) {
+        k = "TABLE";
+        const u32 n = read_be32(s.base + at);
+        u32 offs[0x100];
+        for (u32 i = 0; i < n; ++i)
+            offs[i] = read_be32(s.base + at + 4 + i * 4);
+        swap_u32_once(s.base + at);
+        for (u32 i = 0; i < n; ++i)
+            swap_u32_once(s.base + at + 4 + i * 4);
+        done = true;
+        for (u32 i = 0; i < n; ++i) {
+            u32 e = end;
+            for (u32 j = 0; j < n; ++j)
+                if (at + offs[j] > at + offs[i] && at + offs[j] < e)
+                    e = at + offs[j];
+            const char *sub = "?";
+            if (!conv_blob(s, at + offs[i], e, depth + 1, &sub))
+                done = false;
+        }
+    }
+    if (kind)
+        *kind = k;
+    return done;
+}
+
+u32 conv_ofs_archive(const Span &s, const char *name)
+{
+    track_begin(s.base, s.size, name);
+    track_label("drs");
+    // taille de la table : elle s'arrete au plus petit decalage
+    u32 limit = s.size;
+    u32 n = 0;
+    while (n < 0x100 && (n * 4 + 4) <= limit && s.has(n * 4, 4)) {
+        const u32 w = read_be32(s.base + n * 4);
+        if (n >= 1 && w && w >= 8 && w < limit)     // le mot 0 est un compte, pas un decalage
+            limit = w;
+        ++n;
+    }
+    if (n < 2 || limit > 0x1000)
+        return 0;
+    u32 offs[0x100];
+    for (u32 i = 0; i < n; ++i)
+        offs[i] = read_be32(s.base + i * 4);
+    for (u32 i = 0; i < n; ++i)
+        swap_u32(s.base + i * 4);
+    u32 unknown = 0;
+    for (u32 i = 0; i < n; ++i) {
+        const u32 o = offs[i];
+        if (!o || i == 0 || i == 1 || o >= s.size)
+            continue;
+        u32 e = s.size;
+        for (u32 j = 1; j < n; ++j)
+            if (offs[j] > o && offs[j] < e)
+                e = offs[j];
+        const char *kind = "?";
+        const bool done = conv_blob(s, o, e, 0, &kind);
+        if (g_trace_on)
+            std::printf("[ARC] %s entree %u +0x%x (%u octets) : %s %s%s", name, (unsigned) i, (unsigned) o, (unsigned) (e - o), kind,
+                        done ? "converti" : "NON converti", done ? "\n" : "  :");
+        if (g_trace_on && !done) {
+            for (u32 k = 0; k < 24 && o + k < s.size; ++k)
+                std::printf(" %02x", s.base[o + k]);
+            std::printf("\n");
+        }
+        if (!done)
+            ++unknown;
+    }
+    return unknown;
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -1278,6 +1521,8 @@ bool conv_smd(const Span &s, u32 at, u32 end)
                 r = conv_model_bin(s, at + ofs + o, next_start(at + ofs + o));
             else if (kind == 1)
                 r = swap_tpl(s, at + ofs + o);
+            else if (kind == 2)
+                r = conv_motion(s, at + ofs + o, next_start(at + ofs + o));
             if (!r) {
                 all = false;
                 std::printf("[PORT] endian : SMD a +0x%x : entree %s %u (+0x%x) refusee\n", (unsigned) at, kind == 0 ? "BIN" : "TPL", (unsigned) i, (unsigned) (at + ofs + o));
