@@ -968,8 +968,11 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     if (version > 0x20030817u) {
         if (blendTbl >= 0x40) {
             const u32 be = region_end(blendTbl);
-            for (u32 o = blendTbl; o + 2 <= be; o += 2)
-                swap_u16(h + o);
+            if (blendTbl + 4 <= be) {                  // s32 compte, puis (dst, a, b, pourcentage) en u16
+                swap_u32(h + blendTbl);
+                for (u32 o = blendTbl + 4; o + 2 <= be; o += 2)
+                    swap_u16(h + o);
+            }
         }
         if (flipTbl >= 0x40) {
             const u32 fe = region_end(flipTbl);
@@ -1364,6 +1367,196 @@ u32 conv_ofs_archive(const Span &s, const char *name)
     return unknown;
 }
 
+// ---- SHD : modeles d'ombre / de decor secondaires (src/game/shadow.cpp, include/shadow.h)
+//
+// u8 version, u8, u16 nombre, u32 decalage de la table des modeles, remplissage a 0x10, puis des
+// entrees de 0x48 octets (position, rotation, echelle : neuf flottants, puis des octets). La table
+// de modeles est un tableau de decalages relatifs a lui-meme, vers des BIN.
+bool conv_shd(const Span &s, u32 at, u32 end)
+{
+    track_label("SHD");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 num = (u32) ((h[2] << 8) | h[3]);
+    const u32 tblOfs = read_be32(h + 4);
+    if (num > 0x200 || !s.has(at + 0x10, num * 0x48))
+        return false;
+    swap_u16(h + 2);
+    swap_u32(h + 4);
+    u32 maxModel = 0;
+    for (u32 i = 0; i < num; ++i) {
+        u8 *e = h + 0x10 + i * 0x48;
+        if (e[0x24] + 1u > maxModel)
+            maxModel = e[0x24] + 1u;
+        for (int k = 0; k < 9; ++k)
+            swap_u32(e + 4 * k);
+    }
+    if (maxModel == 0 || !s.has(at + tblOfs, maxModel * 4))
+        return true;
+    u8 *tbl = h + tblOfs;
+    u32 offs[256];
+    if (maxModel > 256)
+        maxModel = 256;
+    for (u32 i = 0; i < maxModel; ++i)
+        offs[i] = read_be32(tbl + 4 * i);
+    for (u32 i = 0; i < maxModel; ++i)
+        swap_u32_once(tbl + 4 * i);
+    bool ok = true;
+    for (u32 i = 0; i < maxModel; ++i) {
+        const u32 a = at + tblOfs + offs[i];
+        u32 e = end;
+        for (u32 j = 0; j < maxModel; ++j)
+            if (at + tblOfs + offs[j] > a && at + tblOfs + offs[j] < e)
+                e = at + tblOfs + offs[j];
+        if (!conv_model_bin(s, a, e))
+            ok = false;
+    }
+    return ok;
+}
+
+// ---- ITM : modeles d'objets (src/game/item_model.cpp)
+//
+// u32 x0, u32 decalages vers la table des identifiants (u32 compte, puis u16 id + 6 octets), la
+// table des modeles (u32 compte, decalages relatifs a la table) et la table des TPL, idem.
+bool conv_itm(const Span &s, u32 at, u32 end)
+{
+    track_label("ITM");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 ofsId = read_be32(h + 4), ofsBin = read_be32(h + 8), ofsTpl = read_be32(h + 12);
+    for (int k = 0; k < 4; ++k)
+        swap_u32(h + 4 * k);
+    if (!s.has(at + ofsId, 4))
+        return false;
+    const u32 n = read_be32(s.base + at + ofsId);
+    if (n > 0x100 || !s.has(at + ofsId + 4, n * 8))
+        return false;
+    swap_u32(s.base + at + ofsId);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = s.base + at + ofsId + 4 + i * 8;
+        swap_u16(e);
+        swap_u32(e + 4);
+    }
+    bool ok = true;
+    for (int pass = 0; pass < 2; ++pass) {
+        const u32 t = pass == 0 ? ofsBin : ofsTpl;
+        if (!s.has(at + t, 4 + n * 4))
+            return false;
+        u32 offs[0x100];
+        for (u32 i = 0; i < n; ++i)
+            offs[i] = read_be32(s.base + at + t + 4 + i * 4);
+        swap_u32(s.base + at + t);
+        for (u32 i = 0; i < n; ++i)
+            swap_u32_once(s.base + at + t + 4 + i * 4);
+        for (u32 i = 0; i < n; ++i) {
+            const u32 a = at + t + offs[i];
+            u32 e = end;
+            for (u32 j = 0; j < n; ++j)
+                if (at + t + offs[j] > a && at + t + offs[j] < e)
+                    e = at + t + offs[j];
+            if (pass == 0) {
+                // un BIN finit au plus tard ou commence la table des TPL
+                if (at + ofsTpl > a && at + ofsTpl < e)
+                    e = at + ofsTpl;
+                if (!conv_model_bin(s, a, e))
+                    ok = false;
+            } else if (!swap_tpl(s, a)) {
+                ok = false;
+            }
+        }
+    }
+    return ok;
+}
+
+// ---- ETM : archive de fichiers nommes des objets decoratifs (src/game/EtcModel.cpp, EtcArc)
+//
+// u32 nombre, remplissage jusqu'a 0x20, puis des fichiers : u32 taille (en-tete de 0x40 compris),
+// nom sur 0x20 octets a partir de +0x20, donnees a +0x40. L'extension dit le format.
+bool conv_etm(const Span &s, u32 at, u32 end)
+{
+    track_label("ETM");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 0x20))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = read_be32(h);
+    if (n > 0x200)
+        return false;
+    swap_u32(h);
+    u32 f = at + 0x20;
+    bool ok = true;
+    for (u32 i = 0; i < n; ++i) {
+        if (!s.has(f, 0x40))
+            return false;
+        u8 *fh = s.base + f;
+        const u32 size = read_be32(fh);
+        swap_u32(fh);
+        if (size < 0x40 || f + size > end)
+            return false;
+        const char *name = (const char *) fh + 0x20;
+        const u32 dat = f + 0x40, dend = f + size;
+        const size_t ln = strnlen(name, 0x20);
+        bool r = true;
+        if (ln > 4 && !std::strcmp(name + ln - 4, ".eff"))
+            r = swap_eff_data(s, dat);
+        else if (ln > 4 && !std::strcmp(name + ln - 4, ".bin"))
+            r = conv_model_bin(s, dat, dend);
+        else if (ln > 4 && !std::strcmp(name + ln - 4, ".tpl"))
+            r = swap_tpl(s, dat);
+        else {
+            if (g_trace_on)
+                std::printf("[ARC] ETM : fichier '%.32s' (%u octets) sans convertisseur\n", name, (unsigned) (size - 0x40));
+            r = false;
+        }
+        if (!r)
+            ok = false;
+        f += size;
+    }
+    return ok;
+}
+
+// ---- ETS : liste des objets decoratifs de la salle (EtcList : u16 nombre, entrees de 0x28 octets des 0x10)
+bool conv_ets(const Span &s, u32 at, u32 end)
+{
+    track_label("ETS");
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = (u32) ((h[0] << 8) | h[1]);
+    if (n > 0x200 || !s.has(at + 0x10, n * 0x28))
+        return false;
+    swap_u16(h);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = h + 0x10 + i * 0x28;
+        swap_u16(e);
+        swap_u16(e + 2);
+        for (int k = 0; k < 6; ++k)
+            swap_u32(e + 0x10 + 4 * k);
+    }
+    return true;
+}
+
+// ---- Paquet de textures (tag TEX) : un TexData du systeme "id"
+bool conv_tex(const Span &s, u32 at, u32 end)
+{
+    (void) end;
+    return swap_id_tex(s, at);
+}
+
+bool conv_eff_tag(const Span &s, u32 at, u32 end)
+{
+    (void) end;
+    return swap_eff_data(s, at);
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -1560,6 +1753,12 @@ const TagConv kRoomTags[] = {
     { "SMD", conv_smd },
     { "SMX", conv_smx },
     { "LIT", conv_lit },
+    { "SHD", conv_shd },
+    { "ITM", conv_itm },
+    { "ETM", conv_etm },
+    { "ETS", conv_ets },
+    { "TEX", conv_tex },
+    { "EFF", conv_eff_tag },
     { nullptr, nullptr }
 };
 

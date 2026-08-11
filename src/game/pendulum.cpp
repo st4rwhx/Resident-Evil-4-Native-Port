@@ -4,6 +4,9 @@
 // simulation (gravity + wind, angle limit, distance constraints with collision volumes, matrix
 // update); the pl_cloth / em_cloth / obj units pick one per accessory.
 
+#ifdef RE4_PORT
+extern "C" void* port_lc_base(void);
+#endif
 #include "pendulum.h"
 #include "pl_cloth.h"
 #include "atari.h"
@@ -1203,7 +1206,11 @@ PenAtWork* penClothAtMake(cModel* m, PlClothAt* at, int n)
     if (at == 0 || n == 0 || m == 0) {
         return 0;
     }
+#ifdef RE4_PORT   // portage : tampon ordinaire a la place du cache verrouille (include/dolphin/os/OSCache.h)
+    wk = (PenAtWork*) port_lc_base();
+#else
     wk = (PenAtWork*) 0xE0000000;
+#endif
     a = wk->at;
     wk->num = n;
     wk->pAt = a;
