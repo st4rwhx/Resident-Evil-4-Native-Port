@@ -33,8 +33,87 @@ inline u32 bswap32(u32 v)
            ((v << 8) & 0xFF0000u) | ((v << 24) & 0xFF000000u);
 }
 
-inline void swap_u16(void *p) { *(u16 *) p = bswap16(*(u16 *) p); }
-inline void swap_u32(void *p) { *(u32 *) p = bswap32(*(u32 *) p); }
+// Detecteur de double conversion (RE4_TRACE_ENDIAN=1) : retourner deux fois les memes octets les
+// remet a l'envers, et l'erreur n'apparait que bien plus tard. Chaque conversion marque ses octets ;
+// en retrouver un deja marque est signale avec son decalage.
+bool g_trace_on = false;
+
+struct Track {
+    u8 *base = nullptr;
+    u32 size = 0;
+    u8 *mark = nullptr;
+    int reported = 0;
+    const char *what = "";
+    const char *labels[64] = { nullptr };
+    int nlabels = 1;
+    int cur = 0;
+} g_trk;
+
+// Nomme la conversion en cours : une double conversion dit alors qui avait deja touche ces octets.
+inline void track_label(const char *l)
+{
+    if (!g_trk.base)
+        return;
+    for (int i = 1; i < g_trk.nlabels; ++i)
+        if (g_trk.labels[i] == l) { g_trk.cur = i; return; }
+    if (g_trk.nlabels < 63) {
+        g_trk.labels[g_trk.nlabels] = l;
+        g_trk.cur = g_trk.nlabels++;
+    }
+}
+
+
+inline void track_hit(void *p, u32 n)
+{
+    if (!g_trk.base)
+        return;
+    u8 *b = (u8 *) p;
+    if (b < g_trk.base || b + n > g_trk.base + g_trk.size)
+        return;
+    const u32 o = (u32) (b - g_trk.base);
+    int prev = 0;
+    for (u32 i = 0; i < n; ++i) {
+        if (g_trk.mark[o + i])
+            prev = g_trk.mark[o + i];
+        g_trk.mark[o + i] = (u8) g_trk.cur;
+    }
+    if (prev && g_trace_on && g_trk.reported < 12) {
+        ++g_trk.reported;
+        std::printf("[ENDIAN] DOUBLE conversion de %u octets a +0x%x (%s) : deja touche par '%s', reconverti par '%s'\n",
+                    (unsigned) n, (unsigned) o, g_trk.what, g_trk.labels[prev] ? g_trk.labels[prev] : "?",
+                    g_trk.labels[g_trk.cur] ? g_trk.labels[g_trk.cur] : "?");
+    }
+}
+
+void track_begin(void *base, u32 size, const char *what)
+{
+    g_trace_on = std::getenv("RE4_TRACE_ENDIAN") != nullptr;
+    g_trk.base = (u8 *) base;
+    g_trk.size = size;
+    std::free(g_trk.mark);
+    g_trk.mark = (u8 *) std::calloc(size ? size : 1, 1);
+    g_trk.reported = 0;
+    g_trk.what = what;
+}
+
+inline void swap_u16(void *p) { track_hit(p, 2); *(u16 *) p = bswap16(*(u16 *) p); }
+inline void swap_u32(void *p) { track_hit(p, 4); *(u32 *) p = bswap32(*(u32 *) p); }
+
+// Deja retourne ? (blocs que plusieurs tables se partagent, parfois en se chevauchant.)
+inline bool was_swapped(void *p, u32 n)
+{
+    if (!g_trk.base)
+        return false;
+    u8 *b = (u8 *) p;
+    if (b < g_trk.base || b + n > g_trk.base + g_trk.size)
+        return false;
+    for (u32 i = 0; i < n; ++i)
+        if (g_trk.mark[(u32) (b - g_trk.base) + i])
+            return true;
+    return false;
+}
+inline void swap_u16_once(void *p) { if (!was_swapped(p, 2)) swap_u16(p); }
+inline void swap_u32_once(void *p) { if (!was_swapped(p, 4)) swap_u32(p); }
 
 inline u32 read_be32(const void *p) { return bswap32(*(const u32 *) p); }
 // Apres conversion, les memes octets se lisent dans le sens de la machine.
@@ -63,6 +142,7 @@ struct Span {
 // (CalcTplAddr). Ils doivent donc etre justes **avant** cette conversion.
 bool swap_tpl(const Span &s, u32 at)
 {
+    track_label("TPL");
     if (!s.has(at, 12))
         return false;
     u8 *pal = s.base + at;
@@ -136,6 +216,9 @@ bool swap_fnt(const Span &s)
 // de ses entrees, et chacun se reconnait a sa propre signature.
 bool swap_id_tex(const Span &s, u32 at);
 bool swap_id_data(const Span &s, u32 at);
+bool swap_eff_data(const Span &s, u32 at);
+bool conv_lit(const Span &s, u32 at, u32 end);
+bool swap_vib_tbl(const Span &s, u32 at);
 
 // ---------------------------------------------------------------- archive a table d offsets
 //
@@ -155,7 +238,7 @@ bool swap_id_data(const Span &s, u32 at);
 // Les sous-fichiers pointes sont pour beaucoup des TPL (speculaire, illumination globale,
 // textures d interface). `swap_tpl` se reconnait lui-meme a son numero de version : on le
 // propose a chaque entree, il ne touche que celles qui en sont.
-bool swap_arc(const Span &s)
+bool swap_arc(const Span &s, bool core = false)
 {
     if (!s.has(0, 0x10))
         return false;
@@ -183,6 +266,26 @@ bool swap_arc(const Span &s)
         // Chaque convertisseur se reconnait a sa propre signature - le numero de version d un
         // TPL, le 0xB d un paquet de textures, les caracteres "2.00" d une table d unites. On
         // les propose dans l ordre, aucun ne touche ce qui n est pas a lui.
+        // core.das : les entrees 1 (0x14) et 16 (0x50) sont des donnees d'effets (EspDataLoad),
+        // dont la version vaut 0xB comme celle d'un paquet de textures "id" - la signature ne
+        // suffit pas, il faut les nommer.
+        if (core && i == 7) {                   // ofs_2C : lumieres du decor commun (cLit)
+            if (!conv_lit(s, o, s.size))
+                std::printf("[PORT] endian : lumieres communes a +0x%x inattendues\n", (unsigned) o);
+            continue;
+        }
+        if (core && i == 3) {                   // ofs_1C : vibrations
+            if (!swap_vib_tbl(s, o))
+                std::printf("[PORT] endian : table de vibrations inattendue\n");
+            continue;
+        }
+        if (core && (i == 6 || i == 17))        // ofs_28 / ofs_54 : tables de messages, convesties ensuite
+            continue;
+        if (core && (i == 1 || i == 16)) {
+            if (!swap_eff_data(s, o))
+                std::printf("[PORT] endian : donnees d'effets a +0x%x inattendues\n", (unsigned) o);
+            continue;
+        }
         if (swap_tpl(s, o))
             continue;
         if (swap_id_tex(s, o))
@@ -198,6 +301,7 @@ bool swap_arc(const Span &s)
 // sortante, tangente entrante). Tout y est en mots de quatre octets, sans exception.
 bool swap_hermite(const Span &s, u32 at)
 {
+    track_label("hermite");
     if (!s.has(at, 4))
         return false;
     const u32 n = read_be32(s.base + at);
@@ -217,6 +321,7 @@ bool swap_hermite(const Span &s, u32 at)
 // tampon de sortie que `FuncPathParametrize` remplit : il ne contient rien a convertir.
 bool swap_funcpath(const Span &s, u32 at)
 {
+    track_label("funcpath");
     if (!s.has(at, 8))
         return false;
     const u8 n = s.base[at + 7];
@@ -241,6 +346,7 @@ bool swap_funcpath(const Span &s, u32 at)
 // seconde couleur, qui decale tout ce qui suit de quatre octets.
 bool swap_id_data(const Span &s, u32 at)
 {
+    track_label("id_data");
     if (!s.has(at, 8))
         return false;
     const u8 *v = s.base + at;
@@ -327,27 +433,37 @@ bool swap_ofs_tbl(const Span &s, u32 at, bool tpl)
 // ordre). Lue par VibSetData des l'ecran titre : non convertie, elle envoie le jeu hors memoire.
 bool swap_vib_tbl(const Span &s, u32 at)
 {
+    track_label("vibrations");
     if (!s.has(at, 4))
         return false;
     const u32 n = read_be32(s.base + at);
     if (n > 0x100 || !s.has(at + 4, n * 4))
         return false;
     swap_u32(s.base + at);
+    u32 done[0x100];
+    u32 ndone = 0;
     for (u32 i = 0; i < n; ++i) {
         u8 *e = s.base + at + 4 + i * 4;
         const u32 o = read_be32(e);
         swap_u32(e);
         if (!o || !s.has(at + o, 4))
             continue;
+        bool seen = false;                          // plusieurs entrees partagent parfois le meme bloc
+        for (u32 k = 0; k < ndone; ++k)
+            if (done[k] == o)
+                seen = true;
+        if (seen)
+            continue;
+        done[ndone++] = o;
         const u32 m = read_be32(s.base + at + o);
         if (m > 0x40 || !s.has(at + o + 4, m * 8))
             continue;
-        swap_u32(s.base + at + o);
+        swap_u32_once(s.base + at + o);
         for (u32 k = 0; k < m; ++k) {
             u8 *v = s.base + at + o + 4 + k * 8;
-            swap_u16(v);
-            swap_u16(v + 2);
-            swap_u16(v + 4);
+            swap_u16_once(v);
+            swap_u16_once(v + 2);
+            swap_u16_once(v + 4);
         }
     }
     return true;
@@ -396,6 +512,7 @@ bool swap_room_info(const Span &s)
 
 bool swap_id_tex(const Span &s, u32 at)
 {
+    track_label("id_tex");
     if (!s.has(at, 0x20))
         return false;
     const u32 ver = read_be32(s.base + at);
@@ -491,6 +608,7 @@ bool mes_trace(void)
 
 bool swap_mes_tbl(const Span &s, u32 at, u32 end)
 {
+    track_label("mes_tbl");
     if (end > s.size)
         end = s.size;
     if (at + 8 > end)
@@ -564,7 +682,7 @@ bool swap_mes_tbl(const Span &s, u32 at, u32 end)
                 if (abs + w * 2 + 2 > blk_end)
                     break;
                 const u16 v = (u16) ((c[0] << 8) | c[1]);
-                swap_u16(c);
+                swap_u16_once(c);
                 if (v == 0xFFFF)
                     break;
             }
@@ -636,16 +754,14 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     // les entrees d'une archive. Mais on sait ou elles sont - le decompile le documente - donc
     // on les nomme plutot que de les deviner. C'est la seule conversion ciblee par fichier.
     if (ends_with(name, "core.das")) {
-        const bool ok = swap_arc(s);
+        track_begin(data, size, "core.das");
+        const bool ok = swap_arc(s, true);
         if (trace && s.has(0x17dde0, 32)) {
             const u32 *q = (const u32 *) (s.base + 0x17dde0);
             std::printf("[ENDIAN] apres swap_arc, ofs_48 : %08x %08x %08x %08x %08x %08x\n",
                         q[0], q[1], q[2], q[3], q[4], q[5]);
         }
         if (ok) {
-            const u32 vib = read_le32(s.base + 0x1C);      // ArcFile::ofs_1C : table des vibrations
-            if (vib && !swap_vib_tbl(s, vib))
-                std::printf("[PORT] endian : table de vibrations inattendue\n");
             const u32 mes012 = read_le32(s.base + 0x28);   // ArcFile::ofs_28, deja retourne
             const u32 mes3 = read_le32(s.base + 0x54);     // ArcFile::ofs_54
             if (mes012 && !swap_mes_tbl(s, mes012, arc_chunk_end(s, mes012)))
@@ -736,6 +852,7 @@ bool conv_tpl(const Span &s, u32 at, u32 end) { (void) end; return swap_tpl(s, a
 // morceau) restent telles quelles - c'est la couche GX qui les lira gros-boutistes.
 bool conv_model_bin(const Span &s, u32 at, u32 end)
 {
+    track_label("BIN");
     if (!s.has(at, 0x40))
         return false;
     u8 *h = s.base + at;
@@ -775,7 +892,10 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     auto ok = [&](u32 o, u32 n) { return o >= 0x40 && (u64) o + n <= size_all; };
 
     // Verifications d'abord : on ne touche a rien si une region deborde.
-    if (!ok(pHead, nParts * 16) || !ok(vtxOrig, nVtx * 8) || !ok(pParts, 0x20)) {
+    // Les enregistrements d'articulations ne sont pas comptes par `nParts` (qui compte les morceaux
+    // d'affichage) : leur nombre est ce qui tient entre le tableau et la region suivante.
+    const u32 nHead = pHead >= 0x40 ? (region_end(pHead) - pHead) / 16 : 0;
+    if (!ok(pHead, nHead * 16) || !ok(vtxOrig, nVtx * 8) || !ok(pParts, 0x20)) {
         std::printf("[PORT] endian : BIN a +0x%x : regions incoherentes (taille %u, nParts %u pHead %x, nVtx %u vtx %x, pParts %x, nNrm %u nrm %x, flags %08x)\n",
                     (unsigned) at, (unsigned) size_all, (unsigned) nParts, (unsigned) pHead, (unsigned) nVtx, (unsigned) vtxOrig,
                     (unsigned) pParts, (unsigned) nNrm, (unsigned) nrmOrig, (unsigned) flags);
@@ -787,6 +907,11 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
         return false;
     }
 
+    if (g_trace_on)
+        std::printf("[ARC] BIN +0x%x (%u octets) : head %x clr %x tex %x wgt %x parts %x vtx %x nrm %x blend %x flip %x nParts %u nVtx %u nNrm %u x2A %u flags %08x\n",
+                    (unsigned) at, (unsigned) size_all, (unsigned) pHead, (unsigned) pClr, (unsigned) pTex, (unsigned) pWeight,
+                    (unsigned) pParts, (unsigned) vtxOrig, (unsigned) nrmOrig, (unsigned) blendTbl, (unsigned) flipTbl,
+                    (unsigned) nParts, (unsigned) nVtx, (unsigned) nNrm, (unsigned) x2A, (unsigned) flags);
     // en-tete
     static const u32 words[] = { 0x00u, 0x04u, 0x08u, 0x0Cu, 0x10u, 0x14u, 0x1Cu, 0x20u, 0x24u, 0x2Cu, 0x30u, 0x34u, 0x3Cu };
     for (u32 w : words)
@@ -801,7 +926,7 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     swap_u16(h + 0x3A);
 
     // enregistrements de parties : 4 octets d'indices puis la position
-    for (u32 i = 0; i < nParts; ++i) {
+    for (u32 i = 0; i < nHead; ++i) {
         u8 *r = h + pHead + i * 16;
         for (int k = 1; k < 4; ++k)
             swap_u32(r + 4 * k);
@@ -866,6 +991,198 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     return true;
 }
 
+// ---- Donnees d'effets (src/game/eff_sys.cpp, EffData version 0xB)
+//
+// Un en-tete de douze mots, puis des tables : identifiants de textures, TPL, animations, listes
+// et donnees d'effets (EST/SST), chemins, modeles d'effets (BIN + TPL + mouvements). Ici : tout ce
+// que l'enregistrement lit tout de suite. Les sequences d'effets elles-memes (EspSeqData) ne sont
+// lues qu'au declenchement d'un effet : elles attendent leur convertisseur, signale a l'execution.
+bool conv_model_bin(const Span &s, u32 at, u32 end);
+
+bool swap_eff_data(const Span &s, u32 at)
+{
+    track_label("EFF");
+    if (!s.has(at, 0x30))
+        return false;
+    u8 *h = s.base + at;
+    if (read_be32(h) != 0xBu)
+        return false;
+    u32 f[12];
+    for (int k = 0; k < 12; ++k)
+        f[k] = read_be32(h + 4 * k);
+    for (int k = 0; k < 12; ++k)
+        swap_u32(h + 4 * k);
+    auto id_tbl = [&](u32 ofs) -> u32 {
+        track_label("eff:id_tbl");
+        if (!s.has(at + ofs, 4))
+            return 0;
+        const u32 n = read_be32(s.base + at + ofs);
+        if (n > 0x400 || !s.has(at + ofs + 4, n * 8))
+            return 0;
+        swap_u32(s.base + at + ofs);
+        for (u32 i = 0; i < n; ++i) {
+            u8 *e = s.base + at + ofs + 4 + i * 8;
+            swap_u16(e);
+            swap_u16(e + 2);
+            swap_u32(e + 4);
+        }
+        return n;
+    };
+    // `limit` : le jeu ne parcourt que autant d'entrees que la table d'identifiants en annonce
+    // (EspDataLoad boucle sur `ids->num`) ; la table de decalages peut en porter davantage, et
+    // les suivre mene au milieu d'autres donnees.
+    auto ofs_tbl = [&](u32 ofs, int kind, u32 limit) {
+        track_label("eff:ofs_tbl");
+        if (!s.has(at + ofs, 4))
+            return;
+        u32 n = read_be32(s.base + at + ofs);
+        if (n > 0x400 || !s.has(at + ofs + 4, n * 4))
+            return;
+        swap_u32(s.base + at + ofs);
+        if (n > limit)
+            n = limit;
+        for (u32 i = 0; i < n; ++i) {
+            u8 *e = s.base + at + ofs + 4 + i * 4;
+            const u32 o = read_be32(e);
+            swap_u32(e);
+            if (!o)
+                continue;
+            const u32 t = at + ofs + o;
+            if (kind == 0)
+                swap_tpl(s, t);
+            else if (kind == 1)
+                swap_tex_anm(s, t);
+            else if (kind == 2) {                       // EffEfmEnt : cinq mots, puis modele / TPL / mouvements
+                if (!s.has(t, 20))
+                    continue;
+                const u32 eo[5] = { read_be32(s.base + t), read_be32(s.base + t + 4), read_be32(s.base + t + 8),
+                                    read_be32(s.base + t + 12), read_be32(s.base + t + 16) };
+                for (int k = 0; k < 5; ++k)
+                    swap_u32(s.base + t + 4 * k);
+                if (std::getenv("RE4_TRACE_ENDIAN"))
+                    std::printf("[ARC] EFM %u a +0x%x : x0=%x modele +%x tpl +%x mot +%x x +%x\n", (unsigned) i, (unsigned) t, (unsigned) eo[0], (unsigned) eo[1], (unsigned) eo[2], (unsigned) eo[3], (unsigned) eo[4]);
+                if (eo[1]) {
+                    u32 mend = s.size;                  // le modele finit ou commence le TPL, les mouvements ou l'entree suivante
+                    const u32 cand[3] = { eo[2], eo[3], eo[4] };
+                    for (int k = 0; k < 3; ++k)
+                        if (cand[k] > eo[1] && t + cand[k] < mend)
+                            mend = t + cand[k];
+                    conv_model_bin(s, t + eo[1], mend);
+                }
+                if (eo[2])
+                    swap_tpl(s, t + eo[2]);
+                if (eo[3] && s.has(t + eo[3], 4)) {     // table de mouvements : num + decalages
+                    u8 *m = s.base + t + eo[3];
+                    const u32 mn = read_be32(m);
+                    if (mn <= 0x100 && s.has(t + eo[3] + 4, mn * 4)) {
+                        swap_u32(m);
+                        for (u32 k = 0; k < mn; ++k)
+                            swap_u32(m + 4 + 4 * k);
+                    }
+                }
+            }
+        }
+    };
+    auto list_tbl = [&](u32 ofs) -> u32 {
+        track_label("eff:list");              // SstList : num, puis (no, type, x4) x num
+        if (!s.has(at + ofs, 4))
+            return 0;
+        const u32 n = read_be32(s.base + at + ofs);
+        if (n > 0x1000 || !s.has(at + ofs + 4, n * 8))
+            return 0;
+        swap_u32(s.base + at + ofs);
+        for (u32 i = 0; i < n; ++i) {
+            u8 *e = s.base + at + ofs + 4 + i * 8;
+            swap_u16(e);
+            swap_u16(e + 2);
+            swap_u32(e + 4);
+        }
+        return n;
+    };
+    auto data_tbl = [&](u32 ofs, u32 n) {
+        track_label("eff:data");              // SstData : x0, puis n decalages vers les sequences
+        if (!n || !s.has(at + ofs, 4 + n * 4))
+            return;
+        for (u32 i = 0; i < n + 1; ++i)
+            swap_u32(s.base + at + ofs + 4 * i);
+    };
+    const u32 ntex = id_tbl(f[1]);                     // identifiants de textures
+    ofs_tbl(f[6], 0, ntex);                            // TPL
+    ofs_tbl(f[7], 1, ntex);                            // animations
+    const u32 ne = list_tbl(f[2]);                     // EST
+    const u32 ns = list_tbl(f[3]);                     // SST
+    const u32 np = list_tbl(f[4]);                     // chemins
+    data_tbl(f[8], ne);
+    data_tbl(f[9], ns);
+    data_tbl(f[10], np);
+    const u32 nefm = id_tbl(f[5]);                     // identifiants de modeles d'effets
+    ofs_tbl(f[11], 2, nefm);                           // modeles d'effets
+    PORT_TODO("sequences d'effets (EST/SST/chemins)");
+    return true;
+}
+
+// ---- LIT : lumieres (cLit, include/light.h)
+//
+// u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
+// est un cLightEnv (0x104 octets : brouillard, reglages d'image, vent) suivi de `nLight` cLightWork
+// de 0x12C octets. Les couleurs sont des quadruplets d'octets (GXColor) : on n'y touche pas. Les
+// zones propres a chaque type de lumiere (cLightWork+0x6C, 0xEC) attendent leur convertisseur.
+bool conv_lit(const Span &s, u32 at, u32 end)
+{
+    track_label("LIT");
+    (void) end;
+    if (!s.has(at, 4))
+        return false;
+    u8 *h = s.base + at;
+    const u32 nCut = (u32) ((h[0] << 8) | h[1]);
+    if (nCut > 0x100 || !s.has(at + 4, nCut * 4)) {
+        std::printf("[PORT] endian : LIT a +0x%x : %u coupes (octets %02x %02x %02x %02x, deja touche : %s)\n", (unsigned) at, (unsigned) nCut,
+                    h[0], h[1], h[2], h[3], was_swapped(h, 2) ? g_trk.labels[g_trk.mark[at]] : "non");
+        return false;
+    }
+    swap_u16(h);
+    u32 done[0x100];
+    u32 ndone = 0;
+    for (u32 c = 0; c < nCut; ++c) {
+        u8 *e = h + 4 + c * 4;
+        const u32 o = read_be32(e);
+        swap_u32(e);
+        if (!o)
+            continue;
+        bool seen = false;
+        for (u32 k = 0; k < ndone; ++k)
+            if (done[k] == o)
+                seen = true;
+        if (seen)
+            continue;
+        if (ndone < 0x100)
+            done[ndone++] = o;
+        if (!s.has(at + o, 0x104)) {
+            std::printf("[PORT] endian : LIT a +0x%x : coupe %u hors du fichier (+0x%x)\n", (unsigned) at, (unsigned) c, (unsigned) o);
+            return false;
+        }
+        u8 *cut = h + o;
+        const u32 nLight = read_be32(cut + 4);
+        if (nLight > 0x100 || !s.has(at + o + 0x104, nLight * 0x12C)) {
+            std::printf("[PORT] endian : LIT a +0x%x : coupe %u : %u lumieres\n", (unsigned) at, (unsigned) c, (unsigned) nLight);
+            return false;
+        }
+        static const u32 envw[] = { 0x04u, 0x08u, 0x0Cu, 0x10u, 0x18u, 0x1Cu, 0x20u, 0x28u, 0x44u, 0xF8u };
+        for (u32 w : envw)
+            swap_u32(cut + w);
+        for (u32 i = 0; i < nLight; ++i) {
+            u8 *w = cut + 0x104 + i * 0x12C;
+            static const u32 ww[] = { 0x04u, 0x08u, 0x0Cu, 0x10u, 0x18u, 0x20u, 0x28u, 0x2Cu, 0x30u, 0x34u, 0x38u,
+                                      0x3Cu, 0x40u, 0x44u, 0x48u, 0x4Cu };
+            for (u32 o2 : ww)
+                swap_u32(w + o2);
+            swap_u16(w + 0x24);
+            swap_u16(w + 0x26);
+        }
+    }
+    return true;
+}
+
 // ---- SMD : la carte de decor de la salle (src/game/scroll.cpp, include/scroll.h)
 bool conv_smd(const Span &s, u32 at, u32 end)
 {
@@ -924,6 +1241,29 @@ bool conv_smd(const Span &s, u32 at, u32 end)
         std::printf("[ARC] SMD a +0x%x : %u travaux (+%u), tables bin %u@%x tpl %u@%x mot %u@%x\n", (unsigned) at, (unsigned) total, (unsigned) nWork,
                     (unsigned) nb, (unsigned) ofsBin, (unsigned) nt, (unsigned) ofsTpl, (unsigned) nm, (unsigned) ofsMot);
     bool all = true;
+    // Les entrees des trois tables, triees par adresse : chacune finit ou commence la suivante.
+    u32 starts[1024];
+    u32 nstarts = 0;
+    {
+        const u32 tbs[3] = { ofsBin, ofsTpl, ofsMot };
+        const u32 cnt[3] = { nb, nt, nm };
+        for (int k = 0; k < 3; ++k) {
+            if (!tbs[k] || !s.has(at + tbs[k], cnt[k] * 4))
+                continue;
+            for (u32 i = 0; i < cnt[k] && nstarts < 1024; ++i) {
+                const u32 o = read_be32(s.base + at + tbs[k] + i * 4);
+                if (o)
+                    starts[nstarts++] = at + tbs[k] + o;
+            }
+        }
+    }
+    auto next_start = [&](u32 a) {
+        u32 e = end;
+        for (u32 i = 0; i < nstarts; ++i)
+            if (starts[i] > a && starts[i] < e)
+                e = starts[i];
+        return e;
+    };
     auto fix_table = [&](u32 ofs, u32 n, int kind) {
         if (!ofs || !n || !s.has(at + ofs, n * 4))
             return;
@@ -935,7 +1275,7 @@ bool conv_smd(const Span &s, u32 at, u32 end)
                 continue;
             bool r = true;
             if (kind == 0)
-                r = conv_model_bin(s, at + ofs + o, end);
+                r = conv_model_bin(s, at + ofs + o, next_start(at + ofs + o));
             else if (kind == 1)
                 r = swap_tpl(s, at + ofs + o);
             if (!r) {
@@ -974,6 +1314,7 @@ const TagConv kRoomTags[] = {
     { "BIN", conv_model_bin },
     { "SMD", conv_smd },
     { "SMX", conv_smx },
+    { "LIT", conv_lit },
     { nullptr, nullptr }
 };
 
@@ -990,6 +1331,7 @@ bool room_tag_converted(const char *tag)
 extern "C" void port_room_arc_fix(void *arc, u32 size)
 {
     const Span s = { (u8 *) arc, size };
+    track_begin(arc, size, "salle");
     if (!arc || !s.has(0, 0x10)) {
         std::printf("[PORT] endian : archive de salle vide\n");
         return;
