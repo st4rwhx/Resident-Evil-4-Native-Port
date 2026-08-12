@@ -85,6 +85,10 @@ GXColor g_clear = {0, 0, 0, 255};
 u8 g_frac_pos = 0, g_frac_tex = 0;   // bits fractionnaires des attributs entiers
 
 GXAttrType g_desc[GX_VA_MAX_ATTR] = { GX_NONE };
+struct ArrDesc { const unsigned char *base; unsigned stride; };
+ArrDesc g_arr[GX_VA_MAX_ATTR];
+unsigned char g_ctype[GX_VA_MAX_ATTR];   // GX_U8..GX_F32 (ou format de couleur)
+unsigned char g_cfrac[GX_VA_MAX_ATTR];
 u8 g_ncomp[GX_VA_MAX_ATTR] = { 0 };      // composantes par attribut, depuis GXSetVtxAttrFmt
 
 int g_stream_attr = -1;                  // attribut en cours dans le flux direct
@@ -368,9 +372,11 @@ void GXSetVtxDesc(GXAttr attr, GXAttrType type)
 // 2^frac fois trop grande : le modele est la, mais a l'echelle d'un immeuble.
 void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType type, u8 frac)
 {
-    (void)vtxfmt; (void)type;
+    (void)vtxfmt;
     if (attr < 0 || attr >= GX_VA_MAX_ATTR)
         return;
+    g_ctype[attr] = (unsigned char) type;
+    g_cfrac[attr] = frac;
     // GXCompCnt est un enum par famille d'attribut : pour une position, 0 = XY et 1 = XYZ ;
     // pour une couleur, 0 = RGB et 1 = RGBA ; pour une coordonnee de texture, 0 = S et 1 = ST.
     if (attr == GX_VA_POS) {
@@ -475,6 +481,135 @@ void GXNormal3s8(s8 x, s8 y, s8 z) { (void)x; (void)y; (void)z; attr_done(GX_VA_
 // L'indice de matrice par sommet, pour la palette de skinning. Il sera lu quand le portage
 // gerera les matrices multiples ; pour l'instant tout passe par la matrice courante.
 void GXMatrixIndex1u8(u8 idx) { (void)idx; attr_done(GX_VA_PNMTXIDX); }
+
+// ---------------------------------------------------------------- tableaux de sommets et listes d'affichage
+//
+// Les modeles de RE4 ne passent pas leurs sommets un par un : ils declarent des tableaux
+// (GXSetArray) et appellent une liste d'affichage dont les sommets ne sont que des indices. La
+// liste est telle qu'elle est sur le disque - gros-boutiste ; les tableaux, eux, ont ete retournes
+// par port/endian.cpp (ou produits par le skinning du jeu) et se lisent dans le sens de la machine.
+
+inline unsigned rd16be(const unsigned char *p) { return ((unsigned) p[0] << 8) | p[1]; }
+inline unsigned rd32be(const unsigned char *p) { return ((unsigned) p[0] << 24) | ((unsigned) p[1] << 16) | ((unsigned) p[2] << 8) | p[3]; }
+
+// Lit une composante numerique ; `be` : donnees de la liste (gros-boutiste) ou du tableau (natif).
+// Rend le nombre d'octets consommes.
+unsigned dl_read_comp(const unsigned char *p, int type, int frac, bool be, float *out)
+{
+    switch (type) {
+    case 0: *out = (float) p[0] / (float) (1 << frac); return 1;
+    case 1: *out = (float) (signed char) p[0] / (float) (1 << frac); return 1;
+    case 2: { unsigned v = be ? rd16be(p) : (unsigned) (p[0] | (p[1] << 8)); *out = (float) v / (float) (1 << frac); return 2; }
+    case 3: { int v = (short) (be ? rd16be(p) : (unsigned) (p[0] | (p[1] << 8))); *out = (float) v / (float) (1 << frac); return 2; }
+    default: {
+        unsigned v = be ? rd32be(p) : (unsigned) (p[0] | (p[1] << 8) | (p[2] << 16) | ((unsigned) p[3] << 24));
+        float f; std::memcpy(&f, &v, 4); *out = f; return 4;
+    }
+    }
+}
+
+unsigned dl_attr_bytes(int attr, int type, int ncomp)
+{
+    if (attr == GX_VA_CLR0 || attr == GX_VA_CLR1) {
+        switch (type) { case 0: return 2; case 1: return 3; case 2: return 4; case 3: return 2; case 4: return 3; default: return 4; }
+    }
+    const unsigned sz = (type == 0 || type == 1) ? 1 : (type == 2 || type == 3) ? 2 : 4;
+    return sz * (unsigned) ncomp;
+}
+
+// Une liste d'affichage : des primitives (0x80..0xB8 | format), du remplissage (0), et quelques
+// commandes de registre qu'on saute.
+void gx_dl_run(const unsigned char *p, unsigned size)
+{
+    const unsigned char *end = p + size;
+    while (p < end) {
+        const unsigned op = *p++;
+        if (op == 0 || op == 0x48 || op == 0x44)          // NOP, invalidation de cache
+            continue;
+        if ((op & 0x80) == 0)
+            return;                                       // commande de registre : pas dans les modeles
+        const GXPrimitive prim = (GXPrimitive) (op & 0xF8);
+        if (p + 2 > end)
+            return;
+        const unsigned n = rd16be(p);
+        p += 2;
+        GXBegin(prim, (GXVtxFmt) (op & 7), (u16) n);
+        for (unsigned v = 0; v < n; ++v) {
+            float x = 0, y = 0, z = 0, a, b, c, d;
+            const unsigned char *pos_src = nullptr;
+            // indice de matrice par sommet puis de matrices de texture : un octet chacun, directs
+            for (int s = 0; s < STREAM_N; ++s) {
+                const GXAttr at = STREAM_ORDER[s];
+                if (g_desc[at] == GX_NONE)
+                    continue;
+                const bool direct = g_desc[at] == GX_DIRECT;
+                if (at <= GX_VA_TEX7MTXIDX) {
+                    if (direct) ++p;
+                    continue;
+                }
+                const unsigned char *src;
+                bool be;
+                if (direct) {
+                    src = p; be = true;
+                } else {
+                    unsigned idx;
+                    if (g_desc[at] == GX_INDEX8) { idx = *p; ++p; }
+                    else { idx = rd16be(p); p += 2; }
+                    src = g_arr[at].base ? g_arr[at].base + (size_t) idx * g_arr[at].stride : nullptr;
+                    be = false;
+                }
+                const int type = g_ctype[at], frac = g_cfrac[at];
+                const int nc = comps_of(at);
+                const unsigned bytes = dl_attr_bytes(at, type, nc);
+                if (direct)
+                    p += bytes;
+                if (!src)
+                    src = (const unsigned char *) "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+                if (at == GX_VA_POS) {
+                    dl_read_comp(src, type, frac, be, &x);
+                    unsigned o = (type == 0 || type == 1) ? 1 : (type == 2 || type == 3) ? 2 : 4;
+                    dl_read_comp(src + o, type, frac, be, &y);
+                    if (nc > 2) dl_read_comp(src + 2 * o, type, frac, be, &z);
+                    pos_src = src;
+                    GXPosition3f32(x, y, z);
+                } else if (at == GX_VA_NRM) {
+                    attr_done(GX_VA_NRM);
+                } else if (at == GX_VA_CLR0 || at == GX_VA_CLR1) {
+                    a = src[0]; b = src[1]; c = src[2]; d = (type == 5) ? src[3] : 255;
+                    GXColor4u8((u8) a, (u8) b, (u8) c, (u8) d);
+                } else {
+                    float u = 0, w = 0;
+                    const unsigned o = (type == 0 || type == 1) ? 1 : (type == 2 || type == 3) ? 2 : 4;
+                    dl_read_comp(src, type, frac, be, &u);
+                    if (nc > 1) dl_read_comp(src + o, type, frac, be, &w);
+                    GXTexCoord2f32(u, w);
+                }
+            }
+            (void) pos_src;
+        }
+        port_gx_end();
+    }
+}
+
+void GXSetArray(GXAttr attr, void *base_ptr, u8 stride)
+{
+    if (attr >= 0 && attr < GX_VA_MAX_ATTR) {
+        g_arr[attr].base = (const unsigned char *) base_ptr;
+        g_arr[attr].stride = stride;
+    }
+}
+
+void GXCallDisplayList(void *list, u32 nbytes) { gx_dl_run((const unsigned char *) list, nbytes); }
+
+// Le jeu demande un rappel quand le GPU a fini une etape : ici le dessin est enregistre et rejoue
+// plus tard, donc l'etape est consideree finie tout de suite.
+static GXDrawSyncCallback g_sync_cb = nullptr;
+GXDrawSyncCallback GXSetDrawSyncCallback(GXDrawSyncCallback cb) { GXDrawSyncCallback o = g_sync_cb; g_sync_cb = cb; return o; }
+void GXSetDrawSync(u16 token) { if (g_sync_cb) g_sync_cb(token); }
+void GXDrawDone(void) {}
+void GXPixModeSync(void) {}
+void GXInvalidateVtxCache(void) {}
+
 
 // ------------------------------------------------- flux direct : le pipe
 //

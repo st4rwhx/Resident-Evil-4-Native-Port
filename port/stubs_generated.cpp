@@ -67,10 +67,8 @@ s32 DVDGetCommandBlockStatus(const DVDCommandBlock* block) { PORT_TODO("DVDGetCo
 int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); return 0; }   // include\dolphin\dvd.h
 int DVDReadDir(DVDDir* dir, DVDDirEntry* dirent) { PORT_TODO("DVDReadDir"); return 0; }   // include\dolphin\dvd.h
 void GXBeginDisplayList(void* list, u32 size) { PORT_TODO("GXBeginDisplayList"); }   // include\dolphin\gx\GXDispList.h
-void GXCallDisplayList(void* list, u32 nbytes) { PORT_TODO("GXCallDisplayList"); }   // include\dolphin\gx\GXDispList.h
 void GXClearBoundingBox() { PORT_TODO("GXClearBoundingBox"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXCopyTex(void* dest, GXBool clear) { PORT_TODO("GXCopyTex"); }   // include\dolphin\gx\GXFrameBuffer.h
-void GXDrawDone() { PORT_TODO("GXDrawDone"); }   // include\dolphin\gx\GXManage.h
 void GXDrawTorus(f32 rc, u8 numc, u8 numt) { PORT_TODO("GXDrawTorus"); }   // include\dolphin\gx\GXDraw.h
 void GXEnableTexOffsets(GXTexCoordID coord, u8 line_enable, u8 point_enable) { PORT_TODO("GXEnableTexOffsets"); }   // include\dolphin\gx\GXGeometry.h
 u32 GXEndDisplayList() { PORT_TODO("GXEndDisplayList"); return 0; }   // include\dolphin\gx\GXDispList.h
@@ -84,13 +82,10 @@ void GXInitLightDir(GXLightObj* lt_obj, f32 nx, f32 ny, f32 nz) { PORT_TODO("GXI
 void GXInitLightDistAttn(GXLightObj* lt_obj, f32 ref_dist, f32 ref_br, GXDistAttnFn dist_func) { PORT_TODO("GXInitLightDistAttn"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightPos(GXLightObj* lt_obj, f32 x, f32 y, f32 z) { PORT_TODO("GXInitLightPos"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightSpot(GXLightObj* lt_obj, f32 cutoff, GXSpotFn spot_func) { PORT_TODO("GXInitLightSpot"); }   // include\dolphin\gx\GXLighting.h
-void GXInvalidateVtxCache() { PORT_TODO("GXInvalidateVtxCache"); }   // include\dolphin\gx\GXGeometry.h
 void GXLoadLightObjImm(const GXLightObj* lt_obj, GXLightID light) { PORT_TODO("GXLoadLightObjImm"); }   // include\dolphin\gx\GXLighting.h
 void GXLoadNrmMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadNrmMtxImm"); }   // include\dolphin\gx\GXTransform.h
 void GXPeekZ(u16 x, u16 y, u32* z) { PORT_TODO("GXPeekZ"); }   // include\dolphin\gx\GXCpu2Efb.h
-void GXPixModeSync() { PORT_TODO("GXPixModeSync"); }   // include\dolphin\gx\GXManage.h
 void GXProject(f32 x, f32 y, f32 z, const f32 mtx[3][4], const f32* pm, const f32* vp, f32* sx, f32* sy, f32* sz) { PORT_TODO("GXProject"); }   // include\dolphin\gx\GXTransform.h
-void GXSetArray(GXAttr attr, void* base_ptr, u8 stride) { PORT_TODO("GXSetArray"); }   // include\dolphin\gx\GXGeometry.h
 void GXSetCopyFilter(GXBool aa, const u8 sample_pattern[12][2], GXBool vf, const u8 vfilter[7]) { PORT_TODO("GXSetCopyFilter"); }   // include\dolphin\gx\GXFrameBuffer.h
 OSThread* GXSetCurrentGXThread() { PORT_TODO("GXSetCurrentGXThread"); return nullptr; }   // include\dolphin\gx\GXFifo.h
 void GXSetCurrentMtx(u32 id) { PORT_TODO("GXSetCurrentMtx"); }   // include\dolphin\gx\GXTransform.h
@@ -99,8 +94,6 @@ void GXSetDispCopyGamma(GXGamma gamma) { PORT_TODO("GXSetDispCopyGamma"); }   //
 void GXSetDispCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetDispCopySrc"); }   // include\dolphin\gx\GXFrameBuffer.h
 u32 GXSetDispCopyYScale(f32 vscale) { PORT_TODO("GXSetDispCopyYScale"); return 0; }   // include\dolphin\gx\GXFrameBuffer.h
 void GXSetDither(GXBool dither) { PORT_TODO("GXSetDither"); }   // include\dolphin\gx\GXPixel.h
-void GXSetDrawSync(u16 token) { PORT_TODO("GXSetDrawSync"); }   // include\dolphin\gx.h
-GXDrawSyncCallback GXSetDrawSyncCallback(GXDrawSyncCallback cb) { PORT_TODO("GXSetDrawSyncCallback"); return {}; }   // include\dolphin\gx\GXManage.h
 void GXSetDstAlpha(GXBool enable, u8 alpha) { PORT_TODO("GXSetDstAlpha"); }   // include\dolphin\gx\GXPixel.h
 void GXSetFog(GXFogType type, f32 startz, f32 endz, f32 nearz, f32 farz, GXColor color) { PORT_TODO("GXSetFog"); }   // include\dolphin\gx\GXPixel.h
 void GXSetIndTexCoordScale(GXIndTexStageID ind_state, GXIndTexScale scale_s, GXIndTexScale scale_t) { PORT_TODO("GXSetIndTexCoordScale"); }   // include\dolphin\gx\GXBump.h
