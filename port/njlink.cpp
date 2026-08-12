@@ -263,7 +263,75 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint) fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_fbo[slot]);
+    // la copie obeit au ciseau et au masque de couleur que le rendu laisse tels que le jeu les a poses
+    // (en jeu : rectangle de ciseau, ecriture de l'alpha seul) : l'image partait noire (nj22)
+    GLboolean cm0[4];
+    glGetBooleanv(GL_COLOR_WRITEMASK, cm0);
+    const GLboolean sc0 = glIsEnabled(GL_SCISSOR_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    static unsigned n_blit = 0;
+    const bool diag = (++n_blit % 300) == 0;
+    GLenum e0 = 0, e1 = 0, rs = 0, ds = 0;
+    GLint rb = 0;
+    if (diag) {
+        e0 = glGetError();
+        rs = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
+        ds = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+        glGetIntegerv(GL_READ_BUFFER, &rb);
+    }
     glBlitFramebuffer(x, y, x + w, y + h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    if (diag) {
+        e1 = glGetError();
+        std::printf("[NJLINK] copie %u : erreur avant %x apres %x, lecture %x (tampon %x), ecriture %x, src (%d,%d %dx%d)\n", n_blit, e0, e1, rs,
+                    (unsigned) rb, ds, x, y, w, h);
+    }
+    glColorMask(cm0[0], cm0[1], cm0[2], cm0[3]);
+    if (sc0) glEnable(GL_SCISSOR_TEST);
+    {   // l'alpha de l'EFB n'est pas une opacite (le XFB du GameCube n'en a pas) : en jeu il vaut souvent 0,
+        // et l'appli affichait alors l'image transparente, donc noire (nj18 : centre 7D7D76, alpha 00)
+        GLboolean cm[4];
+        GLfloat cc[4];
+        glGetBooleanv(GL_COLOR_WRITEMASK, cm);
+        glGetFloatv(GL_COLOR_CLEAR_VALUE, cc);
+        const GLboolean sc = glIsEnabled(GL_SCISSOR_TEST);
+        glBindFramebuffer(GL_FRAMEBUFFER, g_fbo[slot]);
+        glDisable(GL_SCISSOR_TEST);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glColorMask(cm[0], cm[1], cm[2], cm[3]);
+        glClearColor(cc[0], cc[1], cc[2], cc[3]);
+        if (sc) glEnable(GL_SCISSOR_TEST);
+        static unsigned n_meas = 0;
+        if (++n_meas % 300 == 0) {   // diagnostic N3 : ce qui part vraiment a l'appli (16 points de l'image partagee)
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, g_fbo[slot]);
+            unsigned sum = 0, lit = 0;
+            unsigned char px[4];
+            for (int j = 0; j < 4; ++j)
+                for (int i = 0; i < 4; ++i) {
+                    glReadPixels(g_w * (2 * i + 1) / 8, g_h * (2 * j + 1) / 8, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
+                    sum += px[0] + px[1] + px[2];
+                    lit += (px[0] | px[1] | px[2]) > 8;
+                }
+            if (n_meas == 2400 || n_meas == 2700) {   // image complete dans un fichier (PPM), dossier de l'appli
+                static unsigned char img[640 * 480 * 4];
+                if (g_w <= 640 && g_h <= 480) {
+                    glReadPixels(0, 0, g_w, g_h, GL_RGBA, GL_UNSIGNED_BYTE, img);
+                    char path[300];
+                    const char* d = std::getenv("NJ_STORAGE_DIR");
+                    std::snprintf(path, sizeof path, "%s/njlink_%u.ppm", d ? d : ".", n_meas);
+                    if (std::FILE* f = std::fopen(path, "wb")) {
+                        std::fprintf(f, "P6 %d %d 255\n", g_w, g_h);
+                        for (int y = g_h - 1; y >= 0; --y)
+                            for (int x = 0; x < g_w; ++x) std::fwrite(img + 4 * (y * g_w + x), 1, 3, f);
+                        std::fclose(f);
+                    }
+                }
+            }
+            std::printf("[NJLINK] envoi %u : %ux%u, %u/16 points allumes, somme %u, alpha %u\n", n_meas, g_w, g_h, lit, sum, px[3]);
+        }
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) prev);
     int fence = -1;
     EGLDisplay dpy = eglGetCurrentDisplay();

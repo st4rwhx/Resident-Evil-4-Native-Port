@@ -6,6 +6,7 @@
 // GameCube y est un pointeur). Le portage (port/gx_sdk.cpp) lui passe le flux du SDK ; l'image finie part
 // a l'appli par njlink (images partagees).
 #include "njgfx_bridge.h"
+#include "../njlink.h"
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -35,7 +36,8 @@ extern "C" void njlink_gl_ready(int w, int h);
 extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
-extern "C" int port_host_scope;   // port/arm_hooks.cpp : allocations C++ hors du tas du jeu
+extern "C" int port_host_scope;
+extern "C" void njstate_fill(NjState *out);   // port/arm_hooks.cpp : allocations C++ hors du tas du jeu
 
 namespace {
 struct HostScope {   // tout ce que fait le rendu alloue avec malloc, pas dans le tas du jeu
@@ -60,6 +62,7 @@ std::vector<uint8_t> g_stream;   // octets pas encore lus (commande coupee en fi
 std::vector<gx::GxOp> g_ops;     // commandes de l'image en cours, dessins deja decodes
 size_t g_decoded;                // g_ops[0..g_decoded) decodes
 unsigned g_frames;
+unsigned g_skipped;   // images sans dessin, non envoyees
 
 bool init() {
   if (g_ready || g_failed) return g_ready;
@@ -136,6 +139,17 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   HostScope hs;
   take(bytes, size);
   if (!g_ready) return;
+  {   // image sans dessin (le jeu calcule a 30 i/s, VIFlush tombe a 60 Hz) : rien a montrer. Le rendu aurait
+      // fait l'effacement differe de l'EFB et l'appli aurait recu une image noire une fois sur deux (nj23) ;
+      // le VI du GameCube reaffiche le dernier XFB. Les commandes d'etat restent pour l'image suivante.
+    bool any_draw = false;
+    for (const auto &c : g_ops)
+      if (c.type == gx::GxOpKind::DrawPrimitive) { any_draw = true; break; }
+    if (!any_draw) {
+      ++g_skipped;
+      return;
+    }
+  }
   glBindFramebuffer(GL_FRAMEBUFFER, g_efb_fbo);
   glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
   const size_t nops = g_ops.size();
@@ -152,6 +166,24 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   gx::DecodeEpochAdvance();
   const int s = gfx::g_scale;
   ++g_frames;
+  if (g_frames % 300 == 0) {   // diagnostic N3 : 64 points de l'EFB (moyenne RGB, points non noirs) et mode du jeu
+    unsigned char px[4];
+    unsigned sum[3] = {0, 0, 0}, lit = 0;
+    GLint cur = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &cur);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_efb_fbo);
+    for (int j = 0; j < 8; ++j)
+      for (int i = 0; i < 8; ++i) {
+        glReadPixels((40 + 80 * i) * s, gfx::efb_h() - (30 + 60 * j) * s, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
+        for (int k = 0; k < 3; ++k) sum[k] += px[k];
+        lit += (px[0] | px[1] | px[2]) > 8;
+      }
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
+    NjState st;
+    njstate_fill(&st);
+    std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x\n", g_frames,
+                sum[0] / 64, sum[1] / 64, sum[2] / 64, lit, ndraws, (unsigned)st.mode, (unsigned)st.room);
+  }
   if (g_frames <= 3 || g_frames % 600 == 0) {   // diagnostic N3 : ce que le rendu a recu et ce qu'il a dessine
     unsigned char px[4] = {0, 0, 0, 0};
     GLint cur = 0;
