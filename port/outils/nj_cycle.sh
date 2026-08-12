@@ -1,0 +1,24 @@
+#!/bin/bash
+# Phase N3 : cycle complet natif.  nj_cycle.sh <etiquette> [secondes=70] [host|nohost]
+#  1. bibliotheque Nightjar + libmain (portable, branche natif-nj)  2. coeur (portable)  3. APK
+#  4. installation sur le S5, lancement de l'appli, journal du coeur resume (+ capture si CAPTURE=1)
+export MSYS_NO_PATHCONV=1
+M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"
+TAG=${1:?etiquette}; SEC=${2:-70}
+[ "${3:-host}" = host ] && bash "$M/laptop_m1_host.sh" 2>&1 | grep -E "ninja=|error:" | head -5
+bash "$M/laptop_port_build.sh" -O2 2>&1 | grep -E "build=|en echec|error" | head -6
+bash "$M/laptop_nj_apk.sh" "$TAG" 2>&1 | tail -1 | cut -c1-80
+$A install -r "C:/re4n/ce4_m1_out/apk/$TAG.apk" 2>&1 | tail -1
+$A shell "input keyevent KEYCODE_WAKEUP; am start -n org.nightjar.natif/org.nightjar.re4.RE4Activity >/dev/null; sleep $SEC"
+F=/sdcard/Android/data/org.nightjar.natif/files
+$A shell "echo coeur_vivant=\$(ps -A | grep -c njcore); grep -a -E 'NJGFX|signal|OSPanic' $F/core.log | head -10; echo ...; tail -4 $F/core.log" | cut -c1-200
+if [ -n "${CAPTURE:-}" ]; then
+  $A exec-out screencap -p > "$M/${TAG}_screen.png"
+  python -c "from PIL import Image; im=Image.open(r'$M/${TAG}_screen.png'); im.thumbnail((480,270)); im.save(r'$M/${TAG}_small.png')"
+fi
+if $A shell "grep -a -q 'signal' $F/core.log"; then
+  $A shell "grep -a -A16 'signal' $F/core.log" | tr -d '\r' > "$M/${TAG}_crash.txt"
+  ssh admin@192.168.1.124 "cat /c/re4n/re4port/_port_build/re4" > "$M/re4_${TAG}"
+  ADDRS=$(grep -oE "libnjcore.so \+ 0x[0-9a-f]+" "$M/${TAG}_crash.txt" | awk '{print $3}' | tr '\n' ' ')
+  /c/Android/android-ndk-r26d/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-addr2line.exe -e "$M/re4_${TAG}" -f -C $ADDRS 2>&1 | paste - - | cut -c1-190 | grep -v on_fault | head -12
+fi
