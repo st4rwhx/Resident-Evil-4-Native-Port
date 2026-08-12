@@ -50,7 +50,7 @@ CONLY = ['-std=gnu99', '-fdeclspec', '-fgnu89-inline']   # extern inline des en-
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip', 'njlink']
 
 
 # Unites du jeu volontairement **exclues** du portage.
@@ -237,7 +237,7 @@ def main():
         for o in ok + rel_objs:
             fh.write('"%s"\n' % os.path.relpath(o, ROOT).replace('\\', '/'))
     exe = os.path.join(args.out, 're4')
-    cmd = [cxx, '@' + rsp, '-o', exe, '-lEGL', '-lGLESv3', '-llog', '-static-libstdc++',
+    cmd = [cxx, '@' + rsp, '-o', exe, '-lEGL', '-lGLESv3', '-llog', '-landroid', '-static-libstdc++',
            # sans cela lld s'arrete a 20 erreurs, et on decouvre les symboles manquants
            # vingt par vingt au lieu d'une seule fois.
            '-Wl,--error-limit=0']

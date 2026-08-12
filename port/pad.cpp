@@ -14,6 +14,7 @@
 // jeu applique sa propre zone morte par-dessus. Un tactile qui enverrait 0..255 non signe ferait
 // courir Leon en permanence vers le coin haut-droit.
 #include "port_log.h"
+#include "njlink.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -75,6 +76,18 @@ u32 PADRead(PADStatus *status)
         PADInit();
 
     status[0] = g_state;
+    {   // appli Nightjar : sa manette (tactile ou physique) sur le canal 0
+        NjPad np;
+        if (njlink_pad(&np)) {
+            status[0].button = np.buttons;
+            status[0].stickX = np.stick_x;
+            status[0].stickY = np.stick_y;
+            status[0].substickX = np.substick_x;
+            status[0].substickY = np.substick_y;
+            status[0].triggerLeft = np.trigger_l;
+            status[0].triggerRight = np.trigger_r;
+        }
+    }
     // Banc d'essai : RE4_AUTOPAD=1 appuie sur Start puis sur A a intervalles reguliers, pour faire
     // avancer le jeu sans manette (utilise par les mesures sur appareil, jamais dans une diffusion).
     // RE4_PADFILE=<fichier> : un parcours scripte, une ligne par appui :

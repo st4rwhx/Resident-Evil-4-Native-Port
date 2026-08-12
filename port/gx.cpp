@@ -20,6 +20,7 @@
 //    dupliquant les sommets : le jeu en emet beaucoup pour l'interface.
 #include <time.h>
 #include "port_log.h"
+#include "njlink.h"
 
 extern "C" unsigned int port_gx_bound_texture(int unit);
 
@@ -294,6 +295,7 @@ extern "C" bool port_gx_init_offscreen(u32 w, u32 h)
     g_ctx = eglCreateContext(g_dpy, cfg, EGL_NO_CONTEXT, xa);
     if (eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) != EGL_TRUE)
         return false;
+    njlink_gl_ready((int)w, (int)h);   // images partagees avec l'appli Nightjar (si lance par elle)
 
     GLuint vs = make_shader(GL_VERTEX_SHADER, VS);
     GLuint fs = make_shader(GL_FRAGMENT_SHADER, FS);
@@ -1734,6 +1736,7 @@ void GXCopyDisp(void *dest, GXBool clear)
     if (!g_gl_ready)
         return;
     gx_replay();
+    njlink_frame();   // image finie : a l'appli Nightjar (si lance par elle)
     {
         static struct timespec t0; static unsigned n = 0; static double tgl = 0;
         struct timespec a1, a2; clock_gettime(CLOCK_MONOTONIC, &a1);
