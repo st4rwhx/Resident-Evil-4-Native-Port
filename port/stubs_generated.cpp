@@ -74,14 +74,7 @@ u32 GXEndDisplayList() { PORT_TODO("GXEndDisplayList"); return 0; }   // include
 void GXGetProjectionv(f32* ptr) { PORT_TODO("GXGetProjectionv"); }   // include\dolphin\gx\GXGet.h
 void* GXGetTexObjData(const GXTexObj* to) { PORT_TODO("GXGetTexObjData"); return nullptr; }   // include\dolphin\gx\GXGet.h
 void GXGetViewportv(f32* vp) { PORT_TODO("GXGetViewportv"); }   // include\dolphin\gx\GXGet.h
-void GXInitLightAttn(GXLightObj* lt_obj, f32 a0, f32 a1, f32 a2, f32 k0, f32 k1, f32 k2) { PORT_TODO("GXInitLightAttn"); }   // include\dolphin\gx\GXLighting.h
 void GXInitLightAttnK(GXLightObj* lt_obj, f32 k0, f32 k1, f32 k2) { PORT_TODO("GXInitLightAttnK"); }   // include\dolphin\gx\GXLighting.h
-void GXInitLightColor(GXLightObj* lt_obj, GXColor color) { PORT_TODO("GXInitLightColor"); }   // include\dolphin\gx\GXLighting.h
-void GXInitLightDir(GXLightObj* lt_obj, f32 nx, f32 ny, f32 nz) { PORT_TODO("GXInitLightDir"); }   // include\dolphin\gx\GXLighting.h
-void GXInitLightDistAttn(GXLightObj* lt_obj, f32 ref_dist, f32 ref_br, GXDistAttnFn dist_func) { PORT_TODO("GXInitLightDistAttn"); }   // include\dolphin\gx\GXLighting.h
-void GXInitLightPos(GXLightObj* lt_obj, f32 x, f32 y, f32 z) { PORT_TODO("GXInitLightPos"); }   // include\dolphin\gx\GXLighting.h
-void GXInitLightSpot(GXLightObj* lt_obj, f32 cutoff, GXSpotFn spot_func) { PORT_TODO("GXInitLightSpot"); }   // include\dolphin\gx\GXLighting.h
-void GXLoadLightObjImm(const GXLightObj* lt_obj, GXLightID light) { PORT_TODO("GXLoadLightObjImm"); }   // include\dolphin\gx\GXLighting.h
 void GXLoadNrmMtxImm(const f32 mtx[3][4], u32 id) { PORT_TODO("GXLoadNrmMtxImm"); }   // include\dolphin\gx\GXTransform.h
 void GXPeekZ(u16 x, u16 y, u32* z) { PORT_TODO("GXPeekZ"); }   // include\dolphin\gx\GXCpu2Efb.h
 void GXProject(f32 x, f32 y, f32 z, const f32 mtx[3][4], const f32* pm, const f32* vp, f32* sx, f32* sy, f32* sz) { PORT_TODO("GXProject"); }   // include\dolphin\gx\GXTransform.h

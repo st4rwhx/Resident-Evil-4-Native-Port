@@ -2006,6 +2006,14 @@ bool conv_ese(const Span &s, u32 at, u32 end)
     return true;
 }
 
+// ---- MDT : textes de la salle (table de messages, memes regles que core.das)
+bool conv_mdt(const Span &s, u32 at, u32 end)
+{
+    if (end > s.size)
+        end = s.size;
+    return swap_mes_tbl(s, at, end);
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -2203,6 +2211,7 @@ const TagConv kRoomTags[] = {
     { "SMX", conv_smx },
     { "LIT", conv_lit },
     { "SHD", conv_shd },
+    { "MDT", conv_mdt },
     { "EAR", conv_ear },
     { "SAR", conv_sar },
     { "FSE", conv_fse },

@@ -29,6 +29,7 @@ extern "C" unsigned int port_gx_bound_texture(int unit);
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <math.h>
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
@@ -55,6 +56,7 @@ struct Vertex {
     unsigned char r, g, b, a;       // couleur 0
     unsigned char r1, g1, b1, a1;   // couleur 1
     float uv[4][2];                 // coordonnees de texture 0..3
+    float nx, ny, nz;               // normale
 };
 
 const int MAX_VERTS = 65536;
@@ -314,6 +316,8 @@ extern "C" bool port_gx_init_offscreen(u32 w, u32 h)
     glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+    glEnableVertexAttribArray(7);
+    glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)52);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void *)12);
     glEnableVertexAttribArray(2);
@@ -419,6 +423,7 @@ void GXPosition3f32(f32 x, f32 y, f32 z)
     commit_vertex();
     g_cur.x = x; g_cur.y = y; g_cur.z = z;
     std::memset(g_cur.uv, 0, sizeof(g_cur.uv));
+    g_cur.nx = 0; g_cur.ny = 0; g_cur.nz = 1;
     g_cur.r = g_cur.g = g_cur.b = g_cur.a = 255;
     g_cur.r1 = g_cur.g1 = g_cur.b1 = g_cur.a1 = 255;
     g_tex_seq = g_clr_seq = 0;
@@ -451,7 +456,7 @@ void GXTexCoord2f32(f32 u, f32 v)
     if (k < 4) { g_cur.uv[k][0] = u; g_cur.uv[k][1] = v; }
     attr_done(at);
 }
-void GXNormal3f32(f32 x, f32 y, f32 z) { (void)x; (void)y; (void)z; attr_done(GX_VA_NRM); }
+void GXNormal3f32(f32 x, f32 y, f32 z) { g_cur.nx = x; g_cur.ny = y; g_cur.nz = z; attr_done(GX_VA_NRM); }
 
 // Les memes attributs en virgule fixe. RE4 s'en sert partout ou il peut : c'est par la que
 // passe la geometrie des salles et des personnages, pas par les variantes flottantes.
@@ -476,7 +481,7 @@ void GXTexCoord2s16(s16 s, s16 t)
 // Les normales s8 sont toujours en 1.7 : le bit de signe et sept bits de fraction, donc 127
 // vaut presque 1. Elles ne servent pas encore (l'eclairage viendra avec TEV), mais il faut les
 // consommer : une normale laissee dans le flux decalerait l'attribut suivant.
-void GXNormal3s8(s8 x, s8 y, s8 z) { (void)x; (void)y; (void)z; attr_done(GX_VA_NRM); }
+void GXNormal3s8(s8 x, s8 y, s8 z) { g_cur.nx = x / 64.0f; g_cur.ny = y / 64.0f; g_cur.nz = z / 64.0f; attr_done(GX_VA_NRM); }
 
 // L'indice de matrice par sommet, pour la palette de skinning. Il sera lu quand le portage
 // gerera les matrices multiples ; pour l'instant tout passe par la matrice courante.
@@ -573,6 +578,13 @@ void gx_dl_run(const unsigned char *p, unsigned size)
                     pos_src = src;
                     GXPosition3f32(x, y, z);
                 } else if (at == GX_VA_NRM) {
+                    const int nfrac = (type == 1) ? 6 : (type == 3) ? 14 : 0;
+                    const unsigned o = (type == 0 || type == 1) ? 1 : (type == 2 || type == 3) ? 2 : 4;
+                    float nxv = 0, nyv = 0, nzv = 1;
+                    dl_read_comp(src, type, nfrac, be, &nxv);
+                    dl_read_comp(src + o, type, nfrac, be, &nyv);
+                    dl_read_comp(src + 2 * o, type, nfrac, be, &nzv);
+                    g_cur.nx = nxv; g_cur.ny = nyv; g_cur.nz = nzv;
                     attr_done(GX_VA_NRM);
                 } else if (at == GX_VA_CLR0 || at == GX_VA_CLR1) {
                     a = src[0]; b = src[1]; c = src[2]; d = (type == 5) ? src[3] : 255;
@@ -750,6 +762,7 @@ struct TevDyn {
     float aref[2];
     unsigned char cmask, amask, pad[2];
     float tm[10][16];    // GX_TEXMTX0..9, en 4x4 colonne par colonne
+    float lp[8][4], ld[8][4], lc[8][4], la[8][4], lk[8][4];   // lumieres : position, direction vers la lumiere, couleur, a0..a2, k0..k2
 };
 struct TevCfg { TevStatic s; TevDyn d; };
 
@@ -775,7 +788,7 @@ unsigned hash_bytes(const void *p, size_t n)
 struct Prog {
     unsigned key;
     GLuint prog;
-    GLint u_mvp, u_reg, u_k, u_mat, u_aref, u_tm;
+    GLint u_mvp, u_reg, u_k, u_mat, u_aref, u_tm, u_mv, u_amb, u_lp, u_ld, u_lc, u_la, u_lk;
 };
 Prog g_progs[256];
 int g_nprogs = 0;
@@ -841,14 +854,38 @@ GLuint build_program(const TevStatic &s)
           "layout(location=4) in vec2 aT1;\n"
           "layout(location=5) in vec2 aT2;\n"
           "layout(location=6) in vec2 aT3;\n"
-          "uniform mat4 uMVP;\n"
+          "layout(location=7) in vec3 aN;\n"
+          "uniform mat4 uMVP; uniform mat4 uMV; uniform vec4 uAmb[2];\n"
+          "uniform vec4 uLP[8]; uniform vec4 uLD[8]; uniform vec4 uLC[8]; uniform vec4 uLA[8]; uniform vec4 uLK[8];\n"
           "uniform mat4 uTM[10];\n"
-          "out vec4 vC0; out vec4 vC1;\n"
+          "out vec4 vC0; out vec4 vC1; out vec3 vL0; out vec3 vL1;\n"
           "out vec3 vT[8];\n"
           "void main(){\n"
-          "  vC0 = aC0; vC1 = aC1;\n"
+          "  vC0 = aC0; vC1 = aC1; vL0 = vec3(1.0); vL1 = vec3(1.0);\n"
           "  vec2 t[4]; t[0]=aT0; t[1]=aT1; t[2]=aT2; t[3]=aT3;\n"
           "  vec4 p4 = vec4(aPos, 1.0);\n");
+    // Eclairage par sommet, comme le materiel : ambiant + somme des lumieres du masque, borne a 1.
+    for (int chn = 0; chn < 2; ++chn) {
+        const ChanCfg &cc = s.ch[chn * 2];
+        if (!cc.en || !cc.lmask)
+            continue;
+        v.add("  {\n    vec3 vp = (uMV * p4).xyz; vec3 n = normalize(mat3(uMV) * aN);\n    vec3 acc = %s;\n",
+              cc.amb ? (chn ? "aC1.rgb" : "aC0.rgb") : (chn ? "uAmb[1].rgb" : "uAmb[0].rgb"));
+        for (int li = 0; li < 8; ++li) {
+            if (!(cc.lmask & (1u << li)))
+                continue;
+            v.add("    { vec3 d = uLP[%d].xyz - vp; float dist = max(length(d), 1e-4); vec3 L = d / dist;\n", li);
+            v.add("      float df = %s;\n", cc.diff == 0 ? "1.0" : cc.diff == 1 ? "dot(n, L)" : "max(dot(n, L), 0.0)");
+            if (cc.attn == 1) {
+                v.add("      float ca = max(dot(L, uLD[%d].xyz), 0.0); vec3 sa = uLA[%d].xyz;\n", li, li);
+                v.add("      float aa = (sa == vec3(0.0)) ? 1.0 : max(sa.x + sa.y * ca + sa.z * ca * ca, 0.0);\n");
+                v.add("      float da = uLK[%d].x + uLK[%d].y * dist + uLK[%d].z * dist * dist;\n", li, li, li);
+                v.add("      df *= aa / max(da, 1e-4);\n");
+            }
+            v.add("      acc += uLC[%d].rgb * df; }\n", li);
+        }
+        v.add("    vL%d = clamp(acc, 0.0, 1.0);\n  }\n", chn);
+    }
     for (int i = 0; i < s.ntexgen && i < 8; ++i) {
         const TexGenCfg &g = s.tg[i];
         const char *src;
@@ -865,7 +902,7 @@ GLuint build_program(const TevStatic &s)
     v.add("  gl_Position = uMVP * p4;\n}\n");
 
     f.add("#version 300 es\nprecision highp float;\n"
-          "in vec4 vC0; in vec4 vC1; in vec3 vT[8];\n"
+          "in vec4 vC0; in vec4 vC1; in vec3 vL0; in vec3 vL1; in vec3 vT[8];\n"
           "uniform vec4 uReg[4]; uniform vec4 uK[4]; uniform vec4 uMat[2]; uniform float uARef[2];\n"
           "uniform sampler2D uTex0; uniform sampler2D uTex1; uniform sampler2D uTex2; uniform sampler2D uTex3;\n"
           "uniform sampler2D uTex4; uniform sampler2D uTex5; uniform sampler2D uTex6; uniform sampler2D uTex7;\n"
@@ -874,8 +911,14 @@ GLuint build_program(const TevStatic &s)
           "  vec4 r0 = uReg[0], r1 = uReg[1], r2 = uReg[2], r3 = uReg[3];\n"
           "  vec4 ras0 = vec4(1.0), ras1 = vec4(1.0);\n");
     // Canaux sans eclairage : couleur du sommet ou couleur de materiau (l'eclairage viendra apres).
-    f.add("  ras0 = vec4(%s, %s);\n", s.ch[0].mat ? "vC0.rgb" : "uMat[0].rgb", s.ch[1].mat ? "vC0.a" : "uMat[0].a");
-    f.add("  ras1 = vec4(%s, %s);\n", s.ch[2].mat ? "vC1.rgb" : "uMat[1].rgb", s.ch[3].mat ? "vC1.a" : "uMat[1].a");
+    {
+        const bool lit0 = s.ch[0].en && s.ch[0].lmask, lit1 = s.ch[2].en && s.ch[2].lmask;
+        char m0[64], m1[64];
+        std::snprintf(m0, sizeof(m0), "%s%s", lit0 ? "vL0 * " : "", s.ch[0].mat ? "vC0.rgb" : "uMat[0].rgb");
+        std::snprintf(m1, sizeof(m1), "%s%s", lit1 ? "vL1 * " : "", s.ch[2].mat ? "vC1.rgb" : "uMat[1].rgb");
+        f.add("  ras0 = vec4(%s, %s);\n", m0, s.ch[1].mat ? "vC0.a" : "uMat[0].a");
+        f.add("  ras1 = vec4(%s, %s);\n", m1, s.ch[3].mat ? "vC1.a" : "uMat[1].a");
+    }
     // Les chaines : un canal non declare (nchan==0) rend du blanc, comme le materiel.
     for (int i = 0; i < s.nstage && i < 16; ++i) {
         const TevStageCfg &t = s.st[i];
@@ -983,6 +1026,13 @@ Prog *get_prog(const TevStatic &s)
     pr.u_mat = glGetUniformLocation(pr.prog, "uMat");
     pr.u_aref = glGetUniformLocation(pr.prog, "uARef");
     pr.u_tm = glGetUniformLocation(pr.prog, "uTM");
+    pr.u_mv = glGetUniformLocation(pr.prog, "uMV");
+    pr.u_amb = glGetUniformLocation(pr.prog, "uAmb");
+    pr.u_lp = glGetUniformLocation(pr.prog, "uLP");
+    pr.u_ld = glGetUniformLocation(pr.prog, "uLD");
+    pr.u_lc = glGetUniformLocation(pr.prog, "uLC");
+    pr.u_la = glGetUniformLocation(pr.prog, "uLA");
+    pr.u_lk = glGetUniformLocation(pr.prog, "uLK");
     glUseProgram(pr.prog);
     for (int i = 0; i < 8; ++i) {
         char nm[16];
@@ -1197,6 +1247,60 @@ void GXSetChanMatColor(GXChannelID chan, GXColor c)
     const int k = (chan == 1 || chan == 3 || chan == 5) ? 1 : 0;
     set_reg(g_tevcur.d.mat[k], c8(c.r), c8(c.g), c8(c.b), c8(c.a));
 }
+// Un objet lumiere GX tient dans 64 octets : on y range nos 16 flottants.
+struct LObj { float pos[3], dir[3], col[4], a[3], k[3]; };
+static_assert(sizeof(LObj) <= sizeof(GXLightObj), "LObj deborde de GXLightObj");
+static LObj *lobj(GXLightObj *o) { return (LObj *) o; }
+void GXInitLightAttn(GXLightObj *o, f32 a0, f32 a1, f32 a2, f32 k0, f32 k1, f32 k2)
+{ LObj *l = lobj(o); l->a[0] = a0; l->a[1] = a1; l->a[2] = a2; l->k[0] = k0; l->k[1] = k1; l->k[2] = k2; }
+void GXInitLightSpot(GXLightObj *o, f32 cutoff, GXSpotFn fn)
+{
+    LObj *l = lobj(o);
+    if (cutoff <= 0.0f || cutoff > 90.0f) fn = GX_SP_OFF;
+    const float r = cosf(cutoff * 3.14159265f / 180.0f), d = (1.0f - r) * (1.0f - r);
+    float a0 = 1, a1 = 0, a2 = 0;
+    switch (fn) {
+    case GX_SP_FLAT:  a0 = -1000.0f * r; a1 = 1000.0f; a2 = 0; break;
+    case GX_SP_COS:   a0 = -r / (1.0f - r); a1 = 1.0f / (1.0f - r); a2 = 0; break;
+    case GX_SP_COS2:  a0 = 0; a1 = -r / (1.0f - r); a2 = 1.0f / (1.0f - r); break;
+    case GX_SP_SHARP: a0 = r * (r - 2.0f) / d; a1 = 2.0f / d; a2 = -1.0f / d; break;
+    case GX_SP_RING1: a0 = -4.0f * r / d; a1 = 4.0f * (1.0f + r) / d; a2 = -4.0f / d; break;
+    case GX_SP_RING2: a0 = 1.0f - 2.0f * r * r / d; a1 = 4.0f * r / d; a2 = -2.0f / d; break;
+    default: a0 = 1; a1 = 0; a2 = 0; break;
+    }
+    l->a[0] = a0; l->a[1] = a1; l->a[2] = a2;
+}
+void GXInitLightDistAttn(GXLightObj *o, f32 ref_dist, f32 ref_br, GXDistAttnFn fn)
+{
+    LObj *l = lobj(o);
+    if (ref_dist < 0.0f || ref_br <= 0.0f || ref_br >= 1.0f) fn = GX_DA_OFF;
+    float k0 = 1, k1 = 0, k2 = 0;
+    switch (fn) {
+    case GX_DA_GENTLE: k1 = (1.0f - ref_br) / (ref_br * ref_dist); break;
+    case GX_DA_MEDIUM: k1 = 0.5f * (1.0f - ref_br) / (ref_br * ref_dist); k2 = 0.5f * (1.0f - ref_br) / (ref_br * ref_dist * ref_dist); break;
+    case GX_DA_STEEP:  k2 = (1.0f - ref_br) / (ref_br * ref_dist * ref_dist); break;
+    default: break;
+    }
+    l->k[0] = k0; l->k[1] = k1; l->k[2] = k2;
+}
+void GXInitLightPos(GXLightObj *o, f32 x, f32 y, f32 z) { LObj *l = lobj(o); l->pos[0] = x; l->pos[1] = y; l->pos[2] = z; }
+void GXInitLightDir(GXLightObj *o, f32 nx, f32 ny, f32 nz) { LObj *l = lobj(o); l->dir[0] = -nx; l->dir[1] = -ny; l->dir[2] = -nz; }
+void GXInitLightColor(GXLightObj *o, GXColor c) { LObj *l = lobj(o); l->col[0] = c.r / 255.0f; l->col[1] = c.g / 255.0f; l->col[2] = c.b / 255.0f; l->col[3] = c.a / 255.0f; }
+void GXLoadLightObjImm(const GXLightObj *o, GXLightID id)
+{
+    int i = 0;
+    while (i < 8 && !((unsigned) id & (1u << i))) ++i;
+    if (i >= 8) return;
+    const LObj *l = (const LObj *) o;
+    float *lp = g_tevcur.d.lp[i], *ld = g_tevcur.d.ld[i], *lc = g_tevcur.d.lc[i], *la = g_tevcur.d.la[i], *lk = g_tevcur.d.lk[i];
+    lp[0] = l->pos[0]; lp[1] = l->pos[1]; lp[2] = l->pos[2]; lp[3] = 1;
+    ld[0] = l->dir[0]; ld[1] = l->dir[1]; ld[2] = l->dir[2]; ld[3] = 0;
+    lc[0] = l->col[0]; lc[1] = l->col[1]; lc[2] = l->col[2]; lc[3] = l->col[3];
+    la[0] = l->a[0]; la[1] = l->a[1]; la[2] = l->a[2]; la[3] = 0;
+    lk[0] = l->k[0]; lk[1] = l->k[1]; lk[2] = l->k[2]; lk[3] = 0;
+    tev_dirty();
+}
+
 void GXSetChanAmbColor(GXChannelID chan, GXColor c)
 {
     const int k = (chan == 1 || chan == 3 || chan == 5) ? 1 : 0;
@@ -1209,6 +1313,7 @@ struct Cmd {
     GLuint tex[8];
     int cfg;                  // indice dans g_cfgpool
     float mvp[16];
+    float mv[16];
     unsigned char zt, zf, zw, cull, blend, bsrc, bdst, btype;
     int v[4];
     float nz, fz;
@@ -1331,12 +1436,21 @@ static void gx_replay()
             glUniform4fv(pr->u_mat, 2, &cfg.d.mat[0][0]);
             glUniform1fv(pr->u_aref, 2, cfg.d.aref);
             glUniformMatrix4fv(pr->u_tm, 10, GL_FALSE, &cfg.d.tm[0][0]);
+            if (pr->u_amb >= 0) glUniform4fv(pr->u_amb, 2, &cfg.d.amb[0][0]);
+            if (pr->u_lp >= 0) {
+                glUniform4fv(pr->u_lp, 8, &cfg.d.lp[0][0]);
+                glUniform4fv(pr->u_ld, 8, &cfg.d.ld[0][0]);
+                glUniform4fv(pr->u_lc, 8, &cfg.d.lc[0][0]);
+                glUniform4fv(pr->u_la, 8, &cfg.d.la[0][0]);
+                glUniform4fv(pr->u_lk, 8, &cfg.d.lk[0][0]);
+            }
             const int cm = cfg.d.cmask, am = cfg.d.amask;
             if (cm != s_cm || am != s_am) { glColorMask(cm, cm, cm, am); s_cm = cm; s_am = am; }
             s_cfg = c.cfg;
         }
         if (!s_mvp_ok || std::memcmp(s_mvp, c.mvp, sizeof(s_mvp)) != 0) {
             glUniformMatrix4fv(pr->u_mvp, 1, GL_FALSE, c.mvp);
+            if (pr->u_mv >= 0) glUniformMatrix4fv(pr->u_mv, 1, GL_FALSE, c.mv);
             std::memcpy(s_mvp, c.mvp, sizeof(s_mvp)); s_mvp_ok = true;
         }
         for (int k = 0; k < 8; ++k)
@@ -1444,6 +1558,7 @@ static void port_gx_flush_prim(void)
     std::memcpy(g_ipool + g_pni, g_idx, (size_t)ni * sizeof(unsigned short));
     g_pni += (unsigned)ni;
     mtx_mul(g_proj, g_modelview, c.mvp);
+    std::memcpy(c.mv, g_modelview, sizeof(c.mv));
     for (int k = 0; k < 8; ++k)
         c.tex[k] = port_gx_bound_texture(k);
     c.cfg = tev_snapshot();
