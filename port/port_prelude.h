@@ -15,6 +15,22 @@
 #ifndef PORT_PRELUDE_H
 #define PORT_PRELUDE_H
 
+// Couleur GXColor (octets R, G, B, A) vue comme un mot : le jeu y lit / ecrit 0xRRGGBBAA (ordre du GameCube).
+// Sur ARM un *(u32*) donnerait 0xAABBGGRR : ces deux aides gardent l'ordre d'origine (scroll.cpp smxInit, fondus...).
+static inline unsigned int PORT_COLW(const void* p)
+{
+    const unsigned char* b = (const unsigned char*) p;
+    return ((unsigned int) b[0] << 24) | ((unsigned int) b[1] << 16) | ((unsigned int) b[2] << 8) | (unsigned int) b[3];
+}
+static inline void PORT_SETCOLW(void* p, unsigned int v)
+{
+    unsigned char* b = (unsigned char*) p;
+    b[0] = (unsigned char) (v >> 24);
+    b[1] = (unsigned char) (v >> 16);
+    b[2] = (unsigned char) (v >> 8);
+    b[3] = (unsigned char) v;
+}
+
 #include "disc_ptr.h"
 
 #ifdef __cplusplus

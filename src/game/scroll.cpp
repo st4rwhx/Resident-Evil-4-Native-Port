@@ -314,14 +314,14 @@ void smxInit(cObj* obj, SmxWork* w)
     mi = obj->pInfo;
     if (mi != NULL) {
         col = w->color;
-        *(u32*) mi->color = col;
+        PORT_SETCOLW(mi->color, col);
         if ((col & ~0xFF) == 0) {
             mi->color[0] = 0xFF;
             mi->color[1] = 0xFF;
             mi->color[2] = 0xFF;
         }
         col = w->color2;
-        *(u32*) mi->color2 = col;
+        PORT_SETCOLW(mi->color2, col);
         if ((col & ~0xFF) == 0) {
             mi->color2[3] = 0;
         } else {

@@ -1807,12 +1807,12 @@ static inline void EvtFadeSetW(int no, u32 time, u32 z, int late)
 
     if (no & 0x80000000) {
         c = 0xFF;
-        *(u32*) &col.start = c;
+        PORT_SETCOLW(&col.start, c);
         c = 0;
-        *(u32*) &col.end = c;
+        PORT_SETCOLW(&col.end, c);
     } else {
-        *(u32*) &col.start = 0;
-        *(u32*) &col.end = 0xFF;
+        PORT_SETCOLW(&col.start, 0);
+        PORT_SETCOLW(&col.end, 0xFF);
     }
     FadeSet(no, &col.start, &col.end, time, z, late);
 }

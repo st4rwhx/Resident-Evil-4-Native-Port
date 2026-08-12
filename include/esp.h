@@ -194,8 +194,13 @@ struct EspAnmData {
     union {
         u16 nPtn;      // 0x08 number of patterns
         struct {
+#ifdef RE4_PORT   // portage : nPtn converti en petit-boutiste, son octet bas en tete
+            u8 x9;
+            u8 x8;
+#else
             u8 x8;
             u8 x9;     // 0x09 low byte of nPtn
+#endif
         };
     };
     u8 xA;             // 0x0A

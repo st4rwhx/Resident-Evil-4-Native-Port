@@ -615,8 +615,8 @@ static inline void FadeSetBlackOut(u32 clear, u32 time, u32 z, int late)
 {
     FadeColorPair col;
 
-    *(u32*) &col.start = 0xFF;
-    *(u32*) &col.end = clear;
+    PORT_SETCOLW(&col.start, 0xFF);
+    PORT_SETCOLW(&col.end, clear);
     FadeSet(0x80000000, &col.start, &col.end, time, z, late);
 }
 

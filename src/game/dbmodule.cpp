@@ -124,7 +124,7 @@ void Draw_tile(s16 x, s16 y, s16 w, s16 h, GXColor* color)
         t->y = y;
         t->w = w;
         t->h = h;
-        t->color = *(u32*) color;
+        t->color = PORT_COLW(color);
         AddOtDirect(13, t, (void (*)()) Render_tile, 0, 0x1000, NULL, 0.0f);
     }
 }

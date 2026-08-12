@@ -498,7 +498,7 @@ void cLightMgr::setModel2(cModel* m)
                 continue;
             }
         }
-        if ((*(u32*) &l->curColor & 0xFFFFFF00) == 0) {
+        if ((PORT_COLW(&l->curColor) & 0xFFFFFF00) == 0) {
             continue;
         }
         if (!lightHitCheck(m, l)) {
@@ -543,7 +543,7 @@ void cLightMgr::setCloth(cModel* m)
         if (!(l->xF & 0x10)) {
             continue;
         }
-        if ((*(u32*) &l->curColor & 0xFFFFFF00) == 0) {
+        if ((PORT_COLW(&l->curColor) & 0xFFFFFF00) == 0) {
             continue;
         }
         if (!lightHitCheck(m, l)) {

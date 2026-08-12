@@ -840,7 +840,7 @@ void idSysMove02(IdUnit* u)
 
     if (u->curve[2] != 0 && (num = u->curve[2]->num) != 0) {
         r = Hermite_1CurveCalc(u->curve[2], (f32) (s16) u->timer[2]);
-        if (*(u32*) u->col1 != 0) {
+        if (PORT_COLW(u->col1) != 0) {
             u->col[0] = (1.0f - r) * u->col0[0] + r * u->col1[0];
             u->col[1] = (1.0f - r) * u->col0[1] + r * u->col1[1];
             u->col[2] = (1.0f - r) * u->col0[2] + r * u->col1[2];

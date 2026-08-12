@@ -158,14 +158,14 @@ static inline void r21d_FadeSetW(int no, u32 time, u32 z, int late)
     zero = 0;
     black = 0xFF;
     if (no & 0x80000000) {
-        *(u32*) &col.start = black;
+        PORT_SETCOLW(&col.start, black);
     } else {
-        *(u32*) &col.start = zero;
+        PORT_SETCOLW(&col.start, zero);
     }
     if (no & 0x80000000) {
-        *(u32*) &col.end = zero;
+        PORT_SETCOLW(&col.end, zero);
     } else {
-        *(u32*) &col.end = black;
+        PORT_SETCOLW(&col.end, black);
     }
     FadeSet(no, &col.start, &col.end, time, z, late);
 }

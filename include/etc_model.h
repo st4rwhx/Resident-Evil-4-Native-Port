@@ -18,8 +18,13 @@ struct EtcSetData {
     union {
         u16 no;      // 0x02  g_EtcTbl slot (< 0x40)
         struct {
+#ifdef RE4_PORT   // portage : no converti en petit-boutiste, son octet bas en tete
+            u8 type;
+            u8 pad_2;
+#else
             u8 pad_2;
             u8 type; // 0x03  low byte of `no`: the etc number the Set* functions take (WindowData row)
+#endif
         };
     };
     u8 pad_4[0x10 - 0x4];

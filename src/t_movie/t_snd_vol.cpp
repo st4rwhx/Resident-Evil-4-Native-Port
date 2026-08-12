@@ -827,7 +827,7 @@ void mainFrameDisp()
     S16Vec pt[3];
     GXColor col;
 
-    *(u32*) &col = 0x20202000;
+    PORT_SETCOLW(&col, 0x20202000);
     pt[0].x = 0;
     pt[0].y = 0;
     pt[0].z = 0;
@@ -989,9 +989,9 @@ void editScreenDisp()
     }
     for (i = 0; i <= 13; i++) {
         if ((work->left + i) % 5 == 0) {
-            *(u32*) &col = 0x808080FF;
+            PORT_SETCOLW(&col, 0x808080FF);
         } else {
-            *(u32*) &col = 0x404040FF;
+            PORT_SETCOLW(&col, 0x404040FF);
         }
         x = i * 32 + 0x40;
         pt[0].x = x;
@@ -1002,7 +1002,7 @@ void editScreenDisp()
         pt[1].z = 0;
         TprimDrawFrameFn_s16(pt, &col, 2);
     }
-    *(u32*) &col = 0x80808080;
+    PORT_SETCOLW(&col, 0x80808080);
     x = 0x40;
     for (i = 0; i <= rows; i++) {
         // value pins (local-alloc fake-lifetime parity): the original keeps the SI sum in r0 and the
@@ -1019,7 +1019,7 @@ void editScreenDisp()
         pt[1].z = 0;
         TprimDrawFrameFn_s16(pt, &col, 2);
     }
-    *(u32*) &col = 0x80800080;
+    PORT_SETCOLW(&col, 0x80800080);
     x = (u16) (s16) ((work->curDist - (f32) work->left) * 32.0f) + 0x40;
     {
         // COMPILER-DIFF: 3 -- the original computes `base - 4` and `base + rows * 0x14 + 4` here from a copy of

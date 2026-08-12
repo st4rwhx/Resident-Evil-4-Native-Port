@@ -1156,7 +1156,7 @@ extern "C" void EspToolExit()
     BitOff(pG->flags_170, 0x800000);
     BitOff(pG->flags_170, 0x1000000);
     BitOff(pG->flags_60, 0x10000000);
-    *(u32*) &col = 0;
+    PORT_SETCOLW(&col, 0);
     dbg->target_type = 0;
     bio4_GXSetCopyClear(col, 0xFFFFFF);
     LightMgr.setFog();

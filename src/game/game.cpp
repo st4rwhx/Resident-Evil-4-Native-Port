@@ -136,14 +136,14 @@ static inline void fadeSetG(int no, u32 time, u32 z, int late)
 
     black = 0xFF;
     if (no & 0x80000000) {
-        *(u32*) &col.start = black;
+        PORT_SETCOLW(&col.start, black);
     } else {
-        *(u32*) &col.start = 0;
+        PORT_SETCOLW(&col.start, 0);
     }
     if (no & 0x80000000) {
-        *(u32*) &col.end = 0;
+        PORT_SETCOLW(&col.end, 0);
     } else {
-        *(u32*) &col.end = black;
+        PORT_SETCOLW(&col.end, black);
     }
     FadeSet(no, &col.start, &col.end, time, z, late);
 }

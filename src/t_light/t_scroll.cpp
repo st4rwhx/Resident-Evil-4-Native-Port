@@ -1250,7 +1250,7 @@ void edit_col_core(cObj* obj)
         }
         break;
     }
-    if (*(u32*) info->color2 & 0xFFFFFF00) {
+    if (PORT_COLW(info->color2) & 0xFFFFFF00) {
         info->color2[3] = 0xFF;
     } else {
         info->color2[3] = 0;
@@ -1627,9 +1627,9 @@ int saveMain(const char* path)
         rec->type2 = obj->x12F;
         rec->flags = SmxGetFlag(obj);
         rec->x3 = obj->x135;
-        *(u32*) rec->color = obj->pInfo->colorWord;
+        PORT_SETCOLW(rec->color, obj->pInfo->colorWord);
         rec->color[3] = obj->pInfo->xD6;
-        *(u32*) rec->color2 = *(u32*) obj->pInfo->color2;
+        PORT_SETCOLW(rec->color2, PORT_COLW(obj->pInfo->color2));
         rec->color2[3] = 0;
         rec->uvScrollU = obj->pInfo->uvScrollU;
         rec->uvScrollV = obj->pInfo->uvScrollV;
@@ -1933,7 +1933,7 @@ int smxCk(cObj* obj)
         }
         info = obj->pInfo;
         if (obj->type != 0 || obj->lightInfo.x54 != -1 || obj->x12F != 3 || SmxGetFlag(obj) != 0 || obj->x135 != 0 ||
-            (obj->pInfo->colorWord & 0xFFFFFF00) != 0xFFFFFF00 || (*(u32*) obj->pInfo->color2 & 0xFFFFFF00) != 0 ||
+            (obj->pInfo->colorWord & 0xFFFFFF00) != 0xFFFFFF00 || (PORT_COLW(obj->pInfo->color2) & 0xFFFFFF00) != 0 ||
             obj->pInfo->xD6 != 0 || obj->pInfo->uvScrollU != 0.0f || obj->pInfo->uvScrollV != 0.0f) {
             ret = 1;
         }

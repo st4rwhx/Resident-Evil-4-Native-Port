@@ -15,6 +15,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <vector>
 #include <unistd.h>
@@ -239,10 +240,23 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x bits %05x qte %u\n", g_frames,
                 sum[0] / 64, sum[1] / 64, sum[2] / 64, lit, ndraws, (unsigned)st.mode, (unsigned)st.room, (unsigned)st.bits, (unsigned)st.qte);
     if (st.mode == 6 && (g_frames == 600 || g_frames == 900)) njstate_debug_ids();   // diagnostic : titre
-    if (g_frames == 2400) {   // diagnostic : textures du sol de r100 telles qu'en memoire (decodees sur PC)
+    // diagnostic : NJ_TEXDUMP="adresse:taille,..." (hexadecimal) : octets de textures tels qu'en memoire, a l'image 2400
+    static std::vector<std::pair<unsigned, unsigned>> tx = [] {
+      std::vector<std::pair<unsigned, unsigned>> v;
+      if (const char *e = std::getenv("NJ_TEXDUMP"))
+        for (const char *q = e; *q;) {
+          unsigned a = 0, n = 0;
+          if (std::sscanf(q, "%x:%x", &a, &n) == 2) v.push_back({a, n});
+          const char *c = std::strchr(q, ',');
+          if (!c) break;
+          q = c + 1;
+        }
+      return v;
+    }();
+    if (g_frames == 2400 && !tx.empty()) {
       const char *d = std::getenv("NJ_STORAGE_DIR");
-      const struct { unsigned addr, size; } tx[] = {{0x80801EA0u, 8192}, {0x80803EA0u, 32768}, {0x80817EA0u, 16384}};
-      for (const auto &t : tx) {
+      for (const auto &t0 : tx) {
+        const struct { unsigned addr, size; } t = {t0.first, t0.second};
         char path[300];
         std::snprintf(path, sizeof path, "%s/tex_%08x.bin", d ? d : ".", t.addr);
         if (FILE *f = std::fopen(path, "wb")) {

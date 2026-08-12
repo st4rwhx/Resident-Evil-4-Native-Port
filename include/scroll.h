@@ -18,8 +18,13 @@ struct SmdWork {
     union {
         u32 flags;   // 0x44  bit4: bin/tpl come from the common SMD, bit6: motion too
         struct {
+#ifdef RE4_PORT   // portage : flags est converti en petit-boutiste, son octet bas est en tete
+            u8 x47;
+            u8 pad_44[3];
+#else
             u8 pad_44[3];
             u8 x47;  // 0x47  low byte of flags -> cObj::x3D0
+#endif
         } b;
     };
 };

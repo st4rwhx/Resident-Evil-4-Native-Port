@@ -129,8 +129,8 @@ static inline void r117_fadeWhite(int no, u32 start, u32 end)
 {
     FadeColorPair col;
 
-    *(u32*) &col.start = start;
-    *(u32*) &col.end = end;
+    PORT_SETCOLW(&col.start, start);
+    PORT_SETCOLW(&col.end, end);
     FadeSet(no, &col.start, &col.end, 5, 0, 0);
 }
 
