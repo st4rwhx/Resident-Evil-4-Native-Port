@@ -35,6 +35,9 @@ GuestCpu *g_guest = nullptr;
 
 extern "C" void njlink_gl_ready(int w, int h);
 extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
+// meme chose, image placee sur les lignes [dy, dy + dh) des 480 de l'image partagee (le reste en noir)
+extern "C" void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh);
+extern "C" void port_vi_mode(unsigned out[6]);   // port/vi.cpp
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
 extern "C" int port_host_scope;
@@ -244,5 +247,13 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
       std::printf("\n");
     }
   }
-  njlink_frame_fbo(g_efb_fbo, 0, gfx::efb_h() - 480 * s, 640 * s, 480 * s);
+  {   // ce que montre le VI : la zone rendue (fbWidth x efbHeight, en haut de l'EFB) etiree sur toute la largeur,
+      // ses lignes centrees dans les 480 de l'ecran (viYOrigin)
+    unsigned vm[6];
+    port_vi_mode(vm);
+    const int fw = vm[0] >= 16 && vm[0] <= 640 ? (int)vm[0] : 640;
+    const int eh = vm[1] >= 16 && vm[1] <= 480 ? (int)vm[1] : 480;
+    const int dy = vm[5] + eh <= 480 ? (int)vm[5] : (480 - eh) / 2;
+    njlink_frame_fbo2(g_efb_fbo, 0, gfx::efb_h() - eh * s, fw * s, eh * s, dy, eh);
+  }
 }

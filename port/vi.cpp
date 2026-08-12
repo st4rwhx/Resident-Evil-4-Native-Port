@@ -62,12 +62,26 @@ void VIInit(void)
                 (unsigned long long)(FIELD_NS / 1000ull));
 }
 
+// Mode d'affichage pour le rendu natif (njgfx) : ce que le VI fait de l'XFB - largeur rendue (fbWidth,
+// 512 en jeu) etiree sur viWidth, lignes de l'XFB placees a viYOrigin dans les 480 de l'ecran.
+static unsigned g_vi_mode[6] = {640, 480, 480, 640, 480, 0};   // fbWidth, efbHeight, xfbHeight, viWidth, viHeight, viYOrigin
+extern "C" void port_vi_mode(unsigned out[6]) { for (int i = 0; i < 6; ++i) out[i] = g_vi_mode[i]; }
+
 void VIConfigure(const GXRenderModeObj *rm)
 {
     if (rm) {
+        const bool changed = g_vi_mode[0] != rm->fbWidth || g_vi_mode[1] != rm->efbHeight || g_vi_mode[5] != rm->viYOrigin;
         g_width = rm->fbWidth;
         g_height = rm->xfbHeight;
-        std::printf("[PORT] VIConfigure : %ux%u\n", g_width, g_height);
+        g_vi_mode[0] = rm->fbWidth;
+        g_vi_mode[1] = rm->efbHeight;
+        g_vi_mode[2] = rm->xfbHeight;
+        g_vi_mode[3] = rm->viWidth;
+        g_vi_mode[4] = rm->viHeight;
+        g_vi_mode[5] = rm->viYOrigin;
+        if (changed)   // le jeu le rappelle a chaque image en jeu
+            std::printf("[PORT] VIConfigure : %ux%u (efb %u lignes, VI %ux%u a y %u)\n", g_width, g_height, rm->efbHeight,
+                        rm->viWidth, rm->viHeight, rm->viYOrigin);
     }
 }
 

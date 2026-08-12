@@ -243,6 +243,17 @@ void njlink_frame(void)
 }
 
 // Rendu natif (njgfx) : l'image est dans le tampon `fbo`, rectangle (x, y, w, h).
+void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
+static int g_dst_y0 = 0, g_dst_h = 0;   // lignes de destination (0 = en haut) ; g_dst_h 0 : image entiere
+
+void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh)
+{
+    g_dst_y0 = dy;
+    g_dst_h = dh;
+    njlink_frame_fbo(fbo, x, y, w, h);
+    g_dst_h = 0;
+}
+
 void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
 {
     poll_host();
@@ -280,7 +291,14 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
         ds = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
         glGetIntegerv(GL_READ_BUFFER, &rb);
     }
-    glBlitFramebuffer(x, y, x + w, y + h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    if (g_dst_h > 0) {   // bandes noires au-dessus et au-dessous, comme l'ecran du GameCube
+        const int y0 = g_h - (g_dst_y0 + g_dst_h) * g_h / 480, y1 = g_h - g_dst_y0 * g_h / 480;
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glBlitFramebuffer(x, y, x + w, y + h, 0, y0, g_w, y1, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    } else {
+        glBlitFramebuffer(x, y, x + w, y + h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    }
     if (diag) {
         e1 = glGetError();
         std::printf("[NJLINK] copie %u : erreur avant %x apres %x, lecture %x (tampon %x), ecriture %x, src (%d,%d %dx%d)\n", n_blit, e0, e1, rs,
