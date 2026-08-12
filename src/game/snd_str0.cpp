@@ -277,3 +277,18 @@ void Snd_str_aram_adrs_set(int no, u32 adr)
     str->aram_L_nbl = str->aram_L * 2;
     str->aram_R_nbl = str->aram_R * 2;
 }
+
+#ifdef RE4_PORT
+#include <stdio.h>
+// Mesure du portage (port/audio_port.cpp, toutes les 10 s) : etat des quatre lecteurs de flux.
+extern "C" void port_snd_str_debug(void)
+{
+    int i;
+    for (i = 0; i < SND_STR_MAX; i++) {
+        SND_STR_WORK* s = &Snd_str_work[i];
+        printf("[AUDIO]   flux %d : id %u status %x etat %d req %x err %x dvd %d lu %x voix %p\n", i, (unsigned) s->snd_id,
+               (unsigned) s->status, s->state, (unsigned) s->req, s->err, (int) s->dvd_status, (unsigned) s->read_ofs,
+               (void*) s->voiceL);
+    }
+}
+#endif

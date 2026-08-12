@@ -77,6 +77,16 @@ void arena_init()
         std::abort();
     }
     std::memset(got, 0, MEM1_SIZE);
+    // Memoire basse que l'IPL de la console remplit avant le jeu (dolphin/os.h) : le SDK la lit directement.
+    // Horloge du bus a 0 = budget DSP d'AX nul (toutes les voix jetees, __AXSyncPBs) et OS_TIMER_CLOCK nul dans
+    // toutes les conversions ticks <-> temps (OSTicksToMilliseconds...). Valeurs de la GameCube ; TB_HZ = bus / 4.
+    {
+        u32 *low = (u32 *) got;
+        low[0x28 / 4] = 0x01800000u;    // __OSPhysicalMemSize (24 Mo)
+        low[0xF0 / 4] = 0x01800000u;    // __OSSimulatedMemSize
+        low[0xF8 / 4] = 162000000u;     // __OSBusClock
+        low[0xFC / 4] = 486000000u;     // __OSCoreClock
+    }
     g_arena = (u8 *) got;
     g_arena_lo = (u8 *) (unsigned long) ARENA_LO;
     g_arena_hi = (u8 *) (unsigned long) ARENA_HI;

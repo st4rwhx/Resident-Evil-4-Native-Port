@@ -16,6 +16,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 
 #include <dolphin.h>
 #include <dolphin/dsp.h>
@@ -26,6 +27,11 @@ void ax_hle_command_list(uint32_t list_addr, uint32_t size_words);   // runtime/
 void ax_hle_set_native(const uint8_t* aram, uint32_t aram_size);
 }
 extern "C" void* port_aram_host(u32 addr, u32 length);   // port/aram.cpp
+extern "C" u32 __AXGetNumVoices(void);
+extern "C" u32 port_ax_acq_calls, port_ax_acq_ok, port_ax_state_on;   // src/lib/AXAlloc.c
+extern "C" void port_snd_str_debug(void);
+extern "C" void port_snd_flags_debug(void);   // src/game/snd.cpp   // src/game/snd_str0.cpp
+extern "C" u32 Snd_ctrl_work[];   // src/game/snd_ram.cpp (SND_CTRL_WORK : image a 0x00, dernier son a 0x08)                    // src/lib/AXVPB.c
 
 namespace {
 
@@ -100,6 +106,7 @@ int g_mail_state;           // 0 attente, 1 adresse de liste attendue
 u32 g_list_words;
 bool g_resume_pending;      // la liste a ete mixee : le DSP « rend la main » (rappel de reprise) apres la livraison
 bool g_delivering;
+unsigned g_mixed;           // listes de commandes executees
 
 void push_current_buffer()
 {
@@ -116,6 +123,33 @@ void push_current_buffer()
         std::memset(d, 0, sizeof g_ring[0]);
     }
     g_ring_w.store(w + 1, std::memory_order_release);
+    // NJ_AUDIODUMP=1 : les 30 premieres secondes de sortie dans audio_dump.raw (s16 L,R a 32 kHz), pour l'analyse
+    static FILE* dump = std::getenv("NJ_AUDIODUMP") ? std::fopen("audio_dump.raw", "wb") : nullptr;
+    static int dumped;
+    if (dump) {
+        std::fwrite(d, sizeof g_ring[0], 1, dump);
+        if (++dumped >= 6000) {
+            std::fclose(dump);
+            dump = nullptr;
+            std::printf("[AUDIO] audio_dump.raw ecrit (30 s)\n");
+        }
+    }
+    // mesure sans ecouter : pic du signal et images mixees, toutes les 10 s
+    static int peak, frames, mixed_seen;
+    for (int i = 0; i < kFrames * 2; ++i) {
+        const int a = d[i] < 0 ? -d[i] : d[i];
+        if (a > peak)
+            peak = a;
+    }
+    if (++frames >= 2000) {
+        std::printf("[AUDIO] 10 s : pic %d, voix AX %u (acquises %u/%u, lancees %u), pilote images %u req %u, images mixees %u, retard sortie %u\n", peak, (unsigned) __AXGetNumVoices(), (unsigned) port_ax_acq_ok, (unsigned) port_ax_acq_calls, (unsigned) port_ax_state_on, (unsigned) Snd_ctrl_work[0], (unsigned) Snd_ctrl_work[2], g_mixed - mixed_seen,
+                    g_ring_w.load() - g_ring_r.load());
+        mixed_seen = g_mixed;
+        port_snd_str_debug();
+        port_snd_flags_debug();
+        peak = 0;
+        frames = 0;
+    }
 }
 
 }  // namespace
@@ -202,6 +236,7 @@ void DSPSendMailToDSP(u32 mail)
 {
     if (g_mail_state == 1) {                      // l'adresse de la liste de commandes : on mixe l'image
         nj::runtime::hle::ax_hle_command_list(mail, g_list_words);
+        ++g_mixed;
         g_mail_state = 0;
         g_resume_pending = true;
         return;
@@ -213,3 +248,11 @@ void DSPSendMailToDSP(u32 mail)
 }
 
 }  // extern "C"
+
+// Mode son de l'IPL (reglage de la console) : stereo, comme une GameCube reglee par defaut ; le jeu le relit au
+// demarrage (Snd_sound_mode_init) et l'option du menu le change ensuite.
+extern "C" {
+static u32 g_sound_mode = 1;   // OS_SOUND_MODE_STEREO
+u32 OSGetSoundMode(void) { return g_sound_mode; }
+void OSSetSoundMode(u32 mode) { g_sound_mode = mode ? 1u : 0u; }
+}

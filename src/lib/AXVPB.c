@@ -579,6 +579,13 @@ void AXSetVoiceState(AXVPB* p, u16 state) {
     BOOL old;
 
     old = OSDisableInterrupts();
+#ifdef RE4_PORT
+    {
+        extern u32 port_ax_state_on;
+        if (state == 1)
+            port_ax_state_on++;
+    }
+#endif
     p->pb.state = state;
     p->sync |= AX_SYNC_FLAG_COPYSTATE;
     if (state == 0) {

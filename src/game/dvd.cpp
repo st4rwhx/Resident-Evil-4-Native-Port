@@ -639,18 +639,6 @@ void cDvdQueue::readMain()
 
     switch (step) {
     case 0:
-#ifdef RE4_PORT
-        // Portage : les morceaux 1 et 2 sont les banques de sons. Le pilote audio est
-        // volontairement inerte tant que leurs donnees ne sont pas converties (voir SndInit et
-        // port/ENDIANNESS.md) ; lui livrer une banque gros-boutiste l envoie suivre des
-        // decalages sauvages des sa premiere lecture - etc/core.das tombait ainsi dans
-        // Snd_str_ax_voice_play, sur un pointeur dont l octet de poids fort etait celui du
-        // mauvais bout. On saute ces morceaux comme le jeu saute un morceau vide.
-        if ((*ph)->type == 1 || (*ph)->type == 2) {
-            (*ph)++;
-            break;
-        }
-#endif
         switch ((*ph)->type) {
         case 0xFFFFFFFF:
             if (depth == 0) {

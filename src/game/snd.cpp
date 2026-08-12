@@ -63,6 +63,8 @@ static inline u32 RefU32(u32& x)
 #define SND_FILE "D:/Bio4/Prog/snd.cpp"
 #ifdef RE4_PORT
 extern "C" void port_snd_bank_fix(u8* mram, int blk);
+extern "C" u32 port_sndcall_count;
+u32 port_sndcall_count;
 #endif
 #define ALIGN32(x) (((x) + 0x1F) & ~0x1F)
 #ifdef RE4_PORT
@@ -736,6 +738,9 @@ u32 SndCall(u16 blk, u16 no, Vec* pos, int id, int vol, cUnit* obj)
     int ok = 1;
     int i;
 
+#ifdef RE4_PORT
+    port_sndcall_count++;
+#endif
     if (RefU32(pG->flags_68) & 0x80000) {
         return 0;
     }
@@ -1105,6 +1110,9 @@ u32 SndStrReq(int blk, int no, int req, int time, int vol, f32 pos)
     SndPlayWork* w;
     u32 smp = 0;
 
+#ifdef RE4_PORT
+    OSReport("[AUDIO] SndStrReq blk %d no %d req %x\n", blk, no, req);
+#endif
     if (pG->flags_68 & 0x100000) {
         return 0;
     }
@@ -1160,6 +1168,9 @@ u32 SndStrReq(int blk, int no, int req, int time, int vol, f32 pos)
         e += no;
         Snd_str_blk_init(blk, sf);
         w->id = Snd_str_prepare(blk, no, (char*) FileTbl[StrFileTbl[blk]].name, wk);
+#ifdef RE4_PORT
+        OSReport("[AUDIO]   prepare blk %d no %d -> id %x (%s)\n", blk, no, (unsigned) w->id, FileTbl[StrFileTbl[blk]].name);
+#endif
         w->blk = blk;
         w->no = no;
         if (blk == 1) {
@@ -2721,4 +2732,12 @@ asm(".section .sdata; .balign 8");
 #endif
 #endif
 #endif
+#endif
+
+#ifdef RE4_PORT
+// Mesure du portage (port/audio_port.cpp) : interrupteurs qui coupent le son (0x80000 effets, 0x100000 flux/musique).
+extern "C" void port_snd_flags_debug(void)
+{
+    OSReport("[AUDIO]   SndCall %u, flags_68 %08x x4 %d str_flag %d\n", (unsigned) port_sndcall_count, (unsigned) pG->flags_68, (int) pG->x4, str_flag);
+}
 #endif

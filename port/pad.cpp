@@ -151,6 +151,14 @@ u32 PADRead(PADStatus *status)
             }
             else if (st.mode == 6 && pulse) status[0].button |= PAD_BUTTON_START;
         }
+        // RE4_AUTOWALK=<lectures> : en jeu, Leon avance tout droit ce nombre de lectures de manette (zones d'evenement
+        // de la salle, ex. l'appel radio de r100), puis plus rien.
+        static const char* walk_env = getenv("RE4_AUTOWALK");
+        static unsigned walk_left = walk_env ? (unsigned) atoi(walk_env) : 0;
+        if (in_game && walk_left && !(st.bits & NJS_TEXT_WAIT)) {
+            --walk_left;
+            status[0].stickY = 90;
+        }
     }
     static const bool autopad = getenv("RE4_AUTOPAD") != nullptr;
     if (autopad) {

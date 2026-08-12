@@ -3,7 +3,7 @@
 
 #include "__ax.h"
 
-static u16 __AXCommandList[2][384];
+static u16 __AXCommandList[2][384] ATTRIBUTE_ALIGN(32);   // portage : aligne comme dans la section d origine (assertion AXCL.c)
 
 static u32 __AXCommandListPosition;
 static u16* __AXClWrite;

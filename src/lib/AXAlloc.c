@@ -194,6 +194,9 @@ void AXFreeVoice(AXVPB* p) {
     OSRestoreInterrupts(old);
 }
 
+#ifdef RE4_PORT
+u32 port_ax_acq_calls, port_ax_acq_ok, port_ax_state_on;   /* mesure du portage (port/audio_port.cpp) */
+#endif
 AXVPB* AXAcquireVoice(u32 priority, void (*callback)(void*), u32 userContext) {
     BOOL old;
     AXVPB* p;
@@ -228,6 +231,11 @@ AXVPB* AXAcquireVoice(u32 priority, void (*callback)(void*), u32 userContext) {
 
     ASSERTMSGLINE(410, __AXCheckStacks() != 0, "Voice list is trashed!\n");
     OSRestoreInterrupts(old);
+#ifdef RE4_PORT
+    port_ax_acq_calls++;
+    if (p)
+        port_ax_acq_ok++;
+#endif
     return p;
 }
 
