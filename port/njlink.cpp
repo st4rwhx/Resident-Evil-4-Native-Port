@@ -48,6 +48,23 @@ PFNEGLCREATESYNCKHRPROC p_createSync;
 PFNEGLDESTROYSYNCKHRPROC p_destroySync;
 PFNEGLDUPNATIVEFENCEFDANDROIDPROC p_dupFence;
 
+extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
+extern "C" void njstate_case(int op, int board, const void* data);
+
+// Etat du jeu pour les commandes tactiles (NJ_MSG_STATE) : un paquet NjMsg + NjState.
+void send_state()
+{
+    struct {
+        NjMsg m;
+        NjState s;
+    } p;
+    std::memset(&p, 0, sizeof p);
+    p.m.type = NJ_MSG_STATE;
+    p.m.a = (uint32_t) sizeof(NjState);
+    njstate_fill(&p.s);
+    send(g_fd, &p, sizeof p, MSG_NOSIGNAL | MSG_DONTWAIT);
+}
+
 bool send_msg(const NjMsg& m, int fence)
 {
     struct iovec iov = {(void*) &m, sizeof m};
@@ -92,6 +109,9 @@ void poll_host()
             break;
         case NJ_MSG_QUIT:
             g_quit = true;
+            break;
+        case NJ_MSG_CASE:
+            njstate_case((int) m.a, (int) m.b, m.data);
             break;
         default:
             break;
@@ -228,6 +248,7 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
     poll_host();
     if (!g_ready)
         return;
+    send_state();
     int slot = -1;
     for (int k = 1; k <= kSlots; ++k) {
         const int i = (int) ((g_seq + k) % kSlots);
