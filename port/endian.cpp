@@ -297,25 +297,35 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
                 std::printf("[PORT] endian : donnees d'effets a +0x%x inattendues\n", (unsigned) o);
             continue;
         }
-        if (swap_tpl(s, o))
+        if (swap_tpl(s, o)) {
+            if (g_trace_on && (core || blobs)) std::printf("[ARC]   entree %u +0x%x : TPL\n", (unsigned) i, (unsigned) o);
             continue;
-        if (swap_id_tex(s, o))
+        }
+        if (swap_id_tex(s, o)) {
+            if (g_trace_on && (core || blobs)) std::printf("[ARC]   entree %u +0x%x : paquet id/tex\n", (unsigned) i, (unsigned) o);
             continue;
-        if (swap_id_data(s, o))
+        }
+        if (swap_id_data(s, o)) {
+            if (g_trace_on && (core || blobs)) std::printf("[ARC]   entree %u +0x%x : id data\n", (unsigned) i, (unsigned) o);
             continue;
+        }
         if (core || blobs) {
             // ni TPL ni paquet "id" : modele, lumieres, mouvement... reconnus par leur forme
             u32 e = s.size;
             for (u32 j = 0; j < n; ++j) {
-                const u32 oj = read_le32(s.base + 0x10 + j * 4);
-                if (j > i && oj > o && oj < e)
-                    e = oj;
-                else if (j < i && oj > o && oj < e)
+                // les entrees deja traitees sont retournees, les suivantes encore gros-boutistes
+                const u32 oj = (j > i) ? read_be32(s.base + 0x10 + j * 4) : read_le32(s.base + 0x10 + j * 4);
+                if (oj > o && oj < e)
                     e = oj;
             }
             const char *kind = "?";
-            if (!conv_blob(s, o, e, 0, &kind) && std::getenv("RE4_TRACE_ENDIAN"))
-                std::printf("[ARC] archive : entree %u +0x%x non reconnue (%s)\n", (unsigned) i, (unsigned) o, kind);
+            const bool okb = conv_blob(s, o, e, 0, &kind);
+            if (okb && g_trace_on)
+                std::printf("[ARC]   entree %u +0x%x : %s\n", (unsigned) i, (unsigned) o, kind);
+            if (!okb && std::getenv("RE4_TRACE_ENDIAN"))
+                std::printf("[ARC] archive : entree %u +0x%x (%u octets) non reconnue (%s) : %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                            (unsigned) i, (unsigned) o, (unsigned) (e - o), kind, s.base[o], s.base[o + 1], s.base[o + 2], s.base[o + 3],
+                            s.base[o + 4], s.base[o + 5], s.base[o + 6], s.base[o + 7], s.base[o + 8], s.base[o + 9], s.base[o + 10], s.base[o + 11]);
         }
     }
     return true;
