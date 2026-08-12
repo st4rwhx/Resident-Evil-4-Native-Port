@@ -80,6 +80,13 @@ void port_gx_ras(u32 value)
     if (g_list)
         return;   // dans une liste : l'evenement viendra quand elle sera jouee (lecteur de flux)
     const u32 reg = value >> 24;
+    {   // diagnostic N3 : premieres ecritures des registres TEV de l'etage 0 (couleur 0xC0, alpha 0xC1)
+        static int seen = 0;
+        if ((reg == 0xC0 || reg == 0xC1) && seen < 24) {
+            ++seen;
+            OSReport("[GXSDK] BP %02x = %06x\n", (unsigned) reg, (unsigned) (value & 0xFFFFFF));
+        }
+    }
     if (reg == 0x45 && (value & 0xF) == 2)
         g_pend_finish = true;
     else if (reg == 0x48)

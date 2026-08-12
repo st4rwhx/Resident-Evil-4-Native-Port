@@ -3,6 +3,10 @@
 
 #include "__gx.h"
 
+#ifdef RE4_PORT   // portage : champs de bits ranges par MWCC depuis le poids fort ; clang ARM les range depuis le
+                  // poids faible : la table est donc donnee en mots (meme disposition que sur GameCube)
+static const u32 TEVCOpTableST0[5] = {0xC008F8AF, 0xC008A89F, 0xC008AC8F, 0xC008FFF8, 0xC008FFFA};
+#else
 static struct {
     u32 rid : 8;
     u32 dest : 2;
@@ -21,7 +25,12 @@ static struct {
     {192, 0, 0, 1, 0, 0, 15, 15, 15, 8},   // replace
     {192, 0, 0, 1, 0, 0, 15, 15, 15, 10},  // passclr
 };
+#endif
 
+#ifdef RE4_PORT   // portage : champs de bits ranges par MWCC depuis le poids fort ; clang ARM les range depuis le
+                  // poids faible : la table est donc donnee en mots (meme disposition que sur GameCube)
+static const u32 TEVCOpTableST1[5] = {0xC008F80F, 0xC008089F, 0xC0080C8F, 0xC008FFF8, 0xC008FFF0};
+#else
 static struct {
     u32 rid : 8;
     u32 dest : 2;
@@ -40,7 +49,12 @@ static struct {
     {192, 0, 0, 1, 0, 0, 15, 15, 15, 8},  // replace
     {192, 0, 0, 1, 0, 0, 15, 15, 15, 0},  // passclr
 };
+#endif
 
+#ifdef RE4_PORT   // portage : champs de bits ranges par MWCC depuis le poids fort ; clang ARM les range depuis le
+                  // poids faible : la table est donc donnee en mots (meme disposition que sur GameCube)
+static const u32 TEVAOpTableST0[5] = {0xC108F2F0, 0xC108FFD0, 0xC108F2F0, 0xC108FFC0, 0xC108FFD0};
+#else
 static struct {
     u32 rid : 8;
     u32 dest : 2;
@@ -61,7 +75,12 @@ static struct {
     {193, 0, 0, 1, 0, 0, 7, 7, 7, 4, 0, 0},  // replace
     {193, 0, 0, 1, 0, 0, 7, 7, 7, 5, 0, 0},  // passclr
 };
+#endif
 
+#ifdef RE4_PORT   // portage : champs de bits ranges par MWCC depuis le poids fort ; clang ARM les range depuis le
+                  // poids faible : la table est donc donnee en mots (meme disposition que sur GameCube)
+static const u32 TEVAOpTableST1[5] = {0xC108F070, 0xC108FF80, 0xC108F070, 0xC108FFC0, 0xC108FF80};
+#else
 static struct {
     u32 rid : 8;
     u32 dest : 2;
@@ -82,6 +101,7 @@ static struct {
     {193, 0, 0, 1, 0, 0, 7, 7, 7, 4, 0, 0},  // replace
     {193, 0, 0, 1, 0, 0, 7, 7, 7, 0, 0, 0},  // passclr
 };
+#endif
 
 #define SOME_SET_REG_MACRO(reg, size, shift, val)                                                   \
 	do {                                                                                            \

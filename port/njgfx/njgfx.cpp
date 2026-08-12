@@ -133,7 +133,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     nbp += c.type == gx::GxOpKind::BPRegister;
     nxf += c.type == gx::GxOpKind::XFRegister;
   }
-  if (g_frames + 1 == 600) g_gx_framelog_request = true;   // diagnostic N3 : journal complet d'une image au titre
+  if (g_frames + 1 == 3000) g_gx_framelog_request = true;   // diagnostic N3 : journal complet d'une image au titre
   g_renderer->draw_frame(g_ops);
   g_ops.clear();
   g_decoded = 0;
