@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <memory>
 #include <vector>
+#include <unistd.h>
 
 #include "common/platform.h"
 #include "runtime/config.h"
@@ -37,13 +38,20 @@ extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
 extern "C" int port_host_scope;
-extern "C" void njstate_fill(NjState *out);   // port/arm_hooks.cpp : allocations C++ hors du tas du jeu
+extern "C" void njstate_fill(NjState *out);
+extern "C" void njstate_debug_ids(void);   // port/arm_hooks.cpp : allocations C++ hors du tas du jeu
 
 namespace {
 struct HostScope {   // tout ce que fait le rendu alloue avec malloc, pas dans le tas du jeu
   HostScope() { ++port_host_scope; }
   ~HostScope() { --port_host_scope; }
 };
+// Les fils du jeu sont de vrais fils (passes un a un par un jeton) : njgfx_sync vient de
+// OSDisableInterrupts, appele depuis n'importe lequel. Le contexte GL n'est courant que sur un fil :
+// sans lui, chaque appel GL ne fait rien (nuanceur du titre « rate sans journal », copies noires).
+// Diagnostic : on releve les fils qui entrent dans le rendu et l'etat du contexte.
+void note_thread(const char *who);
+
 }  // namespace
 
 namespace {
@@ -118,6 +126,34 @@ bool init() {
   return true;
 }
 
+void note_thread(const char *who) {
+  static int seen[8], nseen;
+  const int tid = (int)gettid();
+  for (int i = 0; i < nseen; ++i)
+    if (seen[i] == tid) {
+      if (g_ready && eglGetCurrentContext() != g_ctx) {
+        static int bad;
+        if (bad++ < 10) std::printf("[NJGFX] %s : fil %d sans le contexte GL\n", who, tid);
+      }
+      return;
+    }
+  if (nseen < 8) seen[nseen++] = tid;
+  std::printf("[NJGFX] %s : nouveau fil %d (contexte %s)\n", who, tid,
+              !g_ready ? "pas encore cree" : eglGetCurrentContext() == g_ctx ? "courant" : "ABSENT");
+}
+
+// Contexte GL pris par le fil qui entre dans le rendu, rendu a la sortie : le prochain appel peut venir
+// d'un autre fil du jeu (nj30 : contexte cree sur le fil 12114, images envoyees par le 12116).
+struct GlScope {
+  bool took = false;
+  GlScope() {
+    if (g_ready && eglGetCurrentContext() != g_ctx) took = eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) == EGL_TRUE;
+  }
+  ~GlScope() {
+    if (g_ready) eglMakeCurrent(g_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  }
+};
+
 // Lit les commandes completes et decode tout de suite leurs sommets (le jeu peut reecrire sa memoire
 // des le retour).
 void take(const unsigned char *bytes, unsigned size) {
@@ -132,11 +168,15 @@ void take(const unsigned char *bytes, unsigned size) {
 
 extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) {
   HostScope hs;
+  note_thread("sync");
+  GlScope gs;
   take(bytes, size);
 }
 
 extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   HostScope hs;
+  note_thread("image");
+  GlScope gs;
   take(bytes, size);
   if (!g_ready) return;
   {   // image sans dessin (le jeu calcule a 30 i/s, VIFlush tombe a 60 Hz) : rien a montrer. Le rendu aurait
@@ -159,7 +199,10 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     nbp += c.type == gx::GxOpKind::BPRegister;
     nxf += c.type == gx::GxOpKind::XFRegister;
   }
-  if (g_frames + 1 == 2100) g_gx_framelog_request = true;   // diagnostic N3 : journal complet d une image en jeu (r100)
+  {   // diagnostic : NJ_FRAMELOG_AT=<image> journal complet d'une image (dev_env.txt)
+    static const unsigned at = std::getenv("NJ_FRAMELOG_AT") ? (unsigned)std::atoi(std::getenv("NJ_FRAMELOG_AT")) : 0;
+    if (at && g_frames + 1 == at) g_gx_framelog_request = true;
+  }
   g_renderer->draw_frame(g_ops);
   g_ops.clear();
   g_decoded = 0;
@@ -183,6 +226,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     njstate_fill(&st);
     std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x\n", g_frames,
                 sum[0] / 64, sum[1] / 64, sum[2] / 64, lit, ndraws, (unsigned)st.mode, (unsigned)st.room);
+    if (st.mode == 6 && (g_frames == 600 || g_frames == 900)) njstate_debug_ids();   // diagnostic : titre
   }
   if (g_frames <= 3 || g_frames % 600 == 0) {   // diagnostic N3 : ce que le rendu a recu et ce qu'il a dessine
     unsigned char px[4] = {0, 0, 0, 0};

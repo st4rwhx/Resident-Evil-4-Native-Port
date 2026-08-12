@@ -8,6 +8,13 @@ extern "C" int port_host_scope = 0;
 extern "C" int port_on_game_thread(void) { return port_host_scope == 0; }
 extern "C" int port_heap_trace(void) { return 0; }
 
+#include <stdlib.h>
+extern "C" int port_debug_text(void)   // eprintf du jeu (src/game/eprintf.cpp)
+{
+    static const int on = getenv("RE4_EPRINTF") != nullptr;
+    return on;
+}
+
 // Pour le code du jeu, qui ne peut pas inclure <stdio.h> (voir osreport_pc.cpp).
 #include <android/log.h>
 #include <stdarg.h>

@@ -48,6 +48,13 @@ Mtx fontTMtx;
 static Mtx fontTMtx;
 #endif
 int eprintf_init = 0;
+#ifdef RE4_PORT   // texte de debogage de l'executable DEBUG (rang, tirs, memoire libre...) : absent du jeu commercial,
+                  // coupe par defaut ; RE4_EPRINTF=1 le rallume (port/arm_hooks.cpp)
+extern "C" int port_debug_text(void);
+#define PORT_DEBUG_TEXT() port_debug_text()
+#else
+#define PORT_DEBUG_TEXT() 1
+#endif
 static char* mess_ptr_buff;  // MESS_PTR_NUM message pointers
 #define MESS_PTR(i) (((char**) mess_ptr_buff)[i])
 static char* mess_keep_buffer;
@@ -91,7 +98,7 @@ int EprintfSetCurrentNo()
 void eprintf(int x, int y, int color, int a, const char* fmt, ...)
 {
     va_list ap;
-    if (eprintf_init) {
+    if (eprintf_init && PORT_DEBUG_TEXT()) {
         va_start(ap, fmt);
         EprintfSetEnv(x, y, color, a, 0);
         eprintf_main(8, 14, fmt, ap);
@@ -102,7 +109,7 @@ void eprintf(int x, int y, int color, int a, const char* fmt, ...)
 void eprintf2(int w, int h, int x, int y, int color, int a, const char* fmt, ...)
 {
     va_list ap;
-    if (eprintf_init) {
+    if (eprintf_init && PORT_DEBUG_TEXT()) {
         va_start(ap, fmt);
         EprintfSetEnv(x, y, color, a, 0);
         eprintf_main(w, h, fmt, ap);

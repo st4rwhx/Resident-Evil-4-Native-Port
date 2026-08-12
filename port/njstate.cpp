@@ -30,6 +30,7 @@
 #include "title.h"
 
 #include "njlink.h"
+extern "C" void OSReport(const char* fmt, ...);
 
 namespace {
 
@@ -323,5 +324,29 @@ extern "C" void njstate_case(int op, int board, const void* data)
         cj = cj < 0 ? 0 : cj > b->h - 1 ? b->h - 1 : cj;
         b->curX = (s8) ci;
         b->curY = (s8) cj;
+    }
+}
+
+// Diagnostic N3 (titre noir dans le coeur) : les unites IdSys vivantes et ce qui fait leur couleur.
+extern "C" void njstate_debug_ids(void)
+{
+    if (!IdSys.pUnit || IdSys.num <= 0 || IdSys.num > 0x400)
+        return;
+    int shown = 0;
+    for (int i = 0; i < IdSys.num && shown < 24; ++i) {
+        IdUnit& u = IdSys.pUnit[i];
+        if (u.flags == 0xFF || !(u.flags & 1))
+            continue;
+        ++shown;
+        int knum = -1;
+        float kt = -1.0f;
+        if (u.curve[2]) {
+            knum = u.curve[2]->num;
+            if (knum > 0) kt = u.curve[2]->key[knum - 1].t;
+        }
+        OSReport("[IDS] %d type %02x id %02x fl %02x tex %u col %d,%d,%d,%d col0 %02x%02x%02x%02x col1 %02x%02x%02x%02x t2 %d courbe %d fin %d parent %d\n",
+                 i, u.type, u.id, u.flags, (unsigned) u.texId, (int) u.col[0], (int) u.col[1], (int) u.col[2], (int) u.col[3],
+                 u.col0[0], u.col0[1], u.col0[2], u.col0[3], u.col1[0], u.col1[1], u.col1[2], u.col1[3], (int) (s16) u.timer[2],
+                 knum, (int) kt, u.parent ? (int) (u.parent - IdSys.pUnit) : -1);
     }
 }
