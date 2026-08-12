@@ -160,3 +160,6 @@ void ARStartDMA(u32 type, u32 mainmem_addr, u32 aram_addr, u32 length)
 u32 ARGetDMAStatus(void) { return 0; }   // jamais occupe : les transferts sont immediats
 
 }
+
+// Pour la conversion des donnees du disque posees en ARAM (port/endian.cpp).
+extern "C" void *port_aram_host(u32 addr, u32 length) { return host(addr, length); }

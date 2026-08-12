@@ -244,7 +244,7 @@ bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind);
 // Les sous-fichiers pointes sont pour beaucoup des TPL (speculaire, illumination globale,
 // textures d interface). `swap_tpl` se reconnait lui-meme a son numero de version : on le
 // propose a chaque entree, il ne touche que celles qui en sont.
-bool swap_arc(const Span &s, bool core = false)
+bool swap_arc(const Span &s, bool core = false, bool blobs = false)
 {
     if (!s.has(0, 0x10))
         return false;
@@ -301,7 +301,22 @@ bool swap_arc(const Span &s, bool core = false)
             continue;
         if (swap_id_tex(s, o))
             continue;
-        swap_id_data(s, o);
+        if (swap_id_data(s, o))
+            continue;
+        if (core || blobs) {
+            // ni TPL ni paquet "id" : modele, lumieres, mouvement... reconnus par leur forme
+            u32 e = s.size;
+            for (u32 j = 0; j < n; ++j) {
+                const u32 oj = read_le32(s.base + 0x10 + j * 4);
+                if (j > i && oj > o && oj < e)
+                    e = oj;
+                else if (j < i && oj > o && oj < e)
+                    e = oj;
+            }
+            const char *kind = "?";
+            if (!conv_blob(s, o, e, 0, &kind) && std::getenv("RE4_TRACE_ENDIAN"))
+                std::printf("[ARC] archive : entree %u +0x%x non reconnue (%s)\n", (unsigned) i, (unsigned) o, kind);
+        }
     }
     return true;
 }
@@ -819,7 +834,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         // retombe donc sur les memes mots). Les archives de salle, etiquetees par tag, et les
         // tables simples comme `sizetbl.dat` echouent a la validation et repartent intactes,
         // vers le journal du reste a faire.
-        if (swap_arc(s))
+        if (swap_arc(s, false, std::strstr(name, "ss_") != nullptr || std::strstr(name, "SS_") != nullptr))
             return;
     }
     if (ends_with(name, ".tpl")) {
@@ -1313,6 +1328,12 @@ bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind)
     } else if (looks_like_seqtbl(s, at, end)) {
         k = "SEQ";
         done = conv_seqtbl(s, at);
+    } else if (s.has(at, 8) && (s.base[at] << 8 | s.base[at + 1]) >= 1 && (s.base[at] << 8 | s.base[at + 1]) <= 32 &&
+               s.base[at + 2] >= 0x20 && s.base[at + 2] <= 0x2C &&
+               read_be32(s.base + at + 4) == 4 + 4 * (u32) (s.base[at] << 8 | s.base[at + 1]) + (read_be32(s.base + at + 4) - 4 - 4 * (u32) (s.base[at] << 8 | s.base[at + 1]))
+               && read_be32(s.base + at + 4) >= 4 + 4 * (u32) (s.base[at] << 8 | s.base[at + 1]) && read_be32(s.base + at + 4) < 0x100) {
+        k = "LIT";
+        done = conv_lit(s, at, end);
     } else if (depth < 3 && looks_like_ofstbl(s, at, end)) {
         k = "TABLE";
         const u32 n = read_be32(s.base + at);

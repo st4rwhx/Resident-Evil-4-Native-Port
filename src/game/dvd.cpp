@@ -19,6 +19,7 @@
 
 #ifdef RE4_PORT
 extern "C" void port_endian_fix(const char* name, void* data, u32 size);
+extern "C" void* port_aram_host(u32 addr, u32 length);
 extern "C" void port_endian_fix_headers(void* block, u32 size);
 #endif
 
@@ -848,6 +849,17 @@ void cDvdQueue::readExit()
         // Voir port/endian.cpp et port/ENDIANNESS.md.
         if (addrTbl[0][0] && mramSize)
             port_endian_fix(name, (void*) addrTbl[0][0], mramSize);
+        {
+            int k;
+            for (k = 0; k < 32; k++) {
+                u32 ad = addrTbl[0][k];
+                if (ad && ad < 0x10000000 && sizeTbl[0][k]) {
+                    void* h = port_aram_host(ad, sizeTbl[0][k]);
+                    if (h)
+                        port_endian_fix(name, h, sizeTbl[0][k]);
+                }
+            }
+        }
 #endif
         OSReport("DVD: Read Ok ");
     } else if (chk(0x100000)) {
