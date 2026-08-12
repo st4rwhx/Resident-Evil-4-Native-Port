@@ -1006,6 +1006,22 @@ void ModelRender(cModel* m)
         return;
     }
     GXSetAlphaCompare(7, 0, 1, 7, 0);
+#ifdef RE4_PORT
+    {   // diagnostic N3 (decor sans ecriture de profondeur, 12/11) : valeurs de x12C par modele
+        static unsigned n_calls, hist[4];
+        static unsigned char seen_id[16], seen_x12c[16], seen_t[16];
+        static int nseen;
+        ++n_calls;
+        ++hist[m->x12C < 3 ? m->x12C : 3];
+        if (m->x12C != 0 && nseen < 16) {
+            bool dup = false;
+            for (int i = 0; i < nseen; ++i) dup |= seen_id[i] == m->id && seen_t[i] == m->type;
+            if (!dup) { seen_id[nseen] = m->id; seen_t[nseen] = m->type; seen_x12c[nseen] = m->x12C; ++nseen;
+                OSReport("[MDL] x12C=%u id %02x type %02x x12D %u x12E %u x12F %u\n", m->x12C, m->id, m->type, m->x12D, m->x12E, m->x12F); }
+        }
+        if ((n_calls % 20000) == 0) OSReport("[MDL] %u rendus : x12C 0=%u 1=%u 2=%u autre=%u\n", n_calls, hist[0], hist[1], hist[2], hist[3]);
+    }
+#endif
     if (m->x12C == 0) {
         GXSetZMode(1, 3, 1);
     } else if (m->x12C == 1) {

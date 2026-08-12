@@ -11,7 +11,7 @@
 enum {
     NJ_MSG_HELLO = 1,    // coeur -> appli : a = version
     NJ_MSG_BUFFERS = 2,  // coeur -> appli : a = nombre, b = largeur, c = hauteur ; puis a AHardwareBuffer
-    NJ_MSG_FRAME = 3,    // coeur -> appli : a = emplacement, b = numero ; barriere GPU jointe (SCM_RIGHTS) ou aucune
+    NJ_MSG_FRAME = 3,    // coeur -> appli : a = emplacement, b = numero, c = zone XFB (largeur << 16 | hauteur, 0 inconnue) ; barriere GPU jointe ou aucune
     NJ_MSG_STATE = 4,    // coeur -> appli : NjMsg puis NjState dans le meme paquet (etat du jeu, une fois par image)
     NJ_MSG_PAD = 16,     // appli -> coeur : data = NjPad
     NJ_MSG_RELEASE = 17, // appli -> coeur : a = emplacement qu'elle n'affiche plus

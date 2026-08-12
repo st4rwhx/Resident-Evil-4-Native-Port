@@ -20,10 +20,20 @@ extern "C" {
 void* memset(void* dst, int c, unsigned int n);
 #endif
 // game/sub2.cpp; really takes Vec*, declared by value here (same ABI) so the caller copies its Vec.
+#ifdef RE4_PORT
+// portage : definie avec un pointeur ; sur PowerPC un Vec par valeur passe par adresse, pas sur ARM (AAPCS)
+int GetScreenPos(Vec* pos, Vec* scr);
+#else
 int GetScreenPos(Vec pos, Vec* scr);
+#endif
 int LightAreaDataLoad(void* data);
 void LightAreaUpdate();
 }
+#ifdef RE4_PORT
+static inline int port_GetScreenPos_v(Vec pos, Vec* scr) { return GetScreenPos(&pos, scr); }
+#define GetScreenPos port_GetScreenPos_v
+#endif
+
 
 class cPlayer;
 extern cPlayer* pPL;

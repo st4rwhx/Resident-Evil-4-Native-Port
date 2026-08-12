@@ -82,7 +82,17 @@ transfere en memoire principale (`readExit`). Ce sont les deux seuls points ou l
 | paquet de textures "id" (version 0xB / 3) | **fait** | identifiants, TPL et animations de toute l interface |
 | table d unites "id" ("1.00" / "2.00") | **fait** | positions, sommets, tailles, rotations, et les six decalages de fin |
 | chemin B-spline et courbe de Hermite | **fait** | les trajectoires que le systeme "id" fait suivre a ses elements |
-| contenu d une archive de salle (`St1/r100.das`) | a faire | etiquetee par tag, pas par table de decalages |
+| contenu d une archive de salle (`St1/r100.das`) | **fait** (port_room_arc_fix) | etiquetee par tag, pas par table de decalages |
+| sequences d effets EST / SST (`EspSeqData` + enregistrements `EspGenWork` de 0x12C) et chemins (`Path`) | **fait** (12/11/2026, `swap_eff_data`) | avant : particules immortelles, chemins « OUT OF RANGE », reserve d effets saturee (« ESP : num max. retry ») et des centaines de sprites couleur de brouillard sur toute l image en jeu (sol beige du natif). Les vues partielles de `prm` (moitie / octet bas d un mot) et `SstList.b.id` ont une disposition propre au portage dans `esp.h` / `espgen.h` |
+| zone d effets `SstArea` (`EffAreaDataLoad`) | a verifier | flags u32 et donnees de zone (AreaData) |
+
+### Autre piege du meme ordre : structure par valeur contre pointeur (ABI)
+
+Sur PowerPC (MWCC), un `Vec` ou un `GXColor` passe **par valeur** est transmis par adresse : un prototype
+`f(Vec pos)` et une definition `f(Vec* pos)` se melangent sans dommage. Sur ARM (AAPCS) le Vec passe en registres
+flottants : la fonction recoit des bits de flottant a la place d'un pointeur (SIGBUS dans `commonClothLightSet`,
+12/11). Les fonctions `extern "C"` se lient quand meme. Outil de recherche : `abi_scan.py` (copie dans
+`port/outils/`) ; six cas corriges sous `RE4_PORT` (cloth, Espgen43, area, db_work, outils t_*).
 
 ## Ordre de travail restant
 

@@ -13,8 +13,18 @@
 
 extern "C" {
 void Draw_pos(Vec* pos, int size);
+#ifdef RE4_PORT
+// portage : definie avec un pointeur ; sur PowerPC un Vec par valeur passe par adresse, pas sur ARM (AAPCS)
+void Draw_sphere(Vec* pos, f32 r, u32 color, int zcmp, int zupd);
+#else
 void Draw_sphere(Vec pos, f32 r, int color, int zcmp, int zupd);
+#endif
 }
+#ifdef RE4_PORT
+static inline void port_Draw_sphere_v(Vec pos, f32 r, int color, int zcmp, int zupd) { Draw_sphere(&pos, r, (u32) color, zcmp, zupd); }
+#define Draw_sphere port_Draw_sphere_v
+#endif
+
 
 // obj18 work (cObj::work) as far as the viewer reads it
 struct DbObj18Work {

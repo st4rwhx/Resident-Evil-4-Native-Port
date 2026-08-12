@@ -52,3 +52,6 @@ int DVDReadPrio(void* fi, void* addr, int length, int offset, int prio)
 }
 
 }
+
+// Adresse physique -> adresse avec cache (os.h : OS_BASE_CACHED + paddr) ; l'arene est a 0x80000000.
+extern "C" void* OSPhysicalToCached(unsigned int paddr) { return (void*) (unsigned long) (0x80000000u + paddr); }

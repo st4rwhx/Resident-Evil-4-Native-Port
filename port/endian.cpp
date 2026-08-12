@@ -1148,12 +1148,83 @@ bool swap_eff_data(const Span &s, u32 at)
         }
         return n;
     };
-    auto data_tbl = [&](u32 ofs, u32 n) {
-        track_label("eff:data");              // SstData : x0, puis n decalages vers les sequences
+    // Blocs deja convertis pendant cet appel : plusieurs entrees d'une table peuvent viser le meme bloc.
+    u32 done[0x400];
+    u32 ndone = 0;
+    auto first_time = [&](u32 t) {
+        for (u32 i = 0; i < ndone; ++i)
+            if (done[i] == t)
+                return false;
+        if (ndone < 0x400)
+            done[ndone++] = t;
+        return true;
+    };
+    // EspSeqData (include/esp.h) : en-tete de 0x30 puis `num` enregistrements EspGenWork de 0x12C. Chaque champ
+    // a un seul type (les unions x40/x64/xD8 ne portent que des flottants) ; prm (0xCC..0xD3) est lu comme deux
+    // mots gros-boutistes dont le jeu prend parfois la moitie ou l'octet bas : ces vues ont une disposition
+    // propre au portage dans esp.h. Les zones dont on ne connait pas le type (0x100..0x103, 0x112..0x117,
+    // 0x24..0x2F de l'en-tete) restent telles quelles.
+    auto conv_seq = [&](u32 t) {
+        track_label("eff:seq");
+        if (!s.has(t, 0x30))
+            return;
+        u8 *h = s.base + t;
+        const u32 num = (u32) ((h[0] << 8) | h[1]);
+        if (num == 0 || num > 0x200 || !s.has(t, 0x30 + num * 0x12C))
+            return;
+        swap_u16(h);              // num
+        swap_u16(h + 0x08);       // flags
+        for (u32 o = 0x0C; o < 0x24; o += 4)
+            swap_u32(h + o);      // pos, rot
+        for (u32 r = 0; r < num; ++r) {
+            u8 *e = h + 0x30 + r * 0x12C;
+            swap_u16(e + 0x04);                                   // x4 : temps de la sequence
+            swap_u32(e + 0x08);                                   // flags
+            for (u32 o = 0x0C; o < 0x9C; o += 4) swap_u32(e + o); // flottants 0x0C..0x9B (x0C..x98)
+            for (u32 o = 0xA0; o < 0xB0; o += 4) swap_u32(e + o); // xA0..xAC
+            for (u32 o = 0xB0; o < 0xBC; o += 2) swap_u16(e + o); // xB0..xBA
+            swap_u16(e + 0xBE);                                   // xBE
+            swap_u32(e + 0xCC);                                   // prm.w.xCC
+            swap_u32(e + 0xD0);                                   // prm.w.xD0
+            swap_u32(e + 0xD4);                                   // xD4
+            for (u32 o = 0xD8; o < 0xFC; o += 4) swap_u32(e + o); // xD8..xF8
+            swap_u16(e + 0x110);                                  // x110
+            for (u32 o = 0x118; o < 0x124; o += 4) swap_u32(e + o); // x118 (Vec)
+        }
+    };
+    // Path (include/path.h) : u16 num, 2 octets, puis num sommets de 0x28 (pos, nrm, dist en flottants, octets).
+    auto conv_path = [&](u32 t) {
+        track_label("eff:path");
+        if (!s.has(t, 4))
+            return;
+        u8 *h = s.base + t;
+        const u32 num = (u32) ((h[0] << 8) | h[1]);
+        if (num == 0 || num > 0x1000 || !s.has(t + 4, num * 0x28))
+            return;
+        swap_u16(h);
+        for (u32 v = 0; v < num; ++v)
+            for (u32 o = 0; o < 0x1C; o += 4)
+                swap_u32(h + 4 + v * 0x28 + o);
+    };
+    // SstData : x0, puis n decalages (depuis l'en-tete) vers les blocs ; kind 0 sequences, 1 chemins.
+    auto data_tbl = [&](u32 ofs, u32 n, int kind) {
+        track_label("eff:data");
         if (!n || !s.has(at + ofs, 4 + n * 4))
             return;
-        for (u32 i = 0; i < n + 1; ++i)
-            swap_u32(s.base + at + ofs + 4 * i);
+        for (u32 i = 0; i < n + 1; ++i) {
+            u8 *e = s.base + at + ofs + 4 * i;
+            const u32 o = read_be32(e);
+            swap_u32(e);
+            if (i == 0 || o == 0)
+                continue;
+            const u32 t = at + ofs + o;
+            if (t >= s.size || !first_time(t))
+                continue;
+            if (kind == 0)
+                conv_seq(t);
+            else
+                conv_path(t);
+        }
     };
     const u32 ntex = id_tbl(f[1]);                     // identifiants de textures
     ofs_tbl(f[6], 0, ntex);                            // TPL
@@ -1161,12 +1232,11 @@ bool swap_eff_data(const Span &s, u32 at)
     const u32 ne = list_tbl(f[2]);                     // EST
     const u32 ns = list_tbl(f[3]);                     // SST
     const u32 np = list_tbl(f[4]);                     // chemins
-    data_tbl(f[8], ne);
-    data_tbl(f[9], ns);
-    data_tbl(f[10], np);
+    data_tbl(f[8], ne, 0);
+    data_tbl(f[9], ns, 0);
+    data_tbl(f[10], np, 1);
     const u32 nefm = id_tbl(f[5]);                     // identifiants de modeles d'effets
     ofs_tbl(f[11], 2, nefm);                           // modeles d'effets
-    PORT_TODO("sequences d'effets (EST/SST/chemins)");
     return true;
 }
 

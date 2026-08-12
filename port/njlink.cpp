@@ -244,6 +244,8 @@ void njlink_frame(void)
 
 // Rendu natif (njgfx) : l'image est dans le tampon `fbo`, rectangle (x, y, w, h).
 void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
+static unsigned g_xfb_w = 0, g_xfb_h = 0;   // zone de l'EFB que le jeu copie dans son XFB (FRAME.c = w << 16 | h)
+void njlink_set_xfb(unsigned w, unsigned h) { g_xfb_w = w; g_xfb_h = h; }
 static int g_dst_y0 = 0, g_dst_h = 0;   // lignes de destination (0 = en haut) ; g_dst_h 0 : image entiere
 
 void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh)
@@ -368,6 +370,7 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
     m.type = NJ_MSG_FRAME;
     m.a = (unsigned) slot;
     m.b = ++g_seq;
+    m.c = (g_xfb_w << 16) | (g_xfb_h & 0xFFFF);
     g_busy[slot] = true;
     send_msg(m, fence);
     if (fence >= 0)

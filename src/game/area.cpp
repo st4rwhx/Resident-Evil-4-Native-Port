@@ -26,12 +26,22 @@ f32 cosf(f32 x);
 f32 SQRTF(f32 x);
 f32 LIMIT_ANGLE(f32 x);
 // game/sub2.cpp; really takes Vec*, declared by value here (same ABI) so the caller copies its Vec.
+#ifdef RE4_PORT
+// portage : definie avec un pointeur ; sur PowerPC un Vec par valeur passe par adresse, pas sur ARM (AAPCS)
+int GetScreenPos(Vec* pos, Vec* scr);
+#else
 int GetScreenPos(Vec pos, Vec* scr);
+#endif
 void Draw_line3d(Vec* a, Vec* b, u32 color, int blend);
 void Draw_poly(Vec* p, u32 color, int zupd);
 void Draw_sphere(Vec* pos, f32 r, u32 color, int zcmp, int zupd);
 void Draw_corn2(Vec* pos, Vec* dir, f32 len, f32 ang, u32 color);
 }
+#ifdef RE4_PORT
+static inline int port_GetScreenPos_v(Vec pos, Vec* scr) { return GetScreenPos(&pos, scr); }
+#define GetScreenPos port_GetScreenPos_v
+#endif
+
 
 #define AREA_TYPE_ERR "AREA_HIT_DATA : AREA_TYPE[%d] invalid."
 

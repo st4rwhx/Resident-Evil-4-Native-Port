@@ -11,6 +11,20 @@ struct EspGenPrmW {
     u32 xCC;           // 0xCC
     u32 xD0;           // 0xD0
 };
+#ifdef RE4_PORT
+// Portage : les deux mots de prm sont convertis en petit-boutiste (port/endian.cpp) ; le jeu lit parfois leur
+// moitie ou leur octet de poids faible (xCE, xD2, xCF, xD3), qui sont alors en tete de chaque mot.
+struct EspGenPrmH {
+    u16 xCE;
+    u16 xCC;
+    u16 xD2;
+    u16 xD0;
+};
+struct EspGenPrmB {
+    u8 xCF, xCE, xCD, xCC;
+    u8 xD3, xD2, xD1, xD0;
+};
+#else
 struct EspGenPrmH {
     u16 xCC;           // 0xCC
     u16 xCE;           // 0xCE
@@ -21,6 +35,7 @@ struct EspGenPrmB {
     u8 xCC, xCD, xCE, xCF;  // 0xCC
     u8 xD0, xD1, xD2, xD3;  // 0xD0
 };
+#endif
 union EspGenPrm {
     EspGenPrmW w;
     EspGenPrmH h;

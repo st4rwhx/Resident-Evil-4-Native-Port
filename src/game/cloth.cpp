@@ -14,7 +14,11 @@
 
 extern "C" {
 // game/trans_lit.cpp
+#ifdef RE4_PORT   // definie avec Vec* (trans_lit.cpp) : sur PowerPC un Vec par valeur passe par adresse, pas sur ARM
+void commonClothLightSet(cLight** list, int n, Vec* pos, f32 radius);
+#else
 void commonClothLightSet(cLight** list, int n, Vec pos, f32 radius);
+#endif
 void OSReport(const char* fmt, ...);
 }
 
@@ -362,7 +366,11 @@ void clothTrans(Cloth* c)
     } else {
         r = model.lightInfo.size.y;
     }
+#ifdef RE4_PORT
+    commonClothLightSet(model.lightInfo.pLight, 8, &model.pos, r);
+#else
     commonClothLightSet(model.lightInfo.pLight, 8, model.pos, r);
+#endif
     GXSetChanMatColor(4, c->color);
     GXSetNumTexGens(1);
     GXLoadTexObj(tex, 0);

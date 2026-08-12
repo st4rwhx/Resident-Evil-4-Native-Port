@@ -24,9 +24,19 @@ void* memset(void* dst, int c, unsigned int n);
 int sprintf(char* dst, const char* fmt, ...);
 f32 LIMIT_ANGLE(f32 x);
 // game/sub2.cpp; really takes Vec*, declared by value here (same ABI) so the caller copies its Vec.
+#ifdef RE4_PORT
+// portage : definie avec un pointeur ; sur PowerPC un Vec par valeur passe par adresse, pas sur ARM (AAPCS)
+int GetScreenPos(Vec* pos, Vec* scr);
+#else
 int GetScreenPos(Vec pos, Vec* scr);
+#endif
 void Get3DPosFrom2D(Vec* out, f32 sx, f32 sy, f32 y);
 }
+#ifdef RE4_PORT
+static inline int port_GetScreenPos_v(Vec pos, Vec* scr) { return GetScreenPos(&pos, scr); }
+#define GetScreenPos port_GetScreenPos_v
+#endif
+
 void TransMatrix(Mtx m, Vec* pos);
 
 struct EmInfoWork {

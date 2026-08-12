@@ -33,7 +33,12 @@ struct Espgen43Work {
 
 extern "C" {
 // game/trans_lit.cpp
+#ifdef RE4_PORT
+// portage : definie avec un pointeur ; sur PowerPC un Vec par valeur passe par adresse, pas sur ARM (AAPCS)
+void commonClothLightSet(cLight** list, int n, Vec* pos, f32 radius);
+#else
 void commonClothLightSet(cLight** list, int n, Vec pos, f32 radius);
+#endif
 // game/espgen.cpp
 int EspgenApplyFunc(void (*func)(EspgenWork* w));
 
@@ -43,6 +48,11 @@ void Espgen43_Move00(EspgenWork* w);
 void Espgen43_TransSub(EspgenWork* w);
 EspgenWork* SetSandWork(EspgenWork* w, Vec* pos, Vec* rot, f32 size, f32 sizeRate, u32 nx, u32 ny);
 }
+#ifdef RE4_PORT
+static inline void port_commonClothLightSet_v(cLight** list, int n, Vec pos, f32 radius) { commonClothLightSet(list, n, &pos, radius); }
+#define commonClothLightSet port_commonClothLightSet_v
+#endif
+
 
 static Vec Chk_pos;
 static f32 Height_ret;

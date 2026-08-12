@@ -24,6 +24,7 @@
 #include "runtime/cpu_context.h"
 #include "runtime/gfx_settings.h"
 #include "runtime/gx/fifo_parser.h"
+#include "runtime/gx/fifo_record.h"
 #include "runtime/gx/frame_renderer.h"
 #include "runtime/hw/hw.h"
 
@@ -38,6 +39,7 @@ extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 // meme chose, image placee sur les lignes [dy, dy + dh) des 480 de l'image partagee (le reste en noir)
 extern "C" void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh);
 extern "C" void port_vi_mode(unsigned out[6]);   // port/vi.cpp
+extern "C" void njlink_set_xfb(unsigned w, unsigned h);   // port/njlink.cpp : zone de l'EFB copiee dans l'XFB
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
 extern "C" int port_host_scope;
@@ -206,6 +208,10 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     static const unsigned at = std::getenv("NJ_FRAMELOG_AT") ? (unsigned)std::atoi(std::getenv("NJ_FRAMELOG_AT")) : 0;
     if (at && g_frames + 1 == at) g_gx_framelog_request = true;
   }
+  {   // NJ_DFF_AT=<image> : enregistrement .dff de 6 images (fifo_record.cpp), a comparer aux enregistrements Dolphin
+    static const unsigned dff = std::getenv("NJ_DFF_AT") ? (unsigned)std::atoi(std::getenv("NJ_DFF_AT")) : 0;
+    if (dff && g_frames + 1 == dff) nj::runtime::gx::rec::request(6);
+  }
   g_renderer->draw_frame(g_ops);
   g_ops.clear();
   g_decoded = 0;
@@ -227,9 +233,21 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
     NjState st;
     njstate_fill(&st);
-    std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x\n", g_frames,
-                sum[0] / 64, sum[1] / 64, sum[2] / 64, lit, ndraws, (unsigned)st.mode, (unsigned)st.room);
+    std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x bits %05x qte %u\n", g_frames,
+                sum[0] / 64, sum[1] / 64, sum[2] / 64, lit, ndraws, (unsigned)st.mode, (unsigned)st.room, (unsigned)st.bits, (unsigned)st.qte);
     if (st.mode == 6 && (g_frames == 600 || g_frames == 900)) njstate_debug_ids();   // diagnostic : titre
+    if (g_frames == 2400) {   // diagnostic : textures du sol de r100 telles qu'en memoire (decodees sur PC)
+      const char *d = std::getenv("NJ_STORAGE_DIR");
+      const struct { unsigned addr, size; } tx[] = {{0x80801EA0u, 8192}, {0x80803EA0u, 32768}, {0x80817EA0u, 16384}};
+      for (const auto &t : tx) {
+        char path[300];
+        std::snprintf(path, sizeof path, "%s/tex_%08x.bin", d ? d : ".", t.addr);
+        if (FILE *f = std::fopen(path, "wb")) {
+          std::fwrite(reinterpret_cast<const void *>(t.addr), 1, t.size, f);
+          std::fclose(f);
+        }
+      }
+    }
   }
   if (g_frames <= 3 || g_frames % 600 == 0) {   // diagnostic N3 : ce que le rendu a recu et ce qu'il a dessine
     unsigned char px[4] = {0, 0, 0, 0};
@@ -251,9 +269,11 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
       // ses lignes centrees dans les 480 de l'ecran (viYOrigin)
     unsigned vm[6];
     port_vi_mode(vm);
-    const int fw = vm[0] >= 16 && vm[0] <= 640 ? (int)vm[0] : 640;
-    const int eh = vm[1] >= 16 && vm[1] <= 480 ? (int)vm[1] : 480;
-    const int dy = vm[5] + eh <= 480 ? (int)vm[5] : (480 - eh) / 2;
-    njlink_frame_fbo2(g_efb_fbo, 0, gfx::efb_h() - eh * s, fw * s, eh * s, dy, eh);
+    // 12/11 : l'appli presente elle-meme, comme en 0.1.9 (present_image : zone copiee dans l'XFB, 16:9,
+    // place des commandes) ; on lui envoie l'EFB tel quel et la taille de cette zone.
+    const unsigned fw = vm[0] >= 16 && vm[0] <= 640 ? vm[0] : 640;
+    const unsigned eh = vm[1] >= 16 && vm[1] <= 480 ? vm[1] : 480;
+    njlink_set_xfb(fw, eh);
+    njlink_frame_fbo(g_efb_fbo, 0, gfx::efb_h() - 480 * s, 640 * s, 480 * s);
   }
 }

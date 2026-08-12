@@ -55,8 +55,13 @@ struct SstList {
         union {
             u16 no;    // 0x00 room number range key
             struct {
+#ifdef RE4_PORT   // portage : no est converti en petit-boutiste, son octet bas (id) est en tete
+                u8 id;
+                u8 x0;
+#else
                 u8 x0;
                 u8 id; // 0x01 display flag bit (GetSstDispFlag)
+#endif
             } b;
         };
         u16 type;      // 0x02
