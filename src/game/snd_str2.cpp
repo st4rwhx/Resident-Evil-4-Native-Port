@@ -146,7 +146,7 @@ void Snd_str_get_now_play_nbl(SND_STR_WORK* str)
     if (str->play_blk == -1) {
         return;
     }
-    cur = *(u32*) &str->voiceL->pb.addr.currentAddressHi;
+    cur = PORT_HL32(*(u32*) &str->voiceL->pb.addr.currentAddressHi);
     str->play_nbl = cur - str->aram_L_nbl;
     str->prev_blk = str->play_blk;
     str->play_blk = str->play_nbl / str->blk_size;

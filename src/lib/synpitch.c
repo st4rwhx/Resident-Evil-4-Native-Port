@@ -335,6 +335,6 @@ void __SYNUpdateSrc(SYNVOICE* voice) {
         ratio = 0x40000;
     }
 
-    *(u32*)&voice->axvpb->pb.src.ratioHi = ratio;
+    *(u32*)&voice->axvpb->pb.src.ratioHi = PORT_HL32(ratio);
     voice->axvpb->sync |= 0x80000;
 }

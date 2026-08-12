@@ -29,6 +29,7 @@ typedef int BOOL;
 #ifndef RE4_PORT   // build d'origine : la couleur vue comme un mot, tel quel (portage : port/port_prelude.h)
 #define PORT_COLW(p) (*(u32*) (p))
 #define PORT_SETCOLW(p, v) (*(u32*) (p) = (v))
+#define PORT_HL32(v) (v)
 #endif
 
 #endif

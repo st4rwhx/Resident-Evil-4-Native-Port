@@ -61,6 +61,9 @@ static inline u32 RefU32(u32& x)
 }
 
 #define SND_FILE "D:/Bio4/Prog/snd.cpp"
+#ifdef RE4_PORT
+extern "C" void port_snd_bank_fix(u8* mram, int blk);
+#endif
 #define ALIGN32(x) (((x) + 0x1F) & ~0x1F)
 #ifdef RE4_PORT
 #define SND_DATA_TOP PORT_MEM1(0x80370000)
@@ -120,56 +123,6 @@ void SndInit()
     ARQInit();
     memclr_asm(pSndRaw, sizeof(SndWork));
 
-#ifdef RE4_PORT
-    // Portage : **l'audio est volontairement inerte pour l'instant, et c'est une decision de
-    // priorite, pas un oubli.**
-    //
-    // Les quatre fichiers charges ici (index de flux, table de musiques, table de portes,
-    // banque) sont ranges en gros-boutiste, comme toutes les donnees de RE4. Les convertir
-    // demande de connaitre la disposition de SND_SHD, SND_RIT, SndBgmEnt et de leurs voisines -
-    // un travail reel, et qui ne fait apparaitre **aucune image**. Le chemin vers un premier
-    // ecran passe ailleurs : les textures et les modeles.
-    //
-    // Plutot que de charger des donnees qui seront mal interpretees - ce qui envoie le pilote
-    // de son suivre des decalages sauvages - on lui donne un etat vide et coherent : zero bloc
-    // de flux, zero entree. Le jeu demande alors des sons qui n'existent pas, ce que son propre
-    // code sait deja gerer (les banques ne sont pas toujours chargees).
-    //
-    // Voir port/ENDIANNESS.md. Retirer cette garde est le premier pas quand le son viendra.
-    {
-        static SndStrFile empty_str[2];
-        std::memset(empty_str, 0, sizeof(empty_str));
-        for (i = 0; i < 2; i++) {
-            SndMem.str_file[i] = &empty_str[i];
-            Snd_str_blk_init(i, &empty_str[i]);
-        }
-        str_flag = 0;
-        adr = SND_DATA_TOP;
-        SndMem.bgm_file = (u32*) adr;
-        SndMem.door_tbl = (SndDoorTbl*) adr;
-        SndMem.bgm_tbl = (SndBgmTbl*) adr;
-        std::memset((void*) adr, 0, 0x100);
-    }
-    ARAM_FREE_BASE = 0x800000;
-    SndMem.blk_mram[0] = (u8*) adr + 0x100;
-    SndMem.blk_mram[1] = SndMem.blk_mram[0] + 0x4000;
-    SndMem.blk_mram[2] = SndMem.blk_mram[1] + 0x4000;
-    SndMem.blk_mram[7] = SndMem.blk_mram[2] + 0x4000;
-    SndMem.mram_end = SndMem.blk_mram[7] + 0x4000;
-    adr = (u32) SndMem.mram_end;
-    for (i = 3; i >= 0; i--) {
-        SndMem.str_buf[i] = adr + 0x10000 + i * 0x8000;
-    }
-    SndMem.sub_adr = SndMem.str_buf[3] + 0x8000;
-
-    // Cette lecture-ci reste, meme avec l audio inerte : etc/memcard.das n est pas un fichier
-    // de son. C est l archive de l ecran de carte memoire - son image de banniere et sa propre
-    // table de messages - et cCard::initSub la lit a SndMem.sub_adr. La sauter laissait le
-    // systeme de carte suivre des octets quelconques des le demarrage.
-    r = DvdRead(0x59, (void*) SndMem.sub_adr, 0, 0, 0, 0x8001, __FILE__, __LINE__);
-    Dvd.ReadCheck(r, &len, 0, 0);
-    SndMem.sub_end = SndMem.sub_adr + len;
-#else
 #line 120 SND_FILE
     r = DvdRead(0, (void*) SND_DATA_TOP, 0, 0, 0, 0x11, __FILE__, __LINE__);
     str_flag = Dvd.ReadCheck(r, &len, 0, 0) > 0;
@@ -213,7 +166,6 @@ void SndInit()
     Dvd.ReadCheck(r, &len, 0, 0);
     SndMem.sub_end = SndMem.sub_adr + len;
 
-#endif
     SndDriverInit();
     pSys->sound_mode = Snd_get_sound_mode();
 }
@@ -2485,6 +2437,9 @@ void SndBlkInit(int type, int id, int no)
     }
     Snd_iss_blk[blk].aram = SndMem.blk_aram[blk];
     adr = (u32) SndMem.blk_mram[blk];
+#ifdef RE4_PORT
+    port_snd_bank_fix((u8*) adr, blk);   // port/endian.cpp : la banque arrive gros-boutiste du disque
+#endif
     if (blk != 3 && blk != 4) {
         adr += *(u32*) adr;
     }

@@ -132,4 +132,9 @@ static inline unsigned int __rlwimi(unsigned int a, unsigned int s, int sh, int 
 static inline unsigned int __cntlzw(unsigned int x) { return x ? (unsigned int)__builtin_clz(x) : 32u; }
 #endif
 
+// Paires de demi-mots du DSP (adresses Hi/Lo des blocs de voix AX, rapport de reechantillonnage) lues ou ecrites
+// comme un mot de 32 bits par le SDK et le pilote de Capcom : en gros-boutiste la moitie haute vient d'abord en
+// memoire ; en petit-boutiste il faut echanger les deux moities pour que le champ Hi recoive bien la moitie haute.
+#define PORT_HL32(v) ((unsigned int) ((((unsigned int) (v)) << 16) | (((unsigned int) (v)) >> 16)))
+
 #endif

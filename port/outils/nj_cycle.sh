@@ -14,7 +14,10 @@ wait_laptop; bash "$M/laptop_port_build.sh" -O2 2>&1 | grep -E "build=|en echec|
 wait_laptop; bash "$M/laptop_nj_apk.sh" "$TAG" 2>&1 | tail -1 | cut -c1-80
 [ -f "C:/re4n/ce4_m1_out/apk/$TAG.apk" ] || { echo "ARRET : APK $TAG absent (construction ratee)"; exit 1; }
 $A install -r "C:/re4n/ce4_m1_out/apk/$TAG.apk" 2>&1 | tail -1
-$A shell "input keyevent KEYCODE_WAKEUP; am start -n org.nightjar.natif/org.nightjar.re4.RE4Activity >/dev/null; sleep $SEC"
+# batterie : ne jamais lancer le jeu sous 40 % (le S5 s'eteint) ; NORUN=1 : installer seulement
+LVL=$($A shell "dumpsys battery | grep level" | tr -dc '0-9')
+if [ -n "${NORUN:-}" ] || [ -z "$LVL" ] || [ "$LVL" -lt "${MIN_BAT:-40}" ]; then echo "installe, pas lance (batterie ${LVL:-?} %)"; exit 0; fi
+$A shell "input keyevent KEYCODE_WAKEUP; am start -n org.nightjar.natif/org.nightjar.re4.RE4Activity >/dev/null; sleep $SEC; am force-stop org.nightjar.natif"
 F=/sdcard/Android/data/org.nightjar.natif/files
 $A shell "echo coeur_vivant=\$(ps -A | grep -c njcore); grep -a -E 'NJGFX|signal|OSPanic' $F/core.log | head -10; echo ...; tail -4 $F/core.log" | cut -c1-200
 if [ -n "${CAPTURE:-}" ]; then

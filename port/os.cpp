@@ -372,7 +372,8 @@ namespace { int g_intr = 1; }
 // Le GPU signale ses fins de dessin et ses jetons ici (port/gx_sdk.cpp) : le SDK teste son drapeau
 // juste apres avoir masque (GXWaitDrawDone), et l'ecriture qui les demande les remet a zero apres coup.
 extern "C" void port_gx_deliver(void);
-BOOL OSDisableInterrupts(void) { int o = g_intr; port_gx_deliver(); g_intr = 0; return o; }
+extern "C" void port_audio_deliver(void);   // port/audio_port.cpp : interruptions AI et fin d'image du DSP
+BOOL OSDisableInterrupts(void) { int o = g_intr; port_gx_deliver(); port_audio_deliver(); g_intr = 0; return o; }
 BOOL OSEnableInterrupts(void) { int o = g_intr; g_intr = 1; return o; }
 BOOL OSRestoreInterrupts(BOOL level) { int o = g_intr; g_intr = level; return o; }
 

@@ -768,6 +768,11 @@ extern "C" void port_endian_fix_headers(void *block, u32 size)
 // Appele par la couche DVD quand un fichier vient d'arriver entier en memoire principale.
 // `name` est le chemin que le jeu a demande.
 extern "C" const void *port_rel_prepare(void *hdr);
+namespace {
+void snd_swap32n(u8 *p, u32 n);
+void snd_fix_str_hed(const Span &s);
+void snd_fix_words_then_halves(const Span &s);
+}
 extern "C" void port_endian_fix(const char *name, void *data, u32 size)
 {
     if (!name || !data || size < 8)
@@ -781,6 +786,10 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     if (trace)
         std::printf("[ENDIAN] %s  %u octets a %p\n", name, (unsigned) size, data);
 
+    // Son (phase C) : en-tetes de flux, table des musiques, sons de portes, musiques par salle.
+    if (ends_with(name, "bio4str.hed")) { snd_fix_str_hed(s); return; }
+    if (ends_with(name, "bio4midi.hed")) { snd_swap32n(s.base, s.size / 4); return; }
+    if (ends_with(name, "doorse.hed") || ends_with(name, "bgmtbl.dat")) { snd_fix_words_then_halves(s); return; }
     if (ends_with(name, ".fnt")) {
         if (!swap_fnt(s))
             std::printf("[PORT] endian : %s n a pas la forme attendue d une police\n", name);
@@ -2617,4 +2626,149 @@ extern "C" void port_arc_access(void *arc, const char *tag, int no, void *result
         std::memcpy(seen[nseen++], key, 4);
     std::printf("[ARC] jeu demande %.3s #%d : %s, %s\n", tag, no,
                 result ? "present" : "absent", room_tag_converted(tag) ? "converti" : "NON converti");
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Son (phase C du plan natif). Formats lus par le pilote de Capcom (src/game/snd*.cpp) et la bibliotheque SYN du SDK.
+// Les echantillons DSP-ADPCM restent gros-boutistes : ils vivent en ARAM et seul le « DSP » (interpreteur AX) les lit.
+namespace {
+void snd_swap32n(u8 *p, u32 n) { for (u32 i = 0; i < n; ++i) *(u32 *) (p + 4 * i) = bswap32(*(u32 *) (p + 4 * i)); }
+void snd_swap16n(u8 *p, u32 n) { for (u32 i = 0; i < n; ++i) *(u16 *) (p + 2 * i) = bswap16(*(u16 *) (p + 2 * i)); }
+
+// bgm/bio4str.hed : deux blocs de flux (SND_STR_BLK : nombre, table des en-tetes SHD, table RIT).
+void snd_fix_str_hed(const Span &s)
+{
+    if (!s.has(0, 8))
+        return;
+    snd_swap32n(s.base, 2);
+    for (int b = 0; b < 2; ++b) {
+        const u32 f = read_le32(s.base + 4 * b);
+        if (!s.has(f, 12))
+            continue;
+        snd_swap32n(s.base + f, 3);
+        const u32 num = read_le32(s.base + f), shd = f + read_le32(s.base + f + 4), rit = f + read_le32(s.base + f + 8);
+        if (s.has(rit, num * 0x10))
+            for (u32 i = 0; i < num; ++i) {              // SND_RIT : shd_no s16, octets, flag u16 a 0x0C
+                snd_swap16n(s.base + rit + i * 0x10, 1);
+                snd_swap16n(s.base + rit + i * 0x10 + 0x0C, 1);
+            }
+        if (!s.has(shd, 4))
+            continue;
+        const u32 first = read_be32(s.base + shd);       // la table des decalages s'arrete au premier en-tete
+        const u32 nshd = first / 4;
+        if (!first || !s.has(shd, first))
+            continue;
+        snd_swap32n(s.base + shd, nshd);
+        for (u32 i = 0; i < nshd; ++i) {
+            const u32 o = read_le32(s.base + shd + 4 * i);
+            if (!o || !s.has(shd + o, 0x80))
+                continue;
+            snd_swap32n(s.base + shd + o, 8);            // SND_SHD : 8 mots puis demi-mots (coefficients, etat ADPCM)
+            snd_swap16n(s.base + shd + o + 0x20, 0x30);
+        }
+    }
+}
+
+// bgm/doorse.hed : decalages (mots) jusqu'a la liste de demi-mots ; bgm/bgmtbl.dat : mots jusqu'a la liste des salles.
+void snd_fix_words_then_halves(const Span &s)
+{
+    if (!s.has(0, 8))
+        return;
+    const u32 half = read_be32(s.base + 4);
+    if (half > s.size || (half & 3))
+        return;
+    snd_swap32n(s.base, half / 4);
+    snd_swap16n(s.base + half, (s.size - half) / 2);
+}
+}  // namespace
+
+// Banque de sons d'un bloc (SndBlkInit, src/game/snd.cpp) : appele une fois par chargement, avant Snd_iss_blk_init.
+// Blocs autres que 3/4 : en-tete externe { decalage du bloc ISS, decalage de la table des sons aleatoires }.
+// Bloc ISS : { nombre de SIT, table d'ondes (SND_WT_HDR + tables SYN), SIT[], table des sequences } ; sequences = octets.
+extern "C" void port_snd_bank_fix(u8 *mram, int blk)
+{
+    const u32 kMax = 0x400000;
+    if (!mram)
+        return;
+    u8 *iss = mram;
+    u32 rnd = 0;
+    if (blk != 3 && blk != 4) {
+        snd_swap32n(mram, 2);
+        if (read_le32(mram) >= kMax)
+            return;
+        iss = mram + read_le32(mram);
+        rnd = read_le32(mram + 4);
+    }
+    snd_swap32n(iss, 4);
+    const u32 num = read_le32(iss), dls_o = read_le32(iss + 4), sit_o = read_le32(iss + 8), seq_o = read_le32(iss + 12);
+    if (num > 0x1000 || dls_o >= kMax || sit_o >= kMax || seq_o >= kMax) {
+        std::printf("[SND] banque du bloc %d inattendue (%u SIT)\n", blk, (unsigned) num);
+        return;
+    }
+    // SIT (0x18 octets)
+    int max_rnd = 0;
+    for (u32 i = 0; i < num; ++i) {
+        u8 *t = iss + sit_o + i * 0x18;
+        snd_swap16n(t, 1);
+        snd_swap16n(t + 0x0A, 2);
+        snd_swap16n(t + 0x16, 1);
+        if ((s8) t[0x13] > max_rnd)
+            max_rnd = (s8) t[0x13];
+    }
+    // table des sequences : nombre puis un decalage par banque
+    {
+        u8 *q = iss + seq_o;
+        const u32 n = bswap32(*(u32 *) q);
+        if (n < 0x400)
+            snd_swap32n(q, n + 1);
+    }
+    // table d'ondes
+    u8 *wt = iss + dls_o;
+    snd_swap32n(wt, 6);
+    const u32 perc = read_le32(wt), mel = read_le32(wt + 4), rgn = read_le32(wt + 8), art = read_le32(wt + 12),
+              smp = read_le32(wt + 16), adp = read_le32(wt + 20);
+    const u32 inst = perc < mel ? perc : mel;
+    if (inst <= rgn && rgn <= art && art <= smp && smp <= adp && adp < kMax) {
+        snd_swap16n(wt + inst, (rgn - inst) / 2);                   // WTINST : demi-mots
+        for (u32 o = rgn; o + 0x18 <= art; o += 0x18) {             // WTREGION
+            snd_swap16n(wt + o + 2, 1);
+            snd_swap32n(wt + o + 4, 5);
+        }
+        snd_swap32n(wt + art, (smp - art) / 4);                     // WTART : mots
+        u32 nadp = 0;
+        for (u32 o = smp; o + 0x10 <= adp; o += 0x10) {             // WTSAMPLE
+            snd_swap16n(wt + o, 2);
+            snd_swap32n(wt + o + 4, 2);
+            snd_swap16n(wt + o + 0x0C, 1);
+            const u32 k = *(u16 *) (wt + o + 0x0C) + 1u;
+            if (k > nadp && k < 0x1000)
+                nadp = k;
+        }
+        snd_swap16n(wt + adp, nadp * 0x2E / 2);                     // WTADPCM : demi-mots
+    } else {
+        std::printf("[SND] table d'ondes du bloc %d inattendue\n", blk);
+    }
+    // sons aleatoires (seRandomCheck) : table de decalages indexee par SIT.rnd_no -> { num, last, e[num] }
+    if (rnd && rnd < kMax && max_rnd > 0) {
+        u8 *tbl = mram + rnd;
+        snd_swap32n(tbl, (u32) max_rnd + 1);
+        u32 done[128];
+        int ndone = 0;
+        for (int g = 1; g <= max_rnd; ++g) {
+            const u32 o = read_le32(tbl + 4 * g);
+            if (!o || o >= kMax)
+                continue;
+            bool seen = false;
+            for (int k = 0; k < ndone; ++k)
+                seen |= done[k] == o;
+            if (seen)
+                continue;
+            if (ndone < 128)
+                done[ndone++] = o;
+            snd_swap16n(tbl + o, 2);
+            const u32 n = *(u16 *) (tbl + o);
+            if (n < 0x400)
+                snd_swap16n(tbl + o + 4, n);
+        }
+    }
 }

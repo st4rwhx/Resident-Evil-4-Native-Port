@@ -52,7 +52,7 @@ CONLY = ['-std=gnu99', '-fdeclspec', '-fgnu89-inline']   # extern inline des en-
 # port/gx_sdk.cpp ; RE4_OLDGX=1 : l'ancien rendu de test du portage (gx.cpp, texture.cpp, texobj.cpp).
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad'] + (['gx', 'texture', 'texobj'] if os.environ.get('RE4_OLDGX') else ['gx_sdk', 'gx_sdk_os']) + [
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip', 'njlink', 'njstate', 'quat']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip', 'njlink', 'njstate', 'quat', 'audio_port']
 
 
 # Unites du jeu volontairement **exclues** du portage.
@@ -104,7 +104,7 @@ EXCLUDED = {
 # materiel qu'elles pilotent (AX/DSP, GX, DVD, OS) reste fourni par la couche du portage ; les
 # souches faibles du portage s'effacent devant ces vraies definitions. RE4_NOLIB=1 : sans elles.
 # Phase N1 : le son logiciel Nintendo seulement ; CRI (films, ADX) et la reverberation (asm PowerPC) en phase N4.
-LIB_SOFT = re.compile(r'^lib/(mix\.c|axart|syn|seq\.c|delay|axfx' + ('' if os.environ.get('RE4_OLDGX') else r'|GX|texPalette') + ')')
+LIB_SOFT = re.compile(r'^lib/(mix\.c|axart|syn|seq\.c|delay|axfx|AX(\.c|Alloc|Aux|CL|Comp|Out|Prof|SPB|VPB)|DSPCode' + ('' if os.environ.get('RE4_OLDGX') else r'|GX|texPalette') + ')')
 
 
 def units():
@@ -239,7 +239,7 @@ def main():
         for o in ok + rel_objs:
             fh.write('"%s"\n' % os.path.relpath(o, ROOT).replace('\\', '/'))
     exe = os.path.join(args.out, 're4')
-    cmd = [cxx, '@' + rsp, '-o', exe, '-lEGL', '-lGLESv3', '-llog', '-landroid', '-static-libstdc++',
+    cmd = [cxx, '@' + rsp, '-o', exe, '-lEGL', '-lGLESv3', '-llog', '-landroid', '-lOpenSLES', '-static-libstdc++',
            # sans cela lld s'arrete a 20 erreurs, et on decouvre les symboles manquants
            # vingt par vingt au lieu d'une seule fois.
            '-Wl,--error-limit=0']

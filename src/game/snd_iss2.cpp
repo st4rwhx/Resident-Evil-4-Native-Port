@@ -134,8 +134,8 @@ void seCtrlPauseOn_sub(SND_AXV_WORK* axv, SND_CTRL_WORK* ctrl)
         return;
     }
     if (axv->voice->pb.addr.loopFlag == 0) {
-        cur = *(u32*) &axv->voice->pb.addr.currentAddressHi;
-        end = *(u32*) &axv->voice->pb.addr.endAddressHi;
+        cur = PORT_HL32(*(u32*) &axv->voice->pb.addr.currentAddressHi);
+        end = PORT_HL32(*(u32*) &axv->voice->pb.addr.endAddressHi);
         if (end - cur <= 800) {
             return;
         }
