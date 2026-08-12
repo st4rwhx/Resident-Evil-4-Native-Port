@@ -300,7 +300,7 @@ extern "C" void _unresolved()
 
 void Em31Init(cEm* em)
 {
-    new (em) cEm31();
+    new (em) cEm31;
 }
 
 // Starts the bridge fight (the plain byte stores share the zero of the pillar count).

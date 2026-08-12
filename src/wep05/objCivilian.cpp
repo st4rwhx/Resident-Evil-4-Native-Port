@@ -21,7 +21,7 @@ const u8 civilian_tbl[3] = { 0x14, 0x14, 0x14 };
 
 void ObjCivilian_init(cObj* obj)
 {
-    new (obj) cObjCivilian();
+    new (obj) cObjCivilian;
 }
 
 void cObjCivilian::init(cModel* parent)

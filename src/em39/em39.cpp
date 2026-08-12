@@ -203,7 +203,7 @@ extern "C" void _unresolved()
 
 void Em39Init(cEm* em)
 {
-    new (em) cEm39();
+    new (em) cEm39;
 }
 
 cEm39::~cEm39()

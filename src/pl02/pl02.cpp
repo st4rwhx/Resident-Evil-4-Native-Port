@@ -362,7 +362,7 @@ void cPlAda::moveCloth()
 
 void Pl02Init(cEm* em)
 {
-    new (em) cPlAda();
+    new (em) cPlAda;
 }
 
 extern "C" void _prolog()

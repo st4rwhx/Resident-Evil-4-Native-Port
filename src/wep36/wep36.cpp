@@ -41,7 +41,7 @@ cObjWep* equipWeapon(cPlayer* pl)
 
 void ObjHand_init(cObj* obj)
 {
-    new (obj) cObjHand();
+    new (obj) cObjHand;
 }
 
 void cObjHand::setMotion(cPlayer* pl)

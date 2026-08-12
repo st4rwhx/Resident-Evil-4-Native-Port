@@ -969,7 +969,7 @@ int cSatMgr::construct(cSat* p, u32 id)
 {
     // the alive flag before, the active flag after the constructor: keeps the vptr store last
     p->be_flag = 1;
-    new (p) cSat();
+    new (p) cSat;
     p->flags = 0;
     return 1;
 }

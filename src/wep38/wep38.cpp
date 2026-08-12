@@ -218,7 +218,7 @@ void cObjRuger::setMotion(cPlayer* pl)
 
 static void ObjRuger_init(cObj* obj)
 {
-    new (obj) cObjRuger();
+    new (obj) cObjRuger;
 }
 
 extern "C" void _prolog()

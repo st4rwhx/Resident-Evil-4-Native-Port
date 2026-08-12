@@ -65,7 +65,7 @@ static inline void RoutineStepClear(cSubLuis* o)
 // key (`global constructors keyed to LuisInit`) is the first public function/initialised object assembled.
 void LuisInit(cEm* em)
 {
-    cSubLuis* luis = new (em) cSubLuis();
+    cSubLuis* luis = new (em) cSubLuis;
     luis->modelSet();
     luis->init();
     luis->equipWeapon();
@@ -1498,7 +1498,7 @@ int sameFloorCheck(cModel* a, cModel* b)
 
 void luisItemInit(cObj* obj)
 {
-    new (obj) cObjLuisItem();
+    new (obj) cObjLuisItem;
 }
 
 void cObjLuisItem::init(Vec* p, f32 rotY)

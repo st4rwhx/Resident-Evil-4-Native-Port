@@ -192,7 +192,7 @@ void cPlHunk::setHead(void* bin, void* tpl)
 
 void Pl06Init(cEm* em)
 {
-    new (em) cPlHunk();
+    new (em) cPlHunk;
 }
 
 extern "C" void _prolog()

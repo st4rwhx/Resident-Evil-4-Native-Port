@@ -61,7 +61,7 @@ cObjWep* equipWeapon(cPlayer* pl)
 
 void ObjXd9_init(cObj* obj)
 {
-    new (obj) cObjXd9();
+    new (obj) cObjXd9;
 }
 
 void cObjXd9::init(cModel* parent)

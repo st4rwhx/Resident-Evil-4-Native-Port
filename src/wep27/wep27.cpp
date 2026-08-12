@@ -234,7 +234,7 @@ void cObjMachinegun::setMotion(cPlayer* pl)
 
 void ObjKlauMGun_init(cObj* obj)
 {
-    new (obj) cObjMachinegun();
+    new (obj) cObjMachinegun;
 }
 
 extern "C" void _prolog()

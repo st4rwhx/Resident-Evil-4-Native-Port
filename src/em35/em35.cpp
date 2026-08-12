@@ -166,7 +166,7 @@ extern "C" void _unresolved()
 
 void Em35Init(cEm* em)
 {
-    new (em) cEm35();
+    new (em) cEm35;
 }
 
 void em35DmCk(cEm35* em)

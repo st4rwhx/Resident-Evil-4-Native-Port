@@ -11,7 +11,7 @@
 
 static void Pl11Init(cEm* em)
 {
-    cSubAshley* sub = new (em) cSubAshley();
+    cSubAshley* sub = new (em) cSubAshley;
 
     sub->modelSet();
     sub->init();

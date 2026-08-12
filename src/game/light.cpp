@@ -118,22 +118,22 @@ int cLightMgr::construct(cLight* p, u32 id)
 {
     switch (id) {
     default:
-        new (p) cLight();
+        new (p) cLight;
         break;
     case 1:
-        new (p) cLight01();
+        new (p) cLight01;
         break;
     case 2:
-        new (p) cLight02();
+        new (p) cLight02;
         break;
     case 6:
-        new (p) cLight06();
+        new (p) cLight06;
         break;
     case 7:
-        new (p) cLight07();
+        new (p) cLight07;
         break;
     case 8:
-        new (p) cLight08();
+        new (p) cLight08;
         break;
     }
     return 1;

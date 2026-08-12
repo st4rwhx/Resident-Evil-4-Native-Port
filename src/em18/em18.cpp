@@ -80,7 +80,7 @@ extern "C" void _unresolved()
 
 void Em18Init(cEm* em)
 {
-    new (em) cEm18();
+    new (em) cEm18;
 }
 
 void em18DmCk(cEm18* em)

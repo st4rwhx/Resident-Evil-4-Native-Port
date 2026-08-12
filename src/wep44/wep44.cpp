@@ -40,7 +40,7 @@ void Wep44_init(cModel* m)
 
 void ObjGovernment_init(cObj* obj)
 {
-    new (obj) cObjGovernment();
+    new (obj) cObjGovernment;
 }
 
 void cObjGovernment::init(cModel* parent)

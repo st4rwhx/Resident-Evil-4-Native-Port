@@ -29,7 +29,7 @@ const u8 vp70_tbl[3] = { 0xE, 0xC, 0xA };
 
 void ObjVp70_init(cObj* obj)
 {
-    new (obj) cObjVp70();
+    new (obj) cObjVp70;
 }
 
 void cObjVp70::init(cModel* parent)

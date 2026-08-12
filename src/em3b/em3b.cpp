@@ -84,7 +84,7 @@ extern "C" void _unresolved()
 
 void Em3bInit(cEm* em)
 {
-    new (em) cEm3b();
+    new (em) cEm3b;
 }
 
 void em3bDmCkTruck(cEm3b* em)

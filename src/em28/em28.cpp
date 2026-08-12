@@ -76,7 +76,7 @@ extern "C" void _unresolved()
 
 void Em28Init(cEm* em)
 {
-    new (em) cEm28();
+    new (em) cEm28;
 }
 
 void em28DmCk(cEm28* em)

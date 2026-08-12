@@ -34,7 +34,7 @@ void Wep47_init(cModel* m)
 
 static void ObjHkSniper_init(cObj* obj)
 {
-    new (obj) cObjHkSniper();
+    new (obj) cObjHkSniper;
 }
 
 void cObjHkSniper::init(cModel* parent)

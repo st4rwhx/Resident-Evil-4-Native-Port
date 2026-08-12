@@ -1825,6 +1825,49 @@ bool conv_sat(const Span &s, u32 at, u32 end)
     return ok;
 }
 
+// ---- RTP : points de passage des ennemis (src/game/route_ck.cpp, include/route_ck.h : RtpData)
+//
+// En-tete : 6 octets, u16 nombre de points a +6, u32 decalages des points (+0xC), des liens
+// (+0x10) et du tableau des sauts suivants (+0x14, octets). Points : Vec, u16, u16 (16 octets).
+// Liens : s16, u16 (4 octets), en nombre = max(debut + compte) des points.
+bool conv_rtp(const Span &s, u32 at, u32 end)
+{
+    track_label("RTP");
+    (void) end;
+    if (!s.has(at, 0x18))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = (u32) ((h[6] << 8) | h[7]);
+    const u32 pOfs = read_be32(h + 0xC), lOfs = read_be32(h + 0x10);
+    if (n == 0 || n > 0x400 || !s.has(at + pOfs, n * 16)) {
+        std::printf("[PORT] endian : RTP a +0x%x : %u points\n", (unsigned) at, (unsigned) n);
+        return false;
+    }
+    u32 nLink = 0;
+    for (u32 i = 0; i < n; ++i) {
+        const u8 *p = h + pOfs + i * 16;
+        const u32 lo = (u32) ((p[12] << 8) | p[13]), lc = (u32) ((p[14] << 8) | p[15]);
+        if (lo + lc > nLink)
+            nLink = lo + lc;
+    }
+    if (!s.has(at + lOfs, nLink * 4))
+        return false;
+    swap_u16(h + 6);
+    swap_u32(h + 0xC);
+    swap_u32(h + 0x10);
+    swap_u32(h + 0x14);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *p = h + pOfs + i * 16;
+        for (int k = 0; k < 3; ++k)
+            swap_u32(p + 4 * k);
+        swap_u16(p + 12);
+        swap_u16(p + 14);
+    }
+    for (u32 i = 0; i < nLink * 2; ++i)
+        swap_u16(h + lOfs + 2 * i);
+    return true;
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -2022,6 +2065,7 @@ const TagConv kRoomTags[] = {
     { "SMX", conv_smx },
     { "LIT", conv_lit },
     { "SHD", conv_shd },
+    { "RTP", conv_rtp },
     { "SAT", conv_sat },
     { "EAT", conv_sat },
     { "STB", conv_stb },

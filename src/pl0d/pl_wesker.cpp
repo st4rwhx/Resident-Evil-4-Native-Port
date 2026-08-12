@@ -319,7 +319,7 @@ void cPlWesker::moveCloth()
 
 void Pl0dInit(cEm* em)
 {
-    new (em) cPlWesker();
+    new (em) cPlWesker;
 }
 
 extern "C" void _prolog()

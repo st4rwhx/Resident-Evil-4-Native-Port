@@ -25,7 +25,7 @@ const u8 sniper_tbl[3] = { 0x14, 0, 0 };
 
 void ObjSniper_init(cObj* obj)
 {
-    new (obj) cObjSniper();
+    new (obj) cObjSniper;
 }
 
 void cObjSniper::init(cModel* parent)

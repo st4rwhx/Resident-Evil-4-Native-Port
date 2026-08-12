@@ -2199,7 +2199,7 @@ void CameraControl::UpCutCall(int no, Vec* pos, Vec* at, Vec* up, int sel)
 
 void CameraControl::startPushObject()
 {
-    extra = new (extra_buf) CameraPushObject();
+    extra = new (extra_buf) CameraPushObject;
     state = 0xF;
     AreaCheckOnOff(0);
 }

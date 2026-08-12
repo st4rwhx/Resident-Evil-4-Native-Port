@@ -208,7 +208,7 @@ void cObjBow::interrupt()
 
 void ObjKlauBow_init(cObj* obj)
 {
-    new (obj) cObjBow();
+    new (obj) cObjBow;
 }
 
 void cObjAllow::moveFire()
@@ -239,7 +239,7 @@ void cObjAllow::setMotion(cPlayer* pl)
 
 void ObjKlauAllow_init(cObj* obj)
 {
-    new (obj) cObjAllow();
+    new (obj) cObjAllow;
 }
 
 extern "C" void _prolog()

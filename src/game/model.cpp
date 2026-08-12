@@ -41,7 +41,7 @@ int MotionMoveF(cModel* m, int flag) asm("MotionMove");
 #ifdef RE4_PORT
 static inline cAtariInfo* AtariInfoConstruct(cAtariInfo* p) { p->ctorClear(); return p; }
 #else
-static inline cAtariInfo* AtariInfoConstruct(cAtariInfo* p) { return new (p) cAtariInfo(); }
+static inline cAtariInfo* AtariInfoConstruct(cAtariInfo* p) { return new (p) cAtariInfo; }
 #endif
 #else
 cAtariInfo* AtariInfoConstruct(cAtariInfo* p) asm("__10cAtariInfo");

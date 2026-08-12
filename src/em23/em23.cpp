@@ -81,7 +81,7 @@ extern "C" void _unresolved()
 
 void Em23Init(cEm* em)
 {
-    new (em) cEm23();
+    new (em) cEm23;
 }
 
 void em23DmCk(cEm23* em)

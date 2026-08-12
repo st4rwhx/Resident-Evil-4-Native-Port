@@ -43,7 +43,7 @@ void Wep08_init(cModel* m)
 
 void ObjStriker_init(cObj* obj)
 {
-    new (obj) cObjStriker();
+    new (obj) cObjStriker;
 }
 
 void cObjStriker::init(cModel* parent)

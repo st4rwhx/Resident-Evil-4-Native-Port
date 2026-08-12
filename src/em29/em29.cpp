@@ -169,7 +169,7 @@ extern "C" void _unresolved()
 
 void Em29Init(cEm* em)
 {
-    new (em) cEm29();
+    new (em) cEm29;
 }
 
 void em29DmCk(cEm29* em)

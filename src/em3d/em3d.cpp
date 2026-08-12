@@ -143,7 +143,7 @@ void cEm3d::setNoSuspend(int on)
 
 void Em3dInit(cEm* em)
 {
-    new (em) cEm3d();
+    new (em) cEm3d;
 }
 
 void em3dDmCk(cEm3d* em)

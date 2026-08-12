@@ -40,7 +40,7 @@ void Wep15_init(cModel* m)
 
 void ObjMagnum_init(cObj* obj)
 {
-    new (obj) cObjMagnum();
+    new (obj) cObjMagnum;
 }
 
 void cObjMagnum::init(cModel* parent)

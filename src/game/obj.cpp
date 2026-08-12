@@ -188,112 +188,112 @@ int cObjMgr::construct(cObj* p, int id)
 {
     switch (id) {
     case 0:
-        p = new (p) cObj00();
+        p = new (p) cObj00;
         break;
     case 1:
-        p = new (p) cObj01();
+        p = new (p) cObj01;
         break;
     case 2:
-        p = new (p) cObjScr();
+        p = new (p) cObjScr;
         break;
     case 3:
-        p = new (p) cObj03();
+        p = new (p) cObj03;
         break;
     case 4:
-        p = new (p) cObj04();
+        p = new (p) cObj04;
         break;
     case 5:
-        p = new (p) cObj05();
+        p = new (p) cObj05;
         break;
     case 6:
-        p = new (p) cObjBox();
+        p = new (p) cObjBox;
         break;
     case 8:
-        p = new (p) cObj08();
+        p = new (p) cObj08;
         break;
     case 9:
-        p = new (p) cObj09();
+        p = new (p) cObj09;
         break;
     case 0xA:
-        p = new (p) cWepItem();
+        p = new (p) cWepItem;
         break;
     case 0xB:
-        p = new (p) cObjWep();
+        p = new (p) cObjWep;
         break;
     case 0x12:
-        p = new (p) cObj12();
+        p = new (p) cObj12;
         break;
     case 0x13:
-        p = new (p) cObjLadder();
+        p = new (p) cObjLadder;
         break;
     case 0x14:
-        p = new (p) cObjBell();
+        p = new (p) cObjBell;
         break;
     case 0x15:
-        p = new (p) cObjGatling();
+        p = new (p) cObjGatling;
         break;
     case 0x16:
-        p = new (p) cObj16();
+        p = new (p) cObj16;
         break;
     case 0x18:
-        p = new (p) cObj18();
+        p = new (p) cObj18;
         break;
     case 0x19:
-        p = new (p) cItemObj();
+        p = new (p) cItemObj;
         break;
     case 0x1A:
-        p = new (p) cObjGrenade();
+        p = new (p) cObjGrenade;
         break;
     case 0x1B:
-        p = new (p) cObjSpear();
+        p = new (p) cObjSpear;
         break;
     case 0x1C:
-        p = new (p) cObj1c();
+        p = new (p) cObj1c;
         break;
     case 0x1D:
-        p = new (p) cObjChain();
+        p = new (p) cObjChain;
         break;
     case 0x20:
-        p = new (p) cObjObaModel();
+        p = new (p) cObjObaModel;
         break;
     case 0x22:
-        p = new (p) cObjRocket();
+        p = new (p) cObjRocket;
         break;
     case 0x23:
-        p = new (p) cObjLauncher();
+        p = new (p) cObjLauncher;
         break;
     case 0x26:
-        p = new (p) cObj26();
+        p = new (p) cObj26;
         break;
     case 0x29:
-        p = new (p) cObjGreFire();
+        p = new (p) cObjGreFire;
         break;
     case 0x2A:
-        p = new (p) cObjGreLight();
+        p = new (p) cObjGreLight;
         break;
     case 0x35:
-        p = new (p) cObjGondola();
+        p = new (p) cObjGondola;
         break;
     case 0x37:
-        p = new (p) cObjRobo();
+        p = new (p) cObjRobo;
         break;
     case 0x38:
-        p = new (p) cObjMissile();
+        p = new (p) cObjMissile;
         break;
     case 0x39:
-        p = new (p) cObjYagura();
+        p = new (p) cObjYagura;
         break;
     case 0x3A:
-        p = new (p) cObjEgg();
+        p = new (p) cObjEgg;
         break;
     case 0x3B:
-        p = new (p) cObjTrolley();
+        p = new (p) cObjTrolley;
         break;
     case 0x3E:
-        p = new (p) cObjBull();
+        p = new (p) cObjBull;
         break;
     case 0x1F:
-        p = new (p) cObjPillar();
+        p = new (p) cObjPillar;
         break;
     default:
         if (id > 0x3F) {

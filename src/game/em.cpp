@@ -1,6 +1,9 @@
 // game/em.cpp: the character work base (cEm) and its manager (cEmMgr): construction of the
 // player / enemy / object classes by id, the per-frame emMove loop, the damage info (cDmgInfo).
 
+#ifdef RE4_PORT
+extern "C" int printf(const char*, ...);
+#endif
 #include "atari.h"
 #include "ctrl.h"
 #include "em.h"
@@ -104,10 +107,16 @@ int cEmMgr::construct(cEm* p, u32 id)
     case 0xD:
     case 0xE:
         p->x378 = (u32) EmReadSearch(id, 0, 0);
+#ifdef RE4_PORT
+        printf("[DIAG] cEm id=%d x378=%08x\n", id, p->x378);
+#endif
         if (p->x378 == 0) {
             return 0;
         }
         EmInitFunc(p);
+#ifdef RE4_PORT
+        printf("[DIAG] apres EmInitFunc x378=%08x\n", p->x378);
+#endif
         break;
     case 0x40:
         p = new (p) cEmObj;
@@ -165,10 +174,16 @@ int cEmMgr::construct(cEm* p, u32 id)
         break;
     default:
         p->x378 = (u32) EmReadSearch(id, 0, 0);
+#ifdef RE4_PORT
+        printf("[DIAG] cEm(def) id=%d x378=%08x\n", id, p->x378);
+#endif
         if (p->x378 == 0) {
             return 0;
         }
         EmInitFunc(p);
+#ifdef RE4_PORT
+        printf("[DIAG] apres EmInitFunc x378=%08x\n", p->x378);
+#endif
         break;
     }
     switch (p->id) {

@@ -116,7 +116,7 @@ extern "C" void _unresolved()
 
 void Em2aInit(cEm* em)
 {
-    new (em) cEm2a();
+    new (em) cEm2a;
 }
 
 void em2aDmCkTrap1(cEm2a* em)

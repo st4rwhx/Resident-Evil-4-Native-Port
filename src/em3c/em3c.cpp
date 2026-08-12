@@ -118,7 +118,7 @@ extern "C" void _unresolved()
 
 void Em3cInit(cEm* em)
 {
-    new (em) cEm3c();
+    new (em) cEm3c;
 }
 
 void em3cDmCk(cEm3c* em)

@@ -511,7 +511,7 @@ static void pl_R1_KlauserAttack(cPlayer* pl)
 
 void Pl0aInit(cEm* em)
 {
-    new (em) cPlKlauser();
+    new (em) cPlKlauser;
 }
 
 extern "C" void _prolog()

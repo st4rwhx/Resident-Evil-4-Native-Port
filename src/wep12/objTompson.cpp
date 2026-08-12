@@ -11,7 +11,7 @@
 
 void ObjTompson_init(cObj* obj)
 {
-    new (obj) cObjTompson();
+    new (obj) cObjTompson;
 }
 
 void cObjTompson::init(cModel* parent)

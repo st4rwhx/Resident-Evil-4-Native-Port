@@ -54,7 +54,7 @@ void cObjKnife::init()
 
 void ObjKnife_init(cObj* obj)
 {
-    new (obj) cObjKnife();
+    new (obj) cObjKnife;
 }
 
 void cObjKnife::setMotion(cPlayer* pl)

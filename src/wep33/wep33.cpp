@@ -43,7 +43,7 @@ void Wep33_init(cModel* m)
 
 void ObjShotgun_init(cObj* obj)
 {
-    new (obj) cObjShotgun();
+    new (obj) cObjShotgun;
 }
 
 void cObjShotgun::init(cModel* parent)

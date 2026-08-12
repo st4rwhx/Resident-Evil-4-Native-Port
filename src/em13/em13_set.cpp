@@ -38,7 +38,7 @@ extern "C" void _unresolved()
 
 void Em13Init(cEm* em)
 {
-    new (em) cEm10();
+    new (em) cEm10;
 }
 
 void Em13Set(cEm10* em)

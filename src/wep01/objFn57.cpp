@@ -26,7 +26,7 @@ const u8 fn57_tbl[3] = { 0xE, 0xC, 0xA };
 
 void ObjFn57_init(cObj* obj)
 {
-    new (obj) cObjFn57();
+    new (obj) cObjFn57;
 }
 
 void cObjFn57::init(cModel* parent)

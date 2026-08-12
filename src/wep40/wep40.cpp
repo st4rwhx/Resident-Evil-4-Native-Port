@@ -138,7 +138,7 @@ void cObjHkSniper::setMotion(cPlayer* pl)
 
 void ObjHkSniper_init(cObj* obj)
 {
-    new (obj) cObjHkSniper();
+    new (obj) cObjHkSniper;
 }
 
 extern "C" void _prolog()

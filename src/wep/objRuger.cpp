@@ -28,7 +28,7 @@ const u8 ruger_tbl[3] = { 0x10, 0xE, 0xC };
 #ifndef OBJRUGER_NO_INIT   // pl0d (Wesker) carries this object without the entry point (src/pl0d/objRuger.cpp)
 void ObjRuger_init(cObj* obj)
 {
-    new (obj) cObjRuger();
+    new (obj) cObjRuger;
 }
 #endif
 

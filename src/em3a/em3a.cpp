@@ -169,7 +169,7 @@ void cEm3a::setNoSuspend(int on)
 
 void Em3aInit(cEm* em)
 {
-    new (em) cEm3a();
+    new (em) cEm3a;
 }
 
 void em3aDmCk(cEm3a* em)

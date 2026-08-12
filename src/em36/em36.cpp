@@ -268,7 +268,7 @@ extern "C" void _unresolved()
 
 void Em36Init(cEm* em)
 {
-    new (em) cEm36();
+    new (em) cEm36;
 }
 
 // A lost limb whose hit box took the damage (em36DmCk): the routine is set straight from the loop (one

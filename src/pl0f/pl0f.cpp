@@ -179,7 +179,7 @@ extern "C" void _unresolved()
 
 void Pl0fInit(cEm* em)
 {
-    new (em) cPl0f();
+    new (em) cPl0f;
 }
 
 void cPl0f::move()

@@ -36,7 +36,7 @@ void partsSet(cObjMine* obj);
 
 void ObjMine_init(cObj* obj)
 {
-    new (obj) cObjMine();
+    new (obj) cObjMine;
 }
 
 void cObjMine::init(cModel* parent)

@@ -90,7 +90,7 @@ extern "C" void _unresolved()
 
 void Em34Init(cEm* em)
 {
-    new (em) cEm34();
+    new (em) cEm34;
 }
 
 void em34DmCk(cEm34* em)

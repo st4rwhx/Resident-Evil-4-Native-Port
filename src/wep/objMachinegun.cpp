@@ -11,7 +11,7 @@
 
 void ObjMachinegun_init(cObj* obj)
 {
-    new (obj) cObjMachinegun();
+    new (obj) cObjMachinegun;
 }
 
 void cObjMachinegun::init(cModel* parent)

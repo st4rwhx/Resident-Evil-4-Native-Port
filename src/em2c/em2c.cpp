@@ -323,7 +323,7 @@ extern "C" void _unresolved()
 
 void Em2cInit(cEm* em)
 {
-    new (em) cEm2c();
+    new (em) cEm2c;
 }
 
 // Damage reaction after a hit while alive (em2cDmCk): by the state flags, then by the weapon.

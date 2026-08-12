@@ -133,7 +133,7 @@ extern "C" void _unresolved()
 
 void Em22Init(cEm* em)
 {
-    new (em) cEm22();
+    new (em) cEm22;
 }
 
 void em22DmCk(cEm22* em)

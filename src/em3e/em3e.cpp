@@ -33,7 +33,7 @@ static void emmark_none(cEmMark* em);
 
 void em3eInit(cEm* em)
 {
-    new (em) cEmMark();
+    new (em) cEmMark;
 }
 
 cEmMark::cEmMark()

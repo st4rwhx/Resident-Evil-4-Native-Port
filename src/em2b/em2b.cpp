@@ -445,7 +445,7 @@ extern "C" void _unresolved()
 
 void Em2bInit(cEm* em)
 {
-    new (em) cEm2b();
+    new (em) cEm2b;
 }
 
 cEm2b::~cEm2b()

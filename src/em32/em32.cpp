@@ -368,7 +368,7 @@ extern "C" void _unresolved()
 
 void Em32Init(cEm* em)
 {
-    new (em) cEm32();
+    new (em) cEm32;
 }
 
 void em32DmCk(cEm32* em)

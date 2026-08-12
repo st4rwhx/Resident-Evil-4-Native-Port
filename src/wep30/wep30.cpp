@@ -93,7 +93,7 @@ cObjWep* equipWeapon(cPlayer* pl)
 
 void ObjHandGre_init(cObj* obj)
 {
-    new (obj) cObjHandGre();
+    new (obj) cObjHandGre;
 }
 
 void cObjHandGre::init(cModel* parent)

@@ -14,7 +14,7 @@ const u8 hksniper_tbl[3] = { 0x14, 0xA, 0 };
 
 void ObjHkSniper_init(cObj* obj)
 {
-    new (obj) cObjHkSniper();
+    new (obj) cObjHkSniper;
 }
 
 void cObjHkSniper::init(cModel* parent)

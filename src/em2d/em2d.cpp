@@ -337,7 +337,7 @@ extern "C" void _unresolved()
 
 void Em2dInit(cEm* em)
 {
-    new (em) cEm2d();
+    new (em) cEm2d;
 }
 
 void em2dDmCk(cEm2d* em)
