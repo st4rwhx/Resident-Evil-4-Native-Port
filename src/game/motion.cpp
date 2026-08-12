@@ -940,6 +940,7 @@ void MotionHokan(cModel* m, MotionWork* w)
             #ifdef RE4_PORT
             // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
             // operandes contraignaient l ordonnancement du compilateur d origine
+            pm = p->prevMat;   // portage : ce bloc asm vide affectait `pm` (contrainte "0")
             #else
             asm("" : "=r"(pm) : "0"(p->prevMat));  // COMPILER-DIFF: launder, the extra insn on the r4 path ranks both addi r4 above mr r3
             #endif

@@ -50,6 +50,9 @@ extern inline float cos(float x) {
     return cosf(x);
 }
 
+#ifdef RE4_PORT   // portage : une copie par unite (en C gnu89, `inline` seul definit le symbole dans chacune)
+static
+#endif
 inline float floor(float x) {
     int i=(int)x;   
     float y=x-(float)i; 

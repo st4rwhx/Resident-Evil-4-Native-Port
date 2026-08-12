@@ -95,4 +95,13 @@ unsigned long port_mem1_base(void);
 }
 #endif
 
+
+// Intrinseques PowerPC du compilateur d'origine, appeles par les bibliotheques de la decompilation
+// (include/fake_tgmath.h : __frsqrte puis trois iterations de Newton, __fabsf). Ici en C portable.
+#ifndef PORT_PPC_INTRINSICS
+#define PORT_PPC_INTRINSICS
+static inline double __frsqrte(double x) { return 1.0 / __builtin_sqrt(x); }
+static inline float __fabsf(float x) { return __builtin_fabsf(x); }
+#endif
+
 #endif

@@ -20,9 +20,9 @@
 // `extern "C"` existants, et y faire entrer <dolphin/types.h> changerait la liaison de tout ce
 // qu'il declare - une erreur qui se manifeste trente fichiers plus loin, sur `sprintf`.
 // `extern "C++"` protege les declarations ci-dessous quel que soit le contexte d'inclusion.
-extern "C++" {
-
 #ifdef __cplusplus
+
+extern "C++" {
 
 extern "C" {
 void port_wg_push_u8(u8 v);

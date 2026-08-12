@@ -33,18 +33,18 @@ void OSVReport(const char *msg, std::va_list list)
 
 // Mixeur AX : le volume, la position stereo et la profondeur d'une voix. Sans couche audio, il
 // n'y a rien a regler ; ces appels sont frequents et silencieux par construction.
-void MIXInitChannel(AXVPB *p, u32 mode, int input, int auxA, int auxB, int pan, int span,
+__attribute__((weak)) void MIXInitChannel(AXVPB *p, u32 mode, int input, int auxA, int auxB, int pan, int span,
                     int fader)
 {
     (void) p; (void) mode; (void) input; (void) auxA; (void) auxB;
     (void) pan; (void) span; (void) fader;
 }
 
-void MIXReleaseChannel(AXVPB *p) { (void) p; }
+__attribute__((weak)) void MIXReleaseChannel(AXVPB *p) { (void) p; }
 
-void MIXSetInput(AXVPB *p, int dB) { (void) p; (void) dB; }
-void MIXSetPan(AXVPB *p, int pan) { (void) p; (void) pan; }
-void MIXSetSPan(AXVPB *p, int span) { (void) p; (void) span; }
+__attribute__((weak)) void MIXSetInput(AXVPB *p, int dB) { (void) p; (void) dB; }
+__attribute__((weak)) void MIXSetPan(AXVPB *p, int pan) { (void) p; (void) pan; }
+__attribute__((weak)) void MIXSetSPan(AXVPB *p, int span) { (void) p; (void) span; }
 
 }
 

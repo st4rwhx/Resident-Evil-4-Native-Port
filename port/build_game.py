@@ -18,6 +18,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -32,18 +33,24 @@ COMMON = ['-DRE4_PORT', '-DDEBUG=1', '-DVERSION_G4BE08', '-D__GEKKO__',
           # Tables de deroulement et pointeur de cadre : sans elles le tombstone Android ne
           # donne que la premiere adresse, souvent fausse (une instruction de retour), et on
           # cherche le bug au mauvais endroit. Le cout en taille est sans importance ici.
-          '-funwind-tables', '-fno-omit-frame-pointer', '-g1']
+          '-funwind-tables', '-fno-omit-frame-pointer', '-g1',
+          # Code d'epoque, ecrit pour le compilateur Metrowerks : des fonctions non void se terminent
+          # sans return (cSofdec::startApp : a -O2 clang jugeait la suite inatteignable et le code
+          # tombait dans les donnees, SIGILL au film d'ouverture), des types se lisent l'un par
+          # l'autre, des calculs signes debordent volontairement, et l'image doit rester celle des
+          # flottants separes (pas de fusion multiplication-addition).
+          '-fno-strict-return', '-fno-strict-aliasing', '-fwrapv', '-ffp-contract=off']
 # gnu++11 et pas gnu++17 : gnu++17 supprime `register` et rouvre 44 erreurs. -fdeclspec en
 # resout 369 a lui seul.
 # -Wno-c++11-narrowing : snd_str4.cpp fait `switch (u32)` sur des constantes DVD_STATE_*
 # negatives. C'est legal pour le compilateur d'origine et sans consequence ici - la valeur
 # comparee est la meme apres conversion - mais c'est une **erreur** en C++11.
 CXXONLY = ['-std=gnu++11', '-fdeclspec', '-Wno-c++11-narrowing']
-CONLY = ['-std=gnu99', '-fdeclspec']
+CONLY = ['-std=gnu99', '-fdeclspec', '-fgnu89-inline']   # extern inline des en-tetes d'epoque (fake_tgmath.h) : pas de definition externe
 
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip']
 
 
 # Unites du jeu volontairement **exclues** du portage.
@@ -89,12 +96,23 @@ EXCLUDED = {
 }
 
 
+# Bibliotheques de la decompilation qui sont du pur logiciel et se compilent telles quelles : le
+# middleware CRI (films Sofdec : sfd/mpv/mps/dct/mws/sfx..., son ADX : adx/sj/lsc/rna...) et la
+# partie logicielle du son Nintendo (synthetiseur, sequenceur, mixeur, AXART, effets AXFX). Le
+# materiel qu'elles pilotent (AX/DSP, GX, DVD, OS) reste fourni par la couche du portage ; les
+# souches faibles du portage s'effacent devant ces vraies definitions. RE4_NOLIB=1 : sans elles.
+# Phase N1 : le son logiciel Nintendo seulement ; CRI (films, ADX) et la reverberation (asm PowerPC) en phase N4.
+LIB_SOFT = re.compile(r'^lib/(mix\.c|axart|syn|seq\.c|delay|axfx)')
+
+
 def units():
     p = os.path.join(ROOT, 'config', 'G4BE08', 'objects.py')
     spec = importlib.util.spec_from_file_location('objects', p)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return [u for u in mod.UNITS if not u.startswith('lib/') and u not in EXCLUDED]
+    keep_lib = not os.environ.get('RE4_NOLIB')
+    return [u for u in mod.UNITS if u not in EXCLUDED and
+            (not u.startswith('lib/') or (keep_lib and LIB_SOFT.match(u)))]
 
 
 def main():
@@ -125,7 +143,7 @@ def main():
     except Exception:
         stamps = {}
 
-    inc = ['-I' + os.path.join(ROOT, 'include'), '-I' + ROOT, '-I' + os.path.join(ROOT, 'port'), '-I' + os.path.join(ROOT, 'src'),
+    inc = ['-I' + os.path.join(ROOT, 'include'), '-I' + ROOT, '-I' + os.path.join(ROOT, 'port'), '-I' + os.path.join(ROOT, 'src'), '-idirafter', os.path.join(ROOT, 'src', 'lib', 'cri'), '-idirafter', os.path.join(ROOT, 'src', 'lib'),
            '-include', os.path.join(ROOT, 'port', 'port_prelude.h')]
     # L'empreinte du cache couvre **aussi les en-tetes**. Sans cela, modifier un `#ifdef
     # RE4_PORT` dans include/ ne recompile rien et le lien echoue sur un symbole qu'on vient

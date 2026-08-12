@@ -405,6 +405,14 @@ BOOL DVDReadAsyncPrio(DVDFileInfo *fileInfo, void *addr, s32 length, s32 offset,
             const ssize_t n = port_pread(f, addr, (size_t) length, (off_t) offset);
             got = (n > 0) ? (s32) n : 0;
             ::close(f);
+            // Dossier extrait : le fichier s'arrete a sa taille logique, la ou le disque continue sur son
+            // remplissage (voir le cas de l'image ci-dessous). Une demande arrondie au-dela de la fin
+            // (etc/sizetbl.dat : 2 660 octets) rendait moins que demande, et le jeu bouclait sur
+            // « DVD: Read Error!!! ». On complete par des zeros, comme le remplissage du disque.
+            if (offset >= 0 && got >= 0 && got < length) {
+                memset((u8 *) addr + got, 0, (size_t) (length - got));
+                got = length;
+            }
         }
     } else if (g_image >= 0) {
         // Depuis l image : la position du fichier plus le decalage demande.

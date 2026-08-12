@@ -315,6 +315,7 @@ void Esp09_PolyTrans(cEsp09* esp, u8 r, u8 g, u8 b, u8 a)
         #ifdef RE4_PORT
         // portage : bloc asm vide, il ne produisait aucune instruction - seules ses
         // operandes contraignaient l ordonnancement du compilateur d origine
+        p = pn;   // portage : ce bloc asm vide affectait `p` (contrainte "0")
         #else
         asm("" : "=r"(p) : "0"(pn));  // COMPILER-DIFF: candidate (cse canonical register): tied copy, regmove emits the mr
         #endif
