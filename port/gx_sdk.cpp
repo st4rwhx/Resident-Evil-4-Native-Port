@@ -155,6 +155,20 @@ void port_gx_deliver(void)
     g_delivering = false;
 }
 
+// Decodage a la soumission (phase B, PLAN_NATIF_REPRISE_2026-11-12.md) : RE4 construit les sommets de tous ses modeles
+// skinnes dans UN tampon partage (AllocDrawTmpBuf) qu'il reecrit pour le modele suivant aussitot le dessin soumis. Le rendu
+// doit donc lire les sommets au moment ou le dessin est soumis, pas a la fin de l'image (surfaces geantes de r100, voir
+// PASSATION_2026-10-28_ANTIGRAVITY.md ; contournement 0.1.9 = copies volatiles). Appele a la fin de chaque primitive
+// (GXEnd) et apres chaque appel de liste d'affichage : les commandes completes sont lues et leurs dessins decodes tout de
+// suite, dans le fil du jeu (comme CubeEvil4).
+void port_gx_submit(void)
+{
+    if (g_list || g_fifo.n == 0)
+        return;   // liste en cours d'enregistrement : elle sera lue quand elle sera jouee
+    njgfx_sync(g_fifo.p, (unsigned) g_fifo.n);
+    g_fifo.n = 0;
+}
+
 // Fin d'une image (VIFlush, vi.cpp) : le rendu dessine tout le flux et envoie l'image a l'appli.
 void port_gx_frame(void)
 {

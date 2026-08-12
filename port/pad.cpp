@@ -15,6 +15,7 @@
 // courir Leon en permanence vers le coin haut-droit.
 #include "port_log.h"
 #include "njlink.h"
+extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
 
 #include <cstdio>
 #include <cstdlib>
@@ -120,6 +121,36 @@ u32 PADRead(PADStatus *status)
                 status[0].stickY = (s8)script[i].sy;
             }
         ++reads;
+    }
+    // Banc d'essai : RE4_AUTOLOAD=1 charge la sauvegarde 01 en suivant l'etat du jeu (njstate.cpp), pas l'horloge :
+    // logos et « PRESS START » -> Start ; menu du titre -> haut puis A (NEW GAME) ; ecran de la carte -> une fois
+    // haut (le curseur est sur 02) puis A ; texte qui attend -> A. Une fois en jeu, plus rien : Leon reste immobile.
+    static const bool autoload = getenv("RE4_AUTOLOAD") != nullptr;
+    if (autoload) {
+        static unsigned k = 0, card_reads = 0;
+        static bool in_game = false, up_done = false;
+        NjState st;
+        njstate_fill(&st);
+        ++k;
+        const bool pulse = (k % 40) < 4;   // un appui de 4 lectures toutes les 40
+        if (st.mode == 1 && (st.bits & NJS_PLAYER))
+            in_game = true;
+        if (st.bits & NJS_CARD) {
+            ++card_reads;
+            if (!up_done && card_reads == 120) { status[0].button |= PAD_BUTTON_UP; up_done = true; }
+            else if (card_reads > 160 && pulse) status[0].button |= PAD_BUTTON_A;
+        } else if (st.bits & NJS_TEXT_WAIT) {
+            if (pulse) status[0].button |= PAD_BUTTON_A;
+        } else if (!in_game) {
+            if (st.bits & NJS_TITLE_MENU) {   // NEW GAME est au-dessus de LOAD (curseur par defaut) : une fois haut, puis A
+                static unsigned menu_reads = 0;
+                static bool menu_up = false;
+                if (st.title_menu_alpha > 0.9f) ++menu_reads;
+                if (!menu_up && menu_reads == 60) { status[0].button |= PAD_BUTTON_UP; menu_up = true; }
+                else if (menu_up && menu_reads > 100 && pulse) status[0].button |= PAD_BUTTON_A;
+            }
+            else if (st.mode == 6 && pulse) status[0].button |= PAD_BUTTON_START;
+        }
     }
     static const bool autopad = getenv("RE4_AUTOPAD") != nullptr;
     if (autopad) {

@@ -2,6 +2,9 @@
 #include <dolphin/os.h>
 
 #include "__gx.h"
+#ifdef RE4_PORT
+#include <dlfcn.h>
+#endif
 
 #define CHECK_ATTRPTR(line, attrPtr) ASSERTMSGLINE(line, (attrPtr) != NULL, "GXSetVtxDescv: attrPtr is NULL")
 #define CHECK_ATTRNAME(line, attr)   ASSERTMSGLINE(line, (attr) >= GX_VA_PNMTXIDX, "GXSetVtxDesc: Invalid vertex attribute name")
@@ -519,6 +522,29 @@ void GXSetArray(GXAttr attr, void* base_ptr, u8 stride) {
     CHECK_ATTRNAME5(966, attr);
     cpAttr = attr - GX_VA_POS;
     phyAddr = (u32)base_ptr & 0x3FFFFFFF;
+#ifdef RE4_PORT
+    {   /* diagnostic N3 : tableau de sommets hors de MEM1 (le rendu ne le lirait pas : couleurs blanches...) */
+        extern void OSReport(const char* fmt, ...);
+        static void* seen[24];
+        static int nseen;
+        u32 a = (u32) base_ptr;
+        if (base_ptr && (a < 0x80000000u || a >= 0x82000000u)) {
+            void* ra = __builtin_return_address(0);
+            int i, dup = 0;
+            for (i = 0; i < nseen; ++i) dup |= seen[i] == ra;
+            if (!dup && nseen < 24) {
+                Dl_info di, dl;
+                int ok1, ok2;
+                seen[nseen++] = ra;
+                ok1 = dladdr(ra, &di);
+                ok2 = dladdr(base_ptr, &dl);
+                OSReport("[ARRHORS] attr %d tableau %08x pas %u appelant %s +%x ; tableau dans %s +%x\n", (int) attr, a, (unsigned) stride,
+                         ok1 && di.dli_sname ? di.dli_sname : "?", ok1 && di.dli_saddr ? (u32) ((char*) ra - (char*) di.dli_saddr) : 0,
+                         ok2 && dl.dli_sname ? dl.dli_sname : "?", ok2 && dl.dli_saddr ? (u32) ((char*) base_ptr - (char*) dl.dli_saddr) : 0);
+            }
+        }
+    }
+#endif
 
     GX_WRITE_SOME_REG2(8, cpAttr | 0xA0, phyAddr, cpAttr - 12);
     GX_WRITE_SOME_REG3(8, cpAttr | 0xB0, stride, cpAttr - 12);

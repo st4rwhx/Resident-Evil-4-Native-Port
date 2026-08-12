@@ -173,9 +173,12 @@ void take(const unsigned char *bytes, unsigned size) {
 
 extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) {
   HostScope hs;
-  note_thread("sync");
-  GlScope gs;
-  take(bytes, size);
+  if (!g_ready) {   // premiere fois : init() cree le contexte GL
+    GlScope gs;
+    take(bytes, size);
+    return;
+  }
+  take(bytes, size);   // lecture du flux et decodage des sommets : aucun appel GL
 }
 
 extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {

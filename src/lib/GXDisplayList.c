@@ -4,6 +4,9 @@
 #include <dolphin/os.h>
 
 #include "__gx.h"
+#ifdef RE4_PORT
+#include <dlfcn.h>
+#endif
 
 static __GXFifoObj DisplayListFifo;
 static volatile __GXFifoObj* OldCPUFifo;
@@ -108,7 +111,37 @@ void GXCallDisplayList(void* list, u32 nbytes) {
         __GXSendFlushPrim();
     }
 
+#ifdef RE4_PORT
+    {   /* diagnostic N3 : liste hors de MEM1 (le GPU ne la lirait pas) : appelant releve */
+        extern void OSReport(const char* fmt, ...);
+        static void* seen[16];
+        static int nseen;
+        u32 a = (u32) list;
+        if (a < 0x80000000u || a >= 0x82000000u) {
+            void* ra = __builtin_return_address(0);
+            int i, dup = 0;
+            for (i = 0; i < nseen; ++i) dup |= seen[i] == ra;
+            if (!dup && nseen < 16) {
+                seen[nseen++] = ra;
+                {
+                    Dl_info di, dl;
+                    int ok1 = dladdr(ra, &di), ok2 = dladdr(list, &dl);
+                    OSReport("[DLHORS] liste %08x taille %x appelant %p (%s +%x, base %p) ; liste dans %s +%x\n", a, nbytes, ra,
+                             ok1 && di.dli_sname ? di.dli_sname : "?", ok1 && di.dli_saddr ? (u32) ((char*) ra - (char*) di.dli_saddr) : 0,
+                             ok1 ? di.dli_fbase : 0, ok2 && dl.dli_sname ? dl.dli_sname : "?",
+                             ok2 && dl.dli_saddr ? (u32) ((char*) list - (char*) dl.dli_saddr) : 0);
+                }
+            }
+        }
+    }
+#endif
     GX_WRITE_U8(GX_CMD_CALL_DL);
     GX_WRITE_U32(list);
     GX_WRITE_U32(nbytes);
+#ifdef RE4_PORT
+    {   /* decodage a la soumission (port/gx_sdk.cpp) : les sommets lus avant que le jeu ne reecrive son tampon */
+        extern void port_gx_submit(void);
+        port_gx_submit();
+    }
+#endif
 }

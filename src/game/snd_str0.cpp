@@ -219,6 +219,10 @@ int Snd_str_get_status(u32 snd_id)
 {
     SND_STR_WORK* str;
 
+#ifdef RE4_PORT
+    if ((snd_id & 0xFF000000u) == 0xFF000000u)
+        return 0x3;   // flux muet de l'echafaudage (snd.cpp SndStrReq) : valide et pret, jamais en lecture
+#endif
     str = Snd_search_str_work_snd_id(snd_id);
     if (str == NULL) {
         return -1;

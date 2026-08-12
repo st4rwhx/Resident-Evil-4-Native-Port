@@ -833,6 +833,44 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         }
         return;
     }
+    // op/opNN.das : appels radio (Sscrn ss_term.cpp). 0x400 octets de remplissage, puis une archive a table de decalages
+    // (n, trois mots nuls, ofs[n] ; SsArc::ofs[4..] = OP_ARC_PTR 4..29) : entrees 4..16 tables de messages (MesData type 2),
+    // 17..29 sequences TermSeq de 0x10 octets (u16, s16, int time, int mesNo, int arg ; arg = -1 termine). Non convertie,
+    // la radio suivait des decalages sauvages (plantage dans SsTermMain::OpeMesMove, 12/11).
+    if (std::strstr(name, "op/op") && ends_with(name, ".das")) {
+        if (size <= 0x400)
+            return;
+        const Span a = { s.base + 0x400, size - 0x400 };
+        if (!swap_arc(a)) {
+            std::printf("[PORT] endian : %s : archive radio inattendue\n", name);
+            return;
+        }
+        const u32 n = read_le32(a.base);
+        for (u32 k = 0; k < n; ++k) {
+            const u32 o = read_le32(a.base + 0x10 + 4 * k);
+            if (!o)
+                continue;
+            const u32 end = arc_chunk_end(a, o);
+            const u32 idx = k + 4;   // OP_ARC_PTR(wk, idx) lit SsArc::ofs[idx], soit l'entree k de la table
+            if (idx <= 16) {
+                if (!swap_mes_tbl(a, o, end))
+                    std::printf("[PORT] endian : %s : messages %u inattendus\n", name, (unsigned) idx);
+            } else {
+                for (u32 t = o; t + 0x10 <= end; t += 0x10) {
+                    u8 *e = a.base + t;
+                    const u32 arg = read_be32(e + 0x0C);
+                    swap_u16(e);
+                    swap_u16(e + 2);
+                    swap_u32(e + 4);
+                    swap_u32(e + 8);
+                    swap_u32(e + 0x0C);
+                    if (arg == 0xFFFFFFFFu)
+                        break;
+                }
+            }
+        }
+        return;
+    }
     if (ends_with(name, "roominfo.dat")) {
         if (!swap_room_info(s))
             std::printf("[PORT] endian : %s n a pas la forme attendue\n", name);
@@ -907,6 +945,7 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     const u32 pHead = read_be32(h + 0x00), pClr = read_be32(h + 0x0C), pTex = read_be32(h + 0x10);
     const u32 pWeight = read_be32(h + 0x14), pParts = read_be32(h + 0x1C), vtxOrig = read_be32(h + 0x30);
     const u32 nrmOrig = read_be32(h + 0x34);
+    const u32 shapeOfs = read_be32(h + 0x2C);   // table des formes (shape.cpp), 0 = aucune
     const bool ext = version > 0x20030817u && s.has(at, 0x48);
     const u32 blendTbl = ext ? read_be32(h + 0x40) : 0, flipTbl = ext ? read_be32(h + 0x44) : 0;
     const u32 flags = read_be32(h + 0x20);
@@ -917,10 +956,10 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     const u32 size_all = end - at;
 
     // Bornes de chaque region : la suivante dans le fichier.
-    const u32 offs[10] = { pHead, pClr, pTex, pWeight, pParts, vtxOrig, nrmOrig, blendTbl, flipTbl, size_all };
+    const u32 offs[11] = { pHead, pClr, pTex, pWeight, pParts, vtxOrig, nrmOrig, blendTbl, flipTbl, shapeOfs, size_all };
     auto region_end = [&](u32 o) {
         u32 e = size_all;
-        for (u32 k = 0; k < 10; ++k)
+        for (u32 k = 0; k < 11; ++k)
             if (offs[k] > o && offs[k] < e)
                 e = offs[k];
         return e;
@@ -970,6 +1009,38 @@ bool conv_model_bin(const Span &s, u32 at, u32 end)
     // positions des sommets : s16 x, y, z puis l'indice de matrice
     for (u32 i = 0; i < nVtx * 4; ++i)
         swap_u16(h + vtxOrig + i * 2);
+    // Table des formes (visages qui parlent : radio, cinematiques ; shape.cpp CalculateShape_new) : u32 nombre, puis
+    // `nombre` entrees {u32 decalage depuis la table (= shapeOfs + 4), s32 n}, chacune vers n x 4 s16 (indice de sommet,
+    // dx, dy, dz). Plusieurs entrees peuvent viser la meme liste : chaque liste est retournee une fois, avec le plus
+    // grand n. Non convertie, la radio plantait (12/11).
+    if (shapeOfs >= 0x40 && ok(shapeOfs, 4)) {
+        const u32 cnt = read_be32(h + shapeOfs);
+        const u32 tbl = shapeOfs + 4;
+        if (cnt > 0 && cnt <= 0x400 && ok(tbl, cnt * 8)) {
+            u32 lo[0x400], ln[0x400], nl = 0;
+            bool good = true;
+            for (u32 i = 0; i < cnt && good; ++i) {
+                const u32 o = read_be32(h + tbl + i * 8), n = read_be32(h + tbl + i * 8 + 4);
+                if (n > 0x10000 || !ok(tbl + o, n * 8)) { good = false; break; }
+                u32 k = 0;
+                while (k < nl && lo[k] != o) ++k;
+                if (k == nl) { lo[nl] = o; ln[nl] = n; ++nl; }
+                else if (n > ln[k]) ln[k] = n;
+            }
+            if (good) {
+                swap_u32(h + shapeOfs);
+                for (u32 i = 0; i < cnt; ++i) {
+                    swap_u32(h + tbl + i * 8);
+                    swap_u32(h + tbl + i * 8 + 4);
+                }
+                for (u32 k = 0; k < nl; ++k)
+                    for (u32 j = 0; j < ln[k] * 4; ++j)
+                        swap_u16(h + tbl + lo[k] + j * 2);
+            } else {
+                std::printf("[PORT] endian : BIN a +0x%x : table des formes incoherente\n", (unsigned) at);
+            }
+        }
+    }
     // normales : s8 x4, ou s16 x4
     if (!nrm8)
         for (u32 i = 0; i < nNrm * 4; ++i)

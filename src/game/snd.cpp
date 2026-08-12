@@ -1157,6 +1157,13 @@ u32 SndStrReq(int blk, int no, int req, int time, int vol, f32 pos)
         return 0;
     }
     if (str_flag == 0) {
+#ifdef RE4_PORT
+        // ECHAFAUDAGE TEMPORAIRE (phase C du plan natif : le son n'existe pas encore) : un flux muet, pret tout de
+        // suite et jamais « en cours », pour que la radio et les cinematiques avancent a leur propre rythme (sous-titres)
+        // au lieu d'attendre un flux qui n'arrive jamais (ss_term.cpp OpeMesMove). A retirer quand le son sera branche.
+        if (req & 0x1)
+            return 0xFF000000u | ((u32) (blk & 0xFF) << 16) | (u32) (no & 0xFFFF);
+#endif
         OSReport("SND: No STR Header.\n");
         return 0;
     }

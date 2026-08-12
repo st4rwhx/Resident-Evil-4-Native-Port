@@ -37,7 +37,8 @@ void __GXVerifyState(void) {}
 void __GXVerifyVATImm(uint32_t, uint32_t, uint32_t) {}
 
 // fin d'une primitive (GXGeometry.h en portage) : le materiel ne fait rien de plus
-void port_gx_end(void) {}
+extern "C" void port_gx_submit(void);   // gx_sdk.cpp : decodage a la soumission
+void port_gx_end(void) { port_gx_submit(); }
 
 // cache de palettes de charPipeline (texPalette.c) : pas de cache, lecture directe
 int DOCacheInitialized = 0;
