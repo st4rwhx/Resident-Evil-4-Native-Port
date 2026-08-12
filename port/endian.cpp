@@ -2061,6 +2061,177 @@ static void swap_area(u8 *a)
         swap_u32(a + 4 + 4 * k);
 }
 
+// ---- BLK : blocs de la salle (include/block.h, game/block.cpp cBlock::roomInit). En-tete : "BLK\0", u16 version (0x100),
+// u8, u8 nBlock, u16 nArea, u16 nConnect, u32 ofsLink, ofsArea, ofsConnect. BlockLink (12 o) et BlockConnect (0x14 o) ne
+// sont que des octets ; BlockArea (0x38 o) : u32 lien OT, AreaData, 4 octets. Non convertie, « BLOCK AREA DATA IS OLD
+// VERSION » : aucun bloc cree, donc aucun decor dans les salles a blocs (r100, 12/11).
+bool conv_blk(const Span &s, u32 at, u32 end)
+{
+    track_label("BLK");
+    (void) end;
+    if (!s.has(at, 0x18))
+        return false;
+    u8 *h = s.base + at;
+    if (std::memcmp(h, "BLK", 4) != 0)
+        return false;
+    if (((h[4] << 8) | h[5]) != 0x100)
+        return false;
+    const u32 nArea = (u32) ((h[8] << 8) | h[9]);
+    const u32 ofsArea = read_be32(h + 0x10);
+    if (nArea > 0x400 || (nArea && !s.has(at + ofsArea, nArea * 0x38)))
+        return false;
+    swap_u16(h + 4);
+    swap_u16(h + 8);
+    swap_u16(h + 0xA);
+    swap_u32(h + 0xC);
+    swap_u32(h + 0x10);
+    swap_u32(h + 0x14);
+    for (u32 i = 0; i < nArea; ++i) {
+        u8 *a = h + ofsArea + i * 0x38;
+        swap_u32(a);
+        swap_area(a + 4);
+    }
+    return true;
+}
+
+// ---- AEV / ITA : zones de scenario et objets poses (include/sce_at.h SceAtWork, src/game/sce_at.cpp SceAtFileHead).
+// En-tete 0x10 : "AEV\0" / "ITA\0", u16 version (0x104 / 0x105), u16 num, 8 octets ; puis num SceAtWork de 0x9C.
+// Partie commune : u32 lien OT, AreaData (0x04), octets 0x34..0x3B, int arg (0x3C), fonction (0x40, posee par le jeu),
+// octets 0x44..0x4B, modele parent (0x4C, pose par le jeu), s16 parentParts (0x50), octets. Puis l'union de 0x5C, selon le
+// type x35 (sceAtFunc_tbl) : porte, objet, drapeau, message, sauvegarde, ombre, degats, collision, camera, champ, echelle,
+// objet utilise, cachette, saut. Les pointeurs et fonctions (poses a l'execution) ne sont pas touches. Non convertie :
+// « SceAt DATA IS OLD VERSION » / « SceItem DATA IS OLD VERSION » : ni portes, ni actions, ni objets (12/11).
+static void swap_f32n(u8 *p, int n)
+{
+    for (int k = 0; k < n; ++k)
+        swap_u32(p + 4 * k);
+}
+
+bool conv_sceat(const Span &s, u32 at, u32 end)
+{
+    track_label("AEV");
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const bool aev = std::memcmp(h, "AEV", 4) == 0, ita = std::memcmp(h, "ITA", 4) == 0;
+    if (!aev && !ita)
+        return false;
+    const u32 ver = (u32) ((h[4] << 8) | h[5]), num = (u32) ((h[6] << 8) | h[7]);
+    if ((aev && ver != 0x104) || (ita && ver != 0x105))
+        return false;
+    const u32 rec = 0x9C;
+    if (num > 0x400 || !s.has(at + 0x10, num * rec))
+        return false;
+    swap_u16(h + 4);
+    swap_u16(h + 6);
+    for (u32 i = 0; i < num; ++i) {
+        u8 *w = h + 0x10 + i * rec;
+        swap_u32(w);                // lien OT
+        swap_area(w + 0x04);
+        swap_u32(w + 0x3C);         // arg
+        swap_u32(w + 0x40);         // fonction (nulle sur le disque)
+        swap_u32(w + 0x4C);         // modele parent (nul sur le disque)
+        swap_u16(w + 0x50);         // parentParts
+        u8 *u = w + 0x5C;
+        switch (w[0x35]) {
+        case 0x01:                  // porte : Vec, f32, octets, fonction, octets, int arg
+            swap_f32n(u, 4);
+            swap_u32(u + 0x14);
+            swap_u32(u + 0x1C);
+            break;
+        case 0x03:                  // objet : Vec pos, modele, Vec ofs, u16 x4, octets, s16 saveNo, f32 size, Vec rot
+            swap_f32n(u, 3);
+            swap_u32(u + 0x0C);
+            swap_f32n(u + 0x10, 3);
+            for (int k = 0; k < 4; ++k) swap_u16(u + 0x1C + 2 * k);
+            swap_u16(u + 0x2A);
+            swap_f32n(u + 0x2C, 4);
+            break;
+        case 0x04:                  // drapeau : u8, u8, u16 no
+            swap_u16(u + 2);
+            break;
+        case 0x05:                  // message : s16 type, s16 no, u8, u8, u16
+            swap_u16(u);
+            swap_u16(u + 2);
+            swap_u16(u + 6);
+            break;
+        case 0x08:                  // sauvegarde : int
+        case 0x0D:                  // champ : int, modele
+            swap_u32(u);
+            swap_u32(u + 4);
+            break;
+        case 0x09:                  // ombre : u16 no
+            swap_u16(u);
+            break;
+        case 0x0A:                  // degats : int time, octets, int arg, f32 power
+            swap_u32(u);
+            swap_u32(u + 8);
+            swap_u32(u + 0x0C);
+            break;
+        case 0x0B:                  // collision : 2 pointeurs, octets, int attr, attr2, u32 flags, int flag
+            swap_u32(u);
+            swap_u32(u + 4);
+            swap_f32n(u + 0x0C, 4);
+            break;
+        case 0x0C:                  // camera : Vec, f32, octets, f32 range, f32 range2
+            swap_f32n(u, 4);
+            swap_f32n(u + 0x14, 2);
+            break;
+        case 0x10:                  // echelle : Vec, f32, octets
+            swap_f32n(u, 4);
+            break;
+        case 0x11:                  // objet utilise : u16 useItem[2]
+            swap_u16(u);
+            swap_u16(u + 2);
+            break;
+        case 0x12:                  // cachette : octets, Vec pos (0x24), fonction (0x30)
+            swap_f32n(u + 0x24, 4);
+            break;
+        case 0x13:                  // saut : Vec
+            swap_f32n(u, 3);
+            break;
+        default:                    // 0/6/7/0x14 normal (pointeurs poses par le jeu), 2 exec, 0xE, 0xF : rien sur le disque
+            break;
+        }
+    }
+    return true;
+}
+
+// ---- CNS : constantes de la salle (src/game/cons.cpp ConsRoom) : u32 num, u32 bits[(num >> 5) + 1], u32 valeurs[num].
+bool conv_cns(const Span &s, u32 at, u32 end)
+{
+    track_label("CNS");
+    (void) end;
+    if (!s.has(at, 4))
+        return false;
+    const u32 num = read_be32(s.base + at);
+    const u32 words = 1 + (num >> 5) + 1 + num;
+    if (num > 0x1000 || !s.has(at, words * 4))
+        return false;
+    for (u32 i = 0; i < words; ++i)
+        swap_u32(s.base + at + 4 * i);
+    return true;
+}
+
+// ---- EMI : points des ennemis (include/embarrel.h EmiData) : int n, 4 octets, puis n entrees de 0x40 : octets, Vec pos
+// (0x04), f32 rotY (0x10). Le reste de l'entree (0x14..0x3F) n'a pas de type connu dans le decompile : laisse tel quel.
+bool conv_emi(const Span &s, u32 at, u32 end)
+{
+    track_label("EMI");
+    (void) end;
+    if (!s.has(at, 8))
+        return false;
+    const u32 n = read_be32(s.base + at);
+    if (n > 0x400 || !s.has(at + 8, n * 0x40))
+        return false;
+    swap_u32(s.base + at);
+    for (u32 i = 0; i < n; ++i)
+        for (u32 k = 0; k < 4; ++k)
+            swap_u32(s.base + at + 8 + i * 0x40 + 4 + 4 * k);
+    return true;
+}
+
 // ---- EAR : zones d'affichage des effets (SstArea, include/espgen.h) : u32 nombre, entrees de 0x98 des 0x10
 bool conv_ear(const Span &s, u32 at, u32 end)
 {
@@ -2355,6 +2526,11 @@ const TagConv kRoomTags[] = {
     { "MDT", conv_mdt },
     { "EAR", conv_ear },
     { "SAR", conv_sar },
+    { "BLK", conv_blk },
+    { "AEV", conv_sceat },
+    { "ITA", conv_sceat },
+    { "CNS", conv_cns },
+    { "EMI", conv_emi },
     { "FSE", conv_fse },
     { "ESE", conv_ese },
     { "FCV", conv_motion },

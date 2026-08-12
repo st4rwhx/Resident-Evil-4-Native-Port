@@ -303,6 +303,19 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
     }
     if (diag) {
         e1 = glGetError();
+        {   // pixel source (EFB) et destination (image partagee), au milieu de la zone de jeu (512 x 448)
+            unsigned char ps[4] = {}, pd[4] = {};
+            GLint rf = 0, df = 0, ca = 0;
+            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &rf);
+            glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &df);
+            glGetFramebufferAttachmentParameteriv(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &ca);
+            glReadPixels(x + 256, y + h - 224, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, ps);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, g_fbo[slot]);
+            glReadPixels(g_w * 256 / 640, g_h - g_h * 224 / 480, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pd);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint) fbo);
+            std::printf("[NJLINK] pixels %u : fbo lu %d (couleur %d) ecrit %d ; source %02x%02x%02x%02x destination %02x%02x%02x%02x\n", n_blit,
+                        rf, ca, df, ps[0], ps[1], ps[2], ps[3], pd[0], pd[1], pd[2], pd[3]);
+        }
         std::printf("[NJLINK] copie %u : erreur avant %x apres %x, lecture %x (tampon %x), ecriture %x, src (%d,%d %dx%d)\n", n_blit, e0, e1, rs,
                     (unsigned) rb, ds, x, y, w, h);
     }

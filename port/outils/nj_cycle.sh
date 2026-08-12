@@ -5,9 +5,14 @@
 export MSYS_NO_PATHCONV=1
 M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"
 TAG=${1:?etiquette}; SEC=${2:-70}
+# le portable se coupe parfois du reseau : attendre qu'il reponde (jusqu'a 10 min)
+wait_laptop() { for i in $(seq 1 60); do ssh -o ConnectTimeout=8 admin@192.168.1.124 "echo ok" >/dev/null 2>&1 && return 0; sleep 10; done; echo "ARRET : portable injoignable"; exit 1; }
+wait_laptop
+rm -f "C:/re4n/ce4_m1_out/apk/$TAG.apk"
 [ "${3:-host}" = host ] && bash "$M/laptop_m1_host.sh" 2>&1 | grep -E "ninja=|error:" | head -5
-bash "$M/laptop_port_build.sh" -O2 2>&1 | grep -E "build=|en echec|error" | head -6
-bash "$M/laptop_nj_apk.sh" "$TAG" 2>&1 | tail -1 | cut -c1-80
+wait_laptop; bash "$M/laptop_port_build.sh" -O2 2>&1 | grep -E "build=|en echec|error" | head -6
+wait_laptop; bash "$M/laptop_nj_apk.sh" "$TAG" 2>&1 | tail -1 | cut -c1-80
+[ -f "C:/re4n/ce4_m1_out/apk/$TAG.apk" ] || { echo "ARRET : APK $TAG absent (construction ratee)"; exit 1; }
 $A install -r "C:/re4n/ce4_m1_out/apk/$TAG.apk" 2>&1 | tail -1
 $A shell "input keyevent KEYCODE_WAKEUP; am start -n org.nightjar.natif/org.nightjar.re4.RE4Activity >/dev/null; sleep $SEC"
 F=/sdcard/Android/data/org.nightjar.natif/files
