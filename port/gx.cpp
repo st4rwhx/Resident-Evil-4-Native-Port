@@ -1204,7 +1204,7 @@ void GXSetChanAmbColor(GXChannelID chan, GXColor c)
 }
 
 struct Cmd {
-    int type;                 // 0 dessin, 1 viewport, 2 scissor
+    int type;                 // 0 dessin, 1 viewport, 2 scissor, 3 copie du tampon d'image vers une texture
     unsigned int ioff, ni;
     GLuint tex[8];
     int cfg;                  // indice dans g_cfgpool
@@ -1236,6 +1236,73 @@ static GLenum gl_factor(int f)
     }
 }
 
+// Copies du tampon d'image vers des textures (GXCopyTex) : la cible est une texture GL, retrouvee par
+// l'adresse que le jeu lui a donnee (texobj.cpp, upload()).
+struct EfbTex { const void *dest; GLuint tex, fbo; int w, h; unsigned stamp; };
+EfbTex g_efb[32];
+int g_nefb = 0;
+unsigned short g_copy_src[4] = { 0, 0, 640, 448 };
+unsigned short g_copy_dst[2] = { 640, 448 };
+extern "C" unsigned int port_vi_retrace_count();
+
+extern "C" unsigned port_efb_tex_lookup(const void *img)
+{
+    for (int i = 0; i < g_nefb; ++i)
+        if (g_efb[i].dest == img && port_vi_retrace_count() - g_efb[i].stamp < 8)
+            return g_efb[i].tex;
+    return 0;
+}
+
+static EfbTex *efb_get(const void *dest, int w, int h)
+{
+    for (int i = 0; i < g_nefb; ++i)
+        if (g_efb[i].dest == dest) {
+            EfbTex &e = g_efb[i];
+            if (e.w != w || e.h != h) {
+                glBindTexture(GL_TEXTURE_2D, e.tex);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                e.w = w; e.h = h;
+            }
+            return &e;
+        }
+    if (g_nefb >= 32)
+        return nullptr;
+    EfbTex &e = g_efb[g_nefb++];
+    e.dest = dest; e.w = w; e.h = h; e.stamp = 0;
+    glGenTextures(1, &e.tex);
+    glBindTexture(GL_TEXTURE_2D, e.tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glGenFramebuffers(1, &e.fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, e.fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, e.tex, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return &e;
+}
+
+static void efb_copy_now(const Cmd &c)
+{
+    EfbTex *e = efb_get((const void *) (size_t) c.ioff, c.v[2] ? (int) c.ni : 1, c.nz > 0 ? (int) c.nz : 1);
+    if (!e) return;
+    e->stamp = port_vi_retrace_count();
+    const int sx = c.v[0], sw = c.v[2], sh = c.v[3];
+    const int sy = (int) g_fb_h - c.v[1] - sh;          // origine en bas pour GL
+    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, e->fbo);
+    // l'image GL a l'origine en bas, une texture de console en haut : on retourne a la copie
+    glBlitFramebuffer(sx, sy, sx + sw, sy + sh, 0, e->h, e->w, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (c.zt) {
+        glClearColor(g_clear.r / 255.0f, g_clear.g / 255.0f, g_clear.b / 255.0f, g_clear.a / 255.0f);
+        glDepthMask(GL_TRUE);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+}
+
 static void gx_replay()
 {
     if (g_ncmd == 0) { g_pni = 0; g_ncfg = 0; g_cfg_dirty = true; return; }
@@ -1254,6 +1321,7 @@ static void gx_replay()
         const Cmd &c = g_cmd[i];
         if (c.type == 1) { glViewport(c.v[0], c.v[1], c.v[2], c.v[3]); glDepthRangef(c.nz, c.fz); continue; }
         if (c.type == 2) { glEnable(GL_SCISSOR_TEST); glScissor(c.v[0], c.v[1], c.v[2], c.v[3]); continue; }
+        if (c.type == 3) { efb_copy_now(c); s_zw = -1; s_cm = -1; s_am = -1; glEnable(GL_SCISSOR_TEST); continue; }
         const TevCfg &cfg = g_cfgpool[c.cfg];
         if (c.cfg != s_cfg) {
             pr = get_prog(cfg.s);
@@ -1512,6 +1580,35 @@ static void port_dump_frame(void)
     std::free(px);
     std::fflush(stdout);
     std::_Exit(0);
+}
+
+void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht)
+{
+    g_copy_src[0] = left; g_copy_src[1] = top; g_copy_src[2] = wd; g_copy_src[3] = ht;
+}
+
+void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap)
+{
+    (void) fmt; (void) mipmap;
+    g_copy_dst[0] = wd; g_copy_dst[1] = ht;
+}
+
+void GXCopyTex(void *dest, GXBool clear)
+{
+    if (!g_gl_ready || g_ncmd >= kMaxCmd)
+        return;
+    Cmd &c = g_cmd[g_ncmd++];
+    std::memset(&c, 0, sizeof(c));
+    c.type = 3;
+    c.ioff = (unsigned) (size_t) dest;
+    c.ni = g_copy_dst[0];
+    c.nz = (float) g_copy_dst[1];
+    c.v[0] = g_copy_src[0]; c.v[1] = g_copy_src[1]; c.v[2] = g_copy_src[2]; c.v[3] = g_copy_src[3];
+    c.zt = clear ? 1 : 0;
+    // La texture existe des maintenant : les dessins suivants la designent par son identifiant GL.
+    efb_get(dest, g_copy_dst[0], g_copy_dst[1]);
+    for (int i = 0; i < g_nefb; ++i)
+        if (g_efb[i].dest == dest) g_efb[i].stamp = port_vi_retrace_count();
 }
 
 extern "C" int port_tex_cache_count();

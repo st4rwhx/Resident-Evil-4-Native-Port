@@ -68,7 +68,6 @@ int DVDOpenDir(const char* dirName, DVDDir* dir) { PORT_TODO("DVDOpenDir"); retu
 int DVDReadDir(DVDDir* dir, DVDDirEntry* dirent) { PORT_TODO("DVDReadDir"); return 0; }   // include\dolphin\dvd.h
 void GXBeginDisplayList(void* list, u32 size) { PORT_TODO("GXBeginDisplayList"); }   // include\dolphin\gx\GXDispList.h
 void GXClearBoundingBox() { PORT_TODO("GXClearBoundingBox"); }   // include\dolphin\gx\GXFrameBuffer.h
-void GXCopyTex(void* dest, GXBool clear) { PORT_TODO("GXCopyTex"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXDrawTorus(f32 rc, u8 numc, u8 numt) { PORT_TODO("GXDrawTorus"); }   // include\dolphin\gx\GXDraw.h
 void GXEnableTexOffsets(GXTexCoordID coord, u8 line_enable, u8 point_enable) { PORT_TODO("GXEnableTexOffsets"); }   // include\dolphin\gx\GXGeometry.h
 u32 GXEndDisplayList() { PORT_TODO("GXEndDisplayList"); return 0; }   // include\dolphin\gx\GXDispList.h
@@ -103,8 +102,6 @@ void GXSetLineWidth(u8 width, GXTexOffset texOffsets) { PORT_TODO("GXSetLineWidt
 void GXSetPixelFmt(GXPixelFmt pix_fmt, GXZFmt16 z_fmt) { PORT_TODO("GXSetPixelFmt"); }   // include\dolphin\gx\GXPixel.h
 void GXSetTevIndBumpXYZ(GXTevStageID tev_stage, GXIndTexStageID ind_stage, GXIndTexMtxID matrix_sel) { PORT_TODO("GXSetTevIndBumpXYZ"); }   // include\dolphin\gx\GXBump.h
 void GXSetTevIndWarp(GXTevStageID tev_stage, GXIndTexStageID ind_stage, u8 signed_offset, u8 replace_mode, GXIndTexMtxID matrix_sel) { PORT_TODO("GXSetTevIndWarp"); }   // include\dolphin\gx\GXBump.h
-void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap) { PORT_TODO("GXSetTexCopyDst"); }   // include\dolphin\gx\GXFrameBuffer.h
-void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht) { PORT_TODO("GXSetTexCopySrc"); }   // include\dolphin\gx\GXFrameBuffer.h
 void GXSetViewportJitter(f32 left, f32 top, f32 wd, f32 ht, f32 nearz, f32 farz, u32 field) { PORT_TODO("GXSetViewportJitter"); }   // include\dolphin\gx\GXTransform.h
 void GXSetZCompLoc(GXBool before_tex) { PORT_TODO("GXSetZCompLoc"); }   // include\dolphin\gx\GXPixel.h
 OSTime OSCalendarTimeToTicks(OSCalendarTime* td) { PORT_TODO("OSCalendarTimeToTicks"); return {}; }   // include\dolphin\os.h

@@ -114,8 +114,12 @@ unsigned int tex_hash(const void *img, u32 bytes)
     return h;
 }
 
+extern "C" unsigned port_efb_tex_lookup(const void *img);
+
 GLuint upload(const PortTexObj *t)
 {
+    if (unsigned g = port_efb_tex_lookup(t->img))
+        return (GLuint) g;      // copie du tampon d image : deja une texture GL, a jour
     for (int i = 0; i < g_ncache; ++i) {
         CacheEntry &c = g_cache[i];
         if (c.img == t->img && c.fmt == t->fmt && c.w == t->w && c.h == t->h &&
