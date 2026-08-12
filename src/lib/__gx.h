@@ -3,12 +3,47 @@
 
 #include <dolphin/gx.h>
 
+#ifdef RE4_PORT
+// portage : le jeu etait lie avec la version release du SDK GX, sans ces verifications (DEBUG=1 ne vaut que
+// pour le code du jeu). Exemple : GXSetCPUFifo comparait un pointeur 0x80... a un champ de 21 bits.
+#undef ASSERTLINE
+#undef ASSERTMSGLINE
+#undef ASSERTMSG1LINE
+#undef ASSERTMSG2LINE
+#define ASSERTLINE(line, cond) ((void)0)
+#define ASSERTMSGLINE(line, cond, msg) ((void)0)
+#define ASSERTMSG1LINE(line, cond, msg, a) ((void)0)
+#define ASSERTMSG2LINE(line, cond, msg, a, b) ((void)0)
+#endif
+
+// Une couleur GXColor {r, g, b, a} lue comme un mot : 0xRRGGBBAA sur le GameCube (gros-boutiste). En portage
+// (ARM, petit-boutiste) le mot est compose a partir des champs ; idem pour deux s16 (GXColorS10).
+#ifdef RE4_PORT
+#define PORT_COLOR_WORD(c) (((u32)(c).r << 24) | ((u32)(c).g << 16) | ((u32)(c).b << 8) | (u32)(c).a)
+#define PORT_S16_PAIR(p) (((u32)(u16)(p)[0] << 16) | (u32)(u16)(p)[1])
+#else
+#define PORT_COLOR_WORD(c) (*(u32*)&(c))
+#define PORT_S16_PAIR(p) (*(u32*)(p))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // FIFO WRITE
 
+#ifdef RE4_PORT
+// portage : le tuyau du GPU est une fonction du portage (port/gx_sdk.cpp), qui range les octets dans
+// l'ordre du materiel pour le lecteur de flux de Nightjar.
+void port_wg_push_u8(u8 v);
+void port_wg_push_u16(u16 v);
+void port_wg_push_u32(u32 v);
+void port_wg_push_f32(f32 v);
+#define GX_WRITE_U8(ub)  port_wg_push_u8((u8)(ub))
+#define GX_WRITE_U16(us) port_wg_push_u16((u16)(us))
+#define GX_WRITE_U32(ui) port_wg_push_u32((u32)(ui))
+#define GX_WRITE_F32(f)  port_wg_push_f32((f32)(f));
+#else
 #define GX_WRITE_U8(ub)     \
     GXWGFifo.u8 = (u8)(ub)
 
@@ -20,6 +55,7 @@ extern "C" {
 
 #define GX_WRITE_F32(f)     \
    GXWGFifo.f32 = (f32)(f);
+#endif
 
 
 // REG VERIF
@@ -113,12 +149,23 @@ do { \
 } while (0)
 #endif
 
+#ifdef RE4_PORT   // portage : le portage voit aussi les fins de dessin et les jetons (port/gx_sdk.cpp)
+void port_gx_ras(u32 value);
+#define GX_WRITE_RAS_REG(value) \
+do { \
+    GX_WRITE_U8(0x61); \
+    GX_WRITE_U32(value); \
+    port_gx_ras((u32)(value)); \
+    VERIF_RAS_REG(value); \
+} while (0)
+#else
 #define GX_WRITE_RAS_REG(value) \
 do { \
     GX_WRITE_U8(0x61); \
     GX_WRITE_U32(value); \
     VERIF_RAS_REG(value); \
 } while (0)
+#endif
 
 #ifdef DEBUG
 #define GX_WRITE_SOME_REG2(a, b, c, addr) \

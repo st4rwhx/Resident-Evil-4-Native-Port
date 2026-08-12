@@ -273,7 +273,11 @@ void GXInitLightColor(GXLightObj* lt_obj, GXColor color) {
     obj = (__GXLightObjInt_struct*)lt_obj;
     CHECK_GXBEGIN(463, "GXInitLightColor");
 
+#ifdef RE4_PORT   // portage : le mot de couleur est garde tel que le GPU le lit (0xRRGGBBAA)
+    *(u32*)&obj->Color = PORT_COLOR_WORD(color);
+#else
     *(u32*)&obj->Color = *(u32*)&color;
+#endif
 }
 
 void GXGetLightColor(const GXLightObj* lt_obj, GXColor* color) {
@@ -283,7 +287,14 @@ void GXGetLightColor(const GXLightObj* lt_obj, GXColor* color) {
     obj = (__GXLightObjInt_struct*)lt_obj;
     CHECK_GXBEGIN(477, "GXGetLightColor");
 
+#ifdef RE4_PORT
+    {
+        const u32 w = *(u32*)&obj->Color;
+        color->r = (u8)(w >> 24); color->g = (u8)(w >> 16); color->b = (u8)(w >> 8); color->a = (u8)w;
+    }
+#else
     *(u32*)color = *(u32*)&obj->Color;
+#endif
 }
 
 #if DEBUG
@@ -423,7 +434,7 @@ void GXLoadLightObjIndx(u32 lt_obj_indx, GXLightID light) {
     __GXData->bpSentNot = 1;
 }
 
-#define GXCOLOR_AS_U32(color) (*((u32*)&(color)))
+#define GXCOLOR_AS_U32(color) PORT_COLOR_WORD(color)
 
 void GXSetChanAmbColor(GXChannelID chan, GXColor amb_color) {
     u32 reg;

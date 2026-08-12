@@ -36,6 +36,12 @@ void GXBeginDisplayList(void* list, u32 size) {
     OldCPUFifo = CPUFifo;
     GXSetCPUFifo((GXFifoObj*)&DisplayListFifo);
     GXResetWriteGatherPipe();
+#ifdef RE4_PORT   // portage : le tuyau ecrit dans la liste, plus dans le flux de l'image (port/gx_sdk.cpp)
+    {
+        extern void port_wg_begin_list(void* list, u32 size);
+        port_wg_begin_list(list, size);
+    }
+#endif
 }
 
 u32 GXEndDisplayList(void) {
@@ -49,13 +55,22 @@ u32 GXEndDisplayList(void) {
     CHECK_GXBEGIN(195, "GXEndDisplayList");
     ASSERTMSGLINE(196, __GXData->inDispList == TRUE, "GXEndDisplayList: no display list in progress");
     GXFlush();
-#ifdef DEBUG
+#ifdef RE4_PORT   // portage : octets ecrits dans la liste, debordement si elle n'a pas suffi
+    {
+        extern u32 port_wg_end_list(int* overflow);
+        int over = 0;
+        DisplayListFifo.count = port_wg_end_list(&over);
+        ov = (u32) over;
+    }
+#elif defined(DEBUG)
     reg = GX_GET_PI_REG(5);
     ov = (reg >> 26) & 1;
 #else
     ov = (GX_GET_PI_REG(5) >> 26) & 1;
 #endif
+#ifndef RE4_PORT
     __GXSaveCPUFifoAux(&DisplayListFifo);
+#endif
     ASSERTMSGLINE(213, !ov, "GXEndDisplayList: display list commands overflowed buffer");
     GXSetCPUFifo((GXFifoObj*)OldCPUFifo);
 

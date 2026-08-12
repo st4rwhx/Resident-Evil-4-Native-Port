@@ -73,11 +73,15 @@ static int __GXShutdown(int final);
 
 static OSResetFunctionInfo GXResetFuncInfo = {__GXShutdown, 0x7F, NULL, NULL};
 
+#ifdef RE4_PORT   // portage : le tuyau est une fonction du portage, il n'a pas de tampon a vider
+BOOL IsWriteGatherBufferEmpty(void) { return TRUE; }
+#else
 asm BOOL IsWriteGatherBufferEmpty(void) {
     sync
     mfspr r3, WPAR
     andi. r3, r3, 1
 }
+#endif
 
 static void EnableWriteGatherPipe(void) {
     u32 hid2 = PPCMfhid2();
@@ -260,10 +264,20 @@ GXFifoObj* GXInit(void* base, u32 size) {
     
     GXSetMisc(GX_MT_XF_FLUSH, 0);
 
+#ifdef RE4_PORT   // portage : registres du GPU dans des tableaux du portage (0xCC00xxxx est hors de l'espace d'un processus 32 bits)
+    {
+        extern void* port_gx_reg_base(int unit);
+        __piReg = port_gx_reg_base(0);
+        __cpReg = port_gx_reg_base(1);
+        __peReg = port_gx_reg_base(2);
+        __memReg = port_gx_reg_base(3);
+    }
+#else
     __piReg = OSPhysicalToUncached(0xC003000);
     __cpReg = OSPhysicalToUncached(0xC000000);
     __peReg = OSPhysicalToUncached(0xC001000);
     __memReg = OSPhysicalToUncached(0xC004000);
+#endif
     __GXFifoInit();
     GXInitFifoBase(&FifoObj, base, size);
     GXSetCPUFifo(&FifoObj);

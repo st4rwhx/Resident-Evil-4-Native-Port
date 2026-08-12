@@ -48,7 +48,9 @@ COMMON = ['-DRE4_PORT', '-DDEBUG=1', '-DVERSION_G4BE08', '-D__GEKKO__',
 CXXONLY = ['-std=gnu++11', '-fdeclspec', '-Wno-c++11-narrowing']
 CONLY = ['-std=gnu99', '-fdeclspec', '-fgnu89-inline']   # extern inline des en-tetes d'epoque (fake_tgmath.h) : pas de definition externe
 
-PORT_UNITS = ['os', 'dvd', 'vi', 'pad', 'gx', 'texture', 'texobj',
+# Phase N3 : le rendu est celui de Nightjar (port/njgfx), alimente par la bibliotheque GX du SDK et
+# port/gx_sdk.cpp ; RE4_OLDGX=1 : l'ancien rendu de test du portage (gx.cpp, texture.cpp, texobj.cpp).
+PORT_UNITS = ['os', 'dvd', 'vi', 'pad'] + (['gx', 'texture', 'texobj'] if os.environ.get('RE4_OLDGX') else ['gx_sdk', 'gx_sdk_os']) + [
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
               'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip', 'njlink']
 
@@ -102,7 +104,7 @@ EXCLUDED = {
 # materiel qu'elles pilotent (AX/DSP, GX, DVD, OS) reste fourni par la couche du portage ; les
 # souches faibles du portage s'effacent devant ces vraies definitions. RE4_NOLIB=1 : sans elles.
 # Phase N1 : le son logiciel Nintendo seulement ; CRI (films, ADX) et la reverberation (asm PowerPC) en phase N4.
-LIB_SOFT = re.compile(r'^lib/(mix\.c|axart|syn|seq\.c|delay|axfx)')
+LIB_SOFT = re.compile(r'^lib/(mix\.c|axart|syn|seq\.c|delay|axfx' + ('' if os.environ.get('RE4_OLDGX') else r'|GX|texPalette') + ')')
 
 
 def units():
@@ -241,6 +243,10 @@ def main():
            # sans cela lld s'arrete a 20 erreurs, et on decouvre les symboles manquants
            # vingt par vingt au lieu d'une seule fois.
            '-Wl,--error-limit=0']
+    # Rendu Nightjar (phase N3) : le pont compile a part et les bibliotheques du moteur (laptop_port_build.sh).
+    # Les quelques fonctions que le portage et le moteur definissent tous deux : celles du portage (liees d'abord).
+    if os.environ.get('RE4_EXTRA_LINK'):
+        cmd += os.environ['RE4_EXTRA_LINK'].split() + ['-Wl,--allow-multiple-definition']
     # Le .cmd de clang coupe les arguments aux espaces : chemins relatifs, depuis la racine du depot
     # ("RE4 PROJECT" contient une espace, c'etait la cause du faux "lien en echec").
     cmd[1] = '@' + os.path.relpath(rsp, ROOT).replace(os.sep, '/')

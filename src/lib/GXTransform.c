@@ -32,6 +32,11 @@ void GXProject(f32 x, f32 y, f32 z, const Mtx mtx, const f32* pm, const f32* vp,
     *sz = vp[5] + (wc * (zc * (vp[5] - vp[4])));
 }
 
+#ifdef RE4_PORT
+// portage : memes valeurs que les versions paired-singles (#else) : 6 flottants vers le tuyau / vers dest.
+static void WriteProjPS(const f32 proj[6], volatile void* dest) { int i; (void)dest; for (i = 0; i < 6; i++) { GX_WRITE_F32(proj[i]); } }
+static void Copy6Floats(const f32 src[6], volatile f32* dest) { int i; for (i = 0; i < 6; i++) dest[i] = src[i]; }
+#else
 static void WriteProjPS(const register f32 proj[6], register volatile void* dest) {
     register f32 p01, p23, p45;
 
@@ -57,6 +62,8 @@ static void Copy6Floats(const register f32 src[6], register volatile f32* dest) 
         psq_st ps45, 16(dest), 0, 0
     }
 }
+
+#endif
 
 void __GXSetProjection(void) {
     u32 reg = 0x00061020;
@@ -135,6 +142,15 @@ void GXGetProjectionv(f32* ptr) {
 #endif
 }
 
+#ifdef RE4_PORT
+// portage : les memes valeurs que les versions paired-singles (#else), dans le meme ordre, envoyees au tuyau.
+static void WriteMTXPS4x3(const f32 mtx[3][4], volatile f32* dest) { int r, c; (void)dest; for (r = 0; r < 3; r++) for (c = 0; c < 4; c++) { GX_WRITE_F32(mtx[r][c]); } }
+static void WriteMTXPS3x3from3x4(f32 mtx[3][4], volatile f32* dest) { int r, c; (void)dest; for (r = 0; r < 3; r++) for (c = 0; c < 3; c++) { GX_WRITE_F32(mtx[r][c]); } }
+static void WriteMTXPS3x3(f32 mtx[3][3], volatile f32* dest) { int r, c; (void)dest; for (r = 0; r < 3; r++) for (c = 0; c < 3; c++) { GX_WRITE_F32(mtx[r][c]); } }
+static void WriteMTXPS4x2(const f32 mtx[2][4], volatile f32* dest) { int r, c; (void)dest; for (r = 0; r < 2; r++) for (c = 0; c < 4; c++) { GX_WRITE_F32(mtx[r][c]); } }
+#define GXFIFO_DEST_PTR ((volatile f32*)0)
+#else
+#define GXFIFO_DEST_PTR (&GXWGFifo.f32)
 static void WriteMTXPS4x3(const register f32 mtx[3][4], register volatile f32* dest) {
     register f32 a00_a01;
     register f32 a02_a03;
@@ -222,6 +238,8 @@ static void WriteMTXPS4x2(const register f32 mtx[2][4], register volatile f32* d
     }
 }
 
+#endif
+
 #define GX_WRITE_MTX_ELEM(addr, value) \
 do { \
     f32 xfData = (value); \
@@ -254,7 +272,7 @@ void GXLoadPosMtxImm(const Mtx mtx, u32 id) {
     GX_WRITE_MTX_ELEM(addr + 10, mtx[2][2]);
     GX_WRITE_MTX_ELEM(addr + 11, mtx[2][3]);
 #else
-    WriteMTXPS4x3(mtx, &GXWGFifo.f32);
+    WriteMTXPS4x3(mtx, GXFIFO_DEST_PTR);
 #endif
 }
 
@@ -297,7 +315,7 @@ void GXLoadNrmMtxImm(const Mtx mtx, u32 id) {
     GX_WRITE_MTX_ELEM(addr + 7, mtx[2][1]);
     GX_WRITE_MTX_ELEM(addr + 8, mtx[2][2]);
 #else
-    WriteMTXPS3x3from3x4((void*)mtx, &GXWGFifo.f32);
+    WriteMTXPS3x3from3x4((void*)mtx, GXFIFO_DEST_PTR);
 #endif
 }
 
@@ -323,7 +341,7 @@ void GXLoadNrmMtxImm3x3(const f32 mtx[3][3], u32 id) {
     GX_WRITE_MTX_ELEM(addr + 7, mtx[2][1]);
     GX_WRITE_MTX_ELEM(addr + 8, mtx[2][2]);
 #else
-    WriteMTXPS3x3((void*)mtx, &GXWGFifo.f32);
+    WriteMTXPS3x3((void*)mtx, GXFIFO_DEST_PTR);
 #endif
 }
 
@@ -385,9 +403,9 @@ void GXLoadTexMtxImm(const f32 mtx[][4], u32 id, GXTexMtxType type) {
     }
 #else
     if (type == GX_MTX3x4) {
-        WriteMTXPS4x3(mtx, &GXWGFifo.f32);
+        WriteMTXPS4x3(mtx, GXFIFO_DEST_PTR);
     } else {
-        WriteMTXPS4x2(mtx, &GXWGFifo.f32);
+        WriteMTXPS4x2(mtx, GXFIFO_DEST_PTR);
     }
 #endif
 }

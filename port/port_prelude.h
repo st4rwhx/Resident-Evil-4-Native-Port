@@ -102,6 +102,18 @@ unsigned long port_mem1_base(void);
 #define PORT_PPC_INTRINSICS
 static inline double __frsqrte(double x) { return 1.0 / __builtin_sqrt(x); }
 static inline float __fabsf(float x) { return __builtin_fabsf(x); }
+// rlwimi : rotation a gauche de `sh`, puis insertion sous le masque des bits mb..me (bit 0 = poids fort),
+// le reste vient de `a`. cntlzw : zeros de tete (32 pour zero). Composent les registres du GPU (SDK GX).
+static inline unsigned int __port_ppc_mask(int mb, int me) {
+    const unsigned int hi = 0xFFFFFFFFu >> (mb & 31), lo = 0xFFFFFFFFu << (31 - (me & 31));
+    return (mb <= me) ? (hi & lo) : (hi | lo);
+}
+static inline unsigned int __rlwimi(unsigned int a, unsigned int s, int sh, int mb, int me) {
+    const unsigned int r = (sh & 31) ? ((s << (sh & 31)) | (s >> (32 - (sh & 31)))) : s;
+    const unsigned int m = __port_ppc_mask(mb, me);
+    return (r & m) | (a & ~m);
+}
+static inline unsigned int __cntlzw(unsigned int x) { return x ? (unsigned int)__builtin_clz(x) : 32u; }
 #endif
 
 #endif

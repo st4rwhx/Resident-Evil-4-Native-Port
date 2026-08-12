@@ -608,7 +608,11 @@ void GXRestoreWriteGatherPipe(void) {
 
     enabled = OSDisableInterrupts();
     for (i = 0; i < 31; i++) {
+#ifdef RE4_PORT
+        GX_WRITE_U8(0);
+#else
         GXWGFifo.u8 = 0;
+#endif
     }
 
     PPCSync();

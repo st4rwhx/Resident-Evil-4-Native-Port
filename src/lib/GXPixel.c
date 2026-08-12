@@ -98,7 +98,7 @@ void GXSetFog(GXFogType type, f32 startz, f32 endz, f32 nearz, f32 farz, GXColor
     SET_REG_FIELD(218, fog3, 3, 21, fsel);
     SET_REG_FIELD(218, fog3, 8, 24, 0xF1);
 
-    rgba = *(u32*)&color;
+    rgba = PORT_COLOR_WORD(color);
     SET_REG_FIELD(222, fogclr, 24, 0, rgba >> 8);
     SET_REG_FIELD(222, fogclr, 8, 24, 0xF2);
 
@@ -115,7 +115,7 @@ void GXSetFogColor(GXColor color) {
     u32 rgba;
     u32 fogclr = 0xF2000000;
 
-    rgba = *(u32*)&color;
+    rgba = PORT_COLOR_WORD(color);
     SET_REG_FIELD(250, fogclr, 24, 0, rgba >> 8);
     GX_WRITE_RAS_REG(fogclr);
     __GXData->bpSentNot = 0;

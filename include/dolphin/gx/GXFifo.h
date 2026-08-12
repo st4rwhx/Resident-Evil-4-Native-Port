@@ -10,7 +10,11 @@ extern "C" {
 
 typedef struct {
     u8 pad[128];
-} GXFifoObj;
+}
+#ifdef RE4_PORT   // portage : le SDK lit ce tableau comme __GXFifoObj (mots) ; aligne comme sur GameCube (32 octets)
+__attribute__((aligned(32)))
+#endif
+GXFifoObj;
 
 typedef void (*GXBreakPtCallback)(void);
 

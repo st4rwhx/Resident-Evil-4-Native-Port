@@ -258,6 +258,14 @@ void GXPokeZMode(GXBool compare_enable, GXCompare func, GXBool update_enable) {
     GX_SET_PE_REG(0, reg);
 }
 
+#ifdef RE4_PORT
+// portage : l'EFB est dans le GPU du telephone, pas a une adresse ; lecture par le rendu Nightjar a brancher
+// (efb_peek). D'ici la : noir et profondeur la plus lointaine, ecritures ignorees.
+void GXPeekARGB(u16 x, u16 y, u32* color) { (void)x; (void)y; *color = 0; }
+void GXPokeARGB(u16 x, u16 y, u32 color) { (void)x; (void)y; (void)color; }
+void GXPeekZ(u16 x, u16 y, u32* z) { (void)x; (void)y; *z = 0xFFFFFF; }
+void GXPokeZ(u16 x, u16 y, u32 z) { (void)x; (void)y; (void)z; }
+#else
 void GXPeekARGB(u16 x, u16 y, u32* color) {
     u32 addr = (u32)OSPhysicalToUncached(0x08000000);
 
@@ -293,6 +301,8 @@ void GXPokeZ(u16 x, u16 y, u32 z) {
     SET_REG_FIELD(823, addr, 2, 22, 1);
     *(u32*)addr = z;
 }
+
+#endif
 
 GXDrawSyncCallback GXSetDrawSyncCallback(GXDrawSyncCallback cb) {
     GXDrawSyncCallback oldcb;

@@ -347,8 +347,24 @@ void C_MTXPerspective(Mtx44 m, f32 fovY, f32 aspect, f32 n, f32 f)
 
     m[0][0] = cot / aspect; m[0][1] = 0.0f; m[0][2] = 0.0f;              m[0][3] = 0.0f;
     m[1][0] = 0.0f;         m[1][1] = cot;  m[1][2] = 0.0f;              m[1][3] = 0.0f;
-    m[2][0] = 0.0f;         m[2][1] = 0.0f; m[2][2] = f / (n - f);       m[2][3] = (n * f) / (n - f);
+    // Termes de profondeur du SDK (src/lib/mtx44.c) : z de [-n, -f] vers [-1, 0] (convention GX). La
+    // version d'avant (f/(n-f), nf/(n-f)) donnait [0, 1] : invisible avec l'ancien rendu de test, mais le
+    // rendu Nightjar, fidele au GX, rejetait tout le decor en perspective (11/11, phase N3).
+    const f32 tmp = 1.0f / (f - n);
+    m[2][0] = 0.0f;         m[2][1] = 0.0f; m[2][2] = -n * tmp;          m[2][3] = tmp * -(f * n);
     m[3][0] = 0.0f;         m[3][1] = 0.0f; m[3][2] = -1.0f;             m[3][3] = 0.0f;
+}
+
+// Pyramide de vue quelconque (src/lib/mtx44.c, memes formules) : remplace la souche faible.
+void C_MTXFrustum(Mtx44 m, f32 t, f32 b, f32 l, f32 r, f32 n, f32 f)
+{
+    f32 tmp = 1.0f / (r - l);
+    m[0][0] = (2.0f * n) * tmp; m[0][1] = 0.0f; m[0][2] = tmp * (r + l); m[0][3] = 0.0f;
+    tmp = 1.0f / (t - b);
+    m[1][0] = 0.0f; m[1][1] = (2.0f * n) * tmp; m[1][2] = tmp * (t + b); m[1][3] = 0.0f;
+    tmp = 1.0f / (f - n);
+    m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = -n * tmp; m[2][3] = tmp * -(f * n);
+    m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = -1.0f; m[3][3] = 0.0f;
 }
 
 void C_MTXOrtho(Mtx44 m, f32 t, f32 b, f32 l, f32 r, f32 n, f32 f)

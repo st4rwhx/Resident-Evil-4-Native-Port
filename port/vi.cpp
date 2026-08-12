@@ -82,7 +82,13 @@ void VISetNextFrameBuffer(void *fb) { g_fb_pending = fb; }
 
 // Sur le materiel, VIFlush valide les registres ecrits depuis le dernier flush ; ici cela se
 // reduit a rendre effectif le tampon suivant.
-void VIFlush(void) { if (g_fb_pending) g_fb_current = g_fb_pending; }
+// Image finie (le jeu a copie l'EFB vers le tampon d'affichage puis valide) : rendu natif (gx_sdk.cpp).
+extern "C" void port_gx_frame(void);
+void VIFlush(void)
+{
+    if (g_fb_pending) g_fb_current = g_fb_pending;
+    port_gx_frame();
+}
 
 void VIWaitForRetrace(void)
 {

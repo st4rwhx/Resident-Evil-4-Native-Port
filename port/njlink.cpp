@@ -222,6 +222,51 @@ void njlink_frame(void)
         close(fence);
 }
 
+// Rendu natif (njgfx) : l'image est dans le tampon `fbo`, rectangle (x, y, w, h).
+void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
+{
+    poll_host();
+    if (!g_ready)
+        return;
+    int slot = -1;
+    for (int k = 1; k <= kSlots; ++k) {
+        const int i = (int) ((g_seq + k) % kSlots);
+        if (!g_busy[i]) {
+            slot = i;
+            break;
+        }
+    }
+    if (slot < 0)
+        return;
+    GLint prev = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint) fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_fbo[slot]);
+    glBlitFramebuffer(x, y, x + w, y + h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) prev);
+    int fence = -1;
+    EGLDisplay dpy = eglGetCurrentDisplay();
+    if (p_createSync && p_dupFence) {
+        const EGLint a[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, EGL_NO_NATIVE_FENCE_FD_ANDROID, EGL_NONE};
+        EGLSyncKHR s = p_createSync(dpy, EGL_SYNC_NATIVE_FENCE_ANDROID, a);
+        glFlush();
+        if (s != EGL_NO_SYNC_KHR) {
+            fence = p_dupFence(dpy, s);
+            p_destroySync(dpy, s);
+        }
+    } else {
+        glFinish();
+    }
+    NjMsg m = {};
+    m.type = NJ_MSG_FRAME;
+    m.a = (unsigned) slot;
+    m.b = ++g_seq;
+    g_busy[slot] = true;
+    send_msg(m, fence);
+    if (fence >= 0)
+        close(fence);
+}
+
 int njlink_pad(NjPad* out)
 {
     poll_host();
