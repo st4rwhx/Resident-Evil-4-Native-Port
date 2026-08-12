@@ -1,7 +1,11 @@
 // Crochets de src/game/main_mem.cpp que la cible PC definit dans pc_glue.cpp (fil du jeu repere,
 // sonde de tas par variable d'environnement). Sur ARM les fils du jeu sont serialises par un
 // jeton unique : tous partagent le tas du jeu, et la sonde reste eteinte.
-extern "C" int port_on_game_thread(void) { return 1; }
+// port_host_scope : le rendu Nightjar (port/njgfx, libnjruntime) tourne sur le fil du jeu mais ses
+// allocations C++ ne doivent pas aller dans le tas du jeu (operator new de main_mem.cpp) : elles y
+// decalaient tout (917 Ko + des dizaines de blocs au titre) et r100.das ecrasait le tas 4 (nj14).
+extern "C" int port_host_scope = 0;
+extern "C" int port_on_game_thread(void) { return port_host_scope == 0; }
 extern "C" int port_heap_trace(void) { return 0; }
 
 // Pour le code du jeu, qui ne peut pas inclure <stdio.h> (voir osreport_pc.cpp).

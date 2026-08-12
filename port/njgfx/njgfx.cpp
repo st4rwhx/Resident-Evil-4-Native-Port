@@ -35,6 +35,14 @@ extern "C" void njlink_gl_ready(int w, int h);
 extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
+extern "C" int port_host_scope;   // port/arm_hooks.cpp : allocations C++ hors du tas du jeu
+
+namespace {
+struct HostScope {   // tout ce que fait le rendu alloue avec malloc, pas dans le tas du jeu
+  HostScope() { ++port_host_scope; }
+  ~HostScope() { --port_host_scope; }
+};
+}  // namespace
 
 namespace {
 
@@ -119,9 +127,13 @@ void take(const unsigned char *bytes, unsigned size) {
 
 }  // namespace
 
-extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) { take(bytes, size); }
+extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) {
+  HostScope hs;
+  take(bytes, size);
+}
 
 extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
+  HostScope hs;
   take(bytes, size);
   if (!g_ready) return;
   glBindFramebuffer(GL_FRAMEBUFFER, g_efb_fbo);
@@ -133,7 +145,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     nbp += c.type == gx::GxOpKind::BPRegister;
     nxf += c.type == gx::GxOpKind::XFRegister;
   }
-  if (g_frames + 1 == 3000) g_gx_framelog_request = true;   // diagnostic N3 : journal complet d'une image au titre
+  if (g_frames + 1 == 2100) g_gx_framelog_request = true;   // diagnostic N3 : journal complet d une image en jeu (r100)
   g_renderer->draw_frame(g_ops);
   g_ops.clear();
   g_decoded = 0;

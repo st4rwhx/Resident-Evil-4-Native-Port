@@ -450,6 +450,29 @@ int MemReplaceHeap(int from, int to)
         return 0;
     }
     if (Heap[from].handle >= 0) {
+#ifdef RE4_PORT
+        // Diagnostic N3 (r100.das ecrasait le tas 4) : les blocs encore vivants les plus hauts du tas
+        // repris, avec l'etiquette « MAD fichier(ligne) » que mem_alloc pose en fin de bloc.
+        {
+            OSHeapDescriptor* dd = HeapHead + Heap[from].handle;
+            for (int pass = 0; pass < 12; ++pass) {
+                OSHeapCell* best = NULL;
+                static OSHeapCell* shown[12];
+                for (OSHeapCell* c = dd->allocated; c; c = c->next) {
+                    bool seen = false;
+                    for (int k = 0; k < pass; ++k) seen |= shown[k] == c;
+                    if (!seen && (!best || c > best)) best = c;
+                }
+                if (!best) break;
+                shown[pass] = best;
+                const char* tag = "?";
+                u8* e = (u8*) best + best->size;
+                for (u8* t = e - 0x20; t < e - 4; ++t)
+                    if (t[0] == 0 && t[1] == 'M' && t[2] == 'A' && t[3] == 'D') { tag = (const char*) t + 4; break; }
+                OSReport("[TAS] tas %d vivant %08x taille %x %s\n", from, (u32) (unsigned long) best, best->size, tag);
+            }
+        }
+#endif
         start = MemCheckHeapEnd(from);
         end = Heap[from].end;
         MemDestroyHeap(from);
