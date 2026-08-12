@@ -1089,9 +1089,19 @@ bool swap_eff_data(const Span &s, u32 at)
                     u8 *m = s.base + t + eo[3];
                     const u32 mn = read_be32(m);
                     if (mn <= 0x100 && s.has(t + eo[3] + 4, mn * 4)) {
+                        u32 mo[0x100];
+                        for (u32 k = 0; k < mn; ++k)
+                            mo[k] = read_be32(m + 4 + 4 * k);
                         swap_u32(m);
                         for (u32 k = 0; k < mn; ++k)
                             swap_u32(m + 4 + 4 * k);
+                        for (u32 k = 0; k < mn; ++k) {              // chaque mouvement finit ou commence le suivant
+                            u32 me = s.size;
+                            for (u32 j = 0; j < mn; ++j)
+                                if (mo[j] > mo[k] && t + eo[3] + mo[j] < me)
+                                    me = t + eo[3] + mo[j];
+                            conv_motion(s, t + eo[3] + mo[k], me);
+                        }
                     }
                 }
             }
@@ -1520,6 +1530,8 @@ bool conv_etm(const Span &s, u32 at, u32 end)
             r = conv_model_bin(s, dat, dend);
         else if (ln > 4 && !std::strcmp(name + ln - 4, ".tpl"))
             r = swap_tpl(s, dat);
+        else if (ln > 4 && !std::strcmp(name + ln - 4, ".fcv"))
+            r = conv_motion(s, dat, dend);
         else {
             if (g_trace_on)
                 std::printf("[ARC] ETM : fichier '%.32s' (%u octets) sans convertisseur\n", name, (unsigned) (size - 0x40));
@@ -1868,6 +1880,101 @@ bool conv_rtp(const Span &s, u32 at, u32 end)
     return true;
 }
 
+// ---- Zones declencheuses (include/area.h : AreaData, 0x30 octets)
+//   u8 drapeau, u8 type, u16, puis 11 flottants dont le sens depend du type.
+static void swap_area(u8 *a)
+{
+    swap_u16(a + 2);
+    for (int k = 0; k < 11; ++k)
+        swap_u32(a + 4 + 4 * k);
+}
+
+// ---- EAR : zones d'affichage des effets (SstArea, include/espgen.h) : u32 nombre, entrees de 0x98 des 0x10
+bool conv_ear(const Span &s, u32 at, u32 end)
+{
+    track_label("EAR");
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = read_be32(h);
+    if (n > 0x200 || !s.has(at + 0x10, n * 0x98))
+        return false;
+    swap_u32(h);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = h + 0x10 + i * 0x98;
+        swap_area(e + 4);
+        swap_u32(e + 0x34);
+    }
+    return true;
+}
+
+// ---- SAR : zones de lumiere (LightAreaHed, src/game/light_area.cpp) : u32 nombre, entrees de 0xD8 des 0x10
+bool conv_sar(const Span &s, u32 at, u32 end)
+{
+    track_label("SAR");
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = read_be32(h);
+    if (n > 0x200 || !s.has(at + 0x10, n * 0xD8))
+        return false;
+    swap_u32(h);
+    for (u32 i = 0; i < n; ++i)
+        swap_area(h + 0x10 + i * 0xD8 + 4);
+    return true;
+}
+
+// ---- FSE : attributs de sol sonores (FlrAtHead + FlrAt de 0x84, include/flr_at.h)
+bool conv_fse(const Span &s, u32 at, u32 end)
+{
+    track_label("FSE");
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = (u32) ((h[6] << 8) | h[7]);
+    if (n > 0x400 || !s.has(at + 0x10, n * 0x84))
+        return false;
+    swap_u16(h + 4);
+    swap_u16(h + 6);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = h + 0x10 + i * 0x84;
+        swap_area(e + 0x14);
+        swap_u32(e + 0x48);
+        swap_u32(e + 0x4C);
+        swap_u16(e + 0x50);
+        swap_u16(e + 0x52);
+        swap_u32(e + 0x54);
+    }
+    return true;
+}
+
+// ---- ESE : sons de zone (SeAtHead + SeAt de 0x2C, include/snd.h)
+bool conv_ese(const Span &s, u32 at, u32 end)
+{
+    track_label("ESE");
+    (void) end;
+    if (!s.has(at, 0x10))
+        return false;
+    u8 *h = s.base + at;
+    const u32 n = (u32) ((h[6] << 8) | h[7]);
+    if (n > 0x400 || !s.has(at + 0x10, n * 0x2C))
+        return false;
+    swap_u16(h + 4);
+    swap_u16(h + 6);
+    for (u32 i = 0; i < n; ++i) {
+        u8 *e = h + 0x10 + i * 0x2C;
+        swap_u16(e + 2);
+        for (int k = 0; k < 3; ++k)
+            swap_u32(e + 4 + 4 * k);
+        for (int k = 0; k < 10; ++k)
+            swap_u16(e + 0x10 + 2 * k);
+    }
+    return true;
+}
+
 // ---- LIT : lumieres (cLit, include/light.h)
 //
 // u16 nombre de coupes, deux octets (version, lumieres max), puis `nCut` decalages ; chaque coupe
@@ -2065,6 +2172,11 @@ const TagConv kRoomTags[] = {
     { "SMX", conv_smx },
     { "LIT", conv_lit },
     { "SHD", conv_shd },
+    { "EAR", conv_ear },
+    { "SAR", conv_sar },
+    { "FSE", conv_fse },
+    { "ESE", conv_ese },
+    { "FCV", conv_motion },
     { "RTP", conv_rtp },
     { "SAT", conv_sat },
     { "EAT", conv_sat },
@@ -2108,6 +2220,8 @@ extern "C" void port_room_arc_fix(void *arc, u32 size)
         swap_u32(s.base + 0x10 + 4 * i);
 
     static const bool trace = std::getenv("RE4_TRACE_ENDIAN") != 0;
+    if (trace)
+        std::printf("[ARC] archive de salle a %p (%u octets)\n", arc, (unsigned) size);
     for (u32 i = 0; i < n; ++i) {
         const u8 *tg = s.base + 0x10 + n * 4 + i * 4;
         const u32 at = read_le32(s.base + 0x10 + 4 * i);

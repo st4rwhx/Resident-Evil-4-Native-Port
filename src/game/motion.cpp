@@ -1,3 +1,6 @@
+#ifdef RE4_PORT
+extern "C" int printf(const char*, ...);
+#endif
 #include "motion.h"
 #include "global.h"
 #include "db_log.h"
@@ -207,6 +210,9 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
     w->nParts = w->data->nParts;
     w->partsInfo = (u16*) ((u8*) w->data + 3);
     w->partsNo = (u8*) w->data + (w->nParts * 2 + 3);
+#ifdef RE4_PORT
+    { u8* d_ = (u8*) w->data; printf("[DIAG] MotionSetCore data=%p n=%d bytes %02x %02x %02x %02x %02x %02x %02x %02x\n", d_, w->nParts, d_[0], d_[1], d_[2], d_[3], d_[4], d_[5], d_[6], d_[7]); }
+#endif
     if (!(w->flags2 & 0x10000000)) {
         IKInit(m, w);
     }
