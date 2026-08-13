@@ -257,24 +257,34 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
         const u32 o = read_be32(s.base + 0x10 + i * 4);
         if (o == 0)
             continue;               // entree vide : le jeu ne la lit pas
-        if (o <= prev || o >= s.size)
+        // Des entrees peuvent partager les memes donnees (SS/<langue>/ss_pzzl.dat, l'inventaire : 0x34e0 deux fois) :
+        // decalages croissants ou egaux. Refusee, l'archive restait gros-boutiste et l'inventaire plantait (14/11).
+        if (o < prev || o >= s.size)
             return false;
         prev = o;
     }
 
+    u32 last_conv = 0;   // donnees deja converties pour une entree precedente au meme decalage
     swap_u32(s.base);
     for (u32 i = 0; i < n; ++i) {
         u8 *e = s.base + 0x10 + i * 4;
         const u32 o = read_be32(e);
         swap_u32(e);
-        if (!o)
+        if (!o || o == last_conv)
             continue;
+        last_conv = o;
         // Chaque convertisseur se reconnait a sa propre signature - le numero de version d un
         // TPL, le 0xB d un paquet de textures, les caracteres "2.00" d une table d unites. On
         // les propose dans l ordre, aucun ne touche ce qui n est pas a lui.
         // core.das : les entrees 1 (0x14) et 16 (0x50) sont des donnees d'effets (EspDataLoad),
         // dont la version vaut 0xB comme celle d'un paquet de textures "id" - la signature ne
         // suffit pas, il faut les nommer.
+        if (core && i >= 18 && i <= 22) {       // ofs_58..ofs_68 : lumieres de l'examen d'objet (ItemExamine::init, cLit)
+            // Meme format que ofs_2C ; trouvees non converties en comparant au Core.dat du port PS2 de Capcom (14/11).
+            if (!conv_lit(s, o, s.size))
+                std::printf("[PORT] endian : lumieres d'examen %u a +0x%x inattendues\n", (unsigned) (i - 18), (unsigned) o);
+            continue;
+        }
         if (core && i == 7) {                   // ofs_2C : lumieres du decor commun (cLit)
             if (!conv_lit(s, o, s.size))
                 std::printf("[PORT] endian : lumieres communes a +0x%x inattendues\n", (unsigned) o);
@@ -666,6 +676,17 @@ bool swap_mes_tbl(const Span &s, u32 at, u32 end)
     if (at + 8 > end)
         return false;
     const u32 first = read_be32(s.base + at + 4);
+    // Table vide (MDT des salles sans texte : 6 langues, toutes au decalage de fin) : seul l'en-tete est a retourner.
+    if (first >= 8 && !(first & 3) && first / 4 - 1 == read_be32(s.base + at) && at + first <= end && at + first + 8 > end) {
+        bool empty = true;
+        for (u32 k = 0; k < first / 4 - 1 && empty; ++k)
+            empty = read_be32(s.base + at + 4 + k * 4) == first;
+        if (empty) {
+            for (u32 k = 0; k < first / 4; ++k)
+                swap_u32(s.base + at + k * 4);
+            return true;
+        }
+    }
     if (first < 8 || (first & 3) || at + first + 8 > end)
         return false;
     const u32 nlang = first / 4 - 1;
@@ -1491,6 +1512,14 @@ bool conv_seqtbl(const Span &s, u32 at)
     return true;
 }
 
+// Etiquette SEQ d'une archive de salle (sequences des objets animes, lues par le code de la salle via ROOM_ARC_PTR).
+bool conv_seq_tag(const Span &s, u32 at, u32 end)
+{
+    if (end > s.size)
+        end = s.size;
+    return looks_like_seqtbl(s, at, end) && conv_seqtbl(s, at);
+}
+
 // Table de decalages : u32 compte puis `compte` decalages croissants, relatifs a la table.
 bool looks_like_ofstbl(const Span &s, u32 at, u32 end)
 {
@@ -1759,6 +1788,8 @@ bool conv_etm(const Span &s, u32 at, u32 end)
             r = swap_tpl(s, dat);
         else if (ln > 4 && !std::strcmp(name + ln - 4, ".fcv"))
             r = conv_motion(s, dat, dend);
+        else if (ln > 4 && !std::strcmp(name + ln - 4, ".seq"))   // sequences de l'echelle (Et06_init, et0600x0.seq)
+            r = conv_seqtbl(s, dat);
         else {
             if (g_trace_on)
                 std::printf("[ARC] ETM : fichier '%.32s' (%u octets) sans convertisseur\n", name, (unsigned) (size - 0x40));
@@ -2041,8 +2072,10 @@ bool conv_sat(const Span &s, u32 at, u32 end)
     u8 *h = s.base + at;
     if (h[0] == 0xFF)
         return conv_sat_file(s, at, end);
+    // Fichier seul dont l'id n'est pas 0xFF (0x20 : collisions des objets mobiles de r109, r119..., lues par le code de
+    // la salle via ROOM_ARC_PTR). L'etiquette dit deja que c'est une collision ; le jeu ne verifie pas l'id.
     if (!(h[0] & 0x80))
-        return false;
+        return conv_sat_file(s, at, end, true);
     const u32 first = read_be32(h + 4);
     if (first < 8 || (first & 3) || first > 0x100)
         return false;
@@ -2080,7 +2113,14 @@ bool conv_rtp(const Span &s, u32 at, u32 end)
     u8 *h = s.base + at;
     const u32 n = (u32) ((h[6] << 8) | h[7]);
     const u32 pOfs = read_be32(h + 0xC), lOfs = read_be32(h + 0x10);
-    if (n == 0 || n > 0x400 || !s.has(at + pOfs, n * 16)) {
+    if (n == 0) {                                  // salle sans chemin d'ennemis : en-tete seul
+        swap_u16(h + 6);
+        swap_u32(h + 0xC);
+        swap_u32(h + 0x10);
+        swap_u32(h + 0x14);
+        return true;
+    }
+    if (n > 0x400 || !s.has(at + pOfs, n * 16)) {
         std::printf("[PORT] endian : RTP a +0x%x : %u points\n", (unsigned) at, (unsigned) n);
         return false;
     }
@@ -2731,6 +2771,7 @@ const TagConv kRoomTags[] = {
     { "TEX", conv_tex },
     { "EFF", conv_eff_tag },
     { "EVS", conv_evs },
+    { "SEQ", conv_seq_tag },
     { nullptr, nullptr }
 };
 
