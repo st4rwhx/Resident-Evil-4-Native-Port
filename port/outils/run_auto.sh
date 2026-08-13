@@ -8,11 +8,17 @@ export MSYS_NO_PATHCONV=1
 M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"; TAG=${1:?}; T1=${2:-90}; T2=${3:-200}; STEP=${4:-10}
 F=/sdcard/Android/data/org.nightjar.natif/files
 WANT=8282fab82924588e
+# batterie : jamais d'essai sous 40 % (le S5 s'eteint sinon) ; MIN_BAT=<n> pour changer le seuil
+LVL=$($A shell "dumpsys battery | grep level" | tr -dc '0-9')
+if [ -z "$LVL" ] || [ "$LVL" -lt "${MIN_BAT:-40}" ]; then echo "ARRET : batterie a ${LVL:-?} % (minimum ${MIN_BAT:-40})"; exit 1; fi
 H=$($A shell "sha256sum $F/dev_env.txt" | cut -c1-16)
 if [ "$H" != "$WANT" ]; then echo "ARRET : dev_env.txt modifie ($H)"; exit 1; fi
-restore() { $A shell "if [ -f $F/dev_env.txt.n3sav ]; then mv $F/dev_env.txt.n3sav $F/dev_env.txt; fi"; }
+restore() { $A shell "am force-stop org.nightjar.natif; if [ -f $F/dev_env.txt.n3sav ]; then mv $F/dev_env.txt.n3sav $F/dev_env.txt; fi"; }
 trap restore EXIT INT TERM
-$A shell "cp $F/dev_env.txt $F/dev_env.txt.n3sav && echo RE4_AUTOLOAD=1 >> $F/dev_env.txt; for l in ${EXTRA:-}; do echo \$l >> $F/dev_env.txt; done"
+$A shell "cp $F/dev_env.txt $F/dev_env.txt.n3sav && echo RE4_AUTOLOAD=${ALOAD:-1} >> $F/dev_env.txt; for l in ${EXTRA:-}; do echo \$l >> $F/dev_env.txt; done"
+# EXTRA_FILE=<fichier local> : lignes ajoutees telles quelles (valeurs avec ; comme NJ_NATIVE_SETTINGS), la derniere l'emporte
+if [ -n "${EXTRA_FILE:-}" ]; then $A push "$EXTRA_FILE" $F/extra_env.txt >/dev/null && $A shell "cat $F/extra_env.txt >> $F/dev_env.txt; rm $F/extra_env.txt"; fi
+$A shell "rm -f $F/core.log"   # pas de journal d'un essai precedent pris pour celui-ci
 $A shell "am force-stop org.nightjar.natif; input keyevent KEYCODE_WAKEUP; am start -n org.nightjar.natif/org.nightjar.re4.RE4Activity >/dev/null"
 rm -rf "$M/shots_$TAG"; mkdir -p "$M/shots_$TAG"
 T0=$(date +%s)

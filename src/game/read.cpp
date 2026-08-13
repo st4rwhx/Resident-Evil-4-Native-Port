@@ -202,6 +202,9 @@ static void decodeData()
     iTaskExit();
 }
 
+#ifdef RE4_PORT
+extern "C" unsigned port_newgame_room(void);   // port/arm_hooks.cpp : RE4_NEWGAME_ROOM (banc d'essai)
+#endif
 void ReadAreaData()
 {
     char name[64];
@@ -209,6 +212,18 @@ void ReadAreaData()
     u32 readTime;
     u32 decodeTime;
 
+#ifdef RE4_PORT   // banc d'essai : RE4_NEWGAME_ROOM=0x101 -> la premiere salle de jeu (r100) devient celle-ci, une fois
+    {
+        static bool done = false;
+        if (!done && pG->room_id == 0x100) {
+            done = true;
+            if (unsigned r = port_newgame_room()) {
+                OSReport("[PORT] nouvelle partie : salle %x au lieu de 100\n", r);
+                pG->room_id = (u16) r;
+            }
+        }
+    }
+#endif
     sprintf(name, "st%x/r%03x.das", pG->stage_no, pG->room_id);
     if (pG->flags_54 & 0x02000000) {
         pG->flags_54 &= ~0x02000000;

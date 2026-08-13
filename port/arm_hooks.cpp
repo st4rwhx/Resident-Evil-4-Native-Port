@@ -9,6 +9,13 @@ extern "C" int port_on_game_thread(void) { return port_host_scope == 0; }
 extern "C" int port_heap_trace(void) { return 0; }
 
 #include <stdlib.h>
+extern "C" unsigned port_filter_mask(void)   // RE4_FILTERMASK (src/game/filter.cpp)
+{
+    static const char *e = getenv("RE4_FILTERMASK");
+    static const unsigned m = e ? (unsigned) strtoul(e, nullptr, 16) : 0u;
+    return m;
+}
+
 extern "C" int port_debug_text(void)   // eprintf du jeu (src/game/eprintf.cpp)
 {
     static const int on = getenv("RE4_EPRINTF") != nullptr;
@@ -63,5 +70,12 @@ extern "C" void port_rodata_writable(void)
 extern "C" unsigned port_start_room(void)
 {
     static const char *e = getenv("RE4_START_ROOM");
+    return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
+}
+// RE4_NEWGAME_ROOM=0x101 : la NOUVELLE PARTIE commence dans cette salle (scenes de reference du rejeu, 13/11).
+// RE4_START_ROOM n'agit que dans le menu de salles du titre ; la nouvelle partie imposait 0x120.
+extern "C" unsigned port_newgame_room(void)
+{
+    static const char *e = getenv("RE4_NEWGAME_ROOM");
     return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
 }

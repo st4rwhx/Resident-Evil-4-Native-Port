@@ -143,8 +143,11 @@ u32 PADRead(PADStatus *status)
             if (pulse) status[0].button |= PAD_BUTTON_A;
         } else if (!in_game) {
             if (st.bits & NJS_TITLE_MENU) {   // NEW GAME est au-dessus de LOAD (curseur par defaut) : une fois haut, puis A
+                // RE4_AUTOLOAD=2 : LOAD (curseur par defaut, pas de haut) -> ecran de carte -> sauvegarde 01 (scene avec
+                // ennemis, verification n 2 du 13/11) ; sinon NEW GAME.
+                static const bool load = getenv("RE4_AUTOLOAD")[0] == '2';
                 static unsigned menu_reads = 0;
-                static bool menu_up = false;
+                static bool menu_up = load;
                 if (st.title_menu_alpha > 0.9f) ++menu_reads;
                 if (!menu_up && menu_reads == 60) { status[0].button |= PAD_BUTTON_UP; menu_up = true; }
                 else if (menu_up && menu_reads > 100 && pulse) status[0].button |= PAD_BUTTON_A;
