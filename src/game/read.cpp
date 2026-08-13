@@ -220,6 +220,7 @@ void ReadAreaData()
             if (unsigned r = port_newgame_room()) {
                 OSReport("[PORT] nouvelle partie : salle %x au lieu de 100\n", r);
                 pG->room_id = (u16) r;
+                pG->stage_no = (u8) (r >> 8);   // 0x2xx chateau, 0x3xx ile : fichiers st2/, st3/
             }
         }
     }
