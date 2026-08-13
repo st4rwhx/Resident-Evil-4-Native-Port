@@ -18,6 +18,9 @@ int main(int argc, char **argv)
 {
     port_install_crash_handler();
     port_rodata_writable();
+    // Journal ligne par ligne : l'appli arrete le coeur par un arret force, et un tampon plein laissait perdre les
+    // dernieres secondes du journal (on croyait le jeu fige alors qu'il tournait).
+    std::setvbuf(stdout, nullptr, _IOLBF, 0);
 
     const char *dir = (argc > 1) ? argv[1] : std::getenv("RE4_GAME_DIR");
     if (!dir) {

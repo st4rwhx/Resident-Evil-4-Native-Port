@@ -29,6 +29,19 @@ void TaskSleep(int frames);   // game/scheduler.cpp
 void* GetDataExt(void* arc, const char* tag, int no);   // game/read.cpp
 
 cBlock Block;
+#ifdef RE4_PORT
+u32 port_blk_checks;          // mesure : appels de checkCondition
+static int port_blk_forced;      // 1 : checkCondition a force flags_170 a -1 pendant un chargement
+static u32 port_blk_saved;       // la valeur a rendre
+static void port_blk_release(void)
+{
+    if (port_blk_forced) {
+        OSReport("[STOP] bloc : rendu %08x\n", port_blk_saved);
+        pG->flags_170 = port_blk_saved;
+        port_blk_forced = 0;
+    }
+}
+#endif
 
 static inline int bitChk(u32* set, u32 no)
 {
@@ -73,6 +86,12 @@ void cBlock::roomInit(void* data)
     BlockHeader* h = (BlockHeader*) data;
     int i;
 
+#ifdef RE4_PORT
+    // Portage : un chargement de bloc en cours a la sortie de la salle precedente avait fige le jeu (checkCondition :
+    // flags_170 = -1, rendu l'image suivante). Remettre stopFlagSet a zero sans rendre flags_170 laissait le jeu arrete
+    // pour toujours (Leon fige, plus de touches) des que la salle suivante n'a plus de blocs a charger.
+    port_blk_release();
+#endif
     pData = 0;
     pLink = 0;
     pArea = 0;
@@ -127,7 +146,13 @@ void cBlock::roomInit(void* data)
             getBlockWork(i);
         }
     }
+#ifdef RE4_PORT
+    OSReport("[BLK] roomInit : %u blocs, %u zones, %u liaisons\n", (unsigned) nBlock, (unsigned) pData->nArea, (unsigned) pData->nConnect);
+#endif
     if (debugMem == 0 && checkBlockMemory() == 0) {
+#ifdef RE4_PORT
+        OSReport("[BLK] roomInit : memoire des blocs refusee (taille max nulle ou malloc)\n");
+#endif
         if (Block.debugData == 1) {
             if (pData != 0) {
                 Debug_free(pData);
@@ -680,13 +705,28 @@ void cBlock::checkCondition()
     int ok;
     int r;
     u32 i;
+#ifdef RE4_PORT
+    port_blk_checks++;
+#endif
 
     if (noMemCtrl == 0 && pData == 0) {
+#ifdef RE4_PORT
+        port_blk_release();   // meme cas que roomInit : ne jamais garder le jeu arrete sans bloc a attendre
+        stopFlagSet = 0;
+#endif
         return;
     }
     if (stopFlagSet == 1) {
         pG->flags_170 = stopFlag;
+#ifdef RE4_PORT
+        port_blk_forced = 0;
+#endif
     }
+#ifdef RE4_PORT
+    else {
+        port_blk_release();   // arret force puis Block remis a zero entre deux images : rendre flags_170
+    }
+#endif
     stopFlagSet = 0;
     ok = 1;
     for (i = 0; i < nBlock; i++) {
@@ -730,6 +770,15 @@ void cBlock::checkCondition()
     }
     if (stopFlagSet == 1) {
         BitSet(stopFlag, pG->flags_170);
+#ifdef RE4_PORT
+        port_blk_saved = stopFlag;
+        {
+            static int n;
+            if (n++ < 5)
+                OSReport("[STOP] bloc : arret force (sauve %08x, %u blocs)\n", stopFlag, (unsigned) nBlock);
+        }
+        port_blk_forced = 1;
+#endif
         pG->flags_170 = 0xFFFFFFFF;
     }
 }
@@ -820,3 +869,19 @@ void cBlock::dispDebugInfo()
                 u->pData->getSize());
     }
 }
+
+#ifdef RE4_PORT
+// Mesure du portage (port/audio_port.cpp) : blocs du decor en cours (un chargement inacheve fige le jeu : flags_170).
+extern "C" void port_block_debug(void)
+{
+    u32 i;
+    OSReport("[BLK] %u blocs, arret %d, donnees %p\n", (unsigned) Block.nBlock, Block.stopFlagSet, (void*) Block.pData);
+    for (i = 0; i < Block.nBlock; i++) {
+        cBlockUnit* u = Block.getUnitPtr(i);
+        if (!(u->flags & 1))
+            continue;
+        OSReport("[BLK]   %2d etat %d cmd %d donnee %s cond %d err %d\n", (int) u->no, u->state, u->command,
+                 u->pData ? u->pData->name : "-", u->pData ? (int) u->pData->condition : -1, u->pData ? (int) u->pData->err : -1);
+    }
+}
+#endif

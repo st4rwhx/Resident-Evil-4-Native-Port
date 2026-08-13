@@ -3394,6 +3394,10 @@ extern "C" void port_evt_debug(void)
 {
     u32 i;
     OSReport("[EVT] en cours '%s', %u emplacements\n", EvtMgr.evtName, (unsigned) EvtMgr.nArray);
+    if (pPL)
+        OSReport("[EVT]   Leon routine %d %d %d %d pos %.0f %.0f %.0f | Key sx %d sy %d on %08x | flags 500C %08x 60 %08x 64 %08x 170 %08x\n",
+                 pPL->xFC, pPL->xFD, pPL->xFE, pPL->xFF, pPL->pos.x, pPL->pos.y, pPL->pos.z, Key.sx, Key.sy,
+                 (unsigned) Key.on, (unsigned) pG->flags_500C, (unsigned) pG->flags_60, (unsigned) pG->flags_64, (unsigned) pG->flags_170);
     for (i = 0; i < EvtMgr.nArray; i++) {
         Event* e = (Event*) ((u8*) EvtMgr.pArray + EvtMgr.size * i);
         if (!e->isAlive())

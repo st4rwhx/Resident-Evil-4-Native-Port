@@ -215,11 +215,18 @@ void str_type_sub(u8 type, u32 mode, s16 time)
     OSRestoreInterrupts(old);
 }
 
+#ifdef RE4_PORT
+extern "C" void port_audio_deliver(void);   // port/audio_port.cpp
+#endif
 int Snd_str_get_status(u32 snd_id)
 {
     SND_STR_WORK* str;
 
 #ifdef RE4_PORT
+    // Le jeu attend la fin d'un flux en boucle serree (event.cpp EvtSndStrStop : SndStrStatusCk) sans appeler l'OS ;
+    // sur console l'interruption AI faisait avancer le lecteur pendant ce temps. Ici elle n'est livree qu'aux points
+    // d'interruption : en donner un a chaque lecture de l'etat, sinon la boucle ne finit jamais (jeu fige).
+    port_audio_deliver();
     if ((snd_id & 0xFF000000u) == 0xFF000000u)
         return 0x3;   // flux muet de l'echafaudage (snd.cpp SndStrReq) : valide et pret, jamais en lecture
 #endif

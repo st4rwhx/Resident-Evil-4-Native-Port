@@ -31,7 +31,9 @@ extern "C" u32 __AXGetNumVoices(void);
 extern "C" u32 port_ax_acq_calls, port_ax_acq_ok, port_ax_state_on;   // src/lib/AXAlloc.c
 extern "C" void port_snd_str_debug(void);
 extern "C" void port_snd_flags_debug(void);
-extern "C" void port_evt_debug(void);   // src/game/event.cpp   // src/game/snd.cpp   // src/game/snd_str0.cpp
+extern "C" void port_evt_debug(void);
+extern "C" void port_dc_debug(void);
+extern "C" void port_block_debug(void);   // src/game/block.cpp   // src/game/datactrl.cpp   // src/game/event.cpp   // src/game/snd.cpp   // src/game/snd_str0.cpp
 extern "C" u32 Snd_ctrl_work[];   // src/game/snd_ram.cpp (SND_CTRL_WORK : image a 0x00, dernier son a 0x08)                    // src/lib/AXVPB.c
 
 namespace {
@@ -149,6 +151,8 @@ void push_current_buffer()
         port_snd_str_debug();
         port_snd_flags_debug();
         port_evt_debug();
+        port_dc_debug();
+        port_block_debug();
         peak = 0;
         frames = 0;
     }

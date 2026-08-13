@@ -774,6 +774,7 @@ void snd_swap32n(u8 *p, u32 n);
 void snd_fix_str_hed(const Span &s);
 void snd_fix_words_then_halves(const Span &s);
 }
+extern "C" void port_room_arc_fix(void *arc, u32 size);
 extern "C" void port_endian_fix(const char *name, void *data, u32 size)
 {
     if (!name || !data || size < 8)
@@ -898,6 +899,28 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         // retombe donc sur les memes mots). Les archives de salle, etiquetees par tag, et les
         // tables simples comme `sizetbl.dat` echouent a la validation et repartent intactes,
         // vers le journal du reste a faire.
+        // Blocs du decor (stN/rXXX_NN.dat, charges par cBlock) : meme forme que les archives de salle (DataExtHeader :
+        // nombre, trois mots nuls, decalages, etiquettes « SMD »...). Non convertis, ils laissaient le sol absent et une
+        // collision a l'envers (nPoly 0xE305) qui debordait polyBit et remettait Block a zero (jeu fige).
+        const char *base_nm = std::strrchr(name, '/');
+        base_nm = base_nm ? base_nm + 1 : name;
+        const size_t bl = std::strlen(base_nm);
+        const bool block_name = (base_nm[0] == 'r' || base_nm[0] == 'R') && bl == 11 && base_nm[4] == '_' &&
+                                std::strstr(name, "st") != nullptr;   // rXXX_NN.dat sous stN/
+        if (block_name && s.has(0, 0x18)) {
+            const u32 n = read_be32(s.base);
+            bool arc = n >= 1 && n <= 0x40 && read_be32(s.base + 4) == 0 && read_be32(s.base + 8) == 0 &&
+                       read_be32(s.base + 12) == 0 && s.has(0x10, n * 8);
+            for (u32 i = 0; arc && i < n; ++i) {
+                const u32 o = read_be32(s.base + 0x10 + 4 * i);
+                const u8 *tg = s.base + 0x10 + n * 4 + 4 * i;
+                arc = o >= 0x10 + n * 8 && o < s.size && tg[0] >= 'A' && tg[0] <= 'Z' && tg[1] >= 'A' && tg[1] <= 'Z';
+            }
+            if (arc) {
+                port_room_arc_fix(s.base, s.size);
+                return;
+            }
+        }
         if (swap_arc(s, false, std::strstr(name, "ss_") != nullptr || std::strstr(name, "SS_") != nullptr))
             return;
     }
@@ -1958,7 +1981,7 @@ static bool conv_sat_blocks(const Span &s, u32 at, u32 end, int depth)
     }
 }
 
-static bool conv_sat_file(const Span &s, u32 at, u32 end)
+static bool conv_sat_file(const Span &s, u32 at, u32 end, bool from_table = false)
 {
     track_label("SAT");
     if (end > s.size)
@@ -1966,7 +1989,9 @@ static bool conv_sat_file(const Span &s, u32 at, u32 end)
     if (!s.has(at, 0x14))
         return false;
     u8 *h = s.base + at;
-    if (h[0] != 0xFF)
+    // Fichier seul : id 0xFF. Dans une table (salle, EAT) l'id vaut autre chose (0x20 dans r100) : le jeu ne le
+    // verifie pas (cSatFile::dataCheck : nPoly <= 0x1FFF), on ne l'exige donc pas non plus.
+    if (h[0] != 0xFF && !from_table)
         return false;
     u32 v[9];
     for (int k = 0; k < 9; ++k)
@@ -2019,7 +2044,7 @@ bool conv_sat(const Span &s, u32 at, u32 end)
         for (u32 j = 0; j < n; ++j)
             if (at + offs[j] > at + offs[i] && at + offs[j] < e)
                 e = at + offs[j];
-        if (!conv_sat_file(s, at + offs[i], e))
+        if (!conv_sat_file(s, at + offs[i], e, true))
             ok = false;
     }
     return ok;
@@ -2743,6 +2768,12 @@ extern "C" void port_room_arc_fix(void *arc, u32 size)
         if (trace)
             std::printf("[ARC] entree %u : %.3s a +0x%x (%u octets) %s\n", (unsigned) i,
                         (const char *) tg, (unsigned) at, (unsigned) (end - at), done ? "converti" : "NON converti");
+        if (trace && !done && s.has(at, 48)) {
+            std::printf("[ARC]   octets :");
+            for (int k = 0; k < 48; ++k)
+                std::printf(" %02x", s.base[at + k]);
+            std::printf("\n");
+        }
     }
 }
 

@@ -23,6 +23,9 @@
 #include <unwind.h>
 #include <ucontext.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/syscall.h>
+#include <pthread.h>
 
 namespace {
 
@@ -149,8 +152,78 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
 
 } // namespace
 
+extern "C" unsigned int port_blk_checks;   // src/game/block.cpp : une fois par image
+namespace {
+// Sentinelle de blocage : si l'image du jeu n'avance plus (compteur port_blk_checks, une fois par image dans la boucle
+// principale) pendant 6 s, chaque fil du processus recoit SIGUSR2 et imprime sa pile, une seule fois par lancement.
+// Sert a trouver les attentes sans fin (boucles qui comptaient sur une interruption de la console).
+volatile int g_dump_busy = 0;
+
+void on_dump(int, siginfo_t *, void *ctx)
+{
+    while (__sync_lock_test_and_set(&g_dump_busy, 1))
+        ;
+    ucontext_t *uc = (ucontext_t *) ctx;
+    const unsigned long pc = (unsigned long) uc->uc_mcontext.arm_pc, lr = (unsigned long) uc->uc_mcontext.arm_lr;
+    g_load_bias = 0;
+    compute_load_bias(pc);
+    std::printf("[BLOQUE] fil %d : pc = %s + 0x%lx", (int) gettid(), g_module[0] ? g_module : "?", pc - g_load_bias);
+    g_load_bias = 0;
+    compute_load_bias(lr);
+    std::printf("  lr = %s + 0x%lx\n", g_module[0] ? g_module : "?", lr - g_load_bias);
+    g_depth = 0;
+    g_load_bias = 0;
+    _Unwind_Backtrace(on_frame, nullptr);
+    std::fflush(stdout);
+    __sync_lock_release(&g_dump_busy);
+}
+
+void *watchdog(void *)
+{
+    unsigned int last = 0, still = 0;
+    bool done = false;
+    for (;;) {
+        sleep(1);
+        const unsigned int now = port_blk_checks;
+        if (now == 0 || now != last) {
+            last = now;
+            still = 0;
+            continue;
+        }
+        if (++still < 6 || done)
+            continue;
+        done = true;
+        std::printf("[BLOQUE] l'image du jeu n'avance plus depuis 6 s (image %u) : piles de tous les fils\n", now);
+        std::fflush(stdout);
+        DIR *d = opendir("/proc/self/task");
+        if (!d)
+            continue;
+        const int self = (int) gettid();
+        while (dirent *e = readdir(d)) {
+            const int tid = std::atoi(e->d_name);
+            if (tid <= 0 || tid == self)
+                continue;
+            syscall(SYS_tgkill, getpid(), tid, SIGUSR2);
+            usleep(150000);
+        }
+        closedir(d);
+    }
+}
+
+} // namespace (sentinelle)
+
 extern "C" void port_install_crash_handler(void)
 {
+    {
+        struct sigaction sd;
+        std::memset(&sd, 0, sizeof(sd));
+        sd.sa_sigaction = on_dump;
+        sd.sa_flags = SA_SIGINFO | SA_RESTART;
+        sigaction(SIGUSR2, &sd, nullptr);
+        pthread_t th;
+        if (pthread_create(&th, nullptr, watchdog, nullptr) == 0)
+            pthread_detach(th);
+    }
     struct sigaction sa;
     std::memset(&sa, 0, sizeof(sa));
     sa.sa_sigaction = on_fault;

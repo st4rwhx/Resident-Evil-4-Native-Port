@@ -7,6 +7,9 @@
 #include "dbmodule.h"
 #include "main.h"
 #include "gx.h"
+#ifdef RE4_PORT
+#include <dolphin/os.h>
+#endif
 
 #line 30 "D:/Bio4/Prog/atari.cpp"
 
@@ -418,8 +421,31 @@ void cSatMgr::log(const char* fmt, ...)
     pLog->vwarn(0, 0, fmt, ap);
 }
 
+#ifdef RE4_PORT
+// Portage : polyBit (0x400 octets) precede Block en memoire ; un nombre de polygones de collision faux (donnees mal
+// converties) l'effacait au-dela de sa taille et remettait Block a zero (jeu fige : flags_170 = -1 jamais rendu).
+static void port_polybit_clear(u32 size, u32 npoly, int site)
+{
+    static int n;
+    if (size > sizeof(polyBit)) {
+        if (n++ < 8)
+            OSReport("[ATARI] polyBit : effacement de %u octets (nPoly %u, site %d) borne a 0x400\n", size, npoly, site);
+        size = sizeof(polyBit);
+    }
+    memclr_asm(polyBit, size);
+}
+#endif
+
 void polyBitSet(u32 no)
 {
+#ifdef RE4_PORT
+    if ((no >> 3) >= sizeof(polyBit)) {
+        static int n;
+        if (n++ < 8)
+            OSReport("[ATARI] polyBitSet : polygone %u hors de la table\n", no);
+        return;
+    }
+#endif
     polyBit[no >> 3] |= 1 << (no & 7);
 }
 
@@ -712,7 +738,11 @@ int cSatMgr::polySphereCk(Vec* oldPos, Vec* pos, f32 r, int flag, Vec* nrm, int 
             Vec lo;
             Vec lp;
             cSatBlock* blk = sat->block;
+#ifdef RE4_PORT
+            port_polybit_clear((sat->nPoly + 7) / 8, sat->nPoly, 715);
+#else
             memclr_asm(polyBit, (sat->nPoly + 7) / 8);
+#endif
             PSMTXMultVec(sat->inv, oldPos, &lo);
             PSMTXMultVec(sat->inv, pos, &lp);
             if (blkPolySphereCk(sat, blk, &lo, &lp, r, flag, nrm, mask)) {
@@ -826,7 +856,11 @@ int cSatMgr::hitCheck2(Vec* a, Vec* b, Vec* hit, u32* attr, int flag, int mask)
         if (sat->isAlive()) {
             cSatBlock* blk = sat->block;
             int r;
+#ifdef RE4_PORT
+            port_polybit_clear((sat->nPoly >> 3) + 1, sat->nPoly, 829);
+#else
             memclr_asm(polyBit, (sat->nPoly >> 3) + 1);
+#endif
             PSMTXMultVec(sat->inv, a, &la);
             PSMTXMultVec(sat->inv, b, &lb);
             PSMTXMultVec(sat->inv, &cur, &lcur);

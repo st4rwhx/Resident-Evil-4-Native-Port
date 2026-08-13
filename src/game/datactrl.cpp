@@ -971,3 +971,17 @@ void cDataCtrl::check()
         checkDummyId();
     }
 }
+
+#ifdef RE4_PORT
+// Mesure du portage (port/audio_port.cpp) : unites de donnees en cours (etat, erreur, demande).
+extern "C" void port_dc_debug(void)
+{
+    int i;
+    for (i = 0; i < 32; i++) {
+        cDataUnit* u = &DC.unit[i];
+        if (!(u->flag & 1))
+            continue;
+        OSReport("[DC]   %2d '%s' etat %d err %d req %d\n", i, u->name, (int) u->condition, (int) u->err, u->reqNo);
+    }
+}
+#endif

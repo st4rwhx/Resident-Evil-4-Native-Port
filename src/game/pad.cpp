@@ -12,6 +12,9 @@
 #include "math_sub.h"
 #include "rnd.h"
 #include "eprintf.h"
+#ifdef RE4_PORT
+#include <dolphin/os.h>
+#endif
 
 static inline void U64Set(u64& d, u64 v) { d = v; }
 
@@ -276,6 +279,23 @@ void PadRead()
         }
     }
 
+#ifdef RE4_PORT
+    {   // mesure du portage : chaque changement des drapeaux d'arret (un -1 garde fige le jeu)
+        static u32 last170 = 0x12345678u;
+        static u32 nframe;
+        ++nframe;
+        if ((nframe % 300) == 0) {
+            extern u32 port_blk_checks;
+            OSReport("[STOP] battement : image %u, checkCondition %u, flags_170 %08x\n", nframe, port_blk_checks,
+                     pG->flags_170);
+        }
+        if (pG->flags_170 != last170) {
+            OSReport("[STOP] image %u : flags_170 %08x -> %08x (salle %x)\n", nframe, last170, pG->flags_170,
+                     (unsigned) G_ROOM_ID);
+            last170 = pG->flags_170;
+        }
+    }
+#endif
     if (!(pG->flags_170 & 0x80000000)) {
         Key.sx = Joy[0].sx;
         Key.sy = Joy[0].sy;
