@@ -164,9 +164,15 @@ int vertex_size(int f)
     return n;
 }
 
+// etape 2 (gxn_tev.inc, inclus a la fin)
+void reset2();
+void compare2(const unsigned* bp);
+void control2(const unsigned* bp);
+
 // ---------------------------------------------------------------- operations natives
 void reset()
 {
+    reset2();
     std::memset(&S, 0, sizeof S);
     S.desc[GX_VA_POS] = GX_DIRECT;
     S.zscale = 1.6777216E7f;
@@ -417,6 +423,7 @@ void compare()
                  " cases de matrices connues natif %u flux %u ; projection[0] natif %08x flux %08x\n",
                  (unsigned) expect_vcd_lo(), cp[0x50] & 0x1FFFF, (unsigned) S.vfmt, (unsigned) a, cp[0x70 + S.vfmt],
                  (unsigned) expect_xf_specs(), xf[0x1008], mine, known, (unsigned) fbits(S.proj[0]), xf[0x1020]);
+        control2(bp);   // etape 2 : valeurs TEV et pixels
     }
     // Attributs (CP)
     cmp(0, 0x50, expect_vcd_lo(), cp[0x50], 0x1FFFF, "descripteur bas");
@@ -476,6 +483,7 @@ void compare()
     for (int i = 0; i < 8; ++i)
         cmp(2, 0x30 + 2 * i, (u32) (S.tofs_line[i] & 1) << 18 | (u32) (S.tofs_point[i] & 1) << 19, bp[0x30 + 2 * i],
             3u << 18, "decalages de coordonnees");
+    compare2(bp);
 }
 
 // octets envoyes depuis GXBegin = sommets x taille de sommet de l'etat type
@@ -803,3 +811,5 @@ void __wrap_GXCallDisplayList(void* list, u32 nbytes)
 }
 
 }  // extern "C"
+
+#include "gxn_tev.inc"   // etape 2 : TEV et pixels
