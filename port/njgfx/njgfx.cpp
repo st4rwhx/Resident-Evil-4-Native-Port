@@ -166,9 +166,9 @@ void note_thread(const char *who) {
 double g_gl_take_ms = 0, g_gl_rel_ms = 0, g_ph_take = 0;
 bool g_ph_draw_seen = false;
 struct PhaseAcc { double take = 0, draw = 0, post = 0, all = 0; unsigned n = 0, empty = 0; } g_ph;   // mesure (enquete Render_swap, 13/11)
-// NJ_RTHREAD=1 (14/11) : le contexte appartient au fil de rendu ; le fil du jeu ne le tient que pendant init().
+// Fil de rendu (14/11, NJ_RTHREAD=0 pour le couper) : le contexte appartient au fil de rendu ; le fil du jeu ne le tient que pendant init().
 bool rthread_on() {
-  static const bool v = [] { const char *e = std::getenv("NJ_RTHREAD"); return e && e[0] == '1'; }();
+  static const bool v = [] { const char *e = std::getenv("NJ_RTHREAD"); return !(e && e[0] == '0'); }();   // actif par defaut depuis le 14/11 (r100, village, 10 min)
   return v;
 }
 struct GlScope {
