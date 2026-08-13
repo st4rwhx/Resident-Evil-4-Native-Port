@@ -14,8 +14,13 @@ struct CRoomInfo {
     union {
         u16 room_id;  // 0x02  stage << 8 | room
         struct {
+#ifdef RE4_PORT   // portage : room_id est un u16 retourne (petit-boutiste), l'octet de poids faible (salle) vient en premier
+            u8 room;   // 0x02
+            u8 stage;  // 0x03
+#else
             u8 stage;  // 0x02
             u8 room;   // 0x03
+#endif
         };
     };
     Vec pos;        // 0x04
