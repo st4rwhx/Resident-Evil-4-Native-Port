@@ -79,3 +79,9 @@ extern "C" unsigned port_newgame_room(void)
     static const char *e = getenv("RE4_NEWGAME_ROOM");
     return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
 }
+// RE4_NEWGAME_POINT=n : n-ieme point d'entree valide de debug/roomInfo.dat pour cette salle (0 par defaut).
+extern "C" unsigned port_newgame_point(void)
+{
+    static const char *e = getenv("RE4_NEWGAME_POINT");
+    return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
+}

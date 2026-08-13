@@ -285,6 +285,22 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
                 std::printf("[PORT] endian : cameras communes a +0x%x inattendues\n", (unsigned) o);
             continue;
         }
+        if (core && i == 11) {                  // ofs_3C : chemins de lumiere (Light05, cLightMgr::getPathPtr)
+            // LightPathHeader : u8 nombre, 3 octets, puis u32 decalage[nombre] depuis l'en-tete (0 = aucun) ; chaque
+            // chemin est une suite d'octets terminee par 0xFF (rien a retourner). Non convertie : Light05() INVALID PATH DATA.
+            const u32 np = s.base[o];
+            bool good = s.has(o + 4, np * 4);
+            for (u32 k = 0; good && k < np; ++k) {
+                const u32 po = read_be32(s.base + o + 4 + k * 4);
+                good = po == 0 || (po >= 4 + np * 4 && s.has(o + po, 1));
+            }
+            if (good)
+                for (u32 k = 0; k < np; ++k)
+                    swap_u32(s.base + o + 4 + k * 4);
+            else
+                std::printf("[PORT] endian : chemins de lumiere a +0x%x inattendus\n", (unsigned) o);
+            continue;
+        }
         if (core && i == 3) {                   // ofs_1C : vibrations
             if (!swap_vib_tbl(s, o))
                 std::printf("[PORT] endian : table de vibrations inattendue\n");

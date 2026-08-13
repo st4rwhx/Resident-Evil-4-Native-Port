@@ -204,6 +204,7 @@ static void decodeData()
 }
 
 #ifdef RE4_PORT
+extern "C" unsigned port_newgame_point(void);   // RE4_NEWGAME_POINT
 extern "C" unsigned port_newgame_room(void);   // port/arm_hooks.cpp : RE4_NEWGAME_ROOM (banc d'essai)
 #endif
 void ReadAreaData()
@@ -230,9 +231,10 @@ void ReadAreaData()
                     if (st < t[0] && t[1 + st] != 0) {
                         u8* b = (u8*) t + t[1 + st];
                         const u32 n = *(u32*) b;
+                        u32 skip = port_newgame_point();
                         for (u32 i = 0; i < n; i++) {
                             CRoomInfo* ci = (CRoomInfo*) (b + 4 + i * sizeof(CRoomInfo));
-                            if (ci->room_id == (u16) r && (ci->flags & 1)) {
+                            if (ci->room_id == (u16) r && (ci->flags & 1) && skip-- == 0) {
                                 pG->sub_pos = ci->pos;
                                 pG->sub_angle = ci->angle;
                                 OSReport("[PORT] point d'entree %x : %d %d %d angle %.2f\n", r, (int) ci->pos.x,
