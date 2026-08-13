@@ -1,3 +1,4 @@
+#include <chrono>
 // -*- coding: utf-8 -*-
 // Rendu natif, cote moteur (phase N3 du plan natif, nj-work/docs/PLAN_NATIF_NIGHTJAR_2026-11-11.md).
 //
@@ -29,6 +30,10 @@
 #include "runtime/gx/frame_renderer.h"
 #include "runtime/hw/hw.h"
 
+namespace nj::runtime::gx {
+extern std::atomic<uint64_t> g_prof_xf_bank, g_prof_xf_single, g_prof_xf_none;   // fifo_parser.cpp : chemins de transformation
+extern uint64_t g_prof_dl_calls, g_prof_dl_hits;                                  // listes d'affichage developpees / en cache
+}
 namespace nj::runtime {
 uint32_t g_debug_pc = 0;
 MMU *g_guest_mem = nullptr;
@@ -162,12 +167,53 @@ struct GlScope {
 
 // Lit les commandes completes et decode tout de suite leurs sommets (le jeu peut reecrire sa memoire
 // des le retour).
+// Mesure (enquete lenteur r100, 13/11) : temps de lecture du flux et de decodage par image, appels et octets.
+struct TakeStat { double parse_ms = 0, dec_ms = 0; unsigned calls = 0, draws = 0; size_t bytes = 0, verts = 0, stream_max = 0, ops_max = 0; };
+TakeStat g_ts;
 void take(const unsigned char *bytes, unsigned size) {
   if (!init()) return;
+  using clk = std::chrono::steady_clock;
+  const auto t0 = clk::now();
   g_stream.insert(g_stream.end(), bytes, bytes + size);
+  if (g_stream.size() > g_ts.stream_max) g_ts.stream_max = g_stream.size();
   gx::ParseFifo(g_stream, g_ops);
+  const auto t1 = clk::now();
   for (; g_decoded < g_ops.size(); ++g_decoded)
-    if (g_ops[g_decoded].type == gx::GxOpKind::DrawPrimitive) gx::DecodeDraw(g_ops[g_decoded]);
+    if (g_ops[g_decoded].type == gx::GxOpKind::DrawPrimitive) {
+      gx::DecodeDraw(g_ops[g_decoded]);
+      ++g_ts.draws;
+      g_ts.verts += g_ops[g_decoded].shared_vertices ? g_ops[g_decoded].shared_vertices->size() : g_ops[g_decoded].vertices.size();
+    }
+  const auto t2 = clk::now();
+  if (g_ops.size() > g_ts.ops_max) g_ts.ops_max = g_ops.size();
+  g_ts.parse_ms += std::chrono::duration<double, std::milli>(t1 - t0).count();
+  g_ts.dec_ms += std::chrono::duration<double, std::milli>(t2 - t1).count();
+  ++g_ts.calls;
+  g_ts.bytes += size;
+}
+void take_stat_frame(unsigned frame) {
+  static unsigned n = 0;
+  static TakeStat acc;
+  acc.parse_ms += g_ts.parse_ms; acc.dec_ms += g_ts.dec_ms; acc.calls += g_ts.calls; acc.draws += g_ts.draws;
+  acc.bytes += g_ts.bytes; acc.verts += g_ts.verts;
+  if (g_ts.stream_max > acc.stream_max) acc.stream_max = g_ts.stream_max;
+  if (g_ts.ops_max > acc.ops_max) acc.ops_max = g_ts.ops_max;
+  g_ts = TakeStat();
+  if (++n < 30) return;
+  std::printf("[TAKE] image %u, par image : lecture %.1f ms, decodage %.1f ms, %u appels, %u dessins, %zu sommets, %zu octets ;"
+              " flux max %zu, commandes max %zu\n", frame, acc.parse_ms / n, acc.dec_ms / n, acc.calls / n, acc.draws / n,
+              acc.verts / n, acc.bytes / n, acc.stream_max, acc.ops_max);
+  {
+    namespace g = nj::runtime::gx;
+    const uint64_t b = g::g_prof_xf_bank.exchange(0), s1 = g::g_prof_xf_single.exchange(0), z = g::g_prof_xf_none.exchange(0);
+    std::printf("[TAKE]   sommets par image : banque de matrices (CPU) %llu, matrice unique (GPU) %llu, sans matrice %llu ;"
+                " listes %llu dont %llu en cache\n", (unsigned long long) (b / n), (unsigned long long) (s1 / n),
+                (unsigned long long) (z / n), (unsigned long long) (g::g_prof_dl_calls / n), (unsigned long long) (g::g_prof_dl_hits / n));
+    g::g_prof_dl_calls = 0;
+    g::g_prof_dl_hits = 0;
+  }
+  acc = TakeStat();
+  n = 0;
 }
 
 }  // namespace
@@ -216,7 +262,16 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     static const unsigned dff = std::getenv("NJ_DFF_AT") ? (unsigned)std::atoi(std::getenv("NJ_DFF_AT")) : 0;
     if (dff && g_frames + 1 == dff) nj::runtime::gx::rec::request(6);
   }
-  g_renderer->draw_frame(g_ops);
+  {
+    using clk = std::chrono::steady_clock;
+    const auto t0 = clk::now();
+    g_renderer->draw_frame(g_ops);
+    static double acc = 0;
+    static unsigned n = 0;
+    acc += std::chrono::duration<double, std::milli>(clk::now() - t0).count();
+    if (++n == 30) { std::printf("[TAKE] rendu GL (draw_frame) %.1f ms par image\n", acc / n); acc = 0; n = 0; }
+  }
+  take_stat_frame(g_frames);
   g_ops.clear();
   g_decoded = 0;
   gx::DecodeEpochAdvance();

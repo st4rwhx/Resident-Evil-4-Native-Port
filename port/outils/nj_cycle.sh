@@ -10,7 +10,9 @@ wait_laptop() { for i in $(seq 1 60); do ssh -o ConnectTimeout=8 admin@192.168.1
 wait_laptop
 rm -f "C:/re4n/ce4_m1_out/apk/$TAG.apk"
 [ "${3:-host}" = host ] && bash "$M/laptop_m1_host.sh" 2>&1 | grep -E "ninja=|error:" | head -5
-wait_laptop; bash "$M/laptop_port_build.sh" -O2 2>&1 | grep -E "build=|en echec|error" | head -6
+wait_laptop; bash "$M/laptop_port_build.sh" -O2 2>&1 | tee "$M/last_build.txt" | grep -E "build=|en echec|error|pont_en_echec" | head -6
+# pont njgfx rate : le lien reprendrait l ancien objet sans rien dire
+grep -q pont_en_echec "$M/last_build.txt" && { echo "ARRET : pont njgfx en echec"; grep -m3 error "$M/last_build.txt"; exit 1; }
 wait_laptop; bash "$M/laptop_nj_apk.sh" "$TAG" 2>&1 | tail -1 | cut -c1-80
 [ -f "C:/re4n/ce4_m1_out/apk/$TAG.apk" ] || { echo "ARRET : APK $TAG absent (construction ratee)"; exit 1; }
 $A install -r "C:/re4n/ce4_m1_out/apk/$TAG.apk" 2>&1 | tail -1

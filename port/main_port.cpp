@@ -1,3 +1,4 @@
+#include <malloc.h>
 // -*- coding: utf-8 -*-
 // Coque desktop du portage : ce que fera l'Activity Android ou le projet Xcode.
 //
@@ -21,6 +22,10 @@ int main(int argc, char **argv)
     // Journal ligne par ligne : l'appli arrete le coeur par un arret force, et un tampon plein laissait perdre les
     // dernieres secondes du journal (on croyait le jeu fige alors qu'il tournait).
     std::setvbuf(stdout, nullptr, _IOLBF, 0);
+    // Allocateur d'Android 9 (jemalloc) : rendre les pages liberees au systeme apres un delai plutot que tout de suite.
+    // Mesure du 13/11 (simpleperf, cinematique r100) : 11 200 defauts de page par seconde sur le fil du jeu, ~30 % de
+    // son temps dans le noyau, parce que le rendu alloue et libere des Mo de sommets a chaque image.
+    std::printf("[PORT] mallopt(M_DECAY_TIME, 1) = %d\n", mallopt(-100 /* M_DECAY_TIME, Android 9+ */, 1));
 
     const char *dir = (argc > 1) ? argv[1] : std::getenv("RE4_GAME_DIR");
     if (!dir) {

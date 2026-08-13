@@ -55,6 +55,39 @@ f32 ORTHO_R;
 #include "os_vi.h"
 #include "rnd.h"
 #include "sscrn.h"
+#ifdef RE4_PORT
+// Mesure du portage : temps de chaque partie de la boucle principale, moyenne sur 60 images (journal [TEMPS]).
+extern "C" long long OSGetTime(void);
+extern "C" void OSReport(const char* msg, ...);
+typedef long long OSTime;
+#define PORT_TB_MS 40500   /* base de temps : 40,5 MHz (bus / 4) */
+static OSTime port_tm_last;
+static u32 port_tm_acc[10];
+static u32 port_tm_frames;
+static void port_tm(int k)
+{
+    const OSTime t = OSGetTime();
+    if (port_tm_last)
+        port_tm_acc[k] += (u32) ((t - port_tm_last) / 405);   // centiemes de ms
+    port_tm_last = t;
+}
+static void port_tm_frame(void)
+{
+    if (++port_tm_frames < 60)
+        return;
+    OSReport("[TEMPS] ms/image : debut %.1f rendu %.1f taches %.1f trans %.1f son %.1f dessin2d %.1f itaches %.1f "
+             "fin_rendu %.1f blocs %.1f attente %.1f\n",
+             port_tm_acc[0] / 6000.0f, port_tm_acc[1] / 6000.0f, port_tm_acc[2] / 6000.0f, port_tm_acc[3] / 6000.0f,
+             port_tm_acc[4] / 6000.0f, port_tm_acc[5] / 6000.0f, port_tm_acc[6] / 6000.0f, port_tm_acc[7] / 6000.0f,
+             port_tm_acc[8] / 6000.0f, port_tm_acc[9] / 6000.0f);
+    for (int i = 0; i < 10; i++)
+        port_tm_acc[i] = 0;
+    port_tm_frames = 0;
+}
+#define PORT_TM(k) port_tm(k)
+#else
+#define PORT_TM(k)
+#endif
 
 extern "C" {
 void __main();
@@ -203,13 +236,17 @@ RESTART:
             Render_before();
             ClearOTagR(MainOt, 5);
             PadRead();
+            PORT_TM(9);
             DebugControl();
             Render();
+            PORT_TM(1);
             ProcessTickGet(4, "RENDER SETUP");
             SetPrimBuffPtr();
             ClearOt();
             pG->flags_51E4++;
+            PORT_TM(0);
             TaskScheduler();
+            PORT_TM(2);
             ProcessTickGet(5, "TaskScheduler");
             if (!(pG->flags_54 & 0x100000) || (pG->flags_500C & 0x40000)) {
                 IdSys.move();
@@ -220,8 +257,10 @@ RESTART:
             if (!(pG->flags_54 & 0x100000)) {
                 Trans();
             }
+            PORT_TM(3);
             Dvd.Watcher();
             SndWatcher();
+            PORT_TM(4);
             ProcessTickGet(5, "SndWatcher");
             FadeControl(0);
             cMes.Move();
@@ -237,11 +276,18 @@ RESTART:
             }
             EprintfFlush();
             ProcessTickGet(2, "PROCESS CPU");
+            PORT_TM(5);
             iTaskScheduler();
+            PORT_TM(6);
             Render_done();
+            PORT_TM(7);
             Block.checkCommand();
             DC.check();
             Block.checkCondition();
+            PORT_TM(8);
+#ifdef RE4_PORT
+            port_tm_frame();
+#endif
             ProcessTickGet(3, "DRAW REMAIN");
             while (vsync_cnt < GetSystemVcnt() - 1) {}
             Render_swap();

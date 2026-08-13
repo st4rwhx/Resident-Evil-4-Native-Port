@@ -52,7 +52,7 @@ CONLY = ['-std=gnu99', '-fdeclspec', '-fgnu89-inline']   # extern inline des en-
 # port/gx_sdk.cpp ; RE4_OLDGX=1 : l'ancien rendu de test du portage (gx.cpp, texture.cpp, texobj.cpp).
 PORT_UNITS = ['os', 'dvd', 'vi', 'pad'] + (['gx', 'texture', 'texobj'] if os.environ.get('RE4_OLDGX') else ['gx_sdk', 'gx_sdk_os']) + [
               'memfill', 'yz2', 'mtx', 'misc', 'aram', 'thread', 'endian', 'crash', 'prodg_rt', 'port_log',
-              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip', 'njlink', 'njstate', 'quat', 'audio_port']
+              'stubs_generated', 'stubs_link', 'main_port', 'arm_hooks', 'card', 'rel', 'rel_missing', 'movie_skip', 'njlink', 'njstate', 'quat', 'audio_port', 'memwrap']
 
 
 # Unites du jeu volontairement **exclues** du portage.

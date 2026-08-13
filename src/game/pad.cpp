@@ -284,10 +284,15 @@ void PadRead()
         static u32 last170 = 0x12345678u;
         static u32 nframe;
         ++nframe;
-        if ((nframe % 300) == 0) {
+        if ((nframe % 60) == 0) {
             extern u32 port_blk_checks;
-            OSReport("[STOP] battement : image %u, checkCondition %u, flags_170 %08x\n", nframe, port_blk_checks,
-                     pG->flags_170);
+            static OSTime t_last;
+            const OSTime t = OSGetTime();
+            const u32 ms = t_last ? (u32) ((t - t_last) / (OS_TIMER_CLOCK / 1000)) : 0;
+            t_last = t;
+            OSReport("[STOP] battement : image %u, 60 images en %u ms (%.1f i/s), flags_170 %08x\n", nframe, ms,
+                     ms ? 60000.0f / (f32) ms : 0.0f, pG->flags_170);
+            (void) port_blk_checks;
         }
         if (pG->flags_170 != last170) {
             OSReport("[STOP] image %u : flags_170 %08x -> %08x (salle %x)\n", nframe, last170, pG->flags_170,
