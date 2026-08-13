@@ -4,8 +4,16 @@
 // port_host_scope : le rendu Nightjar (port/njgfx, libnjruntime) tourne sur le fil du jeu mais ses
 // allocations C++ ne doivent pas aller dans le tas du jeu (operator new de main_mem.cpp) : elles y
 // decalaient tout (917 Ko + des dizaines de blocs au titre) et r100.das ecrasait le tas 4 (nj14).
+// port_render_thread (14/11) : fil de rendu de njgfx (NJ_RTHREAD=1). Il tourne EN MEME TEMPS que le jeu : le compteur
+// global ci-dessus ne peut pas le couvrir (le jeu aurait alloue hors de son tas pendant chaque rendu, defaut nj14).
+// Il est donc reconnu par son identite ; operator delete choisit deja le tas d'apres l'adresse.
+#include <pthread.h>
 extern "C" int port_host_scope = 0;
-extern "C" int port_on_game_thread(void) { return port_host_scope == 0; }
+extern "C" unsigned long port_render_thread = 0;
+extern "C" int port_on_game_thread(void)
+{
+    return port_host_scope == 0 && (port_render_thread == 0 || (unsigned long) pthread_self() != port_render_thread);
+}
 extern "C" int port_heap_trace(void) { return 0; }
 
 #include <stdlib.h>

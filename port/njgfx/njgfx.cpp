@@ -14,6 +14,9 @@
 #include <GLES3/gl3.h>
 
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <pthread.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -53,6 +56,7 @@ extern "C" void njlink_set_xfb(unsigned w, unsigned h);   // port/njlink.cpp : z
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
 extern "C" int port_host_scope;
+extern "C" unsigned long port_render_thread;   // port/arm_hooks.cpp : fil de rendu (NJ_RTHREAD=1)
 extern "C" void njstate_fill(NjState *out);
 extern "C" void njstate_debug_ids(void);   // port/arm_hooks.cpp : allocations C++ hors du tas du jeu
 
@@ -162,16 +166,21 @@ void note_thread(const char *who) {
 double g_gl_take_ms = 0, g_gl_rel_ms = 0, g_ph_take = 0;
 bool g_ph_draw_seen = false;
 struct PhaseAcc { double take = 0, draw = 0, post = 0, all = 0; unsigned n = 0, empty = 0; } g_ph;   // mesure (enquete Render_swap, 13/11)
+// NJ_RTHREAD=1 (14/11) : le contexte appartient au fil de rendu ; le fil du jeu ne le tient que pendant init().
+bool rthread_on() {
+  static const bool v = [] { const char *e = std::getenv("NJ_RTHREAD"); return e && e[0] == '1'; }();
+  return v;
+}
 struct GlScope {
   bool took = false;
   GlScope() {
     const auto t0 = std::chrono::steady_clock::now();
-    if (g_ready && eglGetCurrentContext() != g_ctx) took = eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) == EGL_TRUE;
+    if (g_ready && !rthread_on() && eglGetCurrentContext() != g_ctx) took = eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) == EGL_TRUE;
     g_gl_take_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
   }
   ~GlScope() {
     const auto t0 = std::chrono::steady_clock::now();
-    if (g_ready) eglMakeCurrent(g_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (g_ready && (!rthread_on() || eglGetCurrentContext() == g_ctx)) eglMakeCurrent(g_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     g_gl_rel_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
   }
 };
@@ -295,6 +304,78 @@ extern "C" int njgfx_oracle(const unsigned **cp, const unsigned **bp, const unsi
   return 1;
 }
 
+static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned frame, const unsigned vm_in[6]);
+
+// Fil de rendu (NJ_RTHREAD=1, 14/11 ; modele OpenGOAL : le fil du jeu passe l'image finie au fil graphique).
+// Mesure du 14/11 (r100, S5) : jeu, plomberie GX et pilote GL tournaient en serie sur un seul coeur (~0,85).
+// Le fil du jeu lit et decode l'image N (etat de lecture g_pstate, distinct de celui du rendu), puis la passe ici ;
+// le contexte GL reste a ce fil. Profondeur 1 : le jeu n'attend que si l'image N-1 n'est pas finie a la passation.
+// Le cache de decodage avance d'une generation a la passation, quand plus personne ne lit l'image N-1.
+// Fil cree par pthread_create (pas std::thread) : aucune allocation avant que port_render_thread soit pose.
+namespace rth {
+std::mutex mu;
+std::condition_variable cv;
+bool busy = false, started = false;
+std::vector<gx::GxOp> job;
+unsigned job_size = 0, job_frame = 0, job_vm[6];
+double wait_ms = 0, render_ms = 0;
+unsigned n = 0;
+
+void *loop(void *) {
+  port_render_thread = (unsigned long) pthread_self();
+  eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx);
+  std::printf("[RTHREAD] fil de rendu %d, contexte %s\n", (int) gettid(), eglGetCurrentContext() == g_ctx ? "courant" : "ABSENT");
+  for (;;) {
+    {
+      std::unique_lock<std::mutex> lk(mu);
+      cv.wait(lk, [] { return busy; });
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    render_frame(job, job_size, job_frame, job_vm);
+    job.clear();
+    render_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    {
+      std::lock_guard<std::mutex> lk(mu);
+      busy = false;
+    }
+    cv.notify_all();
+  }
+  return nullptr;
+}
+}  // namespace rth
+
+static void rth_submit(unsigned size, unsigned frame, const unsigned vm[6]) {
+  const auto t0 = std::chrono::steady_clock::now();
+  {
+    std::unique_lock<std::mutex> lk(rth::mu);
+    rth::cv.wait(lk, [] { return !rth::busy; });
+  }
+  rth::wait_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+  gx::DecodeEpochAdvance();   // image N-1 finie : ce qu'elle retenait peut partir
+  {
+    std::lock_guard<std::mutex> lk(rth::mu);
+    rth::job.swap(g_ops);       // g_ops recoit le vecteur vide (et sa capacite) de l'image rendue
+    g_ops.clear();
+    rth::job_size = size;
+    rth::job_frame = frame;
+    std::memcpy(rth::job_vm, vm, sizeof rth::job_vm);
+    rth::busy = true;
+  }
+  g_decoded = 0;
+  if (!rth::started) {
+    rth::started = true;
+    pthread_t t;
+    pthread_create(&t, nullptr, rth::loop, nullptr);
+    pthread_detach(t);
+  }
+  rth::cv.notify_all();
+  if (++rth::n == 120) {
+    std::printf("[RTHREAD] par image : attente du jeu %.1f ms, rendu %.1f ms (120 images)\n", rth::wait_ms / 120, rth::render_ms / 120);
+    rth::wait_ms = rth::render_ms = 0;
+    rth::n = 0;
+  }
+}
+
 extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) {
   HostScope hs;
   if (!g_ready) {   // premiere fois : init() cree le contexte GL
@@ -341,7 +422,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   {   // NJ_GLBENCH=1 : banc des couts GL du pilote, une fois (glbench.cpp, question 4 de la recherche du 13/11)
     static const bool bench = std::getenv("NJ_GLBENCH") != nullptr;
     static bool done = false;
-    if (bench && !done && g_ready && g_frames >= 120) {
+    if (bench && !done && g_ready && g_frames >= 120 && !rthread_on()) {
       done = true;
       njgfx_glbench();
       glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
@@ -374,15 +455,6 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     }
     last_copies = copies;
   }
-  glBindFramebuffer(GL_FRAMEBUFFER, g_efb_fbo);
-  glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
-  const size_t nops = g_ops.size();
-  size_t ndraws = 0, nbp = 0, nxf = 0;
-  for (const auto &c : g_ops) {
-    ndraws += c.type == gx::GxOpKind::DrawPrimitive;
-    nbp += c.type == gx::GxOpKind::BPRegister;
-    nxf += c.type == gx::GxOpKind::XFRegister;
-  }
   {   // diagnostic : NJ_FRAMELOG_AT=<image> journal complet d'une image (dev_env.txt)
     static const unsigned at = std::getenv("NJ_FRAMELOG_AT") ? (unsigned)std::atoi(std::getenv("NJ_FRAMELOG_AT")) : 0;
     if (at && g_frames + 1 == at) g_gx_framelog_request = true;
@@ -391,24 +463,44 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     static const unsigned dff = std::getenv("NJ_DFF_AT") ? (unsigned)std::atoi(std::getenv("NJ_DFF_AT")) : 0;
     if (dff && g_frames + 1 == dff) nj::runtime::gx::rec::request(6);
   }
+  unsigned vm[6];
+  port_vi_mode(vm);
+  take_stat_frame(g_frames);
+  const unsigned frame = ++g_frames;
+  if (rthread_on()) {   // fil de rendu : il dessine cette image pendant que le jeu prepare la suivante
+    rth_submit(size, frame, vm);
+    return;
+  }
+  render_frame(g_ops, size, frame, vm);
+  g_ops.clear();
+  g_decoded = 0;
+  gx::DecodeEpochAdvance();
+}
+
+// Dessin d'une image lue et decodee (fil du jeu, ou fil de rendu avec NJ_RTHREAD=1) et envoi a l'appli.
+static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned frame, const unsigned vm_in[6]) {
+  glBindFramebuffer(GL_FRAMEBUFFER, g_efb_fbo);
+  glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
+  const size_t nops = ops.size();
+  size_t ndraws = 0, nbp = 0, nxf = 0;
+  for (const auto &c : ops) {
+    ndraws += c.type == gx::GxOpKind::DrawPrimitive;
+    nbp += c.type == gx::GxOpKind::BPRegister;
+    nxf += c.type == gx::GxOpKind::XFRegister;
+  }
   {
     using clk = std::chrono::steady_clock;
     const auto t0 = clk::now();
     g_ph_draw_seen = true;
-    g_renderer->draw_frame(g_ops);
+    g_renderer->draw_frame(ops);
     g_ph.draw += std::chrono::duration<double, std::milli>(clk::now() - t0).count();
     static double acc = 0;
     static unsigned n = 0;
     acc += std::chrono::duration<double, std::milli>(clk::now() - t0).count();
     if (++n == 30) { std::printf("[TAKE] rendu GL (draw_frame) %.1f ms par image\n", acc / n); acc = 0; n = 0; }
   }
-  take_stat_frame(g_frames);
-  g_ops.clear();
-  g_decoded = 0;
-  gx::DecodeEpochAdvance();
   const int s = gfx::g_scale;
-  ++g_frames;
-  if (g_frames % 300 == 0) {   // diagnostic N3 : 64 points de l'EFB (moyenne RGB, points non noirs) et mode du jeu
+  if (frame % 300 == 0) {   // diagnostic N3 : 64 points de l'EFB (moyenne RGB, points non noirs) et mode du jeu
     unsigned char px[4];
     unsigned sum[3] = {0, 0, 0}, lit = 0;
     GLint cur = 0;
@@ -423,9 +515,9 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
     NjState st;
     njstate_fill(&st);
-    std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x bits %05x qte %u\n", g_frames,
+    std::printf("[NJGFX] mesure %u : moyenne %u,%u,%u, %u/64 points allumes, %zu dessins, mode %u salle %03x bits %05x qte %u\n", frame,
                 sum[0] / 64, sum[1] / 64, sum[2] / 64, lit, ndraws, (unsigned)st.mode, (unsigned)st.room, (unsigned)st.bits, (unsigned)st.qte);
-    if (st.mode == 6 && (g_frames == 600 || g_frames == 900)) njstate_debug_ids();   // diagnostic : titre
+    if (st.mode == 6 && (frame == 600 || frame == 900)) njstate_debug_ids();   // diagnostic : titre
     // diagnostic : NJ_TEXDUMP="adresse:taille,..." (hexadecimal) : octets de textures tels qu'en memoire, a l'image 2400
     static std::vector<std::pair<unsigned, unsigned>> tx = [] {
       std::vector<std::pair<unsigned, unsigned>> v;
@@ -439,7 +531,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
         }
       return v;
     }();
-    if (g_frames == 2400 && !tx.empty()) {
+    if (frame == 2400 && !tx.empty()) {
       const char *d = std::getenv("NJ_STORAGE_DIR");
       for (const auto &t0 : tx) {
         const struct { unsigned addr, size; } t = {t0.first, t0.second};
@@ -452,7 +544,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
       }
     }
   }
-  if (g_frames <= 3 || g_frames % 600 == 0) {   // diagnostic N3 : ce que le rendu a recu et ce qu'il a dessine
+  if (frame <= 3 || frame % 600 == 0) {   // diagnostic N3 : ce que le rendu a recu et ce qu'il a dessine
     unsigned char px[4] = {0, 0, 0, 0};
     GLint cur = 0;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &cur);
@@ -460,7 +552,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
     glReadPixels(320 * s, gfx::efb_h() - 240 * s, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
     std::printf("[NJGFX] image %u : %zu commandes (%zu dessins, %zu BP, %zu XF), %u octets lus, pixel central %02x%02x%02x%02x\n",
-                g_frames, nops, ndraws, nbp, nxf, size, px[0], px[1], px[2], px[3]);
+                frame, nops, ndraws, nbp, nxf, size, px[0], px[1], px[2], px[3]);
     {   // diagnostic N3 : debut de la texture du titre (CMPR 640x360) telle qu'elle est en memoire
       const uint8_t *t = reinterpret_cast<const uint8_t *>(0x811E3100u);
       std::printf("[NJGFX] texture 011E3100 :");
@@ -470,8 +562,7 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   }
   {   // ce que montre le VI : la zone rendue (fbWidth x efbHeight, en haut de l'EFB) etiree sur toute la largeur,
       // ses lignes centrees dans les 480 de l'ecran (viYOrigin)
-    unsigned vm[6];
-    port_vi_mode(vm);
+    const unsigned *vm = vm_in;
     // 12/11 : l'appli presente elle-meme, comme en 0.1.9 (present_image : zone copiee dans l'XFB, 16:9,
     // place des commandes) ; on lui envoie l'EFB tel quel et la taille de cette zone.
     const unsigned fw = vm[0] >= 16 && vm[0] <= 640 ? vm[0] : 640;
