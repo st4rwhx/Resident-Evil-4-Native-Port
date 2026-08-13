@@ -101,7 +101,22 @@ extern "C" void port_gx_frame(void);
 void VIFlush(void)
 {
     if (g_fb_pending) g_fb_current = g_fb_pending;
+    // mesure (enquete Render_swap, 13/11) : duree de VIFlush, horloge du systeme, moyenne sur 30
+    static double acc = 0, gap = 0;
+    static unsigned n = 0;
+    static u64 last_end = 0;
+    const u64 t0 = now_ns();
+    if (last_end) gap += (double)(t0 - last_end) / 1e6;
     port_gx_frame();
+    const u64 t1 = now_ns();
+    last_end = t1;
+    acc += (double)(t1 - t0) / 1e6;
+    if (++n == 30) {
+        std::printf("[TAKE] VIFlush %.1f ms par appel, %.1f ms entre deux appels\n", acc / n, gap / (n - 1));
+        acc = gap = 0;
+        n = 0;
+        last_end = 0;
+    }
 }
 
 void VIWaitForRetrace(void)

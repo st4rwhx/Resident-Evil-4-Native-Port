@@ -62,7 +62,7 @@ extern "C" void OSReport(const char* msg, ...);
 typedef long long OSTime;
 #define PORT_TB_MS 40500   /* base de temps : 40,5 MHz (bus / 4) */
 static OSTime port_tm_last;
-static u32 port_tm_acc[10];
+static u32 port_tm_acc[16];
 static u32 port_tm_frames;
 static void port_tm(int k)
 {
@@ -76,11 +76,12 @@ static void port_tm_frame(void)
     if (++port_tm_frames < 60)
         return;
     OSReport("[TEMPS] ms/image : debut %.1f rendu %.1f taches %.1f trans %.1f son %.1f dessin2d %.1f itaches %.1f "
-             "fin_rendu %.1f blocs %.1f attente %.1f\n",
+             "fin_rendu %.1f blocs %.1f | vsync1 %.1f swap %.1f ppcsync %.1f vsync2 %.1f post %.1f debut2 %.1f\n",
              port_tm_acc[0] / 6000.0f, port_tm_acc[1] / 6000.0f, port_tm_acc[2] / 6000.0f, port_tm_acc[3] / 6000.0f,
              port_tm_acc[4] / 6000.0f, port_tm_acc[5] / 6000.0f, port_tm_acc[6] / 6000.0f, port_tm_acc[7] / 6000.0f,
-             port_tm_acc[8] / 6000.0f, port_tm_acc[9] / 6000.0f);
-    for (int i = 0; i < 10; i++)
+             port_tm_acc[8] / 6000.0f, port_tm_acc[10] / 6000.0f, port_tm_acc[11] / 6000.0f, port_tm_acc[12] / 6000.0f,
+             port_tm_acc[13] / 6000.0f, port_tm_acc[14] / 6000.0f, port_tm_acc[9] / 6000.0f);
+    for (int i = 0; i < 16; i++)
         port_tm_acc[i] = 0;
     port_tm_frames = 0;
 }
@@ -290,11 +291,16 @@ RESTART:
 #endif
             ProcessTickGet(3, "DRAW REMAIN");
             while (vsync_cnt < GetSystemVcnt() - 1) {}
+            PORT_TM(10);
             Render_swap();
+            PORT_TM(11);
             PPCSync();
+            PORT_TM(12);
             while (vsync_cnt < GetSystemVcnt()) {}
+            PORT_TM(13);
             vsync_cnt = 0;
             systemVSyncPost();
+            PORT_TM(14);
             BitOff(pG->flags_54, 0x10000000);
             ProcessTickGet(0, "PROCESS TOTAL");
             ret = systemResetCheck();

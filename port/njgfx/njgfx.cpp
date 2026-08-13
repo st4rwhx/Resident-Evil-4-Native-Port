@@ -30,6 +30,7 @@
 #include "runtime/gx/frame_renderer.h"
 #include "runtime/hw/hw.h"
 
+extern std::atomic<uint64_t> g_fl_xfb_copies;   // fifo_parser.cpp (gx.cpp) : copies EFB -> XFB analysees
 namespace nj::runtime::gx {
 extern std::atomic<uint64_t> g_prof_xf_bank, g_prof_xf_single, g_prof_xf_none;   // fifo_parser.cpp : chemins de transformation
 extern uint64_t g_prof_dl_calls, g_prof_dl_hits;                                  // listes d'affichage developpees / en cache
@@ -155,13 +156,20 @@ void note_thread(const char *who) {
 
 // Contexte GL pris par le fil qui entre dans le rendu, rendu a la sortie : le prochain appel peut venir
 // d'un autre fil du jeu (nj30 : contexte cree sur le fil 12114, images envoyees par le 12116).
+double g_gl_take_ms = 0, g_gl_rel_ms = 0, g_ph_take = 0;
+bool g_ph_draw_seen = false;
+struct PhaseAcc { double take = 0, draw = 0, post = 0, all = 0; unsigned n = 0, empty = 0; } g_ph;   // mesure (enquete Render_swap, 13/11)
 struct GlScope {
   bool took = false;
   GlScope() {
+    const auto t0 = std::chrono::steady_clock::now();
     if (g_ready && eglGetCurrentContext() != g_ctx) took = eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) == EGL_TRUE;
+    g_gl_take_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
   }
   ~GlScope() {
+    const auto t0 = std::chrono::steady_clock::now();
     if (g_ready) eglMakeCurrent(g_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    g_gl_rel_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
   }
 };
 
@@ -229,10 +237,41 @@ extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) {
 }
 
 extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
+  using clk = std::chrono::steady_clock;
+  struct FtEnd {   // mesure : njgfx_frame entier (liberation du contexte comprise), moyenne sur 30 images
+    clk::time_point f0 = clk::now();
+    ~FtEnd() {
+      static double tot = 0;
+      static unsigned n = 0;
+      const double all = std::chrono::duration<double, std::milli>(clk::now() - f0).count();
+      tot += all;
+      if (g_ph_draw_seen) {
+        g_ph.take += g_ph_take;
+        g_ph.all += all;
+        if (++g_ph.n == 30) {
+          std::printf("[TAKE] appels avec dessins : %.1f ms (reste du flux %.1f, draw_frame %.1f, apres %.1f) ; appels vides %u\n",
+                      g_ph.all / 30, g_ph.take / 30, g_ph.draw / 30, (g_ph.all - g_ph.take - g_ph.draw) / 30, g_ph.empty);
+          g_ph = PhaseAcc();
+        }
+      } else {
+        ++g_ph.empty;
+      }
+      g_ph_draw_seen = false;
+      if (++n == 30) {
+        std::printf("[TAKE] njgfx_frame %.1f ms par image ; contexte GL : prise %.2f, liberation %.2f ms par image\n",
+                    tot / n, g_gl_take_ms / n, g_gl_rel_ms / n);
+        tot = 0;
+        n = 0;
+        g_gl_take_ms = g_gl_rel_ms = 0;
+      }
+    }
+  } ft_end;
   HostScope hs;
   note_thread("image");
   GlScope gs;
+  const auto tk0 = clk::now();
   take(bytes, size);
+  g_ph_take = std::chrono::duration<double, std::milli>(clk::now() - tk0).count();
   if (!g_ready) return;
   {   // image sans dessin (le jeu calcule a 30 i/s, VIFlush tombe a 60 Hz) : rien a montrer. Le rendu aurait
       // fait l'effacement differe de l'EFB et l'appli aurait recu une image noire une fois sur deux (nj23) ;
@@ -244,6 +283,18 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
       ++g_skipped;
       return;
     }
+    // Pas de copie vers l'image affichee (EFB -> XFB, BP 0x52 bit 0x4000) depuis le dernier rendu : ce VIFlush ne
+    // termine pas une image du jeu (ScreenReSize en milieu d'image pendant les cinematiques). Rendre ici envoyait une
+    // demi-image (souvent presque noire) puis le reste : deux rendus par image et le clignotement noir (13/11).
+    // Les commandes restent pour le VIFlush qui suit la copie.
+    static uint64_t last_copies = 0;
+    const uint64_t copies = g_fl_xfb_copies.load(std::memory_order_relaxed);
+    static const bool always = std::getenv("NJ_RENDER_EVERY_FLUSH") != nullptr;
+    if (copies == last_copies && !always) {
+      ++g_skipped;
+      return;
+    }
+    last_copies = copies;
   }
   glBindFramebuffer(GL_FRAMEBUFFER, g_efb_fbo);
   glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
@@ -265,7 +316,9 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   {
     using clk = std::chrono::steady_clock;
     const auto t0 = clk::now();
+    g_ph_draw_seen = true;
     g_renderer->draw_frame(g_ops);
+    g_ph.draw += std::chrono::duration<double, std::milli>(clk::now() - t0).count();
     static double acc = 0;
     static unsigned n = 0;
     acc += std::chrono::duration<double, std::milli>(clk::now() - t0).count();
