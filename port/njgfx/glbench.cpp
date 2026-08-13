@@ -34,6 +34,8 @@ GLuint program(float tint)
 }
 }  // namespace
 
+#include "glbench_pull.cpp"   // A0 : sommets tires par le nuanceur
+
 extern "C" void njgfx_glbench(void)
 {
     GLint prev_fbo = 0, prev_prog = 0, prev_vao = 0;
@@ -169,4 +171,5 @@ extern "C" void njgfx_glbench(void)
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) prev_fbo);
     glUseProgram((GLuint) prev_prog);
     glBindVertexArray((GLuint) prev_vao);
+    njgfx_glbench_pull();
 }
