@@ -3,8 +3,14 @@
 -Wl,--wrap=GXClearVtxDesc
 -Wl,--wrap=GXEnableTexOffsets
 -Wl,--wrap=GXGetProjectionv
+-Wl,--wrap=GXGetTexObjData
 -Wl,--wrap=GXGetViewportv
 -Wl,--wrap=GXInit
+-Wl,--wrap=GXInitTexObj
+-Wl,--wrap=GXInitTexObjCI
+-Wl,--wrap=GXInitTexObjLOD
+-Wl,--wrap=GXInitTlutObj
+-Wl,--wrap=GXInvalidateTexAll
 -Wl,--wrap=GXLoadLightObjImm
 -Wl,--wrap=GXLoadNrmMtxImm
 -Wl,--wrap=GXLoadNrmMtxImm3x3
@@ -13,6 +19,8 @@
 -Wl,--wrap=GXLoadPosMtxIndx
 -Wl,--wrap=GXLoadTexMtxImm
 -Wl,--wrap=GXLoadTexMtxIndx
+-Wl,--wrap=GXLoadTexObj
+-Wl,--wrap=GXLoadTlut
 -Wl,--wrap=GXSetAlphaCompare
 -Wl,--wrap=GXSetAlphaUpdate
 -Wl,--wrap=GXSetArray
