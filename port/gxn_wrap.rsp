@@ -5,6 +5,7 @@
 -Wl,--wrap=GXGetProjectionv
 -Wl,--wrap=GXGetViewportv
 -Wl,--wrap=GXInit
+-Wl,--wrap=GXLoadLightObjImm
 -Wl,--wrap=GXLoadNrmMtxImm
 -Wl,--wrap=GXLoadNrmMtxImm3x3
 -Wl,--wrap=GXLoadNrmMtxIndx3x3
@@ -16,6 +17,9 @@
 -Wl,--wrap=GXSetAlphaUpdate
 -Wl,--wrap=GXSetArray
 -Wl,--wrap=GXSetBlendMode
+-Wl,--wrap=GXSetChanAmbColor
+-Wl,--wrap=GXSetChanCtrl
+-Wl,--wrap=GXSetChanMatColor
 -Wl,--wrap=GXSetColorUpdate
 -Wl,--wrap=GXSetCullMode
 -Wl,--wrap=GXSetCurrentMtx
@@ -23,6 +27,7 @@
 -Wl,--wrap=GXSetDstAlpha
 -Wl,--wrap=GXSetFog
 -Wl,--wrap=GXSetLineWidth
+-Wl,--wrap=GXSetNumChans
 -Wl,--wrap=GXSetNumTevStages
 -Wl,--wrap=GXSetNumTexGens
 -Wl,--wrap=GXSetPixelFmt

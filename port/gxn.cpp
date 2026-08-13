@@ -168,11 +168,17 @@ int vertex_size(int f)
 void reset2();
 void compare2(const unsigned* bp);
 void control2(const unsigned* bp);
+// etape 3 (gxn_light.inc)
+void reset3();
+void compare3(const unsigned* bp, const unsigned* xf, const unsigned char* ok);
+void control3(const unsigned* xf);
+void light_word(int i, int w, u32 bits);
 
 // ---------------------------------------------------------------- operations natives
 void reset()
 {
     reset2();
+    reset3();
     std::memset(&S, 0, sizeof S);
     S.desc[GX_VA_POS] = GX_DIRECT;
     S.zscale = 1.6777216E7f;
@@ -229,7 +235,10 @@ void load_indexed(int which, u32 reg)
     if (addr < 0x100) load_mtx(S.mtx, S.mtx_set, 256, addr, src, (int) n);
     else if (addr >= 0x400 && addr < 0x460) load_mtx(S.nrm, S.nrm_set, 96, addr - 0x400, src, (int) n);
     else if (addr >= 0x500 && addr < 0x600) load_mtx(S.post, S.post_set, 256, addr - 0x500, src, (int) n);
-    // 0x600.. : lumieres (etape 3)
+    else if (addr >= 0x600 && addr < 0x680) {   // lumieres (etape 3)
+        const u32* w = (const u32*) src;
+        for (unsigned k = 0; k < n && addr + k < 0x680; ++k) light_word((addr + k - 0x600) >> 4, (addr + k) & 15, w[k]);
+    }
 }
 
 inline u32 be32(const u8* p) { return ((u32) p[0] << 24) | ((u32) p[1] << 16) | ((u32) p[2] << 8) | p[3]; }
@@ -424,6 +433,7 @@ void compare()
                  (unsigned) expect_vcd_lo(), cp[0x50] & 0x1FFFF, (unsigned) S.vfmt, (unsigned) a, cp[0x70 + S.vfmt],
                  (unsigned) expect_xf_specs(), xf[0x1008], mine, known, (unsigned) fbits(S.proj[0]), xf[0x1020]);
         control2(bp);   // etape 2 : valeurs TEV et pixels
+        control3(xf);   // etape 3 : canaux et lumieres
     }
     // Attributs (CP)
     cmp(0, 0x50, expect_vcd_lo(), cp[0x50], 0x1FFFF, "descripteur bas");
@@ -484,6 +494,7 @@ void compare()
         cmp(2, 0x30 + 2 * i, (u32) (S.tofs_line[i] & 1) << 18 | (u32) (S.tofs_point[i] & 1) << 19, bp[0x30 + 2 * i],
             3u << 18, "decalages de coordonnees");
     compare2(bp);
+    compare3(bp, xf, ok);
 }
 
 // octets envoyes depuis GXBegin = sommets x taille de sommet de l'etat type
@@ -813,3 +824,4 @@ void __wrap_GXCallDisplayList(void* list, u32 nbytes)
 }  // extern "C"
 
 #include "gxn_tev.inc"   // etape 2 : TEV et pixels
+#include "gxn_light.inc"   // etape 3 : canaux et lumieres
