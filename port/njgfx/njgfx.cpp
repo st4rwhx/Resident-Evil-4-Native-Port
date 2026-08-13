@@ -283,6 +283,18 @@ void take_stat_frame(unsigned frame) {
 
 }  // namespace
 
+// GX natif (port/gxn.cpp, NJ_GXN=1) : l'etat decode du flux, oracle de l'etat type.
+extern "C" int njgfx_oracle(const unsigned **cp, const unsigned **bp, const unsigned **xf, const unsigned char **xfok) {
+  const uint32_t *c, *b, *x;
+  const uint8_t *k;
+  gx::OracleRegs(&c, &b, &x, &k);
+  *cp = c;
+  *bp = b;
+  *xf = x;
+  *xfok = k;
+  return 1;
+}
+
 extern "C" void njgfx_sync(const unsigned char *bytes, unsigned size) {
   HostScope hs;
   if (!g_ready) {   // premiere fois : init() cree le contexte GL

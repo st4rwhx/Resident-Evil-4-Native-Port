@@ -32,6 +32,7 @@ struct Bytes {
         p[n++] = b;
     }
 } g_fifo;
+unsigned g_sent;                     // octets du flux deja passes au rendu (compteur continu, GX natif)
 unsigned char* g_list = nullptr;     // liste en cours d'enregistrement
 u32 g_list_size, g_list_used;
 bool g_list_over;
@@ -142,7 +143,7 @@ void port_gx_deliver(void)
         return;
     g_delivering = true;
     njgfx_sync(g_fifo.p, (unsigned) g_fifo.n);
-    g_fifo.n = 0;
+    g_sent += g_fifo.n, g_fifo.n = 0;
     for (int i = 0; i < g_ntokens; ++i) {
         g_pe[7] = g_pend_tokens[i];   // GXTokenInterruptHandler lit le jeton ici
         if (g_handlers[0x12]) g_handlers[0x12](0x12, &g_irq_context);
@@ -161,49 +162,64 @@ void port_gx_deliver(void)
 // PASSATION_2026-10-28_ANTIGRAVITY.md ; contournement 0.1.9 = copies volatiles). Appele a la fin de chaque primitive
 // (GXEnd) et apres chaque appel de liste d'affichage : les commandes completes sont lues et leurs dessins decodes tout de
 // suite, dans le fil du jeu (comme CubeEvil4).
+void gxn_submitted(void);   // port/gxn.cpp : GX natif, comparaison a l'etat decode du flux (NJ_GXN=1)
+void gxn_frame(void);
+
 void port_gx_submit(void)
 {
     if (g_list || g_fifo.n == 0)
         return;   // liste en cours d'enregistrement : elle sera lue quand elle sera jouee
     njgfx_sync(g_fifo.p, (unsigned) g_fifo.n);
-    g_fifo.n = 0;
+    g_sent += g_fifo.n, g_fifo.n = 0;
+    gxn_submitted();
 }
+
+// octets envoyes : dans la liste en cours d'enregistrement, sinon dans le flux (GX natif : sommets de GXBegin a GXEnd)
+unsigned port_gx_stream_pos(void) { return g_list ? (unsigned) g_list_used : g_sent + (unsigned) g_fifo.n; }
 
 // Fin d'une image (VIFlush, vi.cpp) : le rendu dessine tout le flux et envoie l'image a l'appli.
 void port_gx_frame(void)
 {
+    gxn_frame();
     njgfx_frame(g_fifo.p, (unsigned) g_fifo.n);
-    g_fifo.n = 0;
+    g_sent += g_fifo.n, g_fifo.n = 0;
 }
 
 // --- sommets immediats (GXVert.h, fonctions externes en DEBUG) : dans le tuyau, comme le materiel
-#define P1(name, T, put_) void name##1##T(T x) { put_(x); }
-#define P2(name, T, put_) void name##2##T(T x, T y) { put_(x); put_(y); }
-#define P3(name, T, put_) void name##3##T(T x, T y, T z) { put_(x); put_(y); put_(z); }
-#define P4(name, T, put_) void name##4##T(T x, T y, T z, T w) { put_(x); put_(y); put_(z); put_(w); }
-P1(GXCmd, u8, port_wg_push_u8) P1(GXCmd, u16, port_wg_push_u16) P1(GXCmd, u32, port_wg_push_u32)
-P1(GXParam, u8, port_wg_push_u8) P1(GXParam, u16, port_wg_push_u16) P1(GXParam, u32, port_wg_push_u32)
-P1(GXParam, s8, port_wg_push_s8) P1(GXParam, s16, port_wg_push_s16) P1(GXParam, s32, port_wg_push_s32)
-P1(GXParam, f32, port_wg_push_f32) P3(GXParam, f32, port_wg_push_f32) P4(GXParam, f32, port_wg_push_f32)
+// g_vbytes : octets de donnees de sommets (position, normale, couleur, coordonnee, indice de matrice), pour le GX natif
+unsigned g_vbytes;
+#define P1(name, T, put_) void name##1##T(T x) { g_vbytes += sizeof(T); put_(x); }
+#define P2(name, T, put_) void name##2##T(T x, T y) { g_vbytes += 2 * sizeof(T); put_(x); put_(y); }
+#define P3(name, T, put_) void name##3##T(T x, T y, T z) { g_vbytes += 3 * sizeof(T); put_(x); put_(y); put_(z); }
+#define P4(name, T, put_) void name##4##T(T x, T y, T z, T w) { g_vbytes += 4 * sizeof(T); put_(x); put_(y); put_(z); put_(w); }
+unsigned port_gx_vtx_bytes(void) { return g_vbytes; }
+// commandes et parametres bruts (GXCmd/GXParam) : pas des sommets, hors du compteur
+#define C1(name, T, put_) void name##1##T(T x) { put_(x); }
+C1(GXCmd, u8, port_wg_push_u8) C1(GXCmd, u16, port_wg_push_u16) C1(GXCmd, u32, port_wg_push_u32)
+C1(GXParam, u8, port_wg_push_u8) C1(GXParam, u16, port_wg_push_u16) C1(GXParam, u32, port_wg_push_u32)
+C1(GXParam, s8, port_wg_push_s8) C1(GXParam, s16, port_wg_push_s16) C1(GXParam, s32, port_wg_push_s32)
+C1(GXParam, f32, port_wg_push_f32)
+void GXParam3f32(f32 x, f32 y, f32 z) { port_wg_push_f32(x); port_wg_push_f32(y); port_wg_push_f32(z); }
+void GXParam4f32(f32 x, f32 y, f32 z, f32 w) { port_wg_push_f32(x); port_wg_push_f32(y); port_wg_push_f32(z); port_wg_push_f32(w); }
 P3(GXPosition, f32, port_wg_push_f32) P3(GXPosition, u8, port_wg_push_u8) P3(GXPosition, s8, port_wg_push_s8)
 P3(GXPosition, u16, port_wg_push_u16) P3(GXPosition, s16, port_wg_push_s16)
 P2(GXPosition, f32, port_wg_push_f32) P2(GXPosition, u8, port_wg_push_u8) P2(GXPosition, s8, port_wg_push_s8)
 P2(GXPosition, u16, port_wg_push_u16) P2(GXPosition, s16, port_wg_push_s16)
-void GXPosition1x16(u16 x) { port_wg_push_u16(x); }
-void GXPosition1x8(u8 x) { port_wg_push_u8(x); }
+void GXPosition1x16(u16 x) { g_vbytes += 2; port_wg_push_u16(x); }
+void GXPosition1x8(u8 x) { g_vbytes += 1; port_wg_push_u8(x); }
 P3(GXNormal, f32, port_wg_push_f32) P3(GXNormal, s16, port_wg_push_s16) P3(GXNormal, s8, port_wg_push_s8)
-void GXNormal1x16(u16 x) { port_wg_push_u16(x); }
-void GXNormal1x8(u8 x) { port_wg_push_u8(x); }
+void GXNormal1x16(u16 x) { g_vbytes += 2; port_wg_push_u16(x); }
+void GXNormal1x8(u8 x) { g_vbytes += 1; port_wg_push_u8(x); }
 P4(GXColor, u8, port_wg_push_u8) P1(GXColor, u32, port_wg_push_u32) P3(GXColor, u8, port_wg_push_u8)
 P1(GXColor, u16, port_wg_push_u16)
-void GXColor1x16(u16 x) { port_wg_push_u16(x); }
-void GXColor1x8(u8 x) { port_wg_push_u8(x); }
+void GXColor1x16(u16 x) { g_vbytes += 2; port_wg_push_u16(x); }
+void GXColor1x8(u8 x) { g_vbytes += 1; port_wg_push_u8(x); }
 P2(GXTexCoord, f32, port_wg_push_f32) P2(GXTexCoord, s16, port_wg_push_s16) P2(GXTexCoord, u16, port_wg_push_u16)
 P2(GXTexCoord, s8, port_wg_push_s8) P2(GXTexCoord, u8, port_wg_push_u8)
 P1(GXTexCoord, f32, port_wg_push_f32) P1(GXTexCoord, s16, port_wg_push_s16) P1(GXTexCoord, u16, port_wg_push_u16)
 P1(GXTexCoord, s8, port_wg_push_s8) P1(GXTexCoord, u8, port_wg_push_u8)
-void GXTexCoord1x16(u16 x) { port_wg_push_u16(x); }
-void GXTexCoord1x8(u8 x) { port_wg_push_u8(x); }
+void GXTexCoord1x16(u16 x) { g_vbytes += 2; port_wg_push_u16(x); }
+void GXTexCoord1x8(u8 x) { g_vbytes += 1; port_wg_push_u8(x); }
 P1(GXMatrixIndex, u8, port_wg_push_u8)
 
 }
