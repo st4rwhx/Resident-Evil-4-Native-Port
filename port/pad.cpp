@@ -69,17 +69,37 @@ BOOL PADInit()
     return TRUE;
 }
 
+static unsigned long g_pad_reads_total = 0;
+static unsigned long pad_reads_total() { return g_pad_reads_total; }
+
 u32 PADRead(PADStatus *status)
 {
     if (!status)
         return 0;
+    ++g_pad_reads_total;
     if (!g_inited)
         PADInit();
 
     status[0] = g_state;
     {   // appli Nightjar : sa manette (tactile ou physique) sur le canal 0
         NjPad np;
-        if (njlink_pad(&np)) {
+        // RE4_PAD_NOHOST=1 (banc de mesure, 14/11) : manette de l'appli ignoree, scene immobile. Sans lui, Leon bougeait
+        // seul pendant les essais automatiques : on journalise les etats non neutres recus pour en trouver la source.
+        static const bool nohost = getenv("RE4_PAD_NOHOST") != nullptr;
+        const bool got = njlink_pad(&np);
+        if (got) {
+            static unsigned logged = 0;
+            const bool neutral = np.buttons == 0 && std::abs((int)np.stick_x) < 8 && std::abs((int)np.stick_y) < 8 &&
+                                 std::abs((int)np.substick_x) < 8 && std::abs((int)np.substick_y) < 8 && np.trigger_l < 16 &&
+                                 np.trigger_r < 16;
+            if (!neutral && logged < 12) {
+                ++logged;
+                std::printf("[PORT] PAD de l'appli non neutre (lecture %lu) : boutons %04x stick %d,%d c-stick %d,%d gachettes %u,%u%s\n",
+                            pad_reads_total(), (unsigned)np.buttons, (int)np.stick_x, (int)np.stick_y, (int)np.substick_x,
+                            (int)np.substick_y, (unsigned)np.trigger_l, (unsigned)np.trigger_r, nohost ? " (ignore)" : "");
+            }
+        }
+        if (got && !nohost) {
             status[0].button = np.buttons;
             status[0].stickX = np.stick_x;
             status[0].stickY = np.stick_y;

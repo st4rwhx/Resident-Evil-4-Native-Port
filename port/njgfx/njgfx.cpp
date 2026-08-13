@@ -20,6 +20,8 @@
 #include <memory>
 #include <vector>
 #include <unistd.h>
+#include <linux/perf_event.h>
+#include <sys/syscall.h>
 
 #include "common/platform.h"
 #include "runtime/config.h"
@@ -200,7 +202,61 @@ void take(const unsigned char *bytes, unsigned size) {
   ++g_ts.calls;
   g_ts.bytes += size;
 }
+// NJ_PERFCNT=1 (14/11) : mesure independante de la frequence. Compteurs materiels du fil du jeu (cycles,
+// instructions) ouverts a la premiere image (security.perf_harden doit valoir 0 a cet instant ; le banc le remet a 1
+// ensuite, les compteurs ouverts restent valides), et temps sur le processeur / attente de son tour
+// (/proc/self/task/<tid>/schedstat). Ligne [PERFCNT] toutes les 120 images rendues : par image, exact.
+// Pourquoi : la frequence du S5 varie du simple au double d'un essai a l'autre (chauffe) ; les i/s ne comparent rien.
+static void perfcnt_frame() {
+  static const bool on = std::getenv("NJ_PERFCNT") != nullptr;
+  if (!on) return;
+  static int fd_cyc = -2, fd_ins = -1;
+  static unsigned n = 0;
+  static uint64_t c0 = 0, i0 = 0, e0 = 0, w0 = 0, sw0 = 0;
+  static char sched_path[64];
+  auto rd = [](int fd) -> uint64_t { uint64_t v = 0; return fd >= 0 && read(fd, &v, sizeof v) == (ssize_t)sizeof v ? v : 0; };
+  auto sched = [&](uint64_t &e, uint64_t &w, uint64_t &s) {
+    e = w = s = 0;
+    if (FILE *f = std::fopen(sched_path, "r")) {
+      unsigned long long a = 0, b = 0, c = 0;
+      if (std::fscanf(f, "%llu %llu %llu", &a, &b, &c) == 3) { e = a; w = b; s = c; }
+      std::fclose(f);
+    }
+  };
+  if (fd_cyc == -2) {
+    // fil principal du processus (profil du 13/11 : 97 % du coeur y tourne, jeu et rendu) ; la premiere image
+    // peut venir d'un autre fil, d'ou le choix explicite
+    const int tid = (int)getpid();
+    std::snprintf(sched_path, sizeof sched_path, "/proc/self/task/%d/schedstat", tid);
+    auto open_hw = [tid](uint64_t cfg) -> int {
+      struct perf_event_attr a;
+      std::memset(&a, 0, sizeof a);
+      a.type = PERF_TYPE_HARDWARE;
+      a.size = sizeof a;
+      a.config = cfg;
+      a.exclude_hv = 1;
+      return (int)syscall(__NR_perf_event_open, &a, tid, -1, -1, 0);
+    };
+    fd_cyc = open_hw(PERF_COUNT_HW_CPU_CYCLES);
+    fd_ins = open_hw(PERF_COUNT_HW_INSTRUCTIONS);
+    std::printf("[PERFCNT] compteurs : cycles %s, instructions %s (fil %d, image vue du fil %d)\n",
+                fd_cyc >= 0 ? "ouverts" : "refuses (perf_harden ?)", fd_ins >= 0 ? "ouverts" : "refuses", tid, (int)gettid());
+    c0 = rd(fd_cyc); i0 = rd(fd_ins); sched(e0, w0, sw0);
+    return;
+  }
+  if (++n < 120) return;
+  const uint64_t c1 = rd(fd_cyc), i1 = rd(fd_ins);
+  uint64_t e1, w1, sw1;
+  sched(e1, w1, sw1);
+  std::printf("[PERFCNT] par image (%u images) : %.1f Mcycles, %.1f Minstructions, processeur %.1f ms, attente de son tour %.1f ms,"
+              " %.0f tranches ; %.2f GHz\n", n, (c1 - c0) / 1e6 / n, (i1 - i0) / 1e6 / n, (e1 - e0) / 1e6 / n, (w1 - w0) / 1e6 / n,
+              (double)(sw1 - sw0) / n, e1 > e0 ? (double)(c1 - c0) / (double)(e1 - e0) : 0.0);
+  c0 = c1; i0 = i1; e0 = e1; w0 = w1; sw0 = sw1;
+  n = 0;
+}
+
 void take_stat_frame(unsigned frame) {
+  perfcnt_frame();
   static unsigned n = 0;
   static TakeStat acc;
   acc.parse_ms += g_ts.parse_ms; acc.dec_ms += g_ts.dec_ms; acc.calls += g_ts.calls; acc.draws += g_ts.draws;
