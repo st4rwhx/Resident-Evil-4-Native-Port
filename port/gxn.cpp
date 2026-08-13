@@ -177,6 +177,10 @@ void light_word(int i, int w, u32 bits);
 void reset4();
 void compare4(const unsigned* bp);
 void control4(const unsigned* bp);
+// etape 5 (gxn_ind.inc)
+void reset5();
+void compare5(const unsigned* bp);
+void control5(const unsigned* bp);
 
 // ---------------------------------------------------------------- operations natives
 void reset()
@@ -184,6 +188,7 @@ void reset()
     reset2();
     reset3();
     reset4();
+    reset5();
     std::memset(&S, 0, sizeof S);
     S.desc[GX_VA_POS] = GX_DIRECT;
     S.zscale = 1.6777216E7f;
@@ -440,6 +445,7 @@ void compare()
         control2(bp);   // etape 2 : valeurs TEV et pixels
         control3(xf);   // etape 3 : canaux et lumieres
         control4(bp);   // etape 4 : textures
+        control5(bp);   // etape 5 : indirect et copies
     }
     // Attributs (CP)
     cmp(0, 0x50, expect_vcd_lo(), cp[0x50], 0x1FFFF, "descripteur bas");
@@ -502,6 +508,7 @@ void compare()
     compare2(bp);
     compare3(bp, xf, ok);
     compare4(bp);
+    compare5(bp);
 }
 
 // octets envoyes depuis GXBegin = sommets x taille de sommet de l'etat type
@@ -832,4 +839,5 @@ void __wrap_GXCallDisplayList(void* list, u32 nbytes)
 
 #include "gxn_tev.inc"   // etape 2 : TEV et pixels
 #include "gxn_light.inc"   // etape 3 : canaux et lumieres
+#include "gxn_ind.inc"     // etape 5 : indirect et copies d'image
 #include "gxn_tex.inc"     // etape 4 : textures

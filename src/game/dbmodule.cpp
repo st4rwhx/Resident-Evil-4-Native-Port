@@ -67,8 +67,7 @@ void init_dbmodule()
 
 static inline void Pos2s16(s16 x, s16 y)
 {
-    GXWGFifo->s16 = x;
-    GXWGFifo->s16 = y;
+    GXPosition2s16(x, y);   // GX natif : fonction de sommet au lieu d'ecritures directes dans le tuyau (memes octets)
 }
 
 void Render_tile(void* data)

@@ -148,6 +148,14 @@ void compare4(const unsigned* bp)
     // taille de la texture de son unite ; le dernier etage qui utilise une coordonnee l'emporte (meme ordre)
     u32 ts0[8], ts1[8];
     u8 have[8] = {0};
+    for (int i = 0; i < I.n_ind && i < 4; ++i) {   // etages indirects d'abord (meme ordre que la bibliotheque)
+        const u32 tmap = I.order[i][1], c = I.order[i][0];
+        if (tmap >= 8 || c >= 8 || !T.unit_set[tmap]) continue;
+        const TexDesc& d = T.unit[tmap];
+        ts0[c] = ((d.w - 1) & 0x3FF) | (u32) (d.wrap_s == 1) << 16;
+        ts1[c] = ((d.h - 1) & 0x3FF) | (u32) (d.wrap_t == 1) << 16;
+        have[c] = 1;
+    }
     for (int s = 0; s < P.n_stages && s < 16; ++s) {
         const TevStage& t = P.st[s];
         const u32 tmap = t.map & ~GX_TEX_DISABLE;
@@ -235,7 +243,11 @@ void __wrap_GXLoadTexObj(GXTexObj* obj, GXTexMapID id)
             T.unit[id] = *d, T.unit_set[id] = 1;
         } else {
             T.unit_set[id] = 0;   // objet copie par le jeu sans passer par GXInitTexObj : non compare
-            if (++T.unknown_obj <= 8) OSReport("[GXN] objet texture inconnu %p (appelant %p)\n", obj, __builtin_return_address(0));
+            if (++T.unknown_obj <= 8) {
+                const u32* w = (const u32*) obj;
+                OSReport("[GXN] objet texture inconnu %p (appelant %p) : %08x %08x %08x %08x\n", obj, __builtin_return_address(0),
+                         (unsigned) w[0], (unsigned) w[1], (unsigned) w[2], (unsigned) w[3]);
+            }
         }
     }
     __real_GXLoadTexObj(obj, id);

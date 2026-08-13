@@ -127,7 +127,6 @@ void RomFont::setup(void* image)
     GXSetTexCoordGen2(0, 1, 4, 0x1E, 0, 0x7D);
 }
 
-#define WGFIFO_S16(v) (GXWGFifo->s16 = (v))
 
 void RomFont::draw(int x, int y, int cx, int cy)
 {
@@ -141,26 +140,15 @@ void RomFont::draw(int x, int y, int cx, int cy)
     s16 v1 = cy + ((OSFontHeader*) pFont)->cellHeight;
 
     GXBegin(0x80, 0, 4);
-    WGFIFO_S16(x0);
-    WGFIFO_S16(y0);
-    WGFIFO_S16(0);
-    WGFIFO_S16(u0);
-    WGFIFO_S16(v0);
-    WGFIFO_S16(x1);
-    WGFIFO_S16(y0);
-    WGFIFO_S16(0);
-    WGFIFO_S16(u1);
-    WGFIFO_S16(v0);
-    WGFIFO_S16(x1);
-    WGFIFO_S16(y1);
-    WGFIFO_S16(0);
-    WGFIFO_S16(u1);
-    WGFIFO_S16(v1);
-    WGFIFO_S16(x0);
-    WGFIFO_S16(y1);
-    WGFIFO_S16(0);
-    WGFIFO_S16(u0);
-    WGFIFO_S16(v1);
+    // GX natif : fonctions de sommets au lieu d'ecritures directes dans le tuyau (memes octets, position 3 s16 + coordonnee 2 s16)
+    GXPosition3s16(x0, y0, 0);
+    GXTexCoord2s16(u0, v0);
+    GXPosition3s16(x1, y0, 0);
+    GXTexCoord2s16(u1, v0);
+    GXPosition3s16(x1, y1, 0);
+    GXTexCoord2s16(u1, v1);
+    GXPosition3s16(x0, y1, 0);
+    GXTexCoord2s16(u0, v1);
 }
 
 s16 MessageFont::getSize(s16 code, s8* left, s8* right)
@@ -1086,20 +1074,16 @@ void draw(MesQue* q)
     u += l;
     x1 = x + w;
     y1 = y + h;
-    GXWGFifo->s16 = x;
-    GXWGFifo->s16 = y;
+    GXPosition2s16(x, y);
     GXColor4u8(cr, cg, cb, ca);
     GXTexCoord2f32((f32) u / texW, (f32) v / texH);
-    GXWGFifo->s16 = x1;
-    GXWGFifo->s16 = y;
+    GXPosition2s16(x1, y);
     GXColor4u8(cr, cg, cb, ca);
     GXTexCoord2f32((f32) (u + cw) / texW, (f32) v / texH);
-    GXWGFifo->s16 = x1;
-    GXWGFifo->s16 = y1;
+    GXPosition2s16(x1, y1);
     GXColor4u8(cr, cg, cb, ca);
     GXTexCoord2f32((f32) (u + cw) / texW, (f32) (v + cellH) / texH);
-    GXWGFifo->s16 = x;
-    GXWGFifo->s16 = y1;
+    GXPosition2s16(x, y1);
     GXColor4u8(cr, cg, cb, ca);
     GXTexCoord2f32((f32) u / texW, (f32) (v + cellH) / texH);
     LightMgr.setFog();

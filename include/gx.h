@@ -101,6 +101,7 @@ void GXNormal3s8(s8 x, s8 y, s8 z);
 void GXTexCoord2f32(f32 s, f32 t);
 void GXMatrixIndex1u8(u8 idx);
 void GXPosition2u16(u16 x, u16 y);
+void GXPosition2s16(s16 x, s16 y);   // GX natif : remplace les ecritures directes dans GXWGFifo (mes.cpp, dbmodule.cpp)
 void GXTexCoord2s16(s16 s, s16 t);
 #ifdef __cplusplus
 }
