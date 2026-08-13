@@ -31,6 +31,7 @@
 #include "runtime/hw/hw.h"
 
 extern std::atomic<uint64_t> g_fl_xfb_copies;   // fifo_parser.cpp (gx.cpp) : copies EFB -> XFB analysees
+#include "glbench.cpp"   // banc des couts GL (NJ_GLBENCH)
 namespace nj::runtime::gx {
 extern std::atomic<uint64_t> g_prof_xf_bank, g_prof_xf_single, g_prof_xf_none;   // fifo_parser.cpp : chemins de transformation
 extern uint64_t g_prof_dl_calls, g_prof_dl_hits;                                  // listes d'affichage developpees / en cache
@@ -269,6 +270,15 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
   HostScope hs;
   note_thread("image");
   GlScope gs;
+  {   // NJ_GLBENCH=1 : banc des couts GL du pilote, une fois (glbench.cpp, question 4 de la recherche du 13/11)
+    static const bool bench = std::getenv("NJ_GLBENCH") != nullptr;
+    static bool done = false;
+    if (bench && !done && g_ready && g_frames >= 120) {
+      done = true;
+      njgfx_glbench();
+      glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
+    }
+  }
   const auto tk0 = clk::now();
   take(bytes, size);
   g_ph_take = std::chrono::duration<double, std::milli>(clk::now() - tk0).count();
