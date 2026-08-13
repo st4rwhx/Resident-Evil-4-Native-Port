@@ -221,6 +221,9 @@ void ReadAreaData()
                 OSReport("[PORT] nouvelle partie : salle %x au lieu de 100\n", r);
                 pG->room_id = (u16) r;
                 pG->stage_no = (u8) (r >> 8);   // 0x2xx chateau, 0x3xx ile : fichiers st2/, st3/
+                // NB (14/11) : Leon garde la position de depart de r100 (pas de point d'entree). Essai d'utiliser
+                // debug/roomInfo.dat (CRoomInfo::setNextPos) : table non retournee dans le portage (salle suivante 0x802 au
+                // lieu de 0x208, position 0,0,0) -> retire. Scenes de reference du chateau : image non valide pour l'instant.
             }
         }
     }
