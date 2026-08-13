@@ -2534,7 +2534,7 @@ int EventMgr::SetEvt(void* data, u32* key)
         pLog->err(0, 0, "EventMgr::SetEvs : non addr[%x]", hdr);
         return 0;
     }
-    if (*(u32*) hdr->tag != 0x6576656E || hdr->tag[4] != 't') {
+    if (PORT_COLW(hdr->tag) != 0x6576656E || hdr->tag[4] != 't') {   // portage : etiquette lue octet par octet (PORT_COLW)
         pLog->err(0, 0, "EventMgr::SetEvt : invalid data");
         return 0;
     }
@@ -2708,7 +2708,7 @@ int EventMgr::SetEvd(char* nm, void* data, void* dat2, int flag)
         pLog->err(0, 0, "EventMgr::SetEvd : non addr[%s]", nm);
         return 0;
     }
-    if (*(u32*) hdr->tag != 0x6576656E || hdr->tag[4] != 't') {
+    if (PORT_COLW(hdr->tag) != 0x6576656E || hdr->tag[4] != 't') {   // portage : etiquette lue octet par octet (PORT_COLW)
         pLog->err(0, 0, "EventMgr::SetEvd : invalid data[%s]", nm);
         return 0;
     }
@@ -3387,3 +3387,19 @@ int lbl_803149D0 = 0;
 int lbl_803149D4 = 0;
 int lbl_803149D8 = 0;
 int lbl_803149DC = 0;
+
+#ifdef RE4_PORT
+// Mesure du portage (port/audio_port.cpp, toutes les 10 s) : evenements vivants, etat, cut et image.
+extern "C" void port_evt_debug(void)
+{
+    u32 i;
+    OSReport("[EVT] en cours '%s', %u emplacements\n", EvtMgr.evtName, (unsigned) EvtMgr.nArray);
+    for (i = 0; i < EvtMgr.nArray; i++) {
+        Event* e = (Event*) ((u8*) EvtMgr.pArray + EvtMgr.size * i);
+        if (!e->isAlive())
+            continue;
+        OSReport("[EVT]   %d '%s' status %08x cut %d image %d/%d paquet %p\n", (int) i, e->name, (unsigned) e->status,
+                 e->cut, e->frame, e->maxFrame, (void*) e->pPacket);
+    }
+}
+#endif

@@ -769,6 +769,7 @@ extern "C" void port_endian_fix_headers(void *block, u32 size)
 // `name` est le chemin que le jeu a demande.
 extern "C" const void *port_rel_prepare(void *hdr);
 namespace {
+bool conv_evd(const Span &s, u32 at, u32 end);
 void snd_swap32n(u8 *p, u32 n);
 void snd_fix_str_hed(const Span &s);
 void snd_fix_words_then_halves(const Span &s);
@@ -787,6 +788,12 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         std::printf("[ENDIAN] %s  %u octets a %p\n", name, (unsigned) size, data);
 
     // Son (phase C) : en-tetes de flux, table des musiques, sons de portes, musiques par salle.
+    if (ends_with(name, ".evd")) {
+        track_begin(data, size, name);
+        if (!conv_evd(s, 0, size))
+            std::printf("[PORT] endian : %s : cinematique non convertie (ou deja faite)\n", name);
+        return;
+    }
     if (ends_with(name, "bio4str.hed")) { snd_fix_str_hed(s); return; }
     if (ends_with(name, "bio4midi.hed")) { snd_swap32n(s.base, s.size / 4); return; }
     if (ends_with(name, "doorse.hed") || ends_with(name, "bgmtbl.dat")) { snd_fix_words_then_halves(s); return; }
@@ -2525,6 +2532,134 @@ bool conv_smx(const Span &s, u32 at, u32 end)
     return true;
 }
 
+// ---- EVD : fichier de cinematique (include/event.h EvtHeader, « event ») et EVS (evenements de salle = EVD embarques).
+// En-tete : mots a 0x34..0x4C ; flux de paquets (EvtPacket : id, drapeau, cut/frame/taille sur 16 bits, puis selon
+// l'id : noms en octets, pos = 7 mots, val = 3 mots, esp.type = 1 mot) ; table des fichiers embarques (nom 0x30 +
+// decalage) convertis chacun par son convertisseur (bin, tpl, fcv, lit, eff, mdt).
+bool conv_evd(const Span &s, u32 at, u32 end)
+{
+    track_label("EVD");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 0x50) || std::memcmp(s.base + at, "event", 5) != 0)
+        return false;
+    u8 *h = s.base + at;
+    const u32 pac = read_be32(h + 0x40), psz = read_be32(h + 0x44), nb = read_be32(h + 0x48), bo = read_be32(h + 0x4C);
+    if (pac >= end - at || psz > end - at || nb > 0x400 || bo >= end - at)
+        return false;                                   // deja converti (ou pas un EVD)
+    for (u32 o = 0x34; o <= 0x4C; o += 4)
+        swap_u32(h + o);
+    // paquets
+    for (u32 o = at + pac; o + 0x10 <= at + pac + psz;) {
+        u8 *q = s.base + o;
+        const s32 id = (s32) read_be32(q);
+        const s16 size = (s16) ((q[0x0C] << 8) | q[0x0D]);
+        if (size < 0x10 || o + (u32) size > end)
+            break;
+        swap_u32(q);
+        swap_u32(q + 4);
+        swap_u16(q + 8);
+        swap_u16(q + 0x0A);
+        swap_u16(q + 0x0C);
+        swap_u16(q + 0x0E);
+        switch (id) {
+        case 9:                                         // Pos, PosPl : pos[3], rot[3], partsNo
+        case 10:
+            if (size >= 0x44)
+                for (u32 k = 0x28; k < 0x44; k += 4)
+                    swap_u32(q + k);
+            break;
+        case 13:                                        // Esp : type (parts = octet 0x23, laisse tel quel)
+            if (size >= 0x20)
+                swap_u32(q + 0x1C);
+            break;
+        case 15: case 16: case 17: case 18: case 29:    // Str, Se, Mes, Func, Fade : val.no, arg, time
+            if (size >= 0x1C)
+                for (u32 k = 0x10; k < 0x1C; k += 4)
+                    swap_u32(q + k);
+            break;
+        default:
+            break;
+        }
+        o += (u32) size;
+    }
+    // fichiers embarques
+    u32 offs[0x400];
+    for (u32 i = 0; i < nb; ++i) {
+        u8 *e = s.base + at + bo + i * 0x40;
+        if (!s.has(at + bo + i * 0x40, 0x40))
+            return false;
+        swap_u32(e + 0x30);
+        offs[i] = read_le32(e + 0x30);
+    }
+    bool ok = true;
+    for (u32 i = 0; i < nb; ++i) {
+        const char *name = (const char *) (s.base + at + bo + i * 0x40);
+        const u32 dat = at + offs[i];
+        u32 dend = end;
+        for (u32 j = 0; j < nb; ++j)
+            if (offs[j] > offs[i] && at + offs[j] < dend)
+                dend = at + offs[j];
+        if (bo > offs[i] && at + bo < dend)
+            dend = at + bo;
+        const size_t ln = strnlen(name, 0x30);
+        const char *x = ln > 4 ? name + ln - 4 : "";
+        bool r = true;
+        if (!std::strcmp(x, ".bin"))
+            r = conv_model_bin(s, dat, dend);
+        else if (!std::strcmp(x, ".tpl"))
+            r = swap_tpl(s, dat);
+        else if (!std::strcmp(x, ".fcv"))
+            r = conv_motion(s, dat, dend);
+        else if (!std::strcmp(x, ".lit"))
+            r = conv_lit(s, dat, dend);
+        else if (!std::strcmp(x, ".eff"))
+            r = swap_eff_data(s, dat);
+        else if (!std::strcmp(x, ".mdt"))
+            r = conv_mdt(s, dat, dend);
+        else {
+            std::printf("[EVD] fichier '%.48s' sans convertisseur\n", name);
+            r = false;
+        }
+        if (!r) {
+            std::printf("[EVD] conversion de '%.48s' ratee\n", name);
+            ok = false;
+        }
+    }
+    return ok;
+}
+
+bool conv_evs(const Span &s, u32 at, u32 end)
+{
+    track_label("EVS");
+    if (end > s.size)
+        end = s.size;
+    if (!s.has(at, 8))
+        return false;
+    u8 *h = s.base + at;
+    const u32 num = read_be32(h), tbl = read_be32(h + 4);
+    if (num > 0x100 || tbl >= end - at || !s.has(at + tbl, num * 8))
+        return false;
+    swap_u32(h);
+    swap_u32(h + 4);
+    u32 offs[0x100];
+    for (u32 i = 0; i < num; ++i) {
+        swap_u32(h + tbl + i * 8);
+        swap_u32(h + tbl + i * 8 + 4);
+        offs[i] = read_le32(h + tbl + i * 8);
+    }
+    bool ok = true;
+    for (u32 i = 0; i < num; ++i) {
+        u32 e = end;
+        for (u32 j = 0; j < num; ++j)
+            if (offs[j] > offs[i] && at + offs[j] < e)
+                e = at + offs[j];
+        if (!conv_evd(s, at + offs[i], e))
+            ok = false;
+    }
+    return ok;
+}
+
 const TagConv kRoomTags[] = {
     { "TPL", conv_tpl },
     { "BIN", conv_model_bin },
@@ -2554,6 +2689,7 @@ const TagConv kRoomTags[] = {
     { "ETS", conv_ets },
     { "TEX", conv_tex },
     { "EFF", conv_eff_tag },
+    { "EVS", conv_evs },
     { nullptr, nullptr }
 };
 
