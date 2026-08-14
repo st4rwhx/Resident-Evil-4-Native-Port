@@ -80,6 +80,30 @@ extern "C" unsigned port_start_room(void)
     static const char *e = getenv("RE4_START_ROOM");
     return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
 }
+// Sortie du titre (A2, 15/11, src/game/title.cpp titleExit) : choix direct au lieu du menu de salles de debug invisible.
+// RE4_ROOM_MENU=1 : menu de debug d'origine. Choix : port_title_choice_set() (demarrage Nightjar, a venir), sinon
+// RE4_TITLE_CHOICE=new|load|test, sinon salle de test si RE4_START_ROOM est pose, chargement si RE4_AUTOLOAD=2,
+// sinon nouvelle partie (salle 0x120, cinematique d'ouverture, comme le jeu commercial).
+static int g_title_choice = -1;
+extern "C" void port_title_choice_set(int choice) { g_title_choice = choice; }
+extern "C" int port_room_menu(void)
+{
+    static const char *e = getenv("RE4_ROOM_MENU");
+    return e && e[0] == '1';
+}
+extern "C" int port_title_choice(void)
+{
+    if (g_title_choice >= 0) return g_title_choice;
+    if (const char *e = getenv("RE4_TITLE_CHOICE")) {
+        if (e[0] == 'l') return 1;
+        if (e[0] == 't') return 0;
+        return 2;
+    }
+    if (port_start_room()) return 0;
+    if (const char *a = getenv("RE4_AUTOLOAD"))
+        if (a[0] == '2') return 1;
+    return 2;
+}
 // RE4_NEWGAME_ROOM=0x101 : la NOUVELLE PARTIE commence dans cette salle (scenes de reference du rejeu, 13/11).
 // RE4_START_ROOM n'agit que dans le menu de salles du titre ; la nouvelle partie imposait 0x120.
 extern "C" unsigned port_newgame_room(void)

@@ -103,10 +103,20 @@ struct GlobalWork {
     u32 vtx_buf_no;        // 0x24  double-buffer index into cModelInfo::pPosBuf/pNrmBuf (mirror)
     union {
         u16 next_room;     // 0x28  room id (stage << 8 | room) being entered (snd: room BGM / door tables)
+#ifdef RE4_PORT
+        // Portage petit-boutiste (15/11) : octets dans l'ordre inverse, comme room_id plus bas. Sans cela, la porte qui
+        // ecrit stage = 1, room = 0 donnait next_room = 0x0001 : apres la cinematique d'ouverture (r120 -> r100), le jeu
+        // cherchait st0/r001.das (trouve en suivant le parcours du joueur).
+        struct {
+            u8 next_room_no;  // 0x28
+            u8 next_stage;    // 0x29
+        };
+#else
         struct {
             u8 next_stage; // 0x28  (sce_at sceAtFunc_door stores the door destination byte by byte)
             u8 next_room_no;  // 0x29
         };
+#endif
     };
     u8 next_point;         // 0x2A  spawn point in the next room (room_jmp CRoomInfo::setNextPos clears it)
     u8 pad_2B;

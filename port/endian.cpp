@@ -2698,7 +2698,19 @@ bool conv_evd(const Span &s, u32 at, u32 end)
             r = swap_eff_data(s, dat);
         else if (!std::strcmp(x, ".mdt"))
             r = conv_mdt(s, dat, dend);
-        else {
+        else if (!std::strcmp(x, ".fcs") || !std::strcmp(x, ".fog")) {
+            // Mise au point (EvtFocusData, 0x810 o) ou brouillard (EvtFogData, 0x808 o) de la cinematique
+            // (include/t_event.h) : deux EvtCurve {s32 num ; HermiteKey key[64]} (+ deux flottants pour .fcs), que des
+            // mots de quatre octets. Trouve en jouant la cinematique d'ouverture (r120, 15/11) : num lu 0x1FFFFFF,
+            // Hermite_1CurveRight lisait hors de la courbe. Garde : num gros-boutiste entre 0 et 64.
+            const u32 want = !std::strcmp(x, ".fcs") ? 0x810u : 0x808u;
+            const u32 n0 = s.has(dat, 4) ? read_be32(s.base + dat) : 0xFFFFFFFFu;
+            if (n0 <= 64 && s.has(dat, want) && dat + want <= dend) {
+                for (u32 k = 0; k < want; k += 4)
+                    swap_u32(s.base + dat + k);
+            } else
+                r = false;
+        } else {
             std::printf("[EVD] fichier '%.48s' sans convertisseur\n", name);
             r = false;
         }

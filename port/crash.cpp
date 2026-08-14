@@ -233,6 +233,60 @@ void *watchdog(void *)
 
 } // namespace (sentinelle)
 
+#if defined(__i386__)
+namespace {
+// Division entiere par zero (banc x86, 15/11) : sur la console et sur ARM elle ne plante pas (ARM : quotient 0) ; le jeu
+// d'origine en contient (shadow.cpp SoftShadowGXDraw : size / div avec div = 0). Sur x86 le processeur leve SIGFPE.
+// On reproduit le comportement ARM du telephone : quotient 0, reste = dividende (a % 0 = a - 0 * 0), puis on reprend a
+// l'instruction suivante. Instructions traitees : F6/F7 avec /6 (div) ou /7 (idiv), prefixes 66 et de segment.
+void on_intdiv(int sig, siginfo_t *info, void *ctx)
+{
+    ucontext_t *uc = (ucontext_t *) ctx;
+    greg_t *g = uc->uc_mcontext.gregs;
+    const unsigned char *ip = (const unsigned char *) g[REG_EIP];
+    const unsigned char *p = ip;
+    bool op16 = false;
+    while (*p == 0x66 || *p == 0x2E || *p == 0x3E || *p == 0x26 || *p == 0x36 || *p == 0x64 || *p == 0x65) {
+        if (*p == 0x66) op16 = true;
+        ++p;
+    }
+    const unsigned char op = *p++;
+    const unsigned char modrm = *p++;
+    const int mod = modrm >> 6, reg = (modrm >> 3) & 7, rm = modrm & 7;
+    if (info->si_code != FPE_INTDIV || (op != 0xF6 && op != 0xF7) || (reg != 6 && reg != 7)) {
+        on_fault(sig, info, ctx);   // autre chose : rapport de plantage habituel
+        return;
+    }
+    if (mod != 3 && rm == 4) {   // octet SIB
+        const unsigned char sib = *p++;
+        if (mod == 0 && (sib & 7) == 5) p += 4;
+    }
+    if (mod == 1) p += 1;
+    else if (mod == 2 || (mod == 0 && rm == 5)) p += 4;
+    if (op == 0xF6) {   // 8 bits : AL = quotient, AH = reste
+        const unsigned al = (unsigned) g[REG_EAX] & 0xFF;
+        g[REG_EAX] = (g[REG_EAX] & ~0xFFFF) | (al << 8);
+    } else if (op16) {   // 16 bits : AX quotient, DX reste
+        const unsigned ax = (unsigned) g[REG_EAX] & 0xFFFF;
+        g[REG_EAX] = g[REG_EAX] & ~0xFFFF;
+        g[REG_EDX] = (g[REG_EDX] & ~0xFFFF) | ax;
+    } else {   // 32 bits : EAX quotient, EDX reste
+        g[REG_EDX] = g[REG_EAX];
+        g[REG_EAX] = 0;
+    }
+    g[REG_EIP] = (greg_t) (unsigned long) p;
+    static int n = 0;
+    if (n++ < 20) {
+        g_load_bias = 0;
+        g_module[0] = 0;
+        compute_load_bias((unsigned long) ip);
+        std::printf("[PORT] division entiere par zero a %s + 0x%lx : quotient 0 (comme sur ARM)\n",
+                    g_module[0] ? g_module : "?", (unsigned long) ip - g_load_bias);
+    }
+}
+}  // namespace
+#endif
+
 extern "C" void port_install_crash_handler(void)
 {
     {
@@ -252,5 +306,8 @@ extern "C" void port_install_crash_handler(void)
     sigaction(SIGSEGV, &sa, nullptr);
     sigaction(SIGBUS, &sa, nullptr);
     sigaction(SIGILL, &sa, nullptr);
+#if defined(__i386__)
+    sa.sa_sigaction = on_intdiv;   // division par zero : comportement ARM (voir on_intdiv)
+#endif
     sigaction(SIGFPE, &sa, nullptr);
 }

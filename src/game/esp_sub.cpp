@@ -1475,6 +1475,9 @@ struct Esp1bSpWork {
     Vec p3;    // 0x1C
 };
 
+#ifdef RE4_PORT
+extern "C" void* port_esp1b_work(cEsp* esp);   // game/esp1b.cpp : &cEsp1b::work
+#endif
 void Esp1b_SpTrans(cEsp* esp)
 {
     static Vec p0;
@@ -1482,7 +1485,14 @@ void Esp1b_SpTrans(cEsp* esp)
     static Vec p2;
     static Vec p3;
     static Vec ret;
+#ifdef RE4_PORT
+    // Portage (15/11) : sur GameCube le pointeur de table virtuelle est en fin de cEsp (0xF4) et &pad_EC[0xC] tombe sur
+    // cEsp1b::work (0xF8) ; avec clang il est en tete, tout est decale de 4 et cette adresse lisait 4 octets trop loin
+    // (div = bits d'un flottant : boucle sans fin et memoire epuisee pendant la cinematique d'ouverture).
+    Esp1bSpWork* w = (Esp1bSpWork*) port_esp1b_work(esp);
+#else
     Esp1bSpWork* w = (Esp1bSpWork*) &esp->pad_EC[0xC];
+#endif
     u32 div;
     u32 i;
     u32 j;

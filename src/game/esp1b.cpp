@@ -23,6 +23,12 @@ public:
     virtual int SetFreeWork(EspGenWork* gen, u32* seed);
 };
 
+#ifdef RE4_PORT
+// Adresse reelle du travail de l'effet (lu par Esp1b_SpTrans, esp_sub.cpp) : la disposition du portage n'est pas
+// celle du GameCube (pointeur de table virtuelle en tete de cEsp).
+extern "C" void* port_esp1b_work(cEsp* esp) { return &static_cast<cEsp1b*>(esp)->work; }
+#endif
+
 cEsp* Esp1b_Create()
 {
     return new cEsp1b;

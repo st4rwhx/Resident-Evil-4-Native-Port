@@ -1348,6 +1348,8 @@ int stageSelect(TitleWork* w)
 static cRoomJmp* pRj;
 #ifdef RE4_PORT
 extern "C" unsigned port_start_room(void);
+extern "C" int port_room_menu(void);      // port/arm_hooks.cpp : RE4_ROOM_MENU=1, menu de salles de debug
+extern "C" int port_title_choice(void);   // port/arm_hooks.cpp : 2 nouvelle partie, 1 chargement, 0 salle de test
 #endif
 
 void titleExit(TitleWork* w)
@@ -1366,10 +1368,25 @@ void titleExit(TitleWork* w)
         w->dbgX = 340;
         w->dbgY = 60;
         w->sndId = 0;
+#ifdef RE4_PORT
+        // Parcours du joueur (A2, 15/11) : le build de debug ouvrait ici un menu de salles dont le texte est coupe dans le
+        // portage (ecran fige, il fallait appuyer sur A sans le savoir). Choix direct, comme le jeu commercial :
+        // port_title_choice() = 2 NEW GAME (salle 0x120, cinematique d'ouverture), 1 LOAD GAME, 0 DEBUG GAME (salle de
+        // test RE4_START_ROOM). RE4_ROOM_MENU=1 : menu de debug d'origine.
+        if (port_room_menu()) {
+            while (!(Joy[0].trg & 0x1100)) {
+                titleDebugMenu(w);
+                TaskSleep(1);
+            }
+        } else {
+            w->dbgCursor = port_title_choice();
+        }
+#else
         while (!(Joy[0].trg & 0x1100)) {
             titleDebugMenu(w);
             TaskSleep(1);
         }
+#endif
         G_ROOM_ID = pRj->getRoomInfo(w->dbgStage, w->dbgRoom[w->dbgStage] + w->dbgPoint)->room_id;
 #ifdef RE4_PORT   // banc d'essai : RE4_START_ROOM=0x100 saute le menu de salles (le disque de revue n'a pas toutes les salles)
         if (u32 r = port_start_room()) {
