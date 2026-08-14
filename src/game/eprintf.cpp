@@ -51,7 +51,16 @@ int eprintf_init = 0;
 #ifdef RE4_PORT   // texte de debogage de l'executable DEBUG (rang, tirs, memoire libre...) : absent du jeu commercial,
                   // coupe par defaut ; RE4_EPRINTF=1 le rallume (port/arm_hooks.cpp)
 extern "C" int port_debug_text(void);
-#define PORT_DEBUG_TEXT() port_debug_text()
+extern "C" int port_studio_text(void);   // port/studio.cpp : -1 reglage d'origine, 0/1 impose
+// Texte affiche si le Studio le demande, sinon RE4_EPRINTF, et toujours quand le menu des outils est ouvert (sans lui le
+// menu etait invisible et arretait le jeu).
+static inline int port_text_on(void)
+{
+    const int s = port_studio_text();
+    if (s >= 0) return s;
+    return port_debug_text() || (pG->flags_60 & 0x80000000) != 0;
+}
+#define PORT_DEBUG_TEXT() port_text_on()
 #else
 #define PORT_DEBUG_TEXT() 1
 #endif

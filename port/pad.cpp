@@ -22,6 +22,7 @@ extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
 #include <cstring>
 
 #include <dolphin.h>
+extern "C" int port_studio_pad(PADStatus* s);   // port/studio.cpp
 
 namespace {
 
@@ -109,6 +110,7 @@ u32 PADRead(PADStatus *status)
             status[0].triggerRight = np.trigger_r;
         }
     }
+    port_studio_pad(&status[0]);   // Nightjar Studio (port/studio.cpp) : manette imposee par une commande « pad »
     // Banc d'essai : RE4_AUTOPAD=1 appuie sur Start puis sur A a intervalles reguliers, pour faire
     // avancer le jeu sans manette (utilise par les mesures sur appareil, jamais dans une diffusion).
     // RE4_PADFILE=<fichier> : un parcours scripte, une ligne par appui :

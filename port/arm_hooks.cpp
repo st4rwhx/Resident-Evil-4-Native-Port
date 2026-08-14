@@ -33,12 +33,17 @@ extern "C" int port_debug_text(void)   // eprintf du jeu (src/game/eprintf.cpp)
 // Pour le code du jeu, qui ne peut pas inclure <stdio.h> (voir osreport_pc.cpp).
 #include <android/log.h>
 #include <stdarg.h>
+#include <stdio.h>
 extern "C" void port_note(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
     __android_log_vprint(ANDROID_LOG_INFO, "RE4", fmt, ap);
     va_end(ap);
+    va_start(ap, fmt);   // aussi dans le journal du coeur (core.log), lu par nos bancs
+    vprintf(fmt, ap);
+    va_end(ap);
+    putchar(10);
 }
 
 // Le jeu reecrit en place l'extension de certains noms de FileTbl (SET_DRS_NAME : ".das" -> ".drs")
@@ -116,4 +121,20 @@ extern "C" unsigned port_newgame_point(void)
 {
     static const char *e = getenv("RE4_NEWGAME_POINT");
     return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
+}
+
+// RE4_CHK_PL=1 : verification par image de la chaine des zones de touche de Leon (15/11, plantage em10 : un
+// p->next valait 0x437a0000, un flottant). Appelee depuis main.cpp (port_tm_frame).
+extern "C" int port_chk_pl(void)
+{
+    static const int on = getenv("RE4_CHK_PL") != nullptr;
+    return on;
+}
+
+// Adresse de retour lisible par addr2line : decalage dans notre binaire (libnjcore.so).
+extern "C" void port_ret_note(const char *tag, void *ret)
+{
+    Dl_info di;
+    if (dladdr(ret, &di) && di.dli_fbase)
+        port_note("%s +0x%lx", tag, (unsigned long) ((char *) ret - (char *) di.dli_fbase));
 }

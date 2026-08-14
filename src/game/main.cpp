@@ -71,8 +71,34 @@ static void port_tm(int k)
         port_tm_acc[k] += (u32) ((t - port_tm_last) / 405);   // centiemes de ms
     port_tm_last = t;
 }
+extern "C" int port_chk_pl(void);
+extern "C" void port_note(const char* fmt, ...);
+#include "player.h"
+// RE4_CHK_PL=1 : la chaine des zones de touche du joueur (hitInfo -> next, YarareAdd a this+0x530...) doit rester
+// dans l'objet ; on dit la premiere image ou un maillon sort, et ce qu'il contient.
+static void port_chk_pl_chain(void)
+{
+    static int reported;
+    static unsigned img;
+    img++;
+    if (reported || !port_chk_pl() || !pPL)
+        return;
+    int n = 0;
+    for (EmHitInfo* p = &pPL->hitInfo; p != 0 && n < 16; p = p->next, n++) {
+        EmHitInfo* q = p->next;
+        if (q && ((u8*) q < (u8*) pPL || (u8*) q >= (u8*) pPL + 0x800)) {
+            reported = 1;
+            port_note("[CHK_PL] image %u salle %x : maillon %d (pPL+0x%x) next=%p", img,
+                      (unsigned) G_ROOM_ID, n, (unsigned) ((u8*) p - (u8*) pPL), (void*) q);
+            return;
+        }
+    }
+}
+extern "C" void port_studio_frame(void);   // port/studio.cpp (Nightjar Studio S1)
 static void port_tm_frame(void)
 {
+    port_chk_pl_chain();
+    port_studio_frame();
     if (++port_tm_frames < 60)
         return;
     OSReport("[TEMPS] ms/image : debut %.1f rendu %.1f taches %.1f trans %.1f son %.1f dessin2d %.1f itaches %.1f "
