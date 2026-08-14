@@ -10,9 +10,19 @@ typedef unsigned short u16;
 #ifdef RE4_PORT
 /* Portage : les pointeurs valides ne sont plus tous dans les 48 Mo du GameCube - la pile et les variables
  * statiques vivent ailleurs. Seuls les decalages de fichier (en dessous de 0x80000000) restent distincts. */
+#if defined(__i386__)
+/* x86 32 bits (banc G0, MuMu, 15/11) : le programme est charge vers 0x56000000 et la pile est sous 0xFFFF0000 ; les
+ * decalages de fichier restent petits (sous 0x10000000). 0xFFFFFFFF (sentinelle -1) reste invalide. */
+#define PORT_PTR_MIN 0x10000000
+#define PORT_PTR_MAX 0xFFFDFFFF
+#define PORT_PTR_SPAN 0xEFFDFFFF
+#else
+#define PORT_PTR_MIN 0x80000000
 #define PORT_PTR_MAX 0xBFFFFFFF
 #define PORT_PTR_SPAN 0x3FFFFFFF
+#endif
 #else
+#define PORT_PTR_MIN 0x80000000
 #define PORT_PTR_MAX 0x82FFFFFF
 #define PORT_PTR_SPAN 0x02FFFFFF
 #endif

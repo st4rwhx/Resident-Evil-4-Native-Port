@@ -1499,7 +1499,7 @@ void primInit()
         S32Set(pG->prim_max, pG->prim_max / 2);
 #line 2215 "D:/Bio4/Prog/game.cpp"
         S32Set(pG->prim_cnt, (s32) MEM_ALLOC(pG->prim_max * 2, 1, 13));
-        if ((u32) pG->prim_cnt < 0x80000000 || (u32) pG->prim_cnt > PORT_PTR_MAX) {
+        if ((u32) pG->prim_cnt < PORT_PTR_MIN || (u32) pG->prim_cnt > PORT_PTR_MAX) {
             pLog->err(0, 0, "workInit() PRIM BUFFER SIZE WAS REDUCE %08X", pG->prim_max);
         }
     } while (pG->prim_cnt == 0);
@@ -1794,7 +1794,7 @@ int cManager<T>::dispWorkNum(int x, int y, int col, int sub)
     u32 n;
     u32 i;
 
-    if ((u32) pArray < 0x80000000 || (u32) pArray > PORT_PTR_MAX) {
+    if ((u32) pArray < PORT_PTR_MIN || (u32) pArray > PORT_PTR_MAX) {
         return 0;
     }
     n = 0;

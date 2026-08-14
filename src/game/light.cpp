@@ -21,8 +21,8 @@ extern f32 lod_bias;
 extern u32 aniso;
 
 // pointer to game memory (0x80000000 .. PORT_PTR_MAX)
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
-#define IN_RANGE(p) ((u32) (p) - 0x80000000 <= PORT_PTR_SPAN)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define IN_RANGE(p) ((u32) (p) - PORT_PTR_MIN <= PORT_PTR_SPAN)
 #define IS_ALIVE(p) (((p)->be_flag & 0x201) == 1)
 
 void funcDelCtrl(cCtrl* c);

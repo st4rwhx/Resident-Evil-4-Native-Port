@@ -16,7 +16,7 @@ int MotionMove(cModel* m, int flag);               // game/motion.cpp
 int MotionCheckCrossFrame(void* work, f32 frame);  // game/motion.cpp
 }
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 
 void knife_r3_ready00(cPlayer* pl);
 void knife_r3_ready10(cPlayer* pl);

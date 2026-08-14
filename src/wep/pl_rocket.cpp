@@ -18,7 +18,7 @@
 // motion.h declares the one-argument MotionMove; the routines pass a second argument (pl_knife.cpp).
 int MotionMoveI(cModel* m, int flag) asm("MotionMove");
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 #define WEP_ARC_PTR(no) PL_ARC_PTR((PlArc*) pG->pWepArc, no)
 #define LAUNCHER(pl) ((cObjLauncher*) (pl)->pWep->pObj)
 

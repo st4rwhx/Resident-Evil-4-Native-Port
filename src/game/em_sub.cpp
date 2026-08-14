@@ -55,7 +55,7 @@ public:
 // register (`add r9, r9, r31` / `stwx r29, r9, r31`) instead of the pointer.
 #define WEP_LIST(n) ((WepTarget*) ((n) * sizeof(WepTarget) + (u32) list))
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 
 // Position offset by the trolley / bulldozer movement (adjust_add_set / VehicleAdjust).
 static Vec adjust_add = {0.0f, 0.0f, 0.0f};

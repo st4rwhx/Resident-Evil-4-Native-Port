@@ -100,7 +100,7 @@ static inline int pushTargetDead(cPlPush* p)
     return 0;
 }
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 
 // Parts index mirror table (left <-> right parts of the player model).
 u16 pl00_mirror[80] = {

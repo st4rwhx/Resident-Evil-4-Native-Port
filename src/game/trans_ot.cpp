@@ -101,7 +101,7 @@ OtData* MakeOtData(void* data)
 {
     OtPrim* p = (OtPrim*) GetPrimBuff(sizeof(OtPrim));
 
-    if ((u32) p < 0x80000000 || (u32) p > PORT_PTR_MAX) {
+    if ((u32) p < PORT_PTR_MIN || (u32) p > PORT_PTR_MAX) {
         return 0;
     }
     p->data = data;

@@ -52,9 +52,9 @@ static inline int ExeWindowEventTask(cEmWindow* w) { return w->ExeWindowEvent();
 int ExeWindowEventTask(cEmWindow* w) asm("ExeWindowEvent__9cEmWindow");
 #endif
 
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 // cPlNeck's checks compile to the folded `addis 0x8000; cmplwi PORT_PTR_SPAN` range form.
-#define VALID_PTR2(p) ((u32) (p) - 0x80000000 <= PORT_PTR_SPAN)
+#define VALID_PTR2(p) ((u32) (p) - PORT_PTR_MIN <= PORT_PTR_SPAN)
 
 // The original cUnit::beginEvent/endEvent take an int (KNOWN DEBT, cManager.h); view class for
 // the r4 argument (emwindow.cpp BEGIN_EVENT).

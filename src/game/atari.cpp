@@ -40,7 +40,7 @@ extern u32 g_at2_cyc[];
 extern u32 g_at2_total_cyc;
 
 // pointer to game memory (0x80000000 .. PORT_PTR_MAX)
-#define VALID_PTR(p) ((u32) (p) >= 0x80000000 && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 
 // polygons already tested during one check (one bit per polygon index)
 u8 polyBit[0x400];

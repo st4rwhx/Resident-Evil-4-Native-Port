@@ -369,7 +369,7 @@ void cManager<T>::destroyAll()
 template <class T>
 inline void cManager<T>::destroy(T* p)
 {
-    if ((u32)p < 0x80000000 || (u32)p > PORT_PTR_MAX) {
+    if ((u32)p < PORT_PTR_MIN || (u32)p > PORT_PTR_MAX) {
         if (p != 0) {
             log("%s::destroy() ERROR, INVALID  PTR %08X", name, p);
         }

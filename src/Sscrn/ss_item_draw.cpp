@@ -88,7 +88,7 @@ void ss_Draw_tpl_local(TEXPalette* tpl, u32 id, int x, int y, int w, int h)
     TEXHeader* th;
 
     // main-memory range checks (the sub screen's data lives in the ARAM-swapped area)
-    if ((u32) tpl - 0x80000000 > PORT_PTR_SPAN) {
+    if ((u32) tpl - PORT_PTR_MIN > PORT_PTR_SPAN) {
         return;
     }
     calcTplAddr(tpl);
