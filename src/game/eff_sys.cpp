@@ -167,7 +167,14 @@ void EspInit()
     d++;
     *d = 0x80;
     d++;
+#ifdef RE4_PORT
+    // Portage (15/11) : une liste d'affichage GX est gros-boutiste ; ecrit en u16 natif, le nombre de sommets se lisait
+    // 0x0400 (1024 au lieu de 4) et le lecteur sortait de la liste (plantage d'effet, EspCommonTrans).
+    d[0] = 0;
+    d[1] = 4;
+#else
     *(u16*) d = 4;
+#endif
     d++;
     d++;
     *d = 0;

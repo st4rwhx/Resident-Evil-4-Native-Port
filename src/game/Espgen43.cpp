@@ -8,6 +8,10 @@
 #include "camera.h"
 #include "os_vi.h"
 #include "db_log.h"
+#ifndef PORT_DL16   // hors portage : ecriture native, comme l'original
+#define PORT_DL16(d, v) (*(u16*) (d) = (v))
+#define PORT_DLF32(d, v) (*(f32*) (d) = (v))
+#endif
 
 // Byte-identical. AddSandPower's `stfs f1, Add_power` is an asm with a hard-register anti-dependence
 // (see the COMPILER-DIFF note there); everything else is plain C.
@@ -414,45 +418,45 @@ EspgenWork* SetSandWork(EspgenWork* w, Vec* pos, Vec* rot, f32 size, f32 sizeRat
     d++;
     *d = 0x98;
     d++;
-    *(u16*) d = (p->nx + 1) * (p->ny + p->ny);
+    PORT_DL16(d, (p->nx + 1) * (p->ny + p->ny));
     d++;
     d++;
     rep = p->texRep;
     for (i = 0; i < p->ny; i++) {
         k = i * (p->nx + 1);
         for (j = 0; j < p->nx + 1; j++) {
-            *(u16*) d = k;
+            PORT_DL16(d, k);
             d++;
             d++;
-            *(u16*) d = k;
+            PORT_DL16(d, k);
             d++;
             d++;
             k++;
-            *(f32*) d = (f32) j / p->nx * rep;
+            PORT_DLF32(d, (f32) j / p->nx * rep);
             TEX_WRAP(*(f32*) d);
             d++;
             d++;
             d++;
             d++;
-            *(f32*) d = (f32) i / p->ny * rep;
+            PORT_DLF32(d, (f32) i / p->ny * rep);
             TEX_WRAP(*(f32*) d);
             d++;
             d++;
             d++;
             d++;
-            *(u16*) d = p->nx + k;
+            PORT_DL16(d, p->nx + k);
             d++;
             d++;
-            *(u16*) d = p->nx + k;
+            PORT_DL16(d, p->nx + k);
             d++;
             d++;
-            *(f32*) d = (f32) j / p->nx * rep;
+            PORT_DLF32(d, (f32) j / p->nx * rep);
             TEX_WRAP(*(f32*) d);
             d++;
             d++;
             d++;
             d++;
-            *(f32*) d = (f32) (i + 1) / p->ny * rep;
+            PORT_DLF32(d, (f32) (i + 1) / p->ny * rep);
             TEX_WRAP(*(f32*) d);
             d++;
             d++;
@@ -463,38 +467,38 @@ EspgenWork* SetSandWork(EspgenWork* w, Vec* pos, Vec* rot, f32 size, f32 sizeRat
         if (i < p->ny) {
             for (j = p->nx; j >= 0; j--) {
                 k = i * (p->nx + 1) + j;
-                *(u16*) d = k;
+                PORT_DL16(d, k);
                 d++;
             d++;
-                *(u16*) d = k;
+                PORT_DL16(d, k);
                 d++;
             d++;
-                *(f32*) d = (f32) j / p->nx * rep;
+                PORT_DLF32(d, (f32) j / p->nx * rep);
                 TEX_WRAP(*(f32*) d);
                 d++;
             d++;
             d++;
             d++;
                 k++;
-                *(f32*) d = (f32) i / p->ny * rep;
+                PORT_DLF32(d, (f32) i / p->ny * rep);
                 TEX_WRAP(*(f32*) d);
                 d++;
             d++;
             d++;
             d++;
-                *(u16*) d = p->nx + k;
+                PORT_DL16(d, p->nx + k);
                 d++;
             d++;
-                *(u16*) d = p->nx + k;
+                PORT_DL16(d, p->nx + k);
                 d++;
             d++;
-                *(f32*) d = (f32) j / p->nx * rep;
+                PORT_DLF32(d, (f32) j / p->nx * rep);
                 TEX_WRAP(*(f32*) d);
                 d++;
             d++;
             d++;
             d++;
-                *(f32*) d = (f32) (i + 1) / p->ny * rep;
+                PORT_DLF32(d, (f32) (i + 1) / p->ny * rep);
                 TEX_WRAP(*(f32*) d);
                 d++;
                 d++;

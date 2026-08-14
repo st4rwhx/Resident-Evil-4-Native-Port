@@ -10,6 +10,10 @@
 #include "db_log.h"
 #include "main_sub.h"
 #include "joy.h"
+#ifndef PORT_DL16   // hors portage : ecriture native, comme l'original
+#define PORT_DL16(d, v) (*(u16*) (d) = (v))
+#define PORT_DLF32(d, v) (*(f32*) (d) = (v))
+#endif
 
 // Effect controller 42: room water surface. A (nx+1) x (ny+1) height field simulated on two
 // ping-pong buffers, rendered as triangle strips through a display list with an indirect bump
@@ -1019,26 +1023,26 @@ EspgenWork* SetWaterWork(EspgenWork* w, Vec* pos, Vec* rot, f32 size, u32 nx, u3
     d++;
     *d = 0x98;
     d++;
-    *(u16*) d = (p->nx + 1) * 2 * p->ny;
+    PORT_DL16(d, (p->nx + 1) * 2 * p->ny);
     d += 2;
     for (i = 0; i < p->ny; i++) {
         k = i * (p->nx + 1);
         for (j = 0; j < p->nx + 1; j++) {
-            *(u16*) d = k;
+            PORT_DL16(d, k);
             d += 2;
-            *(u16*) d = k;
+            PORT_DL16(d, k);
             d += 2;
-            *(f32*) d = (f32) j / (f32) (p->nx + 1);
+            PORT_DLF32(d, (f32) j / (f32) (p->nx + 1));
             d += 4;
-            *(f32*) d = (f32) i / (f32) (p->ny + 1);
+            PORT_DLF32(d, (f32) i / (f32) (p->ny + 1));
             d += 4;
-            *(u16*) d = p->nx + (k + 1);
+            PORT_DL16(d, p->nx + (k + 1));
             d += 2;
-            *(u16*) d = p->nx + (k + 1);
+            PORT_DL16(d, p->nx + (k + 1));
             d += 2;
-            *(f32*) d = (f32) j / (f32) (p->nx + 1);
+            PORT_DLF32(d, (f32) j / (f32) (p->nx + 1));
             d += 4;
-            *(f32*) d = (f32) (i + 1) / (f32) (p->ny + 1);
+            PORT_DLF32(d, (f32) (i + 1) / (f32) (p->ny + 1));
             d += 4;
             k++;
         }
@@ -1046,21 +1050,21 @@ EspgenWork* SetWaterWork(EspgenWork* w, Vec* pos, Vec* rot, f32 size, u32 nx, u3
         if (i < p->ny) {
             for (j = p->nx; j >= 0; j--) {
                 k = i * (p->nx + 1) + j;
-                *(u16*) d = k;
+                PORT_DL16(d, k);
                 d += 2;
-                *(u16*) d = k;
+                PORT_DL16(d, k);
                 d += 2;
-                *(f32*) d = (f32) j / (f32) (p->nx + 1);
+                PORT_DLF32(d, (f32) j / (f32) (p->nx + 1));
                 d += 4;
-                *(f32*) d = (f32) i / (f32) (p->ny + 1);
+                PORT_DLF32(d, (f32) i / (f32) (p->ny + 1));
                 d += 4;
-                *(u16*) d = p->nx + (k + 1);
+                PORT_DL16(d, p->nx + (k + 1));
                 d += 2;
-                *(u16*) d = p->nx + (k + 1);
+                PORT_DL16(d, p->nx + (k + 1));
                 d += 2;
-                *(f32*) d = (f32) j / (f32) (p->nx + 1);
+                PORT_DLF32(d, (f32) j / (f32) (p->nx + 1));
                 d += 4;
-                *(f32*) d = (f32) (i + 1) / (f32) (p->ny + 1);
+                PORT_DLF32(d, (f32) (i + 1) / (f32) (p->ny + 1));
                 d += 4;
             }
         }

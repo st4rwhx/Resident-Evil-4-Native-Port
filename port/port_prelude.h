@@ -147,4 +147,10 @@ extern "C" void port_vi_wait_field(void);
 #define PORT_VSYNC_WAIT(cond) do { while (cond) port_vi_wait_field(); } while (0)
 #endif
 
+
+// Listes d'affichage GX construites par le jeu lui-meme (effets Espgen42/43/45, eff_sys) : le flux GX est gros-boutiste,
+// le jeu y ecrit compteurs, indices de sommets et coordonnees flottantes en mots natifs (15/11).
+#define PORT_DL16(d, v) do { const unsigned int port_dl16_ = (unsigned int) (v); (d)[0] = (unsigned char) (port_dl16_ >> 8); (d)[1] = (unsigned char) port_dl16_; } while (0)
+#define PORT_DLF32(d, v) do { union { float f; unsigned int u; } port_dlf_; port_dlf_.f = (float) (v); (d)[0] = (unsigned char) (port_dlf_.u >> 24); (d)[1] = (unsigned char) (port_dlf_.u >> 16); (d)[2] = (unsigned char) (port_dlf_.u >> 8); (d)[3] = (unsigned char) port_dlf_.u; } while (0)
+
 #endif
