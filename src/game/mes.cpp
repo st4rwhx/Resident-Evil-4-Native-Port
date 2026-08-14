@@ -15,6 +15,10 @@ extern MessageFont MesFont[4];
 #include "db_log.h"
 #include "id_sys.h"
 #include "cockpit.h"
+#ifdef RE4_PORT
+extern "C" void port_studio_event(const char* fmt, ...);
+extern "C" void port_note(const char* fmt, ...);
+#endif
 #include "pad.h"
 #include "trans_ot.h"
 #include "view.h"
@@ -812,6 +816,9 @@ void Message::WidthCk()
     for (i = 15; i >= 0; i--) {
         lineW[i] = 0;
     }
+#ifdef RE4_PORT
+    int port_guard = 0;
+#endif
     while (flags2 & 8) {
         if (isCtrlCode(*pMsg)) {
             switch (*pMsg) {
@@ -880,6 +887,18 @@ void Message::WidthCk()
             }
         }
         pMsg++;
+#ifdef RE4_PORT
+        // Sentinelle (15/11, Studio) : un texte sans code de fin faisait tourner cette boucle pour toujours (jeu fige en
+        // r101). Au-dela de 20 000 codes : on dit ou, avec les premiers mots du texte et ses attributs, et on s'arrete.
+        if (++port_guard > 20000) {
+            port_studio_event("texte_sans_fin adresse=%p ici=%p attr=%08x mots=%04x %04x %04x %04x %04x %04x %04x %04x", (void*) save, (void*) pMsg,
+                              (unsigned) attr, save[0], save[1], save[2], save[3], save[4], save[5], save[6], save[7]);
+            port_note("[TEXTE] sans code de fin : adresse %p attr %08x, mots %04x %04x %04x %04x %04x %04x %04x %04x",
+                      (void*) save, (unsigned) attr, save[0], save[1], save[2], save[3], save[4], save[5], save[6], save[7]);
+            flags2 &= ~8;
+            break;
+        }
+#endif
     }
     maxW = 0;
     for (i = 0; i < n; i++) {

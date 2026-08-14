@@ -1,4 +1,8 @@
 #include "snd_drv.h"
+#ifdef RE4_PORT
+extern "C" void port_note(const char* fmt, ...);
+extern "C" void port_studio_event(const char* fmt, ...);
+#endif
 
 typedef void (*SND_STR_PLAYER)(SND_STR_WORK*);
 
@@ -32,6 +36,24 @@ void Snd_stream_player(void)
                 str_req_check(str);
                 str_player_tbl[str->state](str);
                 Snd_str_player_update(str);
+#ifdef RE4_PORT
+                {   // Enquete son (15/11) : etat de la voix du flux pendant ses premieres images
+                    static u32 seen[SND_STR_MAX];
+                    static u16 last_id[SND_STR_MAX];
+                    if (last_id[i] != (u16) str->snd_id) {
+                        last_id[i] = (u16) str->snd_id;
+                        seen[i] = 0;
+                    }
+                    if (str->voiceL && seen[i] < 24 && (seen[i]++ % 2) == 0) {
+                        AXPB* pb = &str->voiceL->pb;
+                        port_note("[FLUX] id %u etat %d | voix etat %u type %u boucle %u cur %04x%04x fin %04x%04x deb %04x%04x | lu %x lect %d",
+                                  (unsigned) str->snd_id, str->state, pb->state, pb->type, pb->addr.loopFlag,
+                                  pb->addr.currentAddressHi, pb->addr.currentAddressLo, pb->addr.endAddressHi,
+                                  pb->addr.endAddressLo, pb->addr.loopAddressHi, pb->addr.loopAddressLo,
+                                  (unsigned) str->read_ofs, (int) str->read_cnt);
+                    }
+                }
+#endif
             }
         }
     }
@@ -336,8 +358,24 @@ void str_play_cancel(SND_STR_WORK* str)
     str_play_end(str);
 }
 
+#ifdef RE4_PORT
+extern "C" void port_note(const char* fmt, ...);
+extern "C" void port_ret_note(const char* tag, void* ret);
+#endif
 void str_play_end(SND_STR_WORK* str)
 {
+#ifdef RE4_PORT
+    // Enquete son (15/11) : les flux (musique, voix des cinematiques) finissent apres un seul bloc de 0x8000.
+    port_note("[FLUX] fin id %u status %x lu %x/%x voix etat %d", (unsigned) str->snd_id, (unsigned) str->status,
+              (unsigned) str->read_ofs, (unsigned) str->read_end, str->voiceL ? (int) str->voiceL->pb.state : -1);
+    port_ret_note("[FLUX] fin appelee depuis", __builtin_return_address(0));
+    port_studio_event("flux_fin id=%u lu=%x/%x voix=%d", (unsigned) str->snd_id, (unsigned) str->read_ofs,
+                      (unsigned) str->read_end, str->voiceL ? (int) str->voiceL->pb.state : -1);
+    port_note("[FLUX]   flag %x len %x boucle %x..%x x84 %x bloc %x ; en-tete : flag %x len %x boucle %x..%x", (unsigned) str->flag,
+              (unsigned) str->read_end, (unsigned) str->loop_start, (unsigned) str->loop_end, (unsigned) str->x84,
+              (unsigned) str->blk_size, str->shd ? (unsigned) str->shd->flag : 0u, str->shd ? (unsigned) str->shd->len : 0u,
+              str->shd ? (unsigned) str->shd->loop_start : 0u, str->shd ? (unsigned) str->shd->loop_end : 0u);
+#endif
     Snd_str_ax_voice_stop(str);
     str->status &= ~0x10;
     str->state = 4;

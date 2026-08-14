@@ -812,6 +812,7 @@ void snd_fix_str_hed(const Span &s);
 void snd_fix_words_then_halves(const Span &s);
 }
 extern "C" void port_room_arc_fix(void *arc, u32 size);
+extern "C" void port_studio_event(const char *fmt, ...);   // port/studio.cpp
 extern "C" void port_endian_fix(const char *name, void *data, u32 size)
 {
     if (!name || !data || size < 8)
@@ -994,6 +995,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         seen[nseen][sizeof(seen[0]) - 1] = 0;
         ++nseen;
     }
+    port_studio_event("fichier_sans_convertisseur %s %u", name, (unsigned) size);
     std::printf("[ENDIAN] SANS CONVERTISSEUR : %s (%u octets, debut %02x %02x %02x %02x %02x %02x %02x %02x)\n", name,
                 (unsigned) size, s.base[0], s.base[1], s.base[2], s.base[3], s.base[4], s.base[5], s.base[6], s.base[7]);
 }

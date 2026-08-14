@@ -48,7 +48,9 @@ GuestCpu *g_guest = nullptr;
 }  // namespace nj::runtime
 
 extern "C" void njlink_gl_ready(int w, int h);
-extern "C" void njlink_src_size(int w, int h);   // port/njlink.cpp : taille de l EFB (copie par dessin)
+extern "C" void njlink_src_size(int w, int h);
+extern "C" void njlink_capture_state(void);   // port/njlink.cpp
+extern "C" void port_studio_event(const char *fmt, ...);   // port/studio.cpp   // port/njlink.cpp : taille de l EFB (copie par dessin)
 extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 // meme chose, image placee sur les lignes [dy, dy + dh) des 480 de l'image partagee (le reste en noir)
 extern "C" void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh);
@@ -411,6 +413,7 @@ static void rth_submit(unsigned size, unsigned frame, const unsigned vm[6]) {
     rth::cv.wait(lk, [] { return !rth::busy; });
   }
   rth::wait_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+  njlink_capture_state();     // image N-1 finie : etat du jeu copie sur le fil du jeu, le fil de rendu l'enverra
   gx::DecodeEpochAdvance();   // image N-1 finie : ce qu'elle retenait peut partir
   {
     std::lock_guard<std::mutex> lk(rth::mu);
@@ -616,6 +619,7 @@ static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned fra
         ++dumps;
         NjState st;
         njstate_fill(&st);
+        port_studio_event("ecran_uniforme couleur=%d,%d,%d dessins=%zu salle=%03x", hi[0], hi[1], hi[2], ndraws, (unsigned)st.room);
         std::printf("[UNIFORME] image %u : couleur %d,%d,%d partout, %zu dessins, mode %u salle %03x bits %05x\n", frame, hi[0], hi[1],
                     hi[2], ndraws, (unsigned)st.mode, (unsigned)st.room, (unsigned)st.bits);
         // premiere detection : enregistrement .dff des 6 images suivantes (rejeu FifoReplay sur PC, regle du 28/10 :
