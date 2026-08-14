@@ -116,6 +116,13 @@ s32 set(s32 chan, s32 r)
     return r;
 }
 
+// Journal des appels (14/11, diagnostic des sauvegardes jamais creees sur le S5) : 200 lignes au plus.
+void note(const char *fn, const char *arg, s32 r)
+{
+    static int n = 0;
+    if (n++ < 200) std::printf("[CARD] %s(%s) -> %d (dossier %s)\n", fn, arg ? arg : "", (int)r, dir());
+}
+
 s32 done(s32 chan, s32 r, CARDCallback cb)
 {
     set(chan, r);
@@ -131,6 +138,7 @@ void CARDInit() { dir(); }
 
 s32 CARDProbeEx(s32 chan, s32 *memSize, s32 *sectorSize)
 {
+    note("CARDProbeEx", nullptr, -99);
     if (chan != 0) return CARD_RESULT_NOCARD;
     if (memSize) *memSize = 16;           // en megabits
     if (sectorSize) *sectorSize = kBlock;
@@ -139,6 +147,7 @@ s32 CARDProbeEx(s32 chan, s32 *memSize, s32 *sectorSize)
 
 s32 CARDMountAsync(s32 chan, void *workArea, CARDCallback detach, CARDCallback attach)
 {
+    note("CARDMountAsync", nullptr, -99);
     (void)workArea; (void)detach;
     if (chan != 0) return done(chan, CARD_RESULT_NOCARD, attach);
     return done(chan, CARD_RESULT_READY, attach);
@@ -150,12 +159,14 @@ s32 CARDGetResultCode(s32 chan) { return (chan >= 0 && chan < 2) ? g_result[chan
 
 s32 CARDGetSerialNo(s32 chan, u64 *serialNo)
 {
+    note("CARDGetSerialNo", nullptr, -99);
     if (serialNo) *serialNo = 0x0123456789ABCDEFull;
     return set(chan, chan == 0 ? CARD_RESULT_READY : CARD_RESULT_NOCARD);
 }
 
 s32 CARDFreeBlocks(s32 chan, s32 *byteNotUsed, s32 *filesNotUsed)
 {
+    note("CARDFreeBlocks", nullptr, -99);
     char names[CARD_MAX_FILE][CARD_FILENAME_MAX + 1];
     const int n = list_files(names);
     s32 used = 0;
@@ -170,10 +181,11 @@ s32 CARDFreeBlocks(s32 chan, s32 *byteNotUsed, s32 *filesNotUsed)
 
 s32 CARDOpen(s32 chan, const char *fileName, CARDFileInfo *fi)
 {
+    note("CARDOpen", fileName, -99);
     char names[CARD_MAX_FILE][CARD_FILENAME_MAX + 1];
     int n;
     const int i = find(fileName, names, n);
-    if (i < 0) return set(chan, CARD_RESULT_NOFILE);
+    if (i < 0) { note("CARDOpen absent", fileName, CARD_RESULT_NOFILE); return set(chan, CARD_RESULT_NOFILE); }
     Header h;
     if (!read_header(names[i], h)) return set(chan, CARD_RESULT_BROKEN);
     if (fi) { fi->chan = chan; fi->fileNo = i; fi->offset = 0; fi->length = (s32)h.length; fi->iBlock = 0; }
@@ -184,6 +196,7 @@ s32 CARDClose(CARDFileInfo *fi) { return set(fi ? fi->chan : 0, CARD_RESULT_READ
 
 s32 CARDCreateAsync(s32 chan, const char *fileName, u32 size, CARDFileInfo *fi, CARDCallback cb)
 {
+    note("CARDCreateAsync", fileName, -99);
     if (std::strlen(fileName) > CARD_FILENAME_MAX) return done(chan, CARD_RESULT_NAMETOOLONG, cb);
     char names[CARD_MAX_FILE][CARD_FILENAME_MAX + 1];
     int n;
@@ -217,6 +230,7 @@ s32 CARDCreateAsync(s32 chan, const char *fileName, u32 size, CARDFileInfo *fi, 
 
 s32 CARDDeleteAsync(s32 chan, const char *fileName, CARDCallback cb)
 {
+    note("CARDDeleteAsync", fileName, -99);
     char names[CARD_MAX_FILE][CARD_FILENAME_MAX + 1];
     int n;
     const int i = find(fileName, names, n);
@@ -245,6 +259,7 @@ bool open_file(const CARDFileInfo *fi, char *name, std::FILE **out)
 
 s32 CARDReadAsync(CARDFileInfo *fi, void *buf, s32 length, s32 offset, CARDCallback cb)
 {
+    note("CARDReadAsync", nullptr, -99);
     const s32 chan = fi ? fi->chan : 0;
     char name[CARD_FILENAME_MAX + 1];
     std::FILE *f;
@@ -258,6 +273,7 @@ s32 CARDReadAsync(CARDFileInfo *fi, void *buf, s32 length, s32 offset, CARDCallb
 
 s32 CARDWriteAsync(CARDFileInfo *fi, void *buf, s32 length, s32 offset, CARDCallback cb)
 {
+    note("CARDWriteAsync", nullptr, -99);
     const s32 chan = fi ? fi->chan : 0;
     char name[CARD_FILENAME_MAX + 1];
     std::FILE *f;
@@ -270,6 +286,7 @@ s32 CARDWriteAsync(CARDFileInfo *fi, void *buf, s32 length, s32 offset, CARDCall
 
 s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat *stat)
 {
+    note("CARDGetStatus", nullptr, -99);
     char names[CARD_MAX_FILE][CARD_FILENAME_MAX + 1];
     const int n = list_files(names);
     if (fileNo < 0 || fileNo >= n) return set(chan, CARD_RESULT_NOFILE);
@@ -285,6 +302,7 @@ s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat *stat)
 
 s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CARDStat *stat, CARDCallback cb)
 {
+    note("CARDSetStatusAsync", nullptr, -99);
     char names[CARD_MAX_FILE][CARD_FILENAME_MAX + 1];
     const int n = list_files(names);
     if (fileNo < 0 || fileNo >= n) return done(chan, CARD_RESULT_NOFILE, cb);
