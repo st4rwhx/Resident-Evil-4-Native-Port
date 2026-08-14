@@ -321,10 +321,57 @@ unsigned job_size = 0, job_frame = 0, job_vm[6];
 double wait_ms = 0, render_ms = 0;
 unsigned n = 0;
 
+// NJ_PERFCNT=1 : compteurs materiels du fil de rendu lui-meme, exacts par image rendue (comme perfcnt_frame pour le fil
+// du jeu). Le banc qui divisait des cycles comptes sur 15 s par des images estimees dans le journal variait de +-15 %
+// (village, 14/11) : il ne pouvait pas trancher un gain de moins de 10 %. perf_harden doit valoir 0 a l'ouverture.
+struct RenderCnt {
+  int fd = -2;
+  uint64_t c0 = 0, e0 = 0, w0 = 0;
+  unsigned n = 0;
+  char path[64];
+  static uint64_t rd(int f) { uint64_t v = 0; return f >= 0 && read(f, &v, sizeof v) == (ssize_t) sizeof v ? v : 0; }
+  void sched(uint64_t &e, uint64_t &w) {
+    e = w = 0;
+    if (FILE *f = std::fopen(path, "r")) {
+      unsigned long long a = 0, b = 0;
+      if (std::fscanf(f, "%llu %llu", &a, &b) == 2) { e = a; w = b; }
+      std::fclose(f);
+    }
+  }
+  void frame() {
+    static const bool on = std::getenv("NJ_PERFCNT") != nullptr;
+    if (!on) return;
+    if (fd == -2) {
+      const int tid = (int) gettid();
+      std::snprintf(path, sizeof path, "/proc/self/task/%d/schedstat", tid);
+      struct perf_event_attr a;
+      std::memset(&a, 0, sizeof a);
+      a.type = PERF_TYPE_HARDWARE;
+      a.size = sizeof a;
+      a.config = PERF_COUNT_HW_CPU_CYCLES;
+      a.exclude_hv = 1;
+      fd = (int) syscall(__NR_perf_event_open, &a, tid, -1, -1, 0);
+      std::printf("[PERFCNT-R] compteur du fil de rendu %d : %s\n", tid, fd >= 0 ? "ouvert" : "refuse (perf_harden ?)");
+      c0 = rd(fd);
+      sched(e0, w0);
+      return;
+    }
+    if (++n < 120) return;
+    const uint64_t c1 = rd(fd);
+    uint64_t e1, w1;
+    sched(e1, w1);
+    std::printf("[PERFCNT-R] par image (%u images) : %.1f Mcycles, processeur %.1f ms, attente de son tour %.1f ms ; %.2f GHz\n", n,
+                (c1 - c0) / 1e6 / n, (e1 - e0) / 1e6 / n, (w1 - w0) / 1e6 / n, e1 > e0 ? (double) (c1 - c0) / (double) (e1 - e0) : 0.0);
+    c0 = c1; e0 = e1; w0 = w1;
+    n = 0;
+  }
+};
+
 void *loop(void *) {
   port_render_thread = (unsigned long) pthread_self();
   eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx);
   std::printf("[RTHREAD] fil de rendu %d, contexte %s\n", (int) gettid(), eglGetCurrentContext() == g_ctx ? "courant" : "ABSENT");
+  static RenderCnt cnt;
   for (;;) {
     {
       std::unique_lock<std::mutex> lk(mu);
@@ -332,6 +379,7 @@ void *loop(void *) {
     }
     const auto t0 = std::chrono::steady_clock::now();
     render_frame(job, job_size, job_frame, job_vm);
+    cnt.frame();
     job.clear();
     render_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     {
