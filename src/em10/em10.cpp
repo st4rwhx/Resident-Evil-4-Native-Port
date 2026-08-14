@@ -352,7 +352,12 @@ u32 Ctrl11SetSe2I(cCtrl* c, cModel* m, s16 time, int no, int idx, int blk) asm("
 extern "C" void em10CallVoiceSeI(cEm10* em, int no) asm("em10CallVoiceSe");
 // COMPILER-DIFF: argument-move order (docs/matching.md item 1): em10_R1_R10FGondola's setThrow issues the
 // `addi r5, Em10AtkTbl` before `fmr f1, t`; the GPR-args-first redeclaration is ABI-identical.
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline void cEmWepSetThrowF(cEmWep* wep, Vec* spd, EmAtkInfo* atk, f32 grav) { wep->setThrow(spd, grav, atk); }
+#else
 void cEmWepSetThrowF(cEmWep* wep, Vec* spd, EmAtkInfo* atk, f32 grav) asm("setThrow__6cEmWepP3VecfP9EmAtkInfo");
+#endif
 
 // Helpers of this unit used before their definition.
 int em10CrashCk(cEm10* em);

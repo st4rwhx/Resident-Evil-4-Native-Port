@@ -42,7 +42,12 @@ extern "C" void Em_R0_Scenario(cEm* em);                    // game/em_sub.cpp
 u16 MotionMoveF(cModel* m, int flag) asm("MotionMove");
 // COMPILER-DIFF: #1 (argument-move order): pl0ePathMove issues `lwz r4, pRailObj` before `lfs f1, dist`;
 // the model-before-dist redeclaration is ABI-identical (GPR / FPR argument registers are numbered independently).
-int PathGetPosEmM(void* path, cModel* model, f32 dist, u16* seg, Vec* out) asm("PathGetPosEm");   // MotionMove called with a second argument (pl_npc.cpp)
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline int PathGetPosEmM(void* path, cModel* model, f32 dist, u16* seg, Vec* out) { return PathGetPosEm(path, dist, model, seg, out); }
+#else
+int PathGetPosEmM(void* path, cModel* model, f32 dist, u16* seg, Vec* out) asm("PathGetPosEm");
+#endif   // MotionMove called with a second argument (pl_npc.cpp)
 
 #line 1 "D:/Bio4/Prog/pl0e.cpp"
 

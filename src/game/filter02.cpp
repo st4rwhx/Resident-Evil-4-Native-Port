@@ -20,7 +20,12 @@ extern "C" {
 void Filter02GetEFB(int div, void* buf, int mip, f32 scale);
 // DrawBuffer's call sites issue the FPR argument move before the GPR ones (see docs/matching.md,
 // cAtariInfo::init): ABI-identical redeclaration with the float first.
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline void Filter02GetEFBF(f32 scale, int div, void* buf, int mip) { Filter02GetEFB(div, buf, mip, scale); }
+#else
 void Filter02GetEFBF(f32 scale, int div, void* buf, int mip) asm("Filter02GetEFB");
+#endif
 void Filter02Render();
 void Filter02GXDraw(f32 x, f32 y, f32 z, f32 u, f32 v, f32 alpha, f32 s, f32 s2, void* buf);
 void Filter02DrawBuffer();

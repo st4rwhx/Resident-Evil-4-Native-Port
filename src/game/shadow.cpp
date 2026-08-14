@@ -921,7 +921,12 @@ void SoftShadowGXDraw(ShadowMng* mng, u32 div, f32 x, f32 y, f32 z, f32 u, f32 v
 }
 
 // COMPILER-DIFF: 1 (argument-move order): MakeSoftShadow issues the x/y/z moves before `li r4, div`.
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline void SoftShadowGXDrawF(ShadowMng* mng, f32 x, f32 y, f32 z, u32 div, f32 u, f32 v, f32 alpha, f32 scale) { SoftShadowGXDraw(mng, div, x, y, z, u, v, alpha, scale); }
+#else
 extern "C" void SoftShadowGXDrawF(ShadowMng* mng, f32 x, f32 y, f32 z, u32 div, f32 u, f32 v, f32 alpha, f32 scale) asm("SoftShadowGXDraw");
+#endif
 
 void MakeSoftShadow(ShadowMng* mng)
 {

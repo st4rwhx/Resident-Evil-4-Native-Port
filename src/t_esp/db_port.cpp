@@ -182,7 +182,12 @@ extern "C" int num_get(char** pp);
 extern "C" int symbol_check(char** pp, const char* sym);
 extern "C" void sp_PosRand_trans_1a(EspSeqData* head, EspGenWork* gen);
 // COMPILER-DIFF: #1 (the original moves the cModel* argument before the f32 one: `mr r4; fmr f1`)
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline int PathGetPosEmM(void* path, cModel* model, f32 dist, u16* seg, Vec* out) { return PathGetPosEm(path, dist, model, seg, out); }
+#else
 int PathGetPosEmM(void* path, cModel* model, f32 dist, u16* seg, Vec* out) asm("PathGetPosEm");
+#endif
 
 static inline int evtToolOn()
 {

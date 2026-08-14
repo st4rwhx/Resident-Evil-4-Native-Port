@@ -36,7 +36,13 @@ int MotionMove(cModel* m, int a);   // motion.cpp
 void EstSetB(int a, int b, Vec* pos, Vec* rot, int c, u8 d, int e, u8 f, u32 g, void* h) asm("EstSet");
 // AtSphereCapsuleCk with the float arguments declared first (atari_init.h idiom): the original
 // issues the `fmr` argument moves before the `addi r4` of the second point (emSphereAtCk).
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+u32 AtSphereCapsuleCk(Vec* c, Vec* p0, f32 r, f32 r2, Vec* p1);
+static inline u32 AtSphereCapsuleCkF(Vec* c, f32 r, f32 r2, Vec* p0, Vec* p1) { return AtSphereCapsuleCk(c, p0, r, r2, p1); }
+#else
 u32 AtSphereCapsuleCkF(Vec* c, f32 r, f32 r2, Vec* p0, Vec* p1) asm("AtSphereCapsuleCk");
+#endif
 
 // The vehicle objects (objTrolley.cpp / objBull.cpp) as seen from here: the ride checks only.
 class cObjTrolley : public cObj {

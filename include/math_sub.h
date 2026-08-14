@@ -50,7 +50,12 @@ void free_2dim_array_f32(int n, int m, f32** p);
 int de_Boor_Cox(int n, f32* knot, int k, f32 t, f32* out);
 // COMPILER-DIFF 1: cam_ctrl BSpline issues `lfs f1` (t) before the `addi`/`lwz` of out/k; the
 // floats-first redeclaration reproduces the original's argument-move order (ABI-identical).
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline int de_Boor_CoxF(int n, f32* knot, f32 t, int k, f32* out) { return de_Boor_Cox(n, knot, k, t, out); }
+#else
 int de_Boor_CoxF(int n, f32* knot, f32 t, int k, f32* out) asm("de_Boor_Cox");
+#endif
 f32 MtxNNLUDecomposition(int n, f32* a, int* ip);
 f32 MtxNNInverse(int n, f32* m, f32* inv);
 void MtxNNMultVecSR(int n, int m, f32* mtx, f32* v, f32* out);

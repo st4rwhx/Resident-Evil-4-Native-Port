@@ -99,7 +99,12 @@ static void data_select();
 static void data_edit();
 void markDraw(s16 val, u32 col, int kind, f32 dist);
 // COMPILER-DIFF: 1 -- floats-first view of markDraw: the original loads `lha val` before `lfs dist`
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline void markDrawF(f32 dist, s16 val, u32 col, int kind) { markDraw(val, col, kind, dist); }
+#else
 void markDrawF(f32 dist, s16 val, u32 col, int kind) asm("markDraw__FsUlif");
+#endif
 void mainFrameDisp();
 void editDataLineDraw(TblEnt* e, u32 col);
 void editDataDraw(EditTbl* tbl);

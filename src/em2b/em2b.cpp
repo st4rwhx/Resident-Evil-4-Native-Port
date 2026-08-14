@@ -55,7 +55,12 @@ asm(".comm common_em2b,52,4");
 // game/obj20.cpp
 extern "C" cObj* SetObaModel(cObj* parent, int partsNo, Vec* ofs, f32 rad, u8 type, f32 h);
 // COMPILER-DIFF #1: floats-first view for the call site whose `fmr f2` precedes `li r6` (Die_Event).
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline cObj* SetObaModelF(cObj* parent, int partsNo, Vec* ofs, f32 rad, f32 h, u8 type) { return SetObaModel(parent, partsNo, ofs, rad, type, h); }
+#else
 extern "C" cObj* SetObaModelF(cObj* parent, int partsNo, Vec* ofs, f32 rad, f32 h, u8 type) asm("SetObaModel");
+#endif
 // wep_mod.h idiom: the volatile scalar access keeps the following `lwz pSUB` below the `sth` and the
 // info address in a register (`addi rX, pl, 0x2b4; lhz/sth 0x1a(rX)`), plem2bDashEscape.
 static inline void AtariFlagsOrV(cAtariInfo* at, u16 mask) { *(volatile u16*) &at->flags |= mask; }

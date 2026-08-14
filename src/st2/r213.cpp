@@ -108,8 +108,14 @@ void R213BridgeAngSet(f32 ang);
 void R213ChainAngSet(int no, u32 objId, int hitNo, int flag, f32 ang);
 // COMPILER-DIFF 1: R213BridgeAngSet's two calls issue the `fmr f1` after the third / before the
 // first integer argument move.
+#ifdef RE4_PORT
+// Portage (15/11, audit port/outils/audit_alias_abi.py) : sur x86/ARM l ordre absolu des arguments compte, pas sur PowerPC.
+static inline void R213ChainAngSetF3(int no, u32 objId, int hitNo, f32 ang, int flag) { R213ChainAngSet(no, objId, hitNo, flag, ang); }
+static inline void R213ChainAngSetF0(f32 ang, int no, u32 objId, int hitNo, int flag) { R213ChainAngSet(no, objId, hitNo, flag, ang); }
+#else
 void R213ChainAngSetF3(int no, u32 objId, int hitNo, f32 ang, int flag) asm("R213ChainAngSet__FiUliif");
 void R213ChainAngSetF0(f32 ang, int no, u32 objId, int hitNo, int flag) asm("R213ChainAngSet__FiUliif");
+#endif
 void R213ChainDamageCheck(int no, u32 objId, int hitNo, int flagNo);
 void R213ChainBreakNumCalc();
 static void R213EventSwitchMain();
