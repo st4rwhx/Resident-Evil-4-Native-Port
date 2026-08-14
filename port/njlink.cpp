@@ -256,6 +256,102 @@ void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh)
     g_dst_h = 0;
 }
 
+// Copie EFB -> image partagee par un dessin (15/11). glBlitFramebuffer echouait par moments en GL_INVALID_OPERATION
+// sur MuMu (sessions entieres noires, ou une image noire par intervalles : le « scintillement »), pour des tampons
+// pourtant complets. Un rectangle texture est toujours valide. Source : la texture de couleur de `fbo`, de taille
+// njlink_src_size. Le tampon de destination (image partagee) est deja lie en ecriture. Etat GL rendu tel quel.
+static int g_src_w = 0, g_src_h = 0;
+extern "C" void njlink_src_size(int w, int h) { g_src_w = w; g_src_h = h; }
+static bool copy_draw(unsigned fbo, int x, int y, int w, int h, int dy0, int dy1)
+{
+    static GLuint prog = 0;
+    static GLint u_src = -1, u_tex = -1;
+    static bool failed = false;
+    if (failed || g_src_w <= 0 || g_src_h <= 0)
+        return false;
+    if (!prog) {
+        const char *vs =
+            "#version 300 es\n"
+            "uniform vec4 u_src;\n"
+            "out vec2 v_uv;\n"
+            "void main() {\n"
+            "  vec2 p = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));\n"
+            "  v_uv = mix(u_src.xy, u_src.zw, p);\n"
+            "  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);\n"
+            "}\n";
+        const char *fs =
+            "#version 300 es\n"
+            "precision mediump float;\n"
+            "uniform sampler2D u_tex;\n"
+            "in vec2 v_uv;\n"
+            "out vec4 o;\n"
+            "void main() { o = vec4(texture(u_tex, v_uv).rgb, 1.0); }\n";
+        GLuint s[2] = {glCreateShader(GL_VERTEX_SHADER), glCreateShader(GL_FRAGMENT_SHADER)};
+        glShaderSource(s[0], 1, &vs, nullptr);
+        glShaderSource(s[1], 1, &fs, nullptr);
+        GLint ok = 0;
+        for (GLuint sh : s) {
+            glCompileShader(sh);
+            glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+            if (!ok) { failed = true; std::printf("[NJLINK] copie par dessin : nuanceur refuse, retour a la copie de tampon\n"); return false; }
+        }
+        prog = glCreateProgram();
+        glAttachShader(prog, s[0]);
+        glAttachShader(prog, s[1]);
+        glLinkProgram(prog);
+        glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+        glDeleteShader(s[0]);
+        glDeleteShader(s[1]);
+        if (!ok) { failed = true; std::printf("[NJLINK] copie par dessin : programme refuse, retour a la copie de tampon\n"); return false; }
+        u_src = glGetUniformLocation(prog, "u_src");
+        u_tex = glGetUniformLocation(prog, "u_tex");
+        std::printf("[NJLINK] copie par dessin active (source %dx%d)\n", g_src_w, g_src_h);
+    }
+    GLint tex = 0;
+    glGetFramebufferAttachmentParameteriv(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+    if (!tex)
+        return false;
+    (void) fbo;
+    // etat a rendre
+    GLint p0 = 0, vao0 = 0, at0 = 0, t0 = 0, smp0 = 0, vp[4];
+    glGetIntegerv(GL_CURRENT_PROGRAM, &p0);
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao0);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &at0);
+    glGetIntegerv(GL_VIEWPORT, vp);
+    const GLboolean bl = glIsEnabled(GL_BLEND), dt = glIsEnabled(GL_DEPTH_TEST), cf = glIsEnabled(GL_CULL_FACE),
+                    st = glIsEnabled(GL_STENCIL_TEST), rd = glIsEnabled(GL_RASTERIZER_DISCARD);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &t0);
+    glGetIntegerv(GL_SAMPLER_BINDING, &smp0);
+    static GLuint vao = 0;
+    if (!vao) glGenVertexArrays(1, &vao);
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_RASTERIZER_DISCARD);
+    glUseProgram(prog);
+    glBindVertexArray(vao);
+    glBindTexture(GL_TEXTURE_2D, (GLuint) tex);
+    glBindSampler(0, 0);
+    glUniform1i(u_tex, 0);
+    glUniform4f(u_src, (float) x / g_src_w, (float) y / g_src_h, (float) (x + w) / g_src_w, (float) (y + h) / g_src_h);
+    glViewport(0, dy0, g_w, dy1 - dy0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glViewport(vp[0], vp[1], vp[2], vp[3]);
+    glBindSampler(0, (GLuint) smp0);
+    glBindTexture(GL_TEXTURE_2D, (GLuint) t0);
+    glActiveTexture((GLenum) at0);
+    glBindVertexArray((GLuint) vao0);
+    glUseProgram((GLuint) p0);
+    if (bl) glEnable(GL_BLEND);
+    if (dt) glEnable(GL_DEPTH_TEST);
+    if (cf) glEnable(GL_CULL_FACE);
+    if (st) glEnable(GL_STENCIL_TEST);
+    if (rd) glEnable(GL_RASTERIZER_DISCARD);
+    return true;
+}
+
 void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
 {
     poll_host();
@@ -293,13 +389,19 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
         ds = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
         glGetIntegerv(GL_READ_BUFFER, &rb);
     }
+    static const bool use_blit = [] { const char *e = std::getenv("NJ_LINK_BLIT"); return e && e[0] == '1'; }();
     if (g_dst_h > 0) {   // bandes noires au-dessus et au-dessous, comme l'ecran du GameCube
         const int y0 = g_h - (g_dst_y0 + g_dst_h) * g_h / 480, y1 = g_h - g_dst_y0 * g_h / 480;
+        GLfloat cc[4];
+        glGetFloatv(GL_COLOR_CLEAR_VALUE, cc);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        glBlitFramebuffer(x, y, x + w, y + h, 0, y0, g_w, y1, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glClearColor(cc[0], cc[1], cc[2], cc[3]);
+        if (use_blit || !copy_draw(fbo, x, y, w, h, y0, y1))
+            glBlitFramebuffer(x, y, x + w, y + h, 0, y0, g_w, y1, GL_COLOR_BUFFER_BIT, GL_LINEAR);
     } else {
-        glBlitFramebuffer(x, y, x + w, y + h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        if (use_blit || !copy_draw(fbo, x, y, w, h, 0, g_h))
+            glBlitFramebuffer(x, y, x + w, y + h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
     }
     if (diag) {
         e1 = glGetError();

@@ -48,6 +48,7 @@ GuestCpu *g_guest = nullptr;
 }  // namespace nj::runtime
 
 extern "C" void njlink_gl_ready(int w, int h);
+extern "C" void njlink_src_size(int w, int h);   // port/njlink.cpp : taille de l EFB (copie par dessin)
 extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 // meme chose, image placee sur les lignes [dy, dy + dh) des 480 de l'image partagee (le reste en noir)
 extern "C" void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh);
@@ -116,6 +117,16 @@ bool init() {
   gx::g_native_arrays = true;
   if (const char *sd = std::getenv("NJ_STORAGE_DIR")) nj::set_writable_dir(sd);   // appli : son dossier
   rt::Config::get().load("config.toml");
+  // Resolution interne (15/11) : le reglage « Internal resolution » de Nightjar n'arrivait pas ici (echelle 1 fixe :
+  // seule la boucle de l'appli appliquait wanted_scale, et le rendu natif n'y passe pas). NJ_SCALE : echelle calculee
+  // par l'appli au lancement (elle connait la taille de l'ecran, utile pour « native ») ; sinon le reglage lu ci-dessus.
+  {
+    int s = gfx::g_scale_setting;
+    if (const char *e = std::getenv("NJ_SCALE")) s = std::atoi(e);
+    if (s < 1) s = 1;
+    if (s > gfx::kMaxScale) s = gfx::kMaxScale;
+    gfx::g_scale = s;
+  }
   rt::hw::attach_hardware(rt::IoBus::get());
 
   const int w = gfx::efb_w(), h = gfx::efb_h();
@@ -138,6 +149,7 @@ bool init() {
   g_renderer = gx::make_gl_renderer();
   g_renderer->attach(nullptr);
   // ce que l'appli presente : 640 x 480 a l'echelle interne (comme presented_size)
+  njlink_src_size(w, h);
   njlink_gl_ready(640 * gfx::g_scale, 480 * gfx::g_scale);
   std::printf("[NJGFX] rendu Nightjar pret : EFB %dx%d, echelle %d\n", w, h, gfx::g_scale);
   g_failed = false;
@@ -582,6 +594,51 @@ static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned fra
         std::fclose(f);
         std::printf("[NJGFX] EFB de l'image %u ecrit : %s\n", frame, path);
       }
+    }
+  }
+  {   // NJ_UNIFORME=1 (15/11, ecran beige d'une cinematique en temps reel de r100) : toutes les 15 images, 9 points de
+      // l'EFB ; image uniforme et non noire -> EFB ecrit une fois (efb_uniforme_<n>.ppm, 3 au plus) et etat journalise.
+    static const bool on = std::getenv("NJ_UNIFORME") != nullptr;
+    static int dumps = 0;
+    if (on && dumps < 3 && frame % 15 == 0) {
+      unsigned char px[4];
+      int lo[3] = {255, 255, 255}, hi[3] = {0, 0, 0};
+      GLint cur = 0;
+      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &cur);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, g_efb_fbo);
+      for (int j = 0; j < 3; ++j)
+        for (int i = 0; i < 3; ++i) {
+          glReadPixels((120 + 200 * i) * s, gfx::efb_h() - (100 + 140 * j) * s, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
+          for (int k = 0; k < 3; ++k) { lo[k] = std::min(lo[k], (int)px[k]); hi[k] = std::max(hi[k], (int)px[k]); }
+        }
+      const bool uniform = hi[0] - lo[0] < 6 && hi[1] - lo[1] < 6 && hi[2] - lo[2] < 6 && hi[0] + hi[1] + hi[2] > 150;
+      if (uniform) {
+        ++dumps;
+        NjState st;
+        njstate_fill(&st);
+        std::printf("[UNIFORME] image %u : couleur %d,%d,%d partout, %zu dessins, mode %u salle %03x bits %05x\n", frame, hi[0], hi[1],
+                    hi[2], ndraws, (unsigned)st.mode, (unsigned)st.room, (unsigned)st.bits);
+        // premiere detection : enregistrement .dff des 6 images suivantes (rejeu FifoReplay sur PC, regle du 28/10 :
+        // un defaut vu sur l'appareil se rejoue d'abord sur PC, puis se compare dessin par dessin)
+        if (dumps == 1) {
+          nj::runtime::gx::rec::request(6);
+          g_gx_framelog_request = true;
+          std::printf("[UNIFORME] enregistrement .dff de 6 images demande\n");
+        }
+        const int w = gfx::efb_w(), h = gfx::efb_h();
+        std::vector<unsigned char> img((size_t)w * h * 4);
+        glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, img.data());
+        char path[320];
+        const char *d = std::getenv("NJ_STORAGE_DIR");
+        std::snprintf(path, sizeof path, "%s/efb_uniforme_%u.ppm", d ? d : ".", frame);
+        if (FILE *f = std::fopen(path, "wb")) {
+          std::fprintf(f, "P6 %d %d 255\n", w / s, h / s);   // reduite a 640x480 (un point sur s)
+          for (int y = h - 1; y >= 0; y -= s)
+            for (int x = 0; x < w; x += s) std::fwrite(&img[4 * ((size_t)y * w + x)], 1, 3, f);
+          std::fclose(f);
+        }
+      }
+      glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
     }
   }
   if (frame % 300 == 0) {   // diagnostic N3 : 64 points de l'EFB (moyenne RGB, points non noirs) et mode du jeu
