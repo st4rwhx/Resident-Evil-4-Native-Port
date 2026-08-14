@@ -50,7 +50,8 @@ GuestCpu *g_guest = nullptr;
 extern "C" void njlink_gl_ready(int w, int h);
 extern "C" void njlink_src_size(int w, int h);
 extern "C" void njlink_capture_state(void);   // port/njlink.cpp
-extern "C" void port_studio_event(const char *fmt, ...);   // port/studio.cpp   // port/njlink.cpp : taille de l EFB (copie par dessin)
+extern "C" void port_studio_event(const char *fmt, ...);   // port/studio.cpp
+extern "C" int port_studio_capture(void);   // port/studio.cpp   // port/njlink.cpp : taille de l EFB (copie par dessin)
 extern "C" void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h);
 // meme chose, image placee sur les lignes [dy, dy + dh) des 480 de l'image partagee (le reste en noir)
 extern "C" void njlink_frame_fbo2(unsigned fbo, int x, int y, int w, int h, int dy, int dh);
@@ -597,6 +598,25 @@ static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned fra
         std::fclose(f);
         std::printf("[NJGFX] EFB de l'image %u ecrit : %s\n", frame, path);
       }
+    }
+  }
+  if (port_studio_capture()) {   // Studio : commande « capture » -> studio_<image>.ppm, 640x480 (un point sur s)
+    const int w = gfx::efb_w(), h = gfx::efb_h();
+    std::vector<unsigned char> img((size_t)w * h * 4);
+    GLint cur = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &cur);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_efb_fbo);
+    glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, img.data());
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
+    char path[320];
+    const char *d = std::getenv("NJ_STORAGE_DIR");
+    std::snprintf(path, sizeof path, "%s/studio_%u.ppm", d ? d : ".", frame);
+    if (FILE *f = std::fopen(path, "wb")) {
+      std::fprintf(f, "P6 %d %d 255\n", w / s, h / s);
+      for (int y = h - 1; y >= 0; y -= s)
+        for (int x = 0; x < w; x += s) std::fwrite(&img[4 * ((size_t)y * w + x)], 1, 3, f);
+      std::fclose(f);
+      port_studio_event("capture %s", path);
     }
   }
   {   // NJ_UNIFORME=1 (15/11, ecran beige d'une cinematique en temps reel de r100) : toutes les 15 images, 9 points de

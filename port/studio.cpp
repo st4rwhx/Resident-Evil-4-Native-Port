@@ -57,6 +57,12 @@ int g_pad_sx = 0, g_pad_sy = 0, g_pad_cx = 0, g_pad_cy = 0;
 
 int g_text = -1;   // -1 : reglage d'origine (RE4_EPRINTF)
 
+// reglages en direct (S4 en germe) : nom -> valeur, lus par le portage avec port_knob()
+struct Knob { char name[24]; int value; };
+Knob g_knobs[32];
+int g_nknobs = 0;
+int g_capture = 0;   // capture demandee (lue par port/njgfx a la fin de l'image)
+
 void send_line(const char* s)
 {
     if (g_client < 0)
@@ -222,9 +228,26 @@ void handle(char* l)
         send_line(out);
         return;
     }
+    if (!std::strncmp(l, "reglage ", 8)) {   // reglage <nom> <valeur> : lu par port_knob(nom) sans recompiler
+        char name[24] = {0};
+        int v = 0;
+        if (std::sscanf(l + 8, "%23s %d", name, &v) == 2) {
+            int k = 0;
+            while (k < g_nknobs && std::strcmp(g_knobs[k].name, name)) ++k;
+            if (k == g_nknobs && g_nknobs < 32) { std::snprintf(g_knobs[k].name, sizeof g_knobs[k].name, "%s", name); ++g_nknobs; }
+            if (k < 32) g_knobs[k].value = v;
+            send_line("{\"ok\":\"reglage\"}");
+        } else send_line("{\"erreur\":\"reglage <nom> <valeur>\"}");
+        return;
+    }
+    if (!std::strcmp(l, "capture")) {   // image courante -> <stockage>/studio_<image>.ppm (640x480), lue par njgfx
+        g_capture = 1;
+        send_line("{\"ok\":\"capture a l'image suivante (studio_<n>.ppm)\"}");
+        return;
+    }
     if (!std::strcmp(l, "aide")) {
         send_line("{\"commandes\":[\"etat\",\"evenements\",\"outil <NOM>\",\"texte 0|1\",\"drapeau 60|64 <masque> 0|1\","
-                  "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\"]}");
+                  "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\",\"reglage <nom> <valeur>\",\"capture\"]}");
         return;
     }
     send_line("{\"erreur\":\"commande inconnue (aide)\"}");
@@ -246,6 +269,23 @@ extern "C" void port_studio_event(const char* fmt, ...)
 
 // Texte de debug : reglage du Studio, sinon RE4_EPRINTF (src/game/eprintf.cpp)
 extern "C" int port_studio_text(void) { return g_text; }
+
+// Capture demandee par le Studio : 1 une seule fois (port/njgfx)
+extern "C" int port_studio_capture(void)
+{
+    const int c = g_capture;
+    g_capture = 0;
+    return c;
+}
+
+// Reglage en direct (commande « reglage ») ; def si jamais pose
+extern "C" int port_knob(const char* name, int def)
+{
+    for (int k = 0; k < g_nknobs; ++k)
+        if (!std::strcmp(g_knobs[k].name, name))
+            return g_knobs[k].value;
+    return def;
+}
 
 // Manette imposee par le Studio (port/pad.cpp, apres celle de l'appli)
 extern "C" int port_studio_pad(PADStatus* s)

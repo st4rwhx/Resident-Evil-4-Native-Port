@@ -6,6 +6,9 @@
 
 #ifdef RE4_PORT
 extern "C" void* port_lc_base(void);
+#ifdef RE4_PORT
+extern "C" int port_knob(const char* name, int def);   // port/studio.cpp
+#endif
 #endif
 #include "pendulum.h"
 #include "pl_cloth.h"
@@ -240,6 +243,9 @@ void PenClothFixClear(cModel* m, PenCloth* c, int no)
 
 void PenClothMove(cModel* m, PenCloth* c)
 {
+#ifdef RE4_PORT
+    if (port_knob("cloth_off", 0)) return;   // Studio : simulation des cheveux et tissus coupee (enquete visages, 15/11)
+#endif
     Mtx mtx;
     Vec v;
     Vec wind;
@@ -577,6 +583,9 @@ void PenClothMove(cModel* m, PenCloth* c)
 // Variant with the stiffness ang (x4C) in the constraints and no motion wind.
 void PenClothMove2(cModel* m, PenCloth* c)
 {
+#ifdef RE4_PORT
+    if (port_knob("cloth_off", 0)) return;   // Studio : simulation des cheveux et tissus coupee (enquete visages, 15/11)
+#endif
     Mtx mtx;
     Vec v;
     Vec wind;
