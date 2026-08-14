@@ -547,10 +547,15 @@ void gxn_submitted(void)
     compare();
 }
 
+void gxn_part_measure(const void* list, u32 nbytes);   // gxn_mesure.inc (mesure G1)
+void gxn_part_frame();
+extern "C" int port_model_part = 0;   // pose par commonModelTrans (src/game/trans.cpp) autour de ses listes de modeles
+
 void gxn_frame(void)
 {
     if (!on()) return;
     if (S.in_begin) close_prim();
+    gxn_part_frame();
     if (++st.frames % 120) return;
     OSReport("[GXN] %u images : %u soumissions, %u comparaisons, %u ecarts ; sommets %u justes %u faux ; listes %u (%u Ko) : "
              "%u chargements par indice, etat CP %u XF %u BP %u, inconnus %u ; oracle absent %u\n",
@@ -832,6 +837,7 @@ void __wrap_GXSetScissorBoxOffset(s32 x, s32 y)
 void __wrap_GXCallDisplayList(void* list, u32 nbytes)
 {
     if (on()) scan_list((const u8*) list, nbytes, 0), note("GXCallDisplayList");
+    if (on() && port_model_part) gxn_part_measure(list, nbytes);   // etat du materiau pose : mesure G1
     __real_GXCallDisplayList(list, nbytes);   // la bibliotheque soumet : comparaison apres la lecture du flux
 }
 
@@ -841,3 +847,4 @@ void __wrap_GXCallDisplayList(void* list, u32 nbytes)
 #include "gxn_light.inc"   // etape 3 : canaux et lumieres
 #include "gxn_ind.inc"     // etape 5 : indirect et copies d'image
 #include "gxn_tex.inc"     // etape 4 : textures
+#include "gxn_mesure.inc"  // mesure G1 : parties de modeles et materiaux

@@ -30,6 +30,7 @@
 #include <dolphin/os/OSCache.h>   // LCGetBase : le tampon qui remplace le cache verrouille
 #include "ppc_quantize.h"
 extern "C" u32 port_gqr6(void);
+extern "C" int port_model_part;   // port/gxn.cpp : liste en cours = partie de modele (mesure G1, 14/11)
 #endif
 
 #line 1 "D:/Bio4/Prog/trans.cpp"
@@ -1280,7 +1281,13 @@ void commonModelTrans(cModel* m, cModelInfo* info, Mtx viewMat, int flag)
 #line 2044 "D:/Bio4/Prog/trans.cpp"
                 HALT();
             }
+#ifdef RE4_PORT
+            port_model_part = 1;
+#endif
             GXCallDisplayList(p, part->size);
+#ifdef RE4_PORT
+            port_model_part = 0;
+#endif
             part = (ModelPart*) (p + part->size);
             if (IND_STAGE_ID() != 0) {
                 GXSetNumIndStages(0);
