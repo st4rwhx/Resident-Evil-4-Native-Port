@@ -17,8 +17,16 @@ void Snd_str_dvd_read_sub(SND_STR_WORK* str)
     str->read_cnt--;
     dst = str->buff;
     dst += str->read_blk * str->read_size;
+#ifdef RE4_PORT
+    // Portage (15/11) : la lecture du portage est synchrone et appelle cb_dvd_read_end avant de rendre la main ; poser
+    // dvd_busy apres la remettait a 1 pour toujours (flux bloque en « pret » : ni musique ni voix des cinematiques).
+    // Sur GameCube le rappel arrive toujours apres : on pose le drapeau avant, comme le materiel le garantissait.
+    str->dvd_busy = 1;
+    DVDReadAsyncPrio(&str->dvd, dst, str->read_size, str->aram + str->read_ofs, cb_dvd_read_end, 0);
+#else
     DVDReadAsyncPrio(&str->dvd, dst, str->read_size, str->aram + str->read_ofs, cb_dvd_read_end, 0);
     str->dvd_busy = 1;
+#endif
     str->read_ofs += str->read_size;
     if (str->read_ofs < str->read_end) {
         return;
@@ -49,6 +57,27 @@ void Snd_str_aram_dma_sub(SND_STR_WORK* str)
     src = str->buff;
     src += str->dma_blk * str->read_size;
     ofs = str->dma_aram_blk * str->blk_half;
+#ifdef RE4_PORT
+    // Meme cause que la lecture : ARQPostRequest appelle cb_aram_dma_end tout de suite (dma_busy remis a 0, puis
+    // dma_aram_blk avance). On pose dma_busy et on lit les predicteurs du premier bloc AVANT la copie.
+    str->dma_busy = 1;
+    if (str->dma_aram_blk == 0) {
+        str->pred_L = src[0];
+        if (!(str->flag & 0x2)) {
+            str->pred_R = src[0x4000];
+        }
+    }
+    if (str->flag & 0x1) {
+        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
+                       str->blk_half, NULL);
+        ARQPostRequest(&str->arqR, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) (src + 0x4000),
+                       str->aram_R + ofs, str->blk_half, cb_aram_dma_end);
+    } else {
+        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
+                       str->blk_half, cb_aram_dma_end);
+    }
+    return;
+#endif
     if (str->flag & 0x1) {
         ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
                        str->blk_half, NULL);
