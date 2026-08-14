@@ -87,15 +87,61 @@ struct G1 {
 } g1;
 unsigned g1_parts_this_frame = 0;
 
+// Decomposition par poste (14/11) : qu'est-ce qui varie vraiment d'une image a l'autre ?
+enum { K_TEV, K_ALPHA_FOG, K_TEXGEN, K_CHAN, K_LMASK, K_IND, K_TEXFMT, K_TEVCOL, K_TEX, K_MATCOL, K_PIXEL, K_N };
+const char* const kKName[K_N] = {"tev", "alpha/brouillard", "generateurs", "canaux", "masque lumieres", "indirect",
+                                 "formats tex", "couleurs tev", "textures", "couleurs matiere", "melange/z/face"};
+void component_keys(uint64_t* k)
+{
+    Fnv f[K_N];
+    f[K_TEV].add(P.n_stages);
+    for (int i = 0; i < P.n_stages && i < 16; ++i) f[K_TEV].add(P.st[i]);
+    f[K_TEV].add(P.swap);
+    f[K_ALPHA_FOG].add(P.acmp0), f[K_ALPHA_FOG].add(P.aop), f[K_ALPHA_FOG].add(P.acmp1), f[K_ALPHA_FOG].add(P.fog_type),
+        f[K_ALPHA_FOG].add(P.dst_alpha_en);
+    f[K_TEXGEN].add(S.n_texgens);
+    for (int i = 0; i < S.n_texgens && i < 8; ++i)
+        f[K_TEXGEN].add(S.tg[i].func), f[K_TEXGEN].add(S.tg[i].src), f[K_TEXGEN].add(S.tg[i].normalize);
+    f[K_CHAN].add(L.n_chans);
+    for (int i = 0; i < 4; ++i)
+        f[K_CHAN].add(L.ctrl[i].enable), f[K_CHAN].add(L.ctrl[i].amb_src), f[K_CHAN].add(L.ctrl[i].mat_src),
+            f[K_CHAN].add(L.ctrl[i].diff_fn), f[K_CHAN].add(L.ctrl[i].attn_fn), f[K_LMASK].add(L.ctrl[i].light_mask);
+    f[K_IND].add(I);
+    for (int i = 0; i < 8; ++i) f[K_TEXFMT].add(T.unit[i].fmt), f[K_TEXFMT].add(T.unit[i].ci);
+    f[K_TEVCOL].add(P.tev_reg), f[K_TEVCOL].add(P.kcolor), f[K_TEVCOL].add(P.aref0), f[K_TEVCOL].add(P.aref1);
+    for (int i = 0; i < 8; ++i)
+        if (T.unit_set[i]) f[K_TEX].add(T.unit[i]);
+    f[K_MATCOL].add(L.amb), f[K_MATCOL].add(L.mat);
+    f[K_PIXEL].add(P.blend_type), f[K_PIXEL].add(P.blend_src), f[K_PIXEL].add(P.blend_dst), f[K_PIXEL].add(P.logic_op),
+        f[K_PIXEL].add(P.color_update), f[K_PIXEL].add(P.alpha_update), f[K_PIXEL].add(P.z_enable),
+        f[K_PIXEL].add(P.z_func), f[K_PIXEL].add(P.z_update), f[K_PIXEL].add(P.dst_alpha), f[K_PIXEL].add(S.cull);
+    for (int i = 0; i < K_N; ++i) k[i] = f[i].h;
+}
+struct G1K {
+    HSet<8192> distinct[K_N];
+    HMap<8192> last[K_N];
+    unsigned changed[K_N], seen[K_N];
+} g1k;
+
 }  // namespace
 
 void gxn_part_measure(const void* list, u32 nbytes)
 {
     const uint64_t sk = shader_key(), mk = material_key(sk);
+    {
+        uint64_t k[K_N];
+        component_keys(k);
+        const uint64_t id = ((uint64_t) (uintptr_t) list << 32 | nbytes) ^ ((uint64_t) (u32) port_model_part * 0x9E3779B97F4A7C15ull);
+        for (int i = 0; i < K_N; ++i) {
+            g1k.distinct[i].insert(k[i]);
+            const int r = g1k.last[i].put(id, k[i]);
+            if (r) ++g1k.seen[i], g1k.changed[i] += r == 2;
+        }
+    }
     ++g1.parts, ++g1_parts_this_frame;
     g1.shaders.insert(sk);
     g1.materials.insert(mk);
-    const int r = g1.last.put((uint64_t) (uintptr_t) list << 32 | nbytes, mk);
+    const int r = g1.last.put(((uint64_t) (uintptr_t) list << 32 | nbytes) ^ ((uint64_t) (u32) port_model_part * 0x9E3779B97F4A7C15ull), mk);
     if (r == 0) ++g1.fresh;
     else if (r == 1) ++g1.same;
     else ++g1.changed;
@@ -111,6 +157,16 @@ void gxn_part_frame()
              "parties connues : materiau identique %u, change %u (%.1f %%) ; nouvelles %u ; listes suivies %u\n",
              g1.frames, (double) g1.parts / g1.frames, g1.shaders.n, g1.materials.n, g1.same,
              g1.changed, seen ? 100.0 * g1.changed / seen : 0.0, g1.fresh, g1.last.n);
+    {
+        char line[640];
+        int n = 0;
+        for (int i = 0; i < K_N && n < 600; ++i) {
+            n += snprintf(line + n, sizeof line - n, " %s %u/%.0f%%", kKName[i], g1k.distinct[i].n,
+                          g1k.seen[i] ? 100.0 * g1k.changed[i] / g1k.seen[i] : 0.0);
+            g1k.distinct[i].clear(), g1k.changed[i] = g1k.seen[i] = 0;
+        }
+        OSReport("[G1] par poste (distincts/change d'une image a l'autre) :%s\n", line);
+    }
     g1.parts = g1.frames = g1.same = g1.changed = g1.fresh = 0;
     g1.shaders.clear();
     g1.materials.clear();

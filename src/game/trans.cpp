@@ -1282,7 +1282,7 @@ void commonModelTrans(cModel* m, cModelInfo* info, Mtx viewMat, int flag)
                 HALT();
             }
 #ifdef RE4_PORT
-            port_model_part = 1;
+            port_model_part = (int) (u32) m;   // identite du modele : chaque instance suivie a part
 #endif
             GXCallDisplayList(p, part->size);
 #ifdef RE4_PORT
