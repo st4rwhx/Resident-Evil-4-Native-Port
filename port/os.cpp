@@ -368,7 +368,9 @@ static u64 host_ns()
 OSTime OSGetTime(void)
 {
     static const u64 t0 = host_ns();
-    return (OSTime)(((host_ns() - t0) / 1000ull) * (TB_HZ / 1000000ull));
+    // 40,5 MHz = 405 tops par 10 000 ns. Avant le 15/11 : (TB_HZ / 1000000) en entiers = 40, l'horloge du jeu
+    // retardait de 1,25 % (battement de 60 images lu 1977 ms au lieu de 2002).
+    return (OSTime)((host_ns() - t0) * 405ull / 10000ull);
 }
 
 OSTick OSGetTick(void) { return (OSTick)OSGetTime(); }
