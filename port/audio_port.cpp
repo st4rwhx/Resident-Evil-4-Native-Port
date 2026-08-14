@@ -30,6 +30,7 @@ extern "C" void* port_aram_host(u32 addr, u32 length);   // port/aram.cpp
 extern "C" u32 __AXGetNumVoices(void);
 extern "C" u32 port_ax_acq_calls, port_ax_acq_ok, port_ax_state_on;   // src/lib/AXAlloc.c
 extern "C" void port_snd_str_debug(void);
+extern "C" int port_host_scope;   // port/arm_hooks.cpp
 extern "C" void port_snd_flags_debug(void);
 extern "C" void port_evt_debug(void);
 extern "C" void port_dc_debug(void);
@@ -241,7 +242,11 @@ DSPTaskInfo* DSPCancelTask(DSPTaskInfo* task)
 void DSPSendMailToDSP(u32 mail)
 {
     if (g_mail_state == 1) {                      // l'adresse de la liste de commandes : on mixe l'image
+        // Le mixeur (runtime Nightjar, C++) tourne sur le fil du jeu : ses allocations ne doivent pas aller dans le tas du
+        // jeu (15/11 : tas plein -> operator new(0) rendait 0 -> plantage dans le mixeur, r100 apres 10 400 images).
+        ++port_host_scope;
         nj::runtime::hle::ax_hle_command_list(mail, g_list_words);
+        --port_host_scope;
         ++g_mixed;
         g_mail_state = 0;
         g_resume_pending = true;
