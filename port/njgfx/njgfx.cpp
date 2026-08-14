@@ -548,6 +548,42 @@ static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned fra
     if (++n == 30) { std::printf("[TAKE] rendu GL (draw_frame) %.1f ms par image\n", acc / n); acc = 0; n = 0; }
   }
   const int s = gfx::g_scale;
+  {   // NJ_DUMP_AT=2400,3000,... : EFB complet de ces images dans <stockage>/efb_<n>.ppm (banc A/B au pixel, G1, 14/11).
+      // L'EFB plutot que l'image partagee : avant presentation, et lisible partout (MuMu relit noire l'image partagee).
+    static unsigned at[16];
+    static const int n_at = [] {
+      const char *e = std::getenv("NJ_DUMP_AT");
+      int n = 0;
+      for (const char *q = e; q && *q && n < 16;) {
+        at[n++] = (unsigned)std::strtoul(q, nullptr, 10);
+        const char *c = std::strchr(q, ',');
+        if (!c) break;
+        q = c + 1;
+      }
+      return n;
+    }();
+    bool want = false;
+    for (int k = 0; k < n_at; ++k) want |= frame == at[k];
+    if (want) {
+      const int w = gfx::efb_w(), h = gfx::efb_h();
+      std::vector<unsigned char> img((size_t)w * h * 4);
+      GLint cur = 0;
+      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &cur);
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, g_efb_fbo);
+      glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, img.data());
+      glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)cur);
+      char path[320];
+      const char *d = std::getenv("NJ_STORAGE_DIR");
+      std::snprintf(path, sizeof path, "%s/efb_%u.ppm", d ? d : ".", frame);
+      if (FILE *f = std::fopen(path, "wb")) {
+        std::fprintf(f, "P6 %d %d 255\n", w, h);
+        for (int y = h - 1; y >= 0; --y)
+          for (int x = 0; x < w; ++x) std::fwrite(&img[4 * ((size_t)y * w + x)], 1, 3, f);
+        std::fclose(f);
+        std::printf("[NJGFX] EFB de l'image %u ecrit : %s\n", frame, path);
+      }
+    }
+  }
   if (frame % 300 == 0) {   // diagnostic N3 : 64 points de l'EFB (moyenne RGB, points non noirs) et mode du jeu
     unsigned char px[4];
     unsigned sum[3] = {0, 0, 0}, lit = 0;

@@ -347,9 +347,28 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
                     sum += px[0] + px[1] + px[2];
                     lit += (px[0] | px[1] | px[2]) > 8;
                 }
-            if (n_meas == 2400 || n_meas == 2700) {   // image complete dans un fichier (PPM), dossier de l'appli
-                static unsigned char img[640 * 480 * 4];
-                if (g_w <= 640 && g_h <= 480) {
+            // image complete dans un fichier (PPM), dossier de l'appli. NJ_DUMP_AT=2400,3000,... (multiples de 300) :
+            // images choisies, pour la comparaison A/B au pixel (banc G1, 14/11) ; defaut 2400 et 2700.
+            static unsigned dump_at[16] = {2400, 2700};
+            static int n_dump = [] {
+                const char* e = std::getenv("NJ_DUMP_AT");
+                if (!e) return 2;
+                int n = 0;
+                for (const char* q = e; *q && n < 16;) {
+                    dump_at[n++] = (unsigned) std::strtoul(q, nullptr, 10);
+                    const char* c = std::strchr(q, ',');
+                    if (!c) break;
+                    q = c + 1;
+                }
+                return n;
+            }();
+            bool want = false;
+            for (int k = 0; k < n_dump; ++k) want |= n_meas == dump_at[k];
+            if (want) {
+                static unsigned char* img = nullptr;
+                static size_t img_size = 0;
+                if (img_size < (size_t) g_w * g_h * 4) img = (unsigned char*) std::realloc(img, img_size = (size_t) g_w * g_h * 4);
+                if (img) {
                     glReadPixels(0, 0, g_w, g_h, GL_RGBA, GL_UNSIGNED_BYTE, img);
                     char path[300];
                     const char* d = std::getenv("NJ_STORAGE_DIR");
