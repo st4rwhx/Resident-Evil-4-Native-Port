@@ -120,7 +120,7 @@ def units():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=max(4, (os.cpu_count() or 4)))
-    ap.add_argument('--out', default=os.path.join(ROOT, '_port_build'))
+    ap.add_argument('--out', default=os.path.join(ROOT, '_port_build_x86' if os.environ.get('PORT_ABI') == 'x86' else '_port_build'))
     ap.add_argument('--link', action='store_true')
     ap.add_argument('--quiet', action='store_true')
     ap.add_argument('--maxerr', type=int, default=15)
@@ -131,8 +131,11 @@ def main():
     if not ndk:
         sys.exit('definir NDK sur la racine de android-ndk-r26d')
     bindir = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin')
-    cxx = os.path.join(bindir, 'armv7a-linux-androideabi28-clang++.cmd')
-    cc = os.path.join(bindir, 'armv7a-linux-androideabi28-clang.cmd')
+    # PORT_ABI=x86 (14/11, banc G0) : meme code, Android x86 32 bits (MuMu sur le PC) ; meme modele memoire que
+    # l'ARM32 (pointeurs 32 bits, petit-boutiste). Defaut : ARM32, le telephone.
+    triple = 'i686-linux-android28' if os.environ.get('PORT_ABI') == 'x86' else 'armv7a-linux-androideabi28'
+    cxx = os.path.join(bindir, triple + '-clang++.cmd')
+    cc = os.path.join(bindir, triple + '-clang.cmd')
     for t in (cxx, cc):
         if not os.path.exists(t):
             sys.exit('compilateur introuvable : %s' % t)

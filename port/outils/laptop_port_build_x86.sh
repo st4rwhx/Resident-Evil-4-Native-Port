@@ -1,0 +1,14 @@
+#!/bin/bash
+# Phase N1 : notre port natif (re4-decomp-upstream + port/) compile sur le PORTABLE (ARM32, -O2 par defaut).
+#   laptop_port_build.sh [PORT_OPT]
+set -e
+H=admin@192.168.1.124
+S="C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream"
+OPT="${1:--O2}"
+ssh -o ConnectTimeout=8 $H "mkdir -p /c/re4n/re4port"
+tar cf - -C "$S" --exclude=./.git --exclude=./_port_build --exclude=./_port_dbg . | ssh $H "cd /c/re4n/re4port && tar xf - 2>/dev/null"
+# collision de casse src/Tools / src/tools (NTFS) : contenus pris dans git, minuscules -> src/tools_lc, modules.py ajuste
+python "$(dirname "$0")/casse_tar.py" "$S" | ssh $H "cd /c/re4n/re4port && tar xf - && sed -i 's|\"tools/|\"tools_lc/|g' config/G4BE08/modules.py && grep -rl \"#include \\\"tools/\" src include | xargs -r sed -i 's|#include \"tools/|#include \"tools_lc/|g'"
+ssh $H "cd /c/re4n/re4port && find port src include -mmin -600 -type f -exec touch {} + 2>/dev/null; true"
+# ordre d'origine : objets du DOL (build_rel lit _port_build_x86/obj pour savoir ce que le DOL definit), modules REL, puis lien
+ssh -o ServerAliveInterval=15 $H "cd /c/re4n/re4port && export PORT_ABI=x86 && T0=\$(date +%s) && export NDK=C:/android/android-ndk-r26d PORT_OPT='$OPT' && /c/Python314/python port/build_game.py --jobs 12 --quiet > /c/re4n/re4port_dol_x86.log 2>&1; tail -1 /c/re4n/re4port_dol_x86.log; /c/Python314/python port/build_rel.py --jobs 12 > /c/re4n/re4port_rel_x86.log 2>&1; tail -3 /c/re4n/re4port_rel_x86.log; B=/c/android/android-ndk-r26d/toolchains/llvm/prebuilt/windows-x86_64/bin; L=C:/re4n/android-x86-m1; \$B/clang++.exe --target=i686-none-linux-android24 -DNJ_DEVTOOLS=1 -DNJ_MOBILE=1 -DNJ_NO_WATCH -DANDROID -DNDEBUG -IC:/re4n/nj-m1/runtime/include -IC:/re4n/nj-m1/runtime/third_party/zstd -I\$L/_deps/sdl2-build/include -I\$L/_deps/sdl2-build/include/SDL2 -O2 -std=gnu++20 -funwind-tables -c port/njgfx/njgfx.cpp -o _port_build_x86/njgfx.o > /c/re4n/re4port_njgfx_x86.log 2>&1 || { echo pont_en_echec; head -20 /c/re4n/re4port_njgfx_x86.log; }; RE4_EXTRA_LINK=\"_port_build_x86/njgfx.o \$L/runtime/libnjruntime.a \$L/runtime/libnj_imgui.a \$L/_deps/sdl2-build/libSDL2.a -lOpenSLES -lGLESv1_CM -lm -ldl @port/gxn_wrap.rsp\" /c/Python314/python port/build_game.py --link --quiet --jobs 12 > /c/re4n/re4port_build_x86.log 2>&1; \$B/i686-linux-android28-clang++.cmd @_port_build_x86/game.rsp -o _port_build_x86/re4 -lEGL -lGLESv3 -llog -landroid -static-libstdc++ -Wl,--error-limit=0 _port_build_x86/njgfx.o \$L/runtime/libnjruntime.a \$L/runtime/libnj_imgui.a \$L/_deps/sdl2-build/libSDL2.a -lOpenSLES -lGLESv1_CM -lm -ldl -Wl,--allow-multiple-definition -Wl,--wrap=memset -Wl,--wrap=calloc -Wl,--wrap=malloc @port/gxn_wrap.rsp > /c/re4n/re4port_link_x86.log 2>&1; R=\$?; grep -E \"error\" /c/re4n/re4port_link_x86.log | sort -u | head -10; echo \"build=\$R duree=\$(( \$(date +%s) - T0 )) s\"; tail -12 /c/re4n/re4port_build_x86.log | cut -c1-220; ls -la _port_build_x86/re4 2>&1"

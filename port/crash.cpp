@@ -107,14 +107,26 @@ _Unwind_Reason_Code on_frame(struct _Unwind_Context *ctx, void *)
     return (++g_depth >= 32) ? _URC_END_OF_STACK : _URC_NO_REASON;
 }
 
+// Registres du contexte de signal : ARM32 (telephone) ou x86 32 bits (banc G0 dans MuMu, 14/11 ; pas de registre de
+// lien sur x86 : l'appelant est le mot en sommet de pile).
+#if defined(__i386__)
+#define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.gregs[REG_EIP])
+#define CTX_LR(uc) (*(const unsigned long *) (uc)->uc_mcontext.gregs[REG_ESP])
+#define CTX_FAULT(uc, info) ((unsigned long) (info)->si_addr)
+#else
+#define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.arm_pc)
+#define CTX_LR(uc) ((unsigned long) (uc)->uc_mcontext.arm_lr)
+#define CTX_FAULT(uc, info) ((unsigned long) (uc)->uc_mcontext.fault_address)
+#endif
+
 void on_fault(int sig, siginfo_t *info, void *ctx)
 {
     // Les messages du jeu (printf de cLog, erreurs d'allocation...) sont dans le tampon de stdout :
     // sans ce vidage ils disparaissent avec le processus, et ce sont eux qui disent la cause.
     std::fflush(stdout);
     const ucontext_t *uc = (const ucontext_t *) ctx;
-    const unsigned long pc = (unsigned long) uc->uc_mcontext.arm_pc;
-    const unsigned long fault = (unsigned long) uc->uc_mcontext.fault_address;
+    const unsigned long pc = CTX_PC(uc);
+    const unsigned long fault = CTX_FAULT(uc, info);
     compute_load_bias(pc);
 
     std::printf("\n[PORT] signal %d, adresse fautive %p\n", sig, info->si_addr);
@@ -124,7 +136,7 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
     // `lr` nomme l appelant : quand la faute vient d un saut sur un pointeur nul, c est la
     // seule valeur qui reste exploitable.
     {
-        const unsigned long lr = (unsigned long) uc->uc_mcontext.arm_lr;
+        const unsigned long lr = CTX_LR(uc);
         const unsigned long save = g_load_bias;
         char save_mod[256];
         std::memcpy(save_mod, g_module, sizeof(save_mod));
@@ -135,6 +147,14 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
         g_load_bias = save;
         std::memcpy(g_module, save_mod, sizeof(g_module));
     }
+#if defined(__i386__)
+    {
+        const greg_t *g = uc->uc_mcontext.gregs;
+        std::printf("[PORT] eax ebx ecx edx esi edi ebp esp : %lx %lx %lx %lx %lx %lx %lx %lx\n", (unsigned long) g[REG_EAX],
+                    (unsigned long) g[REG_EBX], (unsigned long) g[REG_ECX], (unsigned long) g[REG_EDX], (unsigned long) g[REG_ESI],
+                    (unsigned long) g[REG_EDI], (unsigned long) g[REG_EBP], (unsigned long) g[REG_ESP]);
+    }
+#else
     std::printf("[PORT] r0-r12 : %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx  sp=%lx\n",
                 (unsigned long) uc->uc_mcontext.arm_r0, (unsigned long) uc->uc_mcontext.arm_r1,
                 (unsigned long) uc->uc_mcontext.arm_r2, (unsigned long) uc->uc_mcontext.arm_r3,
@@ -143,6 +163,7 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
                 (unsigned long) uc->uc_mcontext.arm_r8, (unsigned long) uc->uc_mcontext.arm_r9,
                 (unsigned long) uc->uc_mcontext.arm_r10, (unsigned long) uc->uc_mcontext.arm_fp,
                 (unsigned long) uc->uc_mcontext.arm_ip, (unsigned long) uc->uc_mcontext.arm_sp);
+#endif
     std::printf("[PORT] pile :\n");
     g_depth = 0;
     _Unwind_Backtrace(on_frame, nullptr);
@@ -164,7 +185,7 @@ void on_dump(int, siginfo_t *, void *ctx)
     while (__sync_lock_test_and_set(&g_dump_busy, 1))
         ;
     ucontext_t *uc = (ucontext_t *) ctx;
-    const unsigned long pc = (unsigned long) uc->uc_mcontext.arm_pc, lr = (unsigned long) uc->uc_mcontext.arm_lr;
+    const unsigned long pc = CTX_PC(uc), lr = CTX_LR(uc);
     g_load_bias = 0;
     compute_load_bias(pc);
     std::printf("[BLOQUE] fil %d : pc = %s + 0x%lx", (int) gettid(), g_module[0] ? g_module : "?", pc - g_load_bias);

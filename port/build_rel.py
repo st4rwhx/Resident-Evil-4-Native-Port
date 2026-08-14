@@ -68,15 +68,43 @@ RE_ASMEMPTY = re.compile(r'\basm\s*(?:volatile\s*)?\(\s*""[^;\n]*\)\s*;')
 STATIC_VARS = ['em21_trap_cam', 'em2a_rescue_cam', 'sceAtCur', 'sceItemCur', 'scrollWorkPtr']
 
 
-def sanitize(path, out_dir, key):
-    txt = open(path, encoding='utf-8', errors='replace', newline='').read()
+def _clean(txt):
     new = RE_REGPIN.sub(r'\1 \2', txt)
     new = RE_ASMEMPTY.sub(';', new)
     for nm_ in STATIC_VARS:
         new = re.sub(r'\bstatic\s+((?:const\s+)?[A-Za-z_][\w:<>\*]*\s+\**)(%s)\b' % nm_, r'\1\2', new)
-    if new == txt:
+    return new
+
+
+RE_INC_CPP = re.compile(r'#include\s+"([^"]+\.cpp)"')
+
+
+def sanitize(path, out_dir, key):
+    txt = open(path, encoding='utf-8', errors='replace', newline='').read()
+    new = _clean(txt)
+    # x86 (banc G0, 14/11) : un .cpp qui en inclut un autre (db_light_v2.cpp -> db_light.cpp) gardait les registres
+    # epingles du fichier inclus (« r0 » n'existe pas sur x86). On nettoie aussi l'inclus, copie a cote. Sur ARM, rien
+    # ne change (ces noms de registres y existent ; construction du telephone identique).
+    incs = []
+    if os.environ.get('PORT_ABI') == 'x86':
+        for inc in RE_INC_CPP.findall(txt):
+            ip = os.path.join(os.path.dirname(path), inc)
+            if os.path.exists(ip):
+                it = open(ip, encoding='utf-8', errors='replace', newline='').read()
+                nt = _clean(it)
+                if nt != it:
+                    incs.append((inc, nt))
+    if new == txt and not incs:
         return path
-    dst = os.path.join(out_dir, key)
+    if incs:
+        d = os.path.join(out_dir, key + '.d')
+        for inc, nt in incs:
+            os.makedirs(os.path.dirname(os.path.join(d, inc)), exist_ok=True)
+            with open(os.path.join(d, inc), 'w', encoding='utf-8', newline='') as fh:
+                fh.write(nt)
+        dst = os.path.join(d, os.path.basename(path))
+    else:
+        dst = os.path.join(out_dir, key)
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     with open(dst, 'w', encoding='utf-8', newline='') as fh:
         fh.write(new)
@@ -95,7 +123,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=6)
     ap.add_argument('--only', default='')
-    ap.add_argument('--out', default=os.path.join(ROOT, '_port_build', 'rel'))
+    BASE = '_port_build_x86' if os.environ.get('PORT_ABI') == 'x86' else '_port_build'
+    ap.add_argument('--out', default=os.path.join(ROOT, BASE, 'rel'))
     ap.add_argument('--maxerr', type=int, default=20)
     args = ap.parse_args()
 
@@ -103,7 +132,16 @@ def main():
     if not ndk:
         sys.exit('definir NDK')
     bindir = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin')
-    cxx = os.path.join(bindir, 'armv7a-linux-androideabi28-clang++.cmd')
+    # PORT_ABI=x86 : Android x86 32 bits (banc G0, MuMu), voir build_game.py.
+    x86 = os.environ.get('PORT_ABI') == 'x86'
+    cxx = os.path.join(bindir, ('i686-linux-android28' if x86 else 'armv7a-linux-androideabi28') + '-clang++.cmd')
+    asm_flags = [] if x86 else ['-march=armv7-a']
+
+    def alias_text(stubs):   # saut vers la vraie fonction : Thumb-2 sur ARM, jmp sur x86
+        if x86:
+            return ''.join('.globl %s\n.type %s,@function\n%s:\n    jmp %s\n' % (u, u, u, t) for u, t in stubs)
+        return '.syntax unified\n.thumb\n' + ''.join(
+            '.globl %s\n.type %s,%%function\n.thumb_func\n%s:\n    b.w %s\n' % (u, u, u, t) for u, t in stubs)
     objcopy = os.path.join(bindir, 'llvm-objcopy.exe')
     nm = os.path.join(bindir, 'llvm-nm.exe')
 
@@ -229,7 +267,7 @@ def main():
                     res.setdefault(g2, a)
         return res
 
-    dol_objs = sorted(glob.glob(os.path.join(ROOT, '_port_build', 'obj', '*.o')))
+    dol_objs = sorted(glob.glob(os.path.join(ROOT, BASE, 'obj', '*.o')))
     g2map = defined_funcs(dol_objs)
     # Les fonctions `extern "C"` n'ont pas de signature dans leur nom : on les retrouve par leur nom nu.
     c_funcs = set()
@@ -274,11 +312,9 @@ def main():
             continue
         sp = os.path.join(args.out, mod + '.alias.s')
         with open(sp, 'w') as fh:
-            fh.write('.syntax unified\n.thumb\n')
-            for u, tgt in stubs:
-                fh.write('.globl %s\n.type %s,%%function\n.thumb_func\n%s:\n    b.w %s\n' % (u, u, u, tgt))
+            fh.write(alias_text(stubs))
         so = os.path.join(args.out, mod + '.alias.o')
-        r = run([cxx, '-c', '-march=armv7-a', '-o', rel(so), rel(sp)])
+        r = run([cxx, '-c'] + asm_flags + ['-o', rel(so), rel(sp)])
         if r.returncode != 0:
             print('   alias %s : %s' % (mod, (r.stderr or '').strip()[:200]))
             continue
@@ -311,10 +347,8 @@ def main():
             dol_stubs.append((u, tgt))
     sp = os.path.join(args.out, 'dol_alias.s')
     with open(sp, 'w') as fh:
-        fh.write('.syntax unified\n.thumb\n')
-        for u, tgt in dol_stubs:
-            fh.write('.globl %s\n.type %s,%%function\n.thumb_func\n%s:\n    b.w %s\n' % (u, u, u, tgt))
-    r = run([cxx, '-c', '-march=armv7-a', '-o', rel(os.path.join(args.out, 'dol_alias.o')), rel(sp)])
+        fh.write(alias_text(dol_stubs))
+    r = run([cxx, '-c'] + asm_flags + ['-o', rel(os.path.join(args.out, 'dol_alias.o')), rel(sp)])
     if r.returncode != 0:
         print('   alias du DOL : %s' % (r.stderr or '').strip()[:200])
     print('%d alias de noms GCC 2.95 (+%d pour le DOL)' % (n_alias, len(dol_stubs)))
@@ -334,7 +368,7 @@ def main():
     # le meme binaire, il faut donc garder globaux les symboles que quelqu'un d'autre reclame -
     # et eux seuls, pour que les centaines de `set`, `pRj`, `cEmControl` homonymes restent prives.
     dol_def, dol_und = set(), set()
-    dol_objs = sorted(glob.glob(os.path.join(ROOT, '_port_build', 'obj', '*.o')))
+    dol_objs = sorted(glob.glob(os.path.join(ROOT, BASE, 'obj', '*.o')))
     for k in range(0, len(dol_objs), 80):
         chunk = [rel(o) for o in dol_objs[k:k + 80]]
         for l in run([nm, '--defined-only', '-g'] + chunk).stdout.splitlines():
