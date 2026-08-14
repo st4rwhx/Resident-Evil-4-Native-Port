@@ -123,6 +123,18 @@ struct G1K {
     unsigned changed[K_N], seen[K_N];
 } g1k;
 
+// Partage des maillages et regroupements possibles (14/11) : par image, listes distinctes, parties fixes (tableau de
+// positions identique a la rencontre precedente de la meme instance) ou animees (tampon de peau en double), opaques
+// (sans melange), et suites de parties VOISINES (aucune autre liste entre elles) au materiau identique (hors indirect).
+struct G1M {
+    HSet<4096> lists_frame;
+    HMap<8192> pos_last;
+    unsigned frame_lists, statics, dynamics, opaques, runs, run_parts;
+    unsigned sum_lists, sum_statics, sum_dynamics, sum_opaques, sum_runs;
+    uint64_t prev_mat;
+    u32 prev_listcount;
+} g1m;
+
 }  // namespace
 
 void gxn_part_measure(const void* list, u32 nbytes)
@@ -137,6 +149,21 @@ void gxn_part_measure(const void* list, u32 nbytes)
             const int r = g1k.last[i].put(id, k[i]);
             if (r) ++g1k.seen[i], g1k.changed[i] += r == 2;
         }
+        // partage, fixe/anime, opaque, suites voisines
+        Fnv m;
+        for (int i = 0; i < K_N; ++i)
+            if (i != K_IND) m.add(k[i]);
+        const unsigned before = g1m.lists_frame.n;
+        g1m.lists_frame.insert((uint64_t) (uintptr_t) list << 32 | nbytes);
+        (void) before;
+        const int pr = g1m.pos_last.put(id, S.arr_base[0]);   // tableau GX_VA_POS
+        if (pr == 1) ++g1m.statics;
+        else if (pr == 2) ++g1m.dynamics;
+        if (P.blend_type == GX_BM_NONE) ++g1m.opaques;
+        const bool adjacent = g1m.prev_listcount && st.lists == g1m.prev_listcount + 1;
+        if (!(adjacent && m.h == g1m.prev_mat)) ++g1m.runs;
+        g1m.prev_mat = m.h;
+        g1m.prev_listcount = st.lists;
     }
     ++g1.parts, ++g1_parts_this_frame;
     g1.shaders.insert(sk);
@@ -151,7 +178,20 @@ void gxn_part_frame()
 {
     if (!g1_parts_this_frame) return;   // VIFlush sans image du jeu
     g1_parts_this_frame = 0;
+    g1m.sum_lists += g1m.lists_frame.n, g1m.sum_statics += g1m.statics, g1m.sum_dynamics += g1m.dynamics,
+        g1m.sum_opaques += g1m.opaques, g1m.sum_runs += g1m.runs;
+    g1m.lists_frame.clear();
+    g1m.statics = g1m.dynamics = g1m.opaques = g1m.runs = 0;
+    g1m.prev_listcount = 0;
     if (++g1.frames < 300) return;
+    {
+        const double f = g1.frames, parts = (double) g1.parts / f;
+        OSReport("[G1] dessins par image : %.0f parties, %.0f listes distinctes (%.1f parties par liste) ; fixes %.0f, animees "
+                 "%.0f ; opaques %.0f ; suites voisines de meme materiau %.0f (fusion exacte : %.0f -> %.0f dessins)\n",
+                 parts, g1m.sum_lists / f, g1m.sum_lists ? g1.parts / (double) g1m.sum_lists : 0.0, g1m.sum_statics / f,
+                 g1m.sum_dynamics / f, g1m.sum_opaques / f, g1m.sum_runs / f, parts, g1m.sum_runs / f);
+        g1m.sum_lists = g1m.sum_statics = g1m.sum_dynamics = g1m.sum_opaques = g1m.sum_runs = 0;
+    }
     const unsigned seen = g1.same + g1.changed;
     OSReport("[G1] %u images : %.0f parties de modeles par image ; nuanceurs distincts %u, materiaux distincts %u ; "
              "parties connues : materiau identique %u, change %u (%.1f %%) ; nouvelles %u ; listes suivies %u\n",
