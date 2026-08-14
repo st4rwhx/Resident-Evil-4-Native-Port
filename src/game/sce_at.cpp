@@ -360,8 +360,8 @@ SceAtWork* sceAtGetOtAddr(SceAtWork* p)
     u32 v;
 
     while ((v = p->next) != 0xFFFFFFFF) {
-        p = (SceAtWork*) (v | 0x80000000);
-        if ((s32) v < 0) {
+        p = (SceAtWork*) OT_ADDR(v);
+        if (OT_IS_PRIM(v)) {
             return p;
         }
     }

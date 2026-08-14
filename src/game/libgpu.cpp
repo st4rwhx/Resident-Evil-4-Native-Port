@@ -34,11 +34,11 @@ void DelPrim(u32* ot, u32* prim)
     }
     do {
         u32* p = (u32*) *ot;
-        if ((s32) *ot < 0 && p == prim) {
+        if (OT_IS_PRIM(*ot) && p == prim) {
             *ot = *p;
             return;
         }
-        ot = (u32*) (*ot | 0x80000000);
+        ot = (u32*) OT_ADDR(*ot);
     } while (*ot != 0xFFFFFFFF);
 }
 
@@ -48,7 +48,7 @@ void ClearOTagR(u32* ot, int n)
 
     *ot = 0xFFFFFFFF;
     for (i = 0; i < n - 1; i++) {
-        ot[1] = (u32) ot & 0x7FFFFFFF;
+        ot[1] = OT_LINK(ot);
         ot++;
     }
 }
@@ -83,10 +83,10 @@ void DrawOTag(u32* ot)
     }
     do {
         u32* p = (u32*) *ot;
-        if ((s32) p < 0) {
+        if (OT_IS_PRIM(p)) {
             tbl[p[1] & 0x1F]((u32) p);
         }
-        ot = (u32*) (*ot | 0x80000000);
+        ot = (u32*) OT_ADDR(*ot);
     } while (*ot != 0xFFFFFFFF);
 }
 

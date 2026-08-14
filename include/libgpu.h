@@ -9,6 +9,20 @@
 
 #include "types.h"
 
+// Etiquettes des cases de la table d'ordre. Console : lien vers la case precedente = adresse sans le bit 31,
+// primitive = adresse complete (bit 31 a 1, tout est au-dessus de 0x80000000). Portage (14/11) : nos adresses ne sont
+// pas toutes au-dessus de 0x80000000 (x86 32 bits : le programme est charge vers 0x56000000 ; sur ARM c'etait vrai par
+// chance) ; l'etiquette passe sur le bit 0, toujours libre (cases et primitives alignees sur 4 octets).
+#ifdef RE4_PORT
+#define OT_IS_PRIM(v) ((((u32) (v)) & 1u) == 0)
+#define OT_ADDR(v) (((u32) (v)) & ~1u)
+#define OT_LINK(a) (((u32) (a)) | 1u)
+#else
+#define OT_IS_PRIM(v) ((s32) (v) < 0)
+#define OT_ADDR(v) ((u32) (v) | 0x80000000)
+#define OT_LINK(a) ((u32) (a) & 0x7FFFFFFF)
+#endif
+
 typedef struct {
     u8 r, g, b, cd;
 } GpuColor;

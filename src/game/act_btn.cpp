@@ -42,8 +42,8 @@ void cActionButton::move()
         return;
     }
     for (tag = ot[15]; tag != 0xFFFFFFFF; tag = w->tag) {
-        w = (ActBtnWork*) (tag | 0x80000000);
-        if ((s32) tag >= 0) {
+        w = (ActBtnWork*) OT_ADDR(tag);
+        if (!OT_IS_PRIM(tag)) {
             continue;
         }
         if (w->flags & 0x20) {

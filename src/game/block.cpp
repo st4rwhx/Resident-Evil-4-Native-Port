@@ -73,8 +73,8 @@ u32* cBlock::getOtAddr()
     u32 v;
 
     while ((v = *pOt) != 0xFFFFFFFF) {
-        pOt = (u32*) (v | 0x80000000);
-        if ((s32) v < 0) {
+        pOt = (u32*) OT_ADDR(v);
+        if (OT_IS_PRIM(v)) {
             return pOt;
         }
     }

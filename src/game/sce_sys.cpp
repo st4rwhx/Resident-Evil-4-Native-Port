@@ -160,8 +160,8 @@ u32* scenarioGetOtAddr(u32* p)
     u32 v;
 
     while ((v = *p) != 0xFFFFFFFF) {
-        p = (u32*) (v | 0x80000000);
-        if ((s32) v < 0) {
+        p = (u32*) OT_ADDR(v);
+        if (OT_IS_PRIM(v)) {
             return p;
         }
     }
@@ -446,8 +446,8 @@ void SceExecCheckCondition()
         return;
     }
     do {
-        c = (SceCond*) (v | 0x80000000);
-        if ((s32) v < 0) {
+        c = (SceCond*) OT_ADDR(v);
+        if (OT_IS_PRIM(v)) {
             if (SceExecCheckCondition_sub(c) == 1) {
                 if (c->func != 0) {
                     SceExec(c->prio, c->func, c->arg, c->flag, 2, 0);
