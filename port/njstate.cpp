@@ -141,13 +141,21 @@ bool id_unit_alive(int type, float* alpha)
     return any;
 }
 
+// Pointeur dans la memoire du jeu (MEM1 a adresse fixe 0x80000000, 24 Mo). Pendant un changement de salle les tables
+// de mouvements de Leon pointent sur une memoire deja liberee (motif 0x25 : plantage dans motion_index, 15/11).
+static inline bool in_mem1(const void* p, unsigned len)
+{
+    const unsigned long a = (unsigned long) p;
+    return a >= 0x80000000ul && a + len <= 0x81800000ul;
+}
+
 int motion_index(cPlayer* pl, void* motion)
 {
     if (!pl || !motion)
         return -1;
     for (int t = 0; t < 2; ++t) {
         void** tbl = t ? pl->pRegistMot : pl->pMotTbl;
-        if (!tbl)
+        if (!tbl || !in_mem1(tbl, 192 * sizeof(void*)))
             continue;
         for (int i = 0; i < 192; ++i)
             if (tbl[i] == motion)

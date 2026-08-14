@@ -51,6 +51,16 @@ PFNEGLDUPNATIVEFENCEFDANDROIDPROC p_dupFence;
 extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
 extern "C" void njstate_case(int op, int board, const void* data);
 
+// Etat du jeu pris par le fil du jeu a la passation de l'image (njlink_capture_state, njgfx) : le fil de rendu
+// envoyait un njstate_fill lu en direct dans la memoire du jeu pendant un changement de salle (plantage dans
+// motion_index, 15/11 : le mouvement de Leon venait d'etre libere).
+static NjState g_state_snap;
+static bool g_state_valid = false;
+extern "C" void njlink_capture_state(void)
+{
+    njstate_fill(&g_state_snap);
+    g_state_valid = true;
+}
 // Etat du jeu pour les commandes tactiles (NJ_MSG_STATE) : un paquet NjMsg + NjState.
 void send_state()
 {
@@ -61,7 +71,10 @@ void send_state()
     std::memset(&p, 0, sizeof p);
     p.m.type = NJ_MSG_STATE;
     p.m.a = (uint32_t) sizeof(NjState);
-    njstate_fill(&p.s);
+    if (g_state_valid)
+        p.s = g_state_snap;
+    else
+        njstate_fill(&p.s);
     send(g_fd, &p, sizeof p, MSG_NOSIGNAL | MSG_DONTWAIT);
 }
 
