@@ -1678,7 +1678,11 @@ int cDvd::ErrCheck(int disc, int flag)
             }
             Render_done();
             Render_swap();
+#ifdef RE4_PORT
+            PORT_VSYNC_WAIT(vsync_cnt < (int) GetSystemVcnt());
+#else
             while (vsync_cnt < (int) GetSystemVcnt()) {}
+#endif
             vsync_cnt = 0;
             if (IRef(driveStatus) != -1) {
                 systemResetCheck();
@@ -1692,7 +1696,11 @@ int cDvd::ErrCheck(int disc, int flag)
         Render_before();
         Render_done();
         Render_swap();
+#ifdef RE4_PORT
+        PORT_VSYNC_WAIT(vsync_cnt < (int) GetSystemVcnt());
+#else
         while (vsync_cnt < (int) GetSystemVcnt()) {}
+#endif
         vsync_cnt = 0;
         if (Sofdec.isPlay()) {
             Sofdec.PlayPause(0);

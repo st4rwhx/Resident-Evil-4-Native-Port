@@ -162,6 +162,48 @@ void VIWaitForRetrace(void)
         g_post_cb(g_retrace);
 }
 
+// Cadence du jeu (15/11) : appelee par PORT_VSYNC_WAIT (port/port_prelude.h) a la place des boucles d'attente vides
+// de main.cpp, dvd.cpp et exception.cpp. Comme le materiel : le rappel est appele une fois par balayage ecoule sur une
+// base de temps absolue (59,94 Hz), retards compris ; s'il n'en est ecoule aucun, on dort jusqu'au suivant. Apres un
+// long arret (chargement bloquant), on ne rejoue pas plus de 60 balayages : le chien de garde du jeu (haltExecCheck,
+// vsync_cnt > 3599) ne doit pas se declencher pour un temps que la console aurait passe en images normales.
+// RE4_NOPACE=1 : pas d'attente (mesure du cout brut, comme VIWaitForRetrace).
+extern "C" void port_vi_wait_field(void)
+{
+    if (!g_inited)
+        VIInit();
+    static const bool nopace = getenv("RE4_NOPACE") != nullptr;
+    u64 t = now_ns();
+    if (nopace) {
+        g_next_ns = t;
+    } else if (g_next_ns > t) {
+        const u64 wait = g_next_ns - t;
+        timespec ts;
+        ts.tv_sec = (time_t)(wait / 1000000000ull);
+        ts.tv_nsec = (long)(wait % 1000000000ull);
+        while (nanosleep(&ts, &ts) != 0) {}
+        t = now_ns();
+    }
+    unsigned n = 0;
+    while (g_next_ns <= t && n < 60) {
+        g_next_ns += FIELD_NS;
+        ++n;
+        ++g_retrace;
+        if (g_post_cb)
+            g_post_cb(g_retrace);
+    }
+    if (g_next_ns <= t)
+        g_next_ns = t + FIELD_NS;
+    // mesure : balayages par seconde reellement ecoules et attentes, toutes les ~5 s
+    static u64 m0 = 0; static u32 r0 = 0, calls = 0;
+    ++calls;
+    if (m0 == 0) { m0 = t; r0 = g_retrace; }
+    else if (t - m0 >= 5000000000ull) {
+        std::printf("[CADENCE] %.2f balayages/s, %u attentes\n", (double)(g_retrace - r0) * 1e9 / (double)(t - m0), calls);
+        m0 = t; r0 = g_retrace; calls = 0;
+    }
+}
+
 VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb)
 {
     VIRetraceCallback old = g_post_cb;

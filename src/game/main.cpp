@@ -290,13 +290,21 @@ RESTART:
             port_tm_frame();
 #endif
             ProcessTickGet(3, "DRAW REMAIN");
+#ifdef RE4_PORT
+            PORT_VSYNC_WAIT(vsync_cnt < GetSystemVcnt() - 1);
+#else
             while (vsync_cnt < GetSystemVcnt() - 1) {}
+#endif
             PORT_TM(10);
             Render_swap();
             PORT_TM(11);
             PPCSync();
             PORT_TM(12);
+#ifdef RE4_PORT
+            PORT_VSYNC_WAIT(vsync_cnt < GetSystemVcnt());
+#else
             while (vsync_cnt < GetSystemVcnt()) {}
+#endif
             PORT_TM(13);
             vsync_cnt = 0;
             systemVSyncPost();

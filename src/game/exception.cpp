@@ -599,7 +599,11 @@ void ErrorHandler(OSError error, OSContext* context, ...)
         EprintfFlush();
         Render_done();
         Render_swap();
+#ifdef RE4_PORT
+        PORT_VSYNC_WAIT(vsync_cnt < GetSystemVcnt());
+#else
         while (vsync_cnt < GetSystemVcnt()) {}
+#endif
         vsync_cnt = 0;
         if (OSGetResetButtonState() == 1) {
             OSResetSystem(1, 0, 0);

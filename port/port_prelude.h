@@ -137,4 +137,14 @@ static inline unsigned int __cntlzw(unsigned int x) { return x ? (unsigned int)_
 // memoire ; en petit-boutiste il faut echanger les deux moities pour que le champ Hi recoive bien la moitie haute.
 #define PORT_HL32(v) ((unsigned int) ((((unsigned int) (v)) << 16) | (((unsigned int) (v)) >> 16)))
 
+
+// Cadence (15/11) : sur GameCube, l'interruption de balayage (59,94 Hz) appelle postVSyncCallback, qui fait avancer
+// vsync_cnt ; le jeu attend dans des boucles vides `while (vsync_cnt < n) {}`. Le portage n'a pas d'interruption, et
+// l'optimiseur supprimait ces boucles (le jeu tournait a la vitesse de l'affichage). PORT_VSYNC_WAIT dort jusqu'au
+// prochain balayage et appelle le rappel pour chaque balayage ecoule (port/vi.cpp).
+#ifdef __cplusplus
+extern "C" void port_vi_wait_field(void);
+#define PORT_VSYNC_WAIT(cond) do { while (cond) port_vi_wait_field(); } while (0)
+#endif
+
 #endif
