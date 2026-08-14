@@ -980,11 +980,22 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         return;
     }
 
-    // Tout le reste attend son convertisseur. On le dit une fois par format plutot qu'a chaque
-    // fichier : c'est la liste de ce qu'il reste a faire, et elle se lit a l'execution.
-    const char *dot = std::strrchr(name, '.');
-    if (dot)
-        PORT_TODO(dot);
+    // Tout le reste n'a pas de convertisseur : on le dit une fois PAR FICHIER, en clair. (Avant le 15/11 : PORT_TODO,
+    // dont le drapeau « deja dit » est unique par site d'appel - seule la premiere extension etait jamais dite, et
+    // etc/emleon00.esl est passe en silence.) Un fichier sans conversion peut etre legitime (texte, flux brut) :
+    // la liste se relit, elle ne doit plus se taire.
+    static char seen[256][48];
+    static int nseen;
+    for (int i = 0; i < nseen; ++i)
+        if (!std::strncmp(seen[i], name, sizeof(seen[0]) - 1))
+            return;
+    if (nseen < 256) {
+        std::strncpy(seen[nseen], name, sizeof(seen[0]) - 1);
+        seen[nseen][sizeof(seen[0]) - 1] = 0;
+        ++nseen;
+    }
+    std::printf("[ENDIAN] SANS CONVERTISSEUR : %s (%u octets, debut %02x %02x %02x %02x %02x %02x %02x %02x)\n", name,
+                (unsigned) size, s.base[0], s.base[1], s.base[2], s.base[3], s.base[4], s.base[5], s.base[6], s.base[7]);
 }
 
 
