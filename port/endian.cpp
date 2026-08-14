@@ -925,6 +925,19 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         }
         return;
     }
+    if (ends_with(name, ".esl")) {
+        // Liste des ennemis du chapitre (etc/emleonNN.esl, lue dans pG->emlist ; EmListData, include/em_set.h) :
+        // 0x20 octets par entree, mot flags4 en 4, hp en 8, puis pos[3], rot[3], room, x1A (demi-mots 0xC-0x1B).
+        // Trouve en jouant (15/11) : room lu 0x0001 au lieu de 0x0100, aucun ennemi de la liste n'etait cree et
+        // EmSetFromList2 rendait 0 (plantage de r100_HouseEvent, le Ganado de la premiere maison).
+        for (u32 o = 0; o + 0x20 <= size; o += 0x20) {
+            swap_u32(s.base + o + 4);
+            swap_u16(s.base + o + 8);
+            for (u32 k = 0xC; k < 0x1C; k += 2)
+                swap_u16(s.base + o + k);
+        }
+        return;
+    }
     if (ends_with(name, "roominfo.dat")) {
         if (!swap_room_info(s))
             std::printf("[PORT] endian : %s n a pas la forme attendue\n", name);
