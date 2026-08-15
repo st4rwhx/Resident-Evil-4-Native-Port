@@ -409,6 +409,29 @@ void handle(char* l)
         send_line("{\"ok\":\"oublie\"}");
         return;
     }
+    if (!std::strncmp(l, "appeler ", 8)) {
+        // appeler <adresse hex> [a0..a5] : appelle une fonction du jeu (ou d'un outil de Capcom) sur le fil du jeu, avec
+        // jusqu'a 6 arguments entiers (hex 0x.. ou decimal). Le client resout les noms (llvm-nm). Les arguments flottants
+        // ne passent pas (registres VFP sur ARM) : pour eux, poser les valeurs en memoire et appeler une fonction sans.
+        unsigned long fa = 0;
+        unsigned long a[6] = {0, 0, 0, 0, 0, 0};
+        char* q = l + 8;
+        fa = std::strtoul(q, &q, 16);
+        int na = 0;
+        while (na < 6 && *q) {
+            while (*q == ' ') ++q;
+            if (!*q) break;
+            a[na++] = std::strtoul(q, &q, 0);
+        }
+        Dl_info di;
+        if (!fa || !dladdr((void*) fa, &di)) { send_line("{\"erreur\":\"appeler <adresse de fonction hex> [args] : adresse inconnue\"}"); return; }
+        typedef unsigned long (*Fn6)(unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long);
+        const unsigned long r = ((Fn6) fa)(a[0], a[1], a[2], a[3], a[4], a[5]);
+        char out[128];
+        std::snprintf(out, sizeof out, "{\"ok\":\"appel\",\"resultat\":\"%lx\",\"arguments\":%d}", r, na);
+        send_line(out);
+        return;
+    }
     if (!std::strncmp(l, "position ", 9)) {   // position <x> <y> <z> : teleporter Leon dans la salle courante
         float x, y, z;
         if (!pPL || std::sscanf(l + 9, "%f %f %f", &x, &y, &z) != 3) { send_line("{\"erreur\":\"position <x> <y> <z> (en jeu)\"}"); return; }
