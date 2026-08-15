@@ -245,6 +245,9 @@ bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind);
 // textures d interface). `swap_tpl` se reconnait lui-meme a son numero de version : on le
 // propose a chaque entree, il ne touche que celles qui en sont.
 bool swap_mes_tbl(const Span &s, u32 at, u32 end);   // plus bas
+}
+extern "C" void port_studio_event(const char *fmt, ...);   // port/studio.cpp
+namespace {
 bool swap_arc(const Span &s, bool core = false, bool blobs = false)
 {
     if (!s.has(0, 0x10))
@@ -356,6 +359,10 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
             const bool okb = conv_blob(s, o, e, 0, &kind);
             if (okb && g_trace_on)
                 std::printf("[ARC]   entree %u +0x%x : %s\n", (unsigned) i, (unsigned) o, kind);
+            if (!okb)
+                port_studio_event("archive_entree_non_convertie n%u +0x%x %u octets (%s) %02x%02x%02x%02x %02x%02x%02x%02x",
+                                  (unsigned) i, (unsigned) o, (unsigned) (e - o), kind, s.base[o], s.base[o + 1], s.base[o + 2],
+                                  s.base[o + 3], s.base[o + 4], s.base[o + 5], s.base[o + 6], s.base[o + 7]);
             if (!okb && std::getenv("RE4_TRACE_ENDIAN"))
                 std::printf("[ARC] archive : entree %u +0x%x (%u octets) non reconnue (%s) : %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
                             (unsigned) i, (unsigned) o, (unsigned) (e - o), kind, s.base[o], s.base[o + 1], s.base[o + 2], s.base[o + 3],
@@ -1671,8 +1678,14 @@ u32 conv_ofs_archive(const Span &s, const char *name)
                 std::printf(" %02x", s.base[o + k]);
             std::printf("\n");
         }
-        if (!done)
+        if (!done) {
             ++unknown;
+            // filet bruyant (15/11) : une entree non convertie d'une archive de personnage est dite, une fois
+            // (visages des cinematiques en temps reel : quelle donnee reste gros-boutiste ?)
+            port_studio_event("archive_entree_non_convertie %s n%u +0x%x %u octets (%s) %02x%02x%02x%02x %02x%02x%02x%02x", name,
+                              (unsigned) i, (unsigned) o, (unsigned) (e - o), kind, s.base[o], s.base[o + 1], s.base[o + 2],
+                              s.base[o + 3], s.base[o + 4], s.base[o + 5], s.base[o + 6], s.base[o + 7]);
+        }
     }
     return unknown;
 }
