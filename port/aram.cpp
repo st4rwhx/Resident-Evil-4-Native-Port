@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <sys/mman.h>
 
 #include <dolphin.h>
 #include <dolphin/ar.h>
@@ -34,10 +35,29 @@ const u32 ARAM_USER_BASE = 0x4000u;
 u8 *g_aram = nullptr;
 u32 g_next = ARAM_USER_BASE;
 
+// L'ARAM est placee juste apres MEM1 (0x80000000 + 32 Mo), a 0x82000000 (16/11). Le portage donne au jeu des pointeurs
+// DANS ce tampon (dvd.cpp : fichiers charges en ARAM, lus sur place). Or le code de Capcom reconnait une table deja
+// relogee au signe de ses pointeurs (`(s32) tbl[0] >= 0` : encore des decalages ; `(int) tpl->descriptorArray < 0` :
+// deja fait) : sur console toute donnee est a 0x8xxxxxxx, donc negative. Avec un calloc a 0x65xxxxxx, les pointeurs
+// etaient positifs et chaque nouvel usage relogeait une seconde fois : camera de la cinematique de r100 partie a
+// (0, 0, -524270) -> ecran beige (Studio, 16/11) ; meme famille : modeles, textures, mouvements, formes, en-tetes
+// d'evenements, zones de camera (~25 tests de signe). L'adresse est demandee sans MAP_FIXED (rien n'est ecrase) ;
+// si le systeme en rend une autre, on garde l'ancien comportement et on le dit.
+const unsigned long ARAM_WANT = 0x82000000ul;
 void aram_init()
 {
-    if (!g_aram)
-        g_aram = (u8 *) std::calloc(1, ARAM_SIZE);
+    if (g_aram)
+        return;
+    void *want = (void *) ARAM_WANT;
+    void *got = ::mmap(want, ARAM_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (got != MAP_FAILED && got == want) {
+        g_aram = (u8 *) got;   // pages anonymes : deja a zero
+        return;
+    }
+    if (got != MAP_FAILED)
+        ::munmap(got, ARAM_SIZE);
+    std::printf("[PORT] ARAM : 0x%08lx indisponible, tampon ordinaire (tests de signe de Capcom faux hors MEM1)\n", ARAM_WANT);
+    g_aram = (u8 *) std::calloc(1, ARAM_SIZE);
 }
 
 // Traduit une adresse ARAM en pointeur hote, en refusant ce qui sort des bornes : un transfert

@@ -288,7 +288,7 @@ void handle(char* l)
     }
     if (!std::strncmp(l, "memoire ", 8)) {   // memoire <adresse hex> <octets> : lecture de MEM1 (2048 octets au plus)
         unsigned a = 0, n = 0;
-        if (std::sscanf(l + 8, "%x %u", &a, &n) != 2 || n == 0 || n > 2048 || a < 0x80000000u || a + n > 0x82000000u || a + n < a) {
+        if (std::sscanf(l + 8, "%x %u", &a, &n) != 2 || n == 0 || n > 2048 || a < 0x80000000u || a + n > 0x83000000u || a + n < a) {
             send_line("{\"erreur\":\"memoire <adresse hex 80000000..81FFFFFF> <octets 1..2048>\"}");
             return;
         }

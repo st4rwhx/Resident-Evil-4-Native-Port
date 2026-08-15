@@ -162,7 +162,7 @@ static void port_free(void* q)
         return;
     }
     const u32 a = (u32) (uintptr_t) q;
-    if (a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x82000000))
+    if (a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x83000000))
         return;                      // zone fixe de MEM1 : rien a rendre a personne
     free(q);
 }
@@ -642,7 +642,7 @@ void Mem_free_h(void* p, int heap)
             // peut que laisser le bloc tranquille - le perdre coute moins cher que corrompre le
             // tas, et la trace le dit.
             const u32 a = (u32) (unsigned long long) p;
-            if (a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x82000000)) {
+            if (a >= (u32) PORT_MEM1(0x80000000) && a < (u32) PORT_MEM1(0x83000000)) {
                 if (port_heap_trace())
                     port_note("[HEAP] free ignore : %08x hors de tout tas\n", a);
                 return;
