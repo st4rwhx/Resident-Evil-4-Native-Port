@@ -31,7 +31,7 @@
 namespace {
 
 int g_fd = -1;
-const int kSlots = 3;
+const int kSlots = 4;   // 4 (15/11) : une affichee, deux en attente dans l appli (cadence fixe), une en dessin
 AHardwareBuffer* g_ahb[kSlots];
 GLuint g_tex[kSlots], g_fbo[kSlots];
 bool g_busy[kSlots];   // emplacement envoye, pas encore rendu par l'appli
