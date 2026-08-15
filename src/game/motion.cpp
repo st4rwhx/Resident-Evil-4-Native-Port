@@ -1253,8 +1253,17 @@ int HermiteInterpolation(HermitePrm* prm, Vec* out, u16* hist)
     int axis = 0;
     u16* frames;
     u8* data;
+#ifdef RE4_PORT
+    // Portage : les pistes de type 15 (Fcc_get_data_033 : valeurs seules, sans tangentes) laissent `tan` tel quel, et
+    // hermite() s'en sert quand meme. Sur console le tableau gardait par hasard des restes inoffensifs de la pile ; ici
+    // c'etaient des dechets, parfois NaN : camera de la cinematique r100s00 (4 pistes de type 15) a l'infini, ecran
+    // beige pendant la marche vers la maison (15/11, Studio : camera NaN, esp15 VECNormalize sur Cam.up nul).
+    f32 val[2] = {0.0f, 0.0f};
+    f32 tan[2] = {0.0f, 0.0f};
+#else
     f32 val[2];
     f32 tan[2];
+#endif
     int n;
     int last = 0;
     int idx;
