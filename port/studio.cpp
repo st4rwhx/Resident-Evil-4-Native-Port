@@ -24,6 +24,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <dlfcn.h>
+
+// Sites de conversions flottant -> entier hors intervalle (version PORT_UBSAN_FLOAT=1), voir plus bas.
+namespace {
+struct ConvSite { void* pc; unsigned n; };
+ConvSite g_conv[256];
+unsigned g_nconv = 0, g_conv_lost = 0;
+}
 
 #include "global.h"
 #include "player.h"
@@ -33,6 +41,7 @@
 #include "room_jmp.h"
 #include "main.h"
 #include "mes.h"
+#include "em.h"
 
 extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
 void DbMenuSetExecTool(const char* name);     // src/game/db_menu.cpp
@@ -134,12 +143,15 @@ void cmd_etat()
                   "\"leon\":{\"x\":%.1f,\"y\":%.1f,\"z\":%.1f,\"cap\":%.3f,\"vie\":%d},\"flags_60\":\"%08x\",\"flags_170\":\"%08x\","
                   "\"ecran\":{\"curseur\":%d,\"nb_curseur\":%d,\"choix\":%d,\"choix_curseur\":%d,\"invite\":%u,"
                   "\"titre_alpha\":%.2f,\"fondu\":%.2f,\"qte\":%u},"
-                  "\"flux\":%s,\"evenements_en_attente\":%u}",
+                  "\"flux\":%s,\"evenements_en_attente\":%u,"
+                  "\"camera\":{\"pos\":[%.1f,%.1f,%.1f],\"vise\":[%.1f,%.1f,%.1f],\"haut\":[%.3f,%.3f,%.3f],\"roulis\":%.3f}}",
                   g_frame, (unsigned) G_ROOM_ID, (unsigned) st.mode, (unsigned) st.bits, DbMenuActiveCheck(),
                   pl ? pPL->pos.x : 0.f, pl ? pPL->pos.y : 0.f, pl ? pPL->pos.z : 0.f, pl ? pPL->rot.y : 0.f,
                   (int) (s16) pG->pl_life, (unsigned) pG->flags_60, (unsigned) pG->flags_170, (int) st.cursor,
                   (int) st.cursor_count, (int) st.choice_count, (int) st.choice_cursor, (unsigned) st.prompt,
-                  st.title_menu_alpha, st.fade, (unsigned) st.qte, flux, g_ev_count);
+                  st.title_menu_alpha, st.fade, (unsigned) st.qte, flux, g_ev_count,
+                  pG->Cam.param.pos.x, pG->Cam.param.pos.y, pG->Cam.param.pos.z, pG->Cam.param.at.x, pG->Cam.param.at.y,
+                  pG->Cam.param.at.z, pG->Cam.up.x, pG->Cam.up.y, pG->Cam.up.z, pG->Cam.param.roll);
     send_line(out);
 }
 
@@ -263,6 +275,49 @@ void handle(char* l)
         send_line(out);
         return;
     }
+    if (!std::strncmp(l, "message ", 8)) {   // message <no> <attr hex> [x y] : affiche un texte comme le jeu (MesSet, case 0)
+        int no = 0, x = 120, y = 360;
+        unsigned attr = 0x20088;
+        if (std::sscanf(l + 8, "%d %x %d %d", &no, &attr, &x, &y) < 2) {
+            send_line("{\"erreur\":\"message <no> <attr hex> [x y] (0x20088 : nom d'objet, table 3)\"}");
+            return;
+        }
+        cMes.MesSet(no, x, y, attr | 0x80, 0, 0, 4);   // 0x80 : ne bloque pas les commandes du joueur
+        char out[96];
+        std::snprintf(out, sizeof out, "{\"ok\":\"message %d attr %x\"}", no, attr | 0x80);
+        send_line(out);
+        return;
+    }
+    if (!std::strcmp(l, "ennemis")) {   // ennemis vivants : numero, modele, type, vie, statut, position, drapeaux
+        static char out[2400];
+        int k = std::snprintf(out, sizeof out, "{\"ennemis\":[");
+        int first = 1;
+        for (u32 i = 0; i < EmMgr.nArray && k < (int) sizeof out - 160; ++i) {
+            cEm* e = EmMgrWork(i);
+            if (!e || !(e->be_flag & 1) || e == (cEm*) pPL)
+                continue;
+            k += std::snprintf(out + k, sizeof out - k,
+                               "%s{\"n\":%u,\"id\":\"%02x\",\"type\":%u,\"vie\":%d,\"vie_max\":%d,\"stat\":\"%08x\",\"pos\":[%.0f,%.0f,%.0f],\"be\":\"%08x\"}",
+                               first ? "" : ",", (unsigned) i, (unsigned) e->id, (unsigned) e->type, (int) e->hp, (int) e->hpMax,
+                               (unsigned) e->stat, e->pos.x, e->pos.y, e->pos.z, (unsigned) e->be_flag);
+            first = 0;
+        }
+        std::snprintf(out + k, sizeof out - k, "]}");
+        send_line(out);
+        return;
+    }
+    if (!std::strcmp(l, "conversions")) {   // sites de conversions flottant -> entier hors intervalle (PORT_UBSAN_FLOAT=1)
+        static char out[256 * 28 + 64];
+        int k = std::snprintf(out, sizeof out, "{\"perdus\":%u,\"sites\":[", g_conv_lost);
+        for (unsigned i = 0; i < g_nconv && k < (int) sizeof out - 40; ++i) {
+            Dl_info di;
+            const unsigned long base = (dladdr(g_conv[i].pc, &di) && di.dli_fbase) ? (unsigned long) di.dli_fbase : 0;
+            k += std::snprintf(out + k, sizeof out - k, "%s[\"%lx\",%u]", i ? "," : "", (unsigned long) g_conv[i].pc - base, g_conv[i].n);
+        }
+        std::snprintf(out + k, sizeof out - k, "]}");
+        send_line(out);
+        return;
+    }
     if (!std::strcmp(l, "aide")) {
         send_line("{\"commandes\":[\"etat\",\"evenements\",\"outil <NOM>\",\"texte 0|1\",\"drapeau 60|64 <masque> 0|1\","
                   "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\",\"reglage <nom> <valeur>\",\"capture\",\"memoire <adresse> <octets>\"]}");
@@ -272,6 +327,26 @@ void handle(char* l)
 }
 
 }  // namespace
+
+// Conversions flottant -> entier hors intervalle (version PORT_UBSAN_FLOAT=1, 15/11). Le compilateur appelle ces fonctions
+// juste apres la conversion fautive ; on retient l'adresse de retour (un site du code) et le nombre de passages. Le
+// resultat de la conversion reste celui de la machine : c'est un releve, pas une correction.
+extern "C" void port_studio_event(const char* fmt, ...);
+static void port_conv_note(void* pc)
+{
+    for (unsigned i = 0; i < g_nconv; ++i)
+        if (g_conv[i].pc == pc) { ++g_conv[i].n; return; }
+    if (g_nconv < 256) {
+        g_conv[g_nconv].pc = pc;
+        g_conv[g_nconv].n = 1;
+        ++g_nconv;
+        Dl_info di;
+        const unsigned long base = (dladdr(pc, &di) && di.dli_fbase) ? (unsigned long) di.dli_fbase : 0;
+        port_studio_event("conversion_flottante site=%lx", (unsigned long) pc - base);
+    } else ++g_conv_lost;
+}
+extern "C" void __ubsan_handle_float_cast_overflow_minimal() { port_conv_note(__builtin_return_address(0)); }
+extern "C" void __ubsan_handle_float_cast_overflow_minimal_abort() { port_conv_note(__builtin_return_address(0)); }
 
 extern "C" void port_studio_event(const char* fmt, ...)
 {
