@@ -10,6 +10,7 @@
 Pose `adb forward tcp:7770 tcp:7770` sur l'appareil choisi (MuMu par defaut ; le S5 : --appareil 51b3af08).
 """
 import json
+import re
 import os
 import socket
 import subprocess
@@ -45,7 +46,10 @@ def ask(f, cmd):
 
 
 def etat(f):
-    return json.loads(ask(f, 'etat')[0])
+    # Les flottants du jeu peuvent valoir nan/inf (camera degeneree, 15/11) : JSON les refuse, Python les accepte ecrits NaN.
+    t = re.sub(r'(?<![A-Za-z])-?nan', 'NaN', ask(f, 'etat')[0])
+    t = re.sub(r'(?<![A-Za-z])(-?)inf', r'Infinity', t)
+    return json.loads(t)
 
 
 def scenario(f, nom, sauter):
