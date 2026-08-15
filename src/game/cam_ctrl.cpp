@@ -63,9 +63,18 @@ static const f32 smooth_ratio[12] = {0.0f, 0.9f, 0.85f, 0.92f, 0.8f, 0.92f, 0.9f
 #define EXPORT_TMP(p)                             \
     {                                             \
         for (n = 0; n < 4; n++) {                 \
-            *(p)++ = ((u8*) &tmp)[n];             \
+            *(p)++ = ((u8*) &tmp)[EXPORT_BYTE(n)];  \
         }                                         \
     }
+// Portage : la motion fabriquee ici est relue par HermiteInterpolation, dont les valeurs sont lues octet par octet en
+// gros-boutiste (Fcc_get_data_*, FCC_F32). Sur console l'ordre de la memoire EST le gros-boutiste ; ici il faut l'ecrire
+// explicitement, sinon chaque flottant se relit a l'envers : camera des coupes « sur rail » a (0, 0, -524270), champ de
+// vue -1e33, puis NaN et ecran beige (marche vers la maison de r100 ; trouve au Studio le 16/11, sans recompiler).
+#ifdef RE4_PORT
+#define EXPORT_BYTE(n) (3 - (n))
+#else
+#define EXPORT_BYTE(n) (n)
+#endif
 
 // Converts a rail cut into the CameraMotion key-frame format (cam_motion): header, 4 channels
 // (pos, at, roll, fovy) x 3 components of hermite keys {value, tangent in, tangent out}.
