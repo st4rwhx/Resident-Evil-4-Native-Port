@@ -44,6 +44,7 @@ unsigned g_nconv = 0, g_conv_lost = 0;
 #include "em.h"
 
 extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
+extern "C" void port_studio_frame(void);
 void DbMenuSetExecTool(const char* name);     // src/game/db_menu.cpp
 void DbMenuExec();
 int DbMenuActiveCheck();
@@ -71,6 +72,34 @@ struct Knob { char name[24]; int value; };
 Knob g_knobs[32];
 int g_nknobs = 0;
 int g_capture = 0;   // capture demandee (lue par port/njgfx a la fin de l'image)
+
+// S2 (16/11) : pause, images a pas compte, surveillance d'adresses aux points de la boucle de jeu (ProcessTickGet).
+int g_paused = 0;          // 1 : le fil du jeu attend dans le Studio (port_studio_frame ou un point surveille)
+int g_steps = 0;           // images a jouer avant de se remettre en pause (0 : selon g_paused)
+const char* g_last_point = "debut_image";
+const char* g_paused_at = "";
+struct Watch { unsigned long addr; unsigned len; unsigned char last[64]; int stop; int zero; int on; unsigned hits; };
+Watch g_watch[8];
+int g_memfd = -1;
+
+// Lecture / ecriture sures n'importe ou dans le processus : /proc/self/mem rend une erreur au lieu d'une faute.
+bool mem_read(unsigned long a, void* out, unsigned n)
+{
+    if (g_memfd < 0) g_memfd = open("/proc/self/mem", O_RDWR);
+    return g_memfd >= 0 && pread64(g_memfd, out, n, (off64_t) a) == (ssize_t) n;
+}
+bool mem_write(unsigned long a, const void* in, unsigned n)
+{
+    if (g_memfd < 0) g_memfd = open("/proc/self/mem", O_RDWR);
+    return g_memfd >= 0 && pwrite64(g_memfd, in, n, (off64_t) a) == (ssize_t) n;
+}
+void hexs(char* out, const unsigned char* b, unsigned n)
+{
+    static const char hx[] = "0123456789abcdef";
+    for (unsigned i = 0; i < n; ++i) { out[2 * i] = hx[b[i] >> 4]; out[2 * i + 1] = hx[b[i] & 15]; }
+    out[2 * n] = 0;
+}
+void studio_poll();   // plus bas : lit et execute les commandes en attente
 
 void send_line(const char* s)
 {
@@ -306,6 +335,87 @@ void handle(char* l)
         send_line(out);
         return;
     }
+    if (!std::strcmp(l, "pause")) { g_paused = 1; g_steps = 0; send_line("{\"ok\":\"pause a la prochaine image\"}"); return; }
+    if (!std::strcmp(l, "reprendre")) { g_paused = 0; g_steps = 0; send_line("{\"ok\":\"reprise\"}"); return; }
+    if (!std::strncmp(l, "image", 5) && (l[5] == 0 || l[5] == ' ')) {   // image [n] : jouer n images puis pause
+        g_steps = l[5] ? std::atoi(l + 6) : 1;
+        if (g_steps < 1) g_steps = 1;
+        g_paused = 0;
+        char out[64];
+        std::snprintf(out, sizeof out, "{\"ok\":\"%d image(s) puis pause\"}", g_steps);
+        send_line(out);
+        return;
+    }
+    if (!std::strcmp(l, "ou")) {   // ou en est le fil du jeu : image, pause, dernier point de la boucle
+        char out[200];
+        std::snprintf(out, sizeof out, "{\"image\":%u,\"pause\":%d,\"arret\":\"%s\",\"dernier_point\":\"%s\"}", g_frame, g_paused,
+                      g_paused_at, g_last_point);
+        send_line(out);
+        return;
+    }
+    if (!std::strcmp(l, "base")) {   // adresse de chargement du coeur : symbole = base + valeur de llvm-nm
+        Dl_info di;
+        const unsigned long b = (dladdr((void*) &port_studio_frame, &di) && di.dli_fbase) ? (unsigned long) di.dli_fbase : 0;
+        char out[96];
+        std::snprintf(out, sizeof out, "{\"base\":\"%lx\",\"pG\":\"%lx\",\"pPL\":\"%lx\"}", b, (unsigned long) (void*) pG,
+                      (unsigned long) (void*) pPL);
+        send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "lire ", 5)) {   // lire <adresse hex> <octets> : n'importe ou (memoire du jeu, globales natives)
+        unsigned long a = 0;
+        unsigned n = 0;
+        if (std::sscanf(l + 5, "%lx %u", &a, &n) != 2 || n == 0 || n > 2048) { send_line("{\"erreur\":\"lire <adresse hex> <1..2048>\"}"); return; }
+        static unsigned char buf[2048];
+        static char out[2048 * 2 + 64];
+        if (!mem_read(a, buf, n)) { send_line("{\"erreur\":\"adresse illisible\"}"); return; }
+        int k = std::snprintf(out, sizeof out, "{\"adresse\":\"%lx\",\"octets\":\"", a);
+        hexs(out + k, buf, n);
+        k += 2 * n;
+        std::snprintf(out + k, sizeof out - k, "\"}");
+        send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "ecrire ", 7)) {   // ecrire <adresse hex> <octets hex> : changer une valeur en direct
+        unsigned long a = 0;
+        char hx[260] = {0};
+        if (std::sscanf(l + 7, "%lx %258s", &a, hx) != 2 || (std::strlen(hx) & 1)) { send_line("{\"erreur\":\"ecrire <adresse hex> <octets hex, 128 max>\"}"); return; }
+        unsigned char b[130];
+        const unsigned n = (unsigned) std::strlen(hx) / 2;
+        for (unsigned i = 0; i < n; ++i) { unsigned v = 0; std::sscanf(hx + 2 * i, "%2x", &v); b[i] = (unsigned char) v; }
+        send_line(mem_write(a, b, n) ? "{\"ok\":\"ecrit\"}" : "{\"erreur\":\"adresse non inscriptible\"}");
+        return;
+    }
+    if (!std::strncmp(l, "surveiller ", 11)) {   // surveiller <adresse hex> <octets> [arret] : dit QUI la change
+        unsigned long a = 0;
+        unsigned n = 0;
+        char opt[40] = {0};
+        const int c = std::sscanf(l + 11, "%lx %u %39[a-z ]", &a, &n, opt);
+        int slot = -1;
+        for (int i = 0; i < 8; ++i) if (!g_watch[i].on) { slot = i; break; }
+        if (c < 2 || n == 0 || n > 64 || slot < 0) { send_line("{\"erreur\":\"surveiller <adresse hex> <1..64> [arret] (8 au plus)\"}"); return; }
+        Watch& w = g_watch[slot];
+        if (!mem_read(a, w.last, n)) { send_line("{\"erreur\":\"adresse illisible\"}"); return; }
+        w.addr = a; w.len = n; w.stop = c == 3 && std::strstr(opt, "arret") != nullptr; w.zero = c == 3 && std::strstr(opt, "zero") != nullptr;
+        w.on = 1; w.hits = 0;
+        char out[96];
+        std::snprintf(out, sizeof out, "{\"ok\":\"surveillance %d\",\"arret\":%d}", slot, w.stop);
+        send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "oublier", 7)) {   // oublier [n] : retirer une surveillance (toutes sans numero)
+        const int n = l[7] ? std::atoi(l + 8) : -1;
+        for (int i = 0; i < 8; ++i) if (n < 0 || n == i) g_watch[i].on = 0;
+        send_line("{\"ok\":\"oublie\"}");
+        return;
+    }
+    if (!std::strncmp(l, "position ", 9)) {   // position <x> <y> <z> : teleporter Leon dans la salle courante
+        float x, y, z;
+        if (!pPL || std::sscanf(l + 9, "%f %f %f", &x, &y, &z) != 3) { send_line("{\"erreur\":\"position <x> <y> <z> (en jeu)\"}"); return; }
+        pPL->pos.x = x; pPL->pos.y = y; pPL->pos.z = z;
+        send_line("{\"ok\":\"Leon deplace\"}");
+        return;
+    }
     if (!std::strcmp(l, "conversions")) {   // sites de conversions flottant -> entier hors intervalle (PORT_UBSAN_FLOAT=1)
         static char out[256 * 28 + 64];
         int k = std::snprintf(out, sizeof out, "{\"perdus\":%u,\"sites\":[", g_conv_lost);
@@ -320,7 +430,7 @@ void handle(char* l)
     }
     if (!std::strcmp(l, "aide")) {
         send_line("{\"commandes\":[\"etat\",\"evenements\",\"outil <NOM>\",\"texte 0|1\",\"drapeau 60|64 <masque> 0|1\","
-                  "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\",\"reglage <nom> <valeur>\",\"capture\",\"memoire <adresse> <octets>\"]}");
+                  "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\",\"reglage <nom> <valeur>\",\"capture\",\"memoire <adresse> <octets>\",\"pause\",\"image [n]\",\"reprendre\",\"ou\",\"base\",\"lire <adr> <n>\",\"ecrire <adr> <hex>\",\"surveiller <adr> <n> [arret] [zero]\",\"oublier [n]\",\"position <x> <y> <z>\",\"message <no> <attr>\",\"ennemis\",\"conversions\"]}");
         return;
     }
     send_line("{\"erreur\":\"commande inconnue (aide)\"}");
@@ -348,6 +458,7 @@ static void port_conv_note(void* pc)
 extern "C" void __ubsan_handle_float_cast_overflow_minimal() { port_conv_note(__builtin_return_address(0)); }
 extern "C" void __ubsan_handle_float_cast_overflow_minimal_abort() { port_conv_note(__builtin_return_address(0)); }
 
+extern "C" void port_studio_point(const char* name);   // plus bas
 extern "C" void port_studio_event(const char* fmt, ...)
 {
     char buf[200];
@@ -413,6 +524,27 @@ extern "C" void port_studio_frame(void)
     }
     if (g_client < 0)
         return;
+    studio_poll();
+    g_last_point = "debut_image";
+    port_studio_point("debut_image");
+    // pause / images comptees : le fil du jeu attend ici, entre deux images, en servant les commandes
+    if (g_steps > 0) {
+        if (--g_steps == 0) g_paused = 1;
+    }
+    while (g_paused && g_client >= 0) {
+        g_paused_at = "debut_image";
+        studio_poll();
+        if (!g_paused || g_steps > 0) break;
+        usleep(4000);
+    }
+    g_paused_at = "";
+}
+
+namespace {
+void studio_poll()
+{
+    if (g_client < 0)
+        return;
     for (;;) {
         const ssize_t n = recv(g_client, g_in + g_in_len, sizeof g_in - 1 - g_in_len, 0);
         if (n == 0) { close(g_client); g_client = -1; return; }
@@ -430,5 +562,40 @@ extern "C" void port_studio_frame(void)
             g_in[g_in_len] = 0;
         }
         if (g_in_len >= (int) sizeof g_in - 1) g_in_len = 0;   // ligne trop longue : jetee
+    }
+}
+}  // namespace
+
+// Appele par ProcessTickGet (src/game/debug.cpp) entre chaque sous-systeme de la boucle de jeu : une surveillance qui
+// change entre deux points designe le sous-systeme qui l'a modifiee ; avec « arret », le jeu s'arrete juste apres lui.
+extern "C" void port_studio_point(const char* name)
+{
+    g_last_point = name;
+    for (int i = 0; i < 8; ++i) {
+        Watch& w = g_watch[i];
+        if (!w.on) continue;
+        unsigned char now[64];
+        if (!mem_read(w.addr, now, w.len) || !std::memcmp(now, w.last, w.len)) continue;
+        if (w.zero) {   // option zero : seulement quand la valeur devient entierement nulle
+            bool z = true;
+            for (unsigned k = 0; k < w.len; ++k) z = z && now[k] == 0;
+            if (!z) { std::memcpy(w.last, now, w.len); continue; }
+        }
+        char a[130], b[130];
+        hexs(a, w.last, w.len);
+        hexs(b, now, w.len);
+        port_studio_event("surveillance %d adresse=%lx apres=%s avant=%s maintenant=%s", i, w.addr, name, a, b);
+        std::memcpy(w.last, now, w.len);
+        ++w.hits;
+        if (w.stop) {
+            g_paused = 1; g_steps = 0;
+            g_paused_at = name;
+            while (g_paused && g_client >= 0) {   // arret au milieu de l'image, juste apres le sous-systeme fautif
+                studio_poll();
+                if (!g_paused || g_steps > 0) break;
+                usleep(4000);
+            }
+            g_paused_at = "";
+        }
     }
 }

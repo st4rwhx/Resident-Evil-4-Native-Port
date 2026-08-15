@@ -298,8 +298,14 @@ void processBarDisp()
 // Both arms store proc_tick first: the two independent `stwx` have equal priority and sched1 issues
 // the one with more dying registers first -- the LAST store in RTL order owns the index register's
 // death, so the target's `stwx name` before `stwx tick` means the tick store came first in source.
+#ifdef RE4_PORT
+extern "C" void port_studio_point(const char* name);   // port/studio.cpp : surveillances du Studio entre sous-systemes
+#endif
 void ProcessTickGet(int no, const char* name)
 {
+#ifdef RE4_PORT
+    port_studio_point(name);
+#endif
     if ((u32) no <= 4) {
         proc_tick[no] = OSGetTick() - zero_tick;
         proc_name[no] = name;
