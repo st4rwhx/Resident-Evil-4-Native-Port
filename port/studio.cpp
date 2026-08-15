@@ -245,9 +245,27 @@ void handle(char* l)
         send_line("{\"ok\":\"capture a l'image suivante (studio_<n>.ppm)\"}");
         return;
     }
+    if (!std::strncmp(l, "memoire ", 8)) {   // memoire <adresse hex> <octets> : lecture de MEM1 (2048 octets au plus)
+        unsigned a = 0, n = 0;
+        if (std::sscanf(l + 8, "%x %u", &a, &n) != 2 || n == 0 || n > 2048 || a < 0x80000000u || a + n > 0x82000000u || a + n < a) {
+            send_line("{\"erreur\":\"memoire <adresse hex 80000000..81FFFFFF> <octets 1..2048>\"}");
+            return;
+        }
+        static char out[2048 * 2 + 64];
+        int k = std::snprintf(out, sizeof out, "{\"adresse\":\"%08x\",\"octets\":\"", a);
+        const u8* p = (const u8*) (unsigned long) a;
+        static const char hx[] = "0123456789abcdef";
+        for (unsigned i = 0; i < n; ++i) {
+            out[k++] = hx[p[i] >> 4];
+            out[k++] = hx[p[i] & 15];
+        }
+        std::snprintf(out + k, sizeof out - k, "\"}");
+        send_line(out);
+        return;
+    }
     if (!std::strcmp(l, "aide")) {
         send_line("{\"commandes\":[\"etat\",\"evenements\",\"outil <NOM>\",\"texte 0|1\",\"drapeau 60|64 <masque> 0|1\","
-                  "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\",\"reglage <nom> <valeur>\",\"capture\"]}");
+                  "\"pad <boutons> <sx> <sy> <cx> <cy> <images>\",\"salle <chapitre> <salle hex> [point]\",\"reglage <nom> <valeur>\",\"capture\",\"memoire <adresse> <octets>\"]}");
         return;
     }
     send_line("{\"erreur\":\"commande inconnue (aide)\"}");
