@@ -84,8 +84,38 @@ void cLog::vmes(int a, int b, const char* fmt, va_list ap)
     }
 }
 
+#ifdef RE4_PORT
+// Portage : les erreurs que le jeu detecte lui-meme (pLog->err) n'allaient que dans le tampon d'affichage du mode debug,
+// que personne ne regarde. Elles sont aussi rendues au Studio (evenement erreur_jeu), une meme erreur au plus une fois
+// toutes les 300 images pour ne pas noyer la file (15/11 : nom d'objet absent dans la mallette).
+extern "C" void port_studio_event(const char* fmt, ...);
+static void port_err_to_studio(const char* fmt, va_list ap)
+{
+    static const char* lastFmt[8];
+    static u32 lastTick[8];
+    static u32 tick;
+    ++tick;
+    for (int i = 0; i < 8; ++i)
+        if (lastFmt[i] == fmt && tick - lastTick[i] < 300)
+            return;
+    static int slot;
+    lastFmt[slot] = fmt;
+    lastTick[slot] = tick;
+    slot = (slot + 1) & 7;
+    char buf[200];
+    va_list cp;
+    va_copy(cp, ap);
+    std::vsnprintf(buf, sizeof buf, fmt, cp);
+    va_end(cp);
+    port_studio_event("erreur_jeu %s", buf);
+}
+#endif
+
 void cLog::verr(int a, int b, const char* fmt, va_list ap)
 {
+#ifdef RE4_PORT
+    port_err_to_studio(fmt, ap);
+#endif
     if (!(pG->flags_6C & 0x04000000)) {
         cLogWork* w = add(a, b, fmt, ap);
         w->color = 0x16;
