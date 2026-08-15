@@ -40,6 +40,11 @@ COMMON = ['-DRE4_PORT', '-DDEBUG=1', '-DVERSION_G4BE08', '-D__GEKKO__',
           # l'autre, des calculs signes debordent volontairement, et l'image doit rester celle des
           # flottants separes (pas de fusion multiplication-addition).
           '-fno-strict-return', '-fno-strict-aliasing', '-fwrapv', '-ffp-contract=off']
+# PORT_UBSAN_FLOAT=1 : version de diagnostic (15/11). Chaque conversion flottant -> entier hors de l'intervalle du type
+# (surtout negatif -> non signe : le PowerPC et le x86 font le tour, l'ARM bloque a 0) appelle
+# __ubsan_handle_float_cast_overflow_minimal, defini par port/studio.cpp, qui note l'adresse pour le Studio.
+if os.environ.get('PORT_UBSAN_FLOAT'):
+    COMMON += ['-fsanitize=float-cast-overflow', '-fsanitize-minimal-runtime']
 # gnu++11 et pas gnu++17 : gnu++17 supprime `register` et rouvre 44 erreurs. -fdeclspec en
 # resout 369 a lui seul.
 # -Wno-c++11-narrowing : snd_str4.cpp fait `switch (u32)` sur des constantes DVD_STATE_*
@@ -241,6 +246,14 @@ def main():
     with open(rsp, 'w') as fh:
         for o in ok + rel_objs:
             fh.write('"%s"\n' % os.path.relpath(o, ROOT).replace('\\', '/'))
+    # ARM : conversions flottant -> non signe avec le comportement du PowerPC (port/ppc_f2u.py, 15/11). x86 l'a deja ;
+    # PORT_PPC_F2U=0 : sans (A/B). Idempotent : les objets en cache deja corriges ne changent plus.
+    if os.environ.get('PORT_ABI') != 'x86' and os.environ.get('PORT_PPC_F2U', '1') != '0':
+        objdump = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin', 'llvm-objdump.exe')
+        r = subprocess.run([sys.executable, os.path.join(ROOT, 'port', 'ppc_f2u.py'), rsp, objdump], capture_output=True, text=True, cwd=ROOT)
+        print((r.stdout + r.stderr).strip()[-600:])
+        if r.returncode != 0:
+            sys.exit(1)
     exe = os.path.join(args.out, 're4')
     cmd = [cxx, '@' + rsp, '-o', exe, '-lEGL', '-lGLESv3', '-llog', '-landroid', '-lOpenSLES', '-static-libstdc++',
            # sans cela lld s'arrete a 20 erreurs, et on decouvre les symboles manquants
