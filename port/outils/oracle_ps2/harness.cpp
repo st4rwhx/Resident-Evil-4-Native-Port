@@ -7,8 +7,8 @@
 extern "C" void port_endian_fix(const char *name, void *data, unsigned size);
 extern "C" void port_room_arc_fix(void *arc, unsigned size);
 extern "C" int Fcc_next_axis_addr(int type, int n) {   // copie de src/game/motion.cpp
-  static const int k[13] = {12, 8, 6, -1, 10, 6, 4, -1, 9, 5, 3, -1, -1};
-  return (type >= 0 && type < 13 && k[type] >= 0) ? n * k[type] : -1; }
+  static const int k[16] = {12, 8, 6, -1, 10, 6, 4, -1, 9, 5, 3, -1, -1, -1, -1, 4};
+  return (type >= 0 && type < 16 && k[type] >= 0) ? n * k[type] : -1; }
 extern "C" const void *port_rel_prepare(void *h) { return h; }
 static uint32_t be(const uint8_t *p) { return (uint32_t)p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3]; }
 int main(int c, char **v) {
@@ -21,3 +21,4 @@ int main(int c, char **v) {
   return 0;
 }
 void port_todo(const char *s) { __builtin_printf("[todo] %s\n", s); }
+extern "C" void port_studio_event(const char *, ...) {}   // port/studio.cpp absent du banc
