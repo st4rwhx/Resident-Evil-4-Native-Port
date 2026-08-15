@@ -345,6 +345,50 @@ static void SelfShadowSetup(ModelPart* part, cModel* m, ShadowMng* mng);
 static void bumpSetup(ModelPart* part, cModelInfo* info);
 static void alphaSetup(cModel* m, ModelPart* part, cModelInfo* info, int thermo);
 static void CalcSk1_x(void* dst, void* src, u32 n);
+#ifdef RE4_PORT
+// Portage : sonde du Studio (enquete visages des cinematiques, 15/11). Avant la peau : sommets des modeles a formes
+// qui s'ecartent de vtxOrig de plus de 4000 unites, ou dont l'indice de matrice depasse la palette. Apres : coordonnees
+// saturees (|v| >= 32000). Un evenement par seconde au plus, avec le premier sommet fautif. Active par le reglage
+// Studio `reglage sonde_formes 1` (rien n'est parcouru sinon).
+extern "C" int port_knob(const char* name, int def);
+extern "C" void port_studio_event(const char* fmt, ...);
+static u32 s_spPre, s_spPost, s_spTick;
+static void port_shape_probe_pre(cModelInfo* info, ModelData* d, const s16* v)
+{
+    const s16* o = (const s16*) d->vtxOrig;
+    u32 bad = 0, first = 0xFFFFFFFF;
+    int maxIdx = 0;
+    for (u32 k = 0; k < d->nVtx; ++k) {
+        const int dx = v[k * 4] - o[k * 4], dy = v[k * 4 + 1] - o[k * 4 + 1], dz = v[k * 4 + 2] - o[k * 4 + 2];
+        if (v[k * 4 + 3] > maxIdx) maxIdx = v[k * 4 + 3];
+        if (dx > 4000 || dx < -4000 || dy > 4000 || dy < -4000 || dz > 4000 || dz < -4000) {
+            if (first == 0xFFFFFFFF) first = k;
+            ++bad;
+        }
+    }
+    if (bad && (++s_spPre % 30) == 1) {
+        port_studio_event("peau_avant info=%p sommets_ecartes=%u premier=%u (%d %d %d idx %d) orig=(%d %d %d idx %d) idx_max=%d",
+                          (void*) info, (unsigned) bad, (unsigned) first, v[first * 4], v[first * 4 + 1], v[first * 4 + 2],
+                          v[first * 4 + 3], o[first * 4], o[first * 4 + 1], o[first * 4 + 2], o[first * 4 + 3], maxIdx);
+    }
+    if ((++s_spTick % 120) == 1)
+        port_studio_event("peau_palette info=%p sommets=%u idx_max=%d x18=%u x2A=%u x19=%u shift=%d",
+                          (void*) info, (unsigned) d->nVtx, maxIdx, (unsigned) d->x18, (unsigned) d->x2A, (unsigned) d->x19, (int) d->shift);
+}
+static void port_shape_probe_post(cModelInfo* info, ModelData* d, const s16* v)
+{
+    u32 bad = 0, first = 0xFFFFFFFF;
+    for (u32 k = 0; k < d->nVtx * 3; ++k) {
+        if (v[k] >= 32000 || v[k] <= -32000) {
+            if (first == 0xFFFFFFFF) first = k / 3;
+            ++bad;
+        }
+    }
+    if (bad && (++s_spPost % 30) == 1)
+        port_studio_event("peau_apres info=%p coords_saturees=%u premier_sommet=%u (%d %d %d)", (void*) info, (unsigned) bad,
+                          (unsigned) first, v[first * 3], v[first * 3 + 1], v[first * 3 + 2]);
+}
+#endif
 static void CalcSk1_x2(void* dst, void* src, u32 n);
 static int MakeWeightPaletteExt(WeightExt* w, int n);
 static int MakeWeightPalette(Weight* w, int n);
@@ -782,10 +826,17 @@ int commonScreenMatSub(cModel* m, cModelInfo* info)
                 if (i == 0) {
                     ResetShape(info, src);
                 }
+#ifdef RE4_PORT
+                if (port_knob("formes_off", 0)) continue;   // Studio : formes du visage coupees (enquete, 15/11)
+#endif
                 if (info->shape[i].data) {
                     CalculateShape_new(info, info->shape[i].data, info->shape[i].rate, src);
                 }
             }
+#ifdef RE4_PORT
+            if (port_knob("sonde_formes", 0))
+                port_shape_probe_pre(info, d, (const s16*) src);
+#endif
         }
         nVtx = d->nVtx;
         if (PTR_INVALID(info->pPosBuf[pG->vtx_buf_no]) || PTR_INVALID(src)) {
@@ -793,6 +844,10 @@ int commonScreenMatSub(cModel* m, cModelInfo* info)
             return 0;
         }
         CalcSk1_x(info->pPosBuf[pG->vtx_buf_no], src, nVtx);
+#ifdef RE4_PORT
+        if ((info->be_flag & 2) && port_knob("sonde_formes", 0))
+            port_shape_probe_post(info, d, (const s16*) info->pPosBuf[pG->vtx_buf_no]);
+#endif
         DCStoreRangeNoSync(info->pPosBuf[pG->vtx_buf_no], d->nVtx * 6);
         setupGQR6(0x32073207);
         nsrc = d->nrmOrig;
