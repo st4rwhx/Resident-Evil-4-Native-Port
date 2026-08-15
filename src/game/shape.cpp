@@ -28,6 +28,16 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst);
 
 void ShapeEnd(void* work);
 
+#ifdef RE4_PORT
+// Portage : sonde du Studio pour les visages qui parlent (cinematiques, radio). Signale chaque animation de
+// formes lancee, puis (reglage sonde_formes 1) une fois par seconde environ, ce que CalculateShape_new applique vraiment : canaux actifs,
+// canaux de poids non nul, poids extreme, sommets touches et plus grand deplacement. Sans effet sur le jeu.
+extern "C" void port_studio_event(const char* fmt, ...);
+extern "C" int port_knob(const char* name, int def);
+static u32 s_shpCalls, s_shpActive, s_shpNonZero, s_shpVtx;
+static f32 s_shpMaxV, s_shpMaxD;
+#endif
+
 // Start a shape animation on a model part. Returns 0 when the data has no frames.
 int ShapeSet(void* work, int frame, void* data, int flags)
 {
@@ -37,6 +47,11 @@ int ShapeSet(void* work, int frame, void* data, int flags)
     info->shapeFrame = frame;
     info->pShape = sd;
     info->shapeFlags = flags;
+#ifdef RE4_PORT
+    port_studio_event("forme_lancee info=%p data=%p images=%u canaux=%u image=%d drapeaux=%x sommets=%u table=%x",
+                      (void*) info, (void*) sd, (unsigned) (sd->nFrame & 0x3FFF), (unsigned) sd->num, frame, flags,
+                      info->pData ? (unsigned) info->pData->nVtx : 0u, info->pData ? (unsigned) info->pData->shapeOfs : 0u);
+#endif
     if (flags & 4) {
         info->shapeFrame = sd->nFrame - 1;
     }
@@ -196,7 +211,16 @@ struct ShapeEntry {
 // Portage : ecriture quantifiee vers s16 par GQR5 (echelle nulle). Le materiel sature
 // aux bornes du type et tronque vers zero ; les deux sont reproduits ici, car un
 // debordement silencieux se lirait comme un sommet parti a l autre bout de la salle.
-#define PSQ_ST_S16(f, p) ((void) (*(s16*) (p) = (s16) ((f) > 32767.0f ? 32767.0f : ((f) < -32768.0f ? -32768.0f : (f)))))
+// **Une fonction, pas une macro** : l'appelant passe `PSQ_L_S16(src++) * v`, et la macro d'origine evaluait son
+// argument jusqu'a trois fois, donc avancait `src` de deux a trois cases au lieu d'une. La liste des deformations
+// (indice de sommet, dx, dy, dz) etait lue de travers : des ecarts pris pour des indices projetaient des sommets du
+// haut de la tete au loin (pointes autour des yeux et des cheveux en cinematique) et la bouche ne recevait jamais
+// ses deformations (visages muets). Trouve le 15/11 avec le Studio (reglage formes_off, sonde peau_avant).
+static inline void port_psq_st_s16(f32 f, void* p)
+{
+    *(s16*) p = (s16) (f > 32767.0f ? 32767.0f : (f < -32768.0f ? -32768.0f : f));
+}
+#define PSQ_ST_S16(f, p) port_psq_st_s16((f), (p))
 #else
 #define PSQ_ST_S16(f, p) asm volatile("psq_st %0,0(%1),1,5" : : "f"(f), "b"(p) : "memory")
 #endif
@@ -238,6 +262,16 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
         pp->t = rate;
         pp->frames = w->frames;
         pp->x8 = 2;
+#ifdef RE4_PORT
+        const int sonde = port_knob("sonde_formes", 0);
+        if (sonde && ++s_shpCalls % 60 == 0) {
+            port_studio_event("forme_appliquee appels=%u canaux_actifs=%u non_nuls=%u poids_max=%.3f sommets=%u depl_max=%.1f image=%.1f/%.0f",
+                              (unsigned) s_shpCalls, (unsigned) s_shpActive, (unsigned) s_shpNonZero, (double) s_shpMaxV,
+                              (unsigned) s_shpVtx, (double) s_shpMaxD, (double) rate, (double) w->frames);
+            s_shpActive = s_shpNonZero = s_shpVtx = 0;
+            s_shpMaxV = s_shpMaxD = 0.0f;
+        }
+#endif
         for (i = 0; i < w->num; i++) {
             if (w->flags[i] & 4) {
                 f32 v;
@@ -249,6 +283,25 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
                 if (info->shapeFlags & 8) {
                     v *= 1.37f;
                 }
+#ifdef RE4_PORT
+                if (sonde)
+                    ++s_shpActive;
+                if (sonde && v != 0.0f) {
+                    ++s_shpNonZero;
+                    if ((v < 0 ? -v : v) > s_shpMaxV)
+                        s_shpMaxV = v < 0 ? -v : v;
+                    const ShapeEntry* pe = (const ShapeEntry*) (w->idx[i] * 8 + (u32) tbl);
+                    s_shpVtx += (u32) pe->num;
+                    const s16* ps = (const s16*) (pe->ofs + (u32) tbl);
+                    for (s32 k = 0; k < pe->num; ++k) {
+                        for (int c = 1; c < 4; ++c) {
+                            const f32 d = (f32) ps[k * 4 + c] * v;
+                            if ((d < 0 ? -d : d) > s_shpMaxD)
+                                s_shpMaxD = d < 0 ? -d : d;
+                        }
+                    }
+                }
+#endif
                 if (v != 0.0f) {
                     ShapeEntry* e = (ShapeEntry*) (w->idx[i] * 8 + (u32) tbl);
                     s16* src = (s16*) (e->ofs + (u32) tbl);
