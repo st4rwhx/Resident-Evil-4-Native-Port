@@ -1,4 +1,7 @@
 #include "types.h"
+#ifdef RE4_PORT
+extern "C" void port_studio_event(const char* fmt, ...);
+#endif
 #include "vec.h"
 #include "atari.h"
 #include "global.h"
@@ -365,6 +368,18 @@ void debugCamera::camera_type_00(Camera* cam, JOY* joy)
     }
     PSVECScale(&mv, &mv, (d / 10.0f + 1.0f) * 2.0f);
     PSVECScale(&mv, &mv, gain);
+#ifdef RE4_PORT
+    // Portage : sonde Studio (15/11, ecran beige de la marche vers la maison). La camera de debug ne devrait jamais
+    // bouger en partie normale : dire qui la deplace (manette, boutons, appelant) et si la matrice de la camera est vide.
+    if (mv.x != 0.0f || mv.y != 0.0f || mv.z != 0.0f) {
+        static u32 n;
+        if ((n++ % 60) == 0)
+            port_studio_event("camera_debug_deplacee manette=%d boutons=%08x mode=%d mat11=%.3f dist=%g gain=%g mv=%g,%g,%g pos=%g,%g,%g debug_mode=%d",
+                              (int) (joy - Joy), (unsigned) joy->on, (int) mode, (double) cam->mat[1][1], (double) cam->dist,
+                              (double) gain, (double) mv.x, (double) mv.y, (double) mv.z, (double) cam->param.pos.x,
+                              (double) cam->param.pos.y, (double) cam->param.pos.z, (int) pG->debug_mode);
+    }
+#endif
     if (mv.x != 0.0f || mv.y != 0.0f || mv.z != 0.0f) {
         Vec axis;
         Mtx m;
@@ -444,6 +459,18 @@ void debugCamera::camera_type_01(Camera* cam, JOY* joy)
     }
     PSVECScale(&mv, &mv, (d / 10.0f + 1.0f) * 2.0f);
     PSVECScale(&mv, &mv, gain);
+#ifdef RE4_PORT
+    // Portage : sonde Studio (15/11, ecran beige de la marche vers la maison). La camera de debug ne devrait jamais
+    // bouger en partie normale : dire qui la deplace (manette, boutons, appelant) et si la matrice de la camera est vide.
+    if (mv.x != 0.0f || mv.y != 0.0f || mv.z != 0.0f) {
+        static u32 n;
+        if ((n++ % 60) == 0)
+            port_studio_event("camera_debug_deplacee manette=%d boutons=%08x mode=%d mat11=%.3f dist=%g gain=%g mv=%g,%g,%g pos=%g,%g,%g debug_mode=%d",
+                              (int) (joy - Joy), (unsigned) joy->on, (int) mode, (double) cam->mat[1][1], (double) cam->dist,
+                              (double) gain, (double) mv.x, (double) mv.y, (double) mv.z, (double) cam->param.pos.x,
+                              (double) cam->param.pos.y, (double) cam->param.pos.z, (int) pG->debug_mode);
+    }
+#endif
     if (mv.x != 0.0f || mv.y != 0.0f || mv.z != 0.0f) {
         PSMTXMultVecSR(cam->mat, &mv, &mv);
         CameraDolly(cam, &mv);

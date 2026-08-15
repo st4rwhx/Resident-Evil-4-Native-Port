@@ -8,6 +8,9 @@
 #include "widget.h"
 #include "view.h"
 #include "db_cam.h"
+#ifdef RE4_PORT
+extern "C" void port_studio_event(const char* fmt, ...);
+#endif
 #include "db_log.h"
 #include "joy.h"
 #include "quake.h"
@@ -103,11 +106,35 @@ void CameraMove()
                 pG->Cam = *(Camera*) CamCtrl.x250;
             }
         }
+#ifdef RE4_PORT
+        {   // Sonde Studio (15/11, ecran beige) : etat de la camera du jeu juste apres CamCtrl, et d'ou elle vient.
+            static u32 n;
+            const Vec& q = pG->Cam.param.pos;
+            const bool odd = q.x != q.x || q.y != q.y || q.z != q.z || q.x > 1e6f || q.x < -1e6f || q.z > 1e6f || q.z < -1e6f
+                             || pG->Cam.dist != pG->Cam.dist;
+            if (odd && (n++ % 30) == 0)
+                port_studio_event("camera_source copie=%d x250=%x etat=%d f500C=%08x f60=%08x jeu_pos=%g,%g,%g ctrl_pos=%g,%g,%g ctrl_at=%g,%g,%g dist=%g",
+                                  (pG->flags_500C & 0x100) && !(pG->flags_60 & 0x10000000), (unsigned) CamCtrl.x250, (int) CamCtrl.state,
+                                  (unsigned) pG->flags_500C, (unsigned) pG->flags_60, (double) q.x, (double) q.y, (double) q.z,
+                                  (double) CamCtrl.camera.param.pos.x, (double) CamCtrl.camera.param.pos.y, (double) CamCtrl.camera.param.pos.z,
+                                  (double) CamCtrl.camera.param.at.x, (double) CamCtrl.camera.param.at.y, (double) CamCtrl.camera.param.at.z,
+                                  (double) pG->Cam.dist);
+        }
+#endif
         CamCtrl.x250 = 0;
         if (!(pG->flags_170 & 0x10000)) {
             QuakeMove();
         }
     }
+#ifdef RE4_PORT
+    {   // Sonde Studio (15/11) : camera du jeu en NaN apres CamCtrl.Move, avec l'etat du controleur.
+        static u32 n;
+        if (cam->param.pos.x != cam->param.pos.x && (n++ % 30) == 0)
+            port_studio_event("camera_jeu_nan etat=%d flags2C=%08x f500C=%08x f170=%08x mouvement=%d",
+                              (int) CamCtrl.state, (unsigned) CamCtrl.flags_2C, (unsigned) pG->flags_500C, (unsigned) pG->flags_170,
+                              CamCtrl.IsMotionSet());
+    }
+#endif
     CamDbg.move(cam, &Joy[1], 0);
     if (cam->param.fovy == 0.0f) {
         pLog->err(0, 0, "CameraMove(): Fovy = 0.0f");

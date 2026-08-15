@@ -1,5 +1,8 @@
 // game/TexRender: render-to-texture manager and helpers (D:/Bio4/Prog/TexRender.cpp).
 #include "types.h"
+#ifdef RE4_PORT
+extern "C" void port_studio_event(const char* fmt, ...);
+#endif
 #include "global.h"
 #include "event.h"
 #include "db_log.h"
@@ -361,6 +364,18 @@ void CamRenderPrev(TexRenderCam* c)
     }
     c->pCam = new (&c->cam) CameraMotion(c->data, 0, 0, (f32) frame);
     c->pCam->move();
+#ifdef RE4_PORT
+    {   // Sonde Studio (15/11, ecran beige) : camera de rendu dans une texture, construite depuis c->data.
+        static u32 n;
+        if ((n++ % 60) == 0) {
+            const u8* d = (const u8*) c->data;
+            port_studio_event("texrender_camera data=%p octets=%02x%02x%02x%02x image=%d pos=%g,%g,%g at=%g,%g,%g sauve_pos=%g dist=%g",
+                              c->data, d ? d[0] : 0, d ? d[1] : 0, d ? d[2] : 0, d ? d[3] : 0, frame, (double) c->pCam->param.pos.x,
+                              (double) c->pCam->param.pos.y, (double) c->pCam->param.pos.z, (double) c->pCam->param.at.x,
+                              (double) c->pCam->param.at.y, (double) c->pCam->param.at.z, (double) pG->Cam.param.pos.x, (double) pG->Cam.dist);
+        }
+    }
+#endif
     c->save = pG->Cam;
     pGS->Cam = *c->pCam;
     C_MTXPerspective(pGS->Cam.projMat, pGS->Cam.param.fovy, 4.0f / 3.0f, ((F32S*) &ZNEAR)->v, ((F32S*) &ZFAR)->v);
@@ -369,5 +384,13 @@ void CamRenderPrev(TexRenderCam* c)
 
 void CamRenderAfter(TexRenderCam* c)
 {
+#ifdef RE4_PORT
+    {
+        static u32 n;
+        if ((n++ % 60) == 0)
+            port_studio_event("texrender_restaure pos=%g,%g,%g dist=%g", (double) c->save.param.pos.x, (double) c->save.param.pos.y,
+                              (double) c->save.param.pos.z, (double) c->save.dist);
+    }
+#endif
     pG->Cam = c->save;
 }

@@ -13,6 +13,10 @@ void* memset(void* dst, int c, unsigned int n);
 
 #define PI 3.1415927f
 
+#ifdef RE4_PORT
+extern "C" void port_studio_event(const char* fmt, ...);
+#endif
+
 CameraMotion::CameraMotion(void* data, int hokan, int flags, f32 frame)
 {
     CameraMotionWork* w = &info;
@@ -87,6 +91,22 @@ void CameraMotion::move()
     param.at = at;
     param.roll = roll.y;
     param.fovy = fov.y * 180.0f / PI;
+#ifdef RE4_PORT
+    // Portage : sonde Studio (15/11, ecran beige : camera de cinematique en NaN). Dit quelle grandeur part en NaN, a
+    // quelle image, avec les types de pistes et la matrice de base.
+    {
+        static u32 n;
+        const bool bad = pos.x != pos.x || at.x != at.x || roll.y != roll.y || fov.y != fov.y;
+        if (bad && (n++ % 30) == 0) {
+            port_studio_event("camera_nan image=%.1f/%.1f pistes=%d types=%x,%x,%x,%x numeros=%d,%d,%d,%d pos=%.1f at=%.1f roulis=%.3f fov=%.3f base=%p",
+                              (double) w->frame, (double) w->maxFrame, w->nParts, w->nParts > 0 ? w->partsInfo[0] >> 12 : -1,
+                              w->nParts > 1 ? w->partsInfo[1] >> 12 : -1, w->nParts > 2 ? w->partsInfo[2] >> 12 : -1,
+                              w->nParts > 3 ? w->partsInfo[3] >> 12 : -1, w->nParts > 0 ? w->partsNo[0] : -1,
+                              w->nParts > 1 ? w->partsNo[1] : -1, w->nParts > 2 ? w->partsNo[2] : -1, w->nParts > 3 ? w->partsNo[3] : -1,
+                              (double) pos.x, (double) at.x, (double) roll.y, (double) fov.y, (void*) base_mat);
+        }
+    }
+#endif
     CameraSetOrientationRoll(this);
     if (base_mat) {
         PSMTXMultVec(*base_mat, &param.pos, &param.pos);

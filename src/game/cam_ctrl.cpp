@@ -1,4 +1,7 @@
 #include "types.h"
+#ifdef RE4_PORT
+extern "C" void port_studio_event(const char* fmt, ...);
+#endif
 #include "vec.h"
 #include "global.h"
 #include "camera.h"
@@ -1228,11 +1231,36 @@ void CameraControl::Move()
             }
         }
     }
+#ifdef RE4_PORT
+    // Portage : sonde Studio (15/11, ecran beige). Premiere etape ou la camera devient NaN : entree (cur, issue de l'etat
+    // `state`), interpolation, lissage (qui ajoute pG->quake_ofs et garde la valeur precedente).
+    static int s_nanReported;
+    const bool nanIn = cur.pos.x != cur.pos.x || cur.at.x != cur.at.x || cur.fovy != cur.fovy;
+    const bool nanSmthBefore = CamSmth.param.pos.x != CamSmth.param.pos.x;
+#endif
     interp.move(&cur);
     if (interp.frame != 0) {
         CamSmth.flags &= ~1;
     }
+#ifdef RE4_PORT
+    const bool nanInterp = interp.param.pos.x != interp.param.pos.x || interp.param.at.x != interp.param.at.x;
+#endif
     CamSmth.move(&interp.param);
+#ifdef RE4_PORT
+    {
+        const CameraParam* sp = CamSmth.getParam();
+        const bool nanOut = sp->pos.x != sp->pos.x || sp->at.x != sp->at.x || sp->fovy != sp->fovy;
+        if ((nanIn || nanInterp || nanOut) && s_nanReported < 6) {
+            ++s_nanReported;
+            port_studio_event("camera_nan_etape etat=%d entree=%d interp=%d lisse_avant=%d sortie=%d cur=%g,%g,%g at=%g,%g,%g fov=%g "
+                              "interp_images=%d quake=%g,%g,%g ratio=%g smth=%g,%g,%g",
+                              (int) state, nanIn, nanInterp, nanSmthBefore, nanOut, (double) cur.pos.x, (double) cur.pos.y,
+                              (double) cur.pos.z, (double) cur.at.x, (double) cur.at.y, (double) cur.at.z, (double) cur.fovy,
+                              (int) interp.frame, (double) pG->quake_ofs.x, (double) pG->quake_ofs.y, (double) pG->quake_ofs.z,
+                              (double) CamSmth.ratio, (double) sp->pos.x, (double) sp->pos.y, (double) sp->pos.z);
+        }
+    }
+#endif
     camera.param = *CamSmth.getParam();
     CameraSetOrientationRoll(&camera);
     if (!(pG->flags_60 & 0x10000000) && (flags_30 & 4)) {
