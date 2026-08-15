@@ -320,7 +320,14 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
                 std::printf("[PORT] endian : table de vibrations inattendue\n");
             continue;
         }
-        if (core && (i == 6 || i == 17))        // ofs_28 / ofs_54 : tables de messages, convesties ensuite
+        // ofs_28 / ofs_54 : tables de messages, converties ensuite ; ofs_6C (messages systeme, dvd.cpp MesData.ptr[4])
+        // et ofs_70 (choix du mode TV, tv_mode.cpp) aussi : prises jusqu'ici pour une table de decalages, leur en-tete
+        // etait retourne et le reste laisse gros-boutiste (sentinelle Studio du 15/11, core.das n23/n24).
+        if (core && (i == 6 || i == 17 || i == 23 || i == 24))
+            continue;
+        // ofs_34 / ofs_38 : identiques octet pour octet dans le Core.dat du port PS2 de Capcom (oracle, 15/11) : rien a
+        // retourner. Sautees pour ne plus lever de fausse alerte.
+        if (core && (i == 9 || i == 10))
             continue;
         if (core && (i == 1 || i == 16)) {
             if (!swap_eff_data(s, o))
@@ -360,8 +367,8 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
             if (okb && g_trace_on)
                 std::printf("[ARC]   entree %u +0x%x : %s\n", (unsigned) i, (unsigned) o, kind);
             if (!okb)
-                port_studio_event("archive_entree_non_convertie n%u +0x%x %u octets (%s) %02x%02x%02x%02x %02x%02x%02x%02x",
-                                  (unsigned) i, (unsigned) o, (unsigned) (e - o), kind, s.base[o], s.base[o + 1], s.base[o + 2],
+                port_studio_event("archive_entree_non_convertie %s n%u +0x%x %u octets (%s) %02x%02x%02x%02x %02x%02x%02x%02x",
+                                  g_trk.what ? g_trk.what : "?", (unsigned) i, (unsigned) o, (unsigned) (e - o), kind, s.base[o], s.base[o + 1], s.base[o + 2],
                                   s.base[o + 3], s.base[o + 4], s.base[o + 5], s.base[o + 6], s.base[o + 7]);
             if (!okb && std::getenv("RE4_TRACE_ENDIAN"))
                 std::printf("[ARC] archive : entree %u +0x%x (%u octets) non reconnue (%s) : %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -841,6 +848,14 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     if (trace)
         std::printf("[ENDIAN] %s  %u octets a %p\n", name, (unsigned) size, data);
 
+    // Suivi des octets retournes, pour CHAQUE fichier (15/11). Les conversions « une seule fois » (swap_u16_once : textes
+    // qui se chevauchent dans une table de messages, blocs partages) ne protegent que si le suivi couvre le fichier en
+    // cours. Sans cela le suivi pointait sur le fichier precedent : les zones communes etaient retournees deux fois, donc
+    // laissees gros-boutistes (textes de memcard.das et des sous-ecrans ss_*.dat). Il est coupe en sortie, pour qu'une
+    // conversion faite plus tard ailleurs ne consulte pas la memoire d'un fichier deja rendu au jeu.
+    track_begin(data, size, name);
+    struct TrackEnd { ~TrackEnd() { g_trk.base = nullptr; g_trk.size = 0; } } track_end;
+
     // Son (phase C) : en-tetes de flux, table des musiques, sons de portes, musiques par salle.
     if (ends_with(name, ".evd")) {
         track_begin(data, size, name);
@@ -874,6 +889,12 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
                 std::printf("[PORT] endian : table de messages 0x28 inattendue\n");
             if (mes3 && mes3 != mes012 && !swap_mes_tbl(s, mes3, arc_chunk_end(s, mes3)))
                 std::printf("[PORT] endian : table de messages 0x54 inattendue\n");
+            const u32 mesSys = read_le32(s.base + 0x6C);   // ArcFile::ofs_6C : messages systeme
+            const u32 mesTv = read_le32(s.base + 0x70);    // ArcFile::ofs_70 : choix du mode TV
+            if (mesSys && !swap_mes_tbl(s, mesSys, arc_chunk_end(s, mesSys)))
+                std::printf("[PORT] endian : table de messages 0x6C inattendue\n");
+            if (mesTv && mesTv != mesSys && !swap_mes_tbl(s, mesTv, arc_chunk_end(s, mesTv)))
+                std::printf("[PORT] endian : table de messages 0x70 inattendue\n");
         }
         return;
     }
@@ -881,6 +902,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
     // messages (src/game/card.cpp, cCard::initSub), sans plus de signature que celles de
     // core.das - donc nommee elle aussi.
     if (ends_with(name, "memcard.das")) {
+        track_begin(data, size, name);
         if (swap_arc(s)) {
             const u32 mes = read_le32(s.base + 0x14);   // CardArc::ofs[1]
             if (mes && !swap_mes_tbl(s, mes, arc_chunk_end(s, mes)))
@@ -911,6 +933,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
         if (size <= 0x400)
             return;
         const Span a = { s.base + 0x400, size - 0x400 };
+        track_begin(a.base, a.size, name);
         if (!swap_arc(a)) {
             std::printf("[PORT] endian : %s : archive radio inattendue\n", name);
             return;
@@ -987,6 +1010,7 @@ extern "C" void port_endian_fix(const char *name, void *data, u32 size)
                 return;
             }
         }
+        track_begin(data, size, name);   // nom de l'archive dans les alertes du Studio (sinon celui du fichier precedent)
         if (swap_arc(s, false, std::strstr(name, "ss_") != nullptr || std::strstr(name, "SS_") != nullptr))
             return;
     }
@@ -1461,7 +1485,10 @@ bool conv_motion(const Span &s, u32 at, u32 end)
     u32 keys[256];
     for (u32 i = 0; i < nParts; ++i) {
         keys[i] = read_be32(h + tbl + 4 + i * 4);
-        if (keys[i] + 2 > end - at) {
+        // Une piste peut pointer pile sur la fin de l'entree (wep10.drs n32 : la piste 29 tombe sur l'en-tete de
+        // l'animation suivante, bizarrerie des donnees de Capcom). On convertit les autres pistes au lieu de laisser
+        // toute l'animation gros-boutiste ; celle-ci est sautee (boucle plus bas). Au-dela de la fin : refus.
+        if (keys[i] > end - at) {
             std::printf("[PORT] endian : MOT a +0x%x : cle %u hors de l'entree\n", (unsigned) at, (unsigned) i);
             return false;
         }
@@ -1474,6 +1501,8 @@ bool conv_motion(const Span &s, u32 at, u32 end)
     for (u32 i = 0; i < nParts; ++i) {
         const int type = (infos[i] >> 12) & 0xF;
         u32 p = keys[i];
+        if (p + 2 > end - at)
+            continue;                                  // piste qui pointe sur la fin de l'entree (voir plus haut)
         for (int axis = 0; axis < 3; ++axis) {
             if (p + 2 > end - at)
                 break;
@@ -1514,7 +1543,7 @@ bool looks_like_motion(const Span &s, u32 at, u32 end)
         return false;
     for (u32 i = 0; i < nParts; ++i) {
         const u32 k = read_be32(h + tbl + 4 + i * 4);
-        if (k < tbl + 4 + nParts * 4 || k + 2 > end - at)
+        if (k < tbl + 4 + nParts * 4 || k > end - at)   // k == fin : piste en bout d'entree (wep10.drs n32)
             return false;
     }
     return true;
@@ -1530,7 +1559,10 @@ bool looks_like_seqtbl(const Span &s, u32 at, u32 end)
     const u32 n = (u32) ((h[0] << 8) | h[1]);
     if (n == 0 || n > 2000 || 4 + n * 4 > end - at || h[2] > 1)
         return false;
-    if (h[4] != 0 || h[5] != 0)                 // la premiere cle est a l'image 0
+    // La premiere cle est en general a l'image 0. Les tables qui reprennent en cours d'animation (villageois em10..em1f,
+    // entrees 93/94/123 : premiere cle 0x0300 = image 12) ne sont acceptees que si l'entree a exactement leur taille,
+    // arrondie a 32 octets comme le fait l'outil de Capcom (balayage des .drs, 15/11).
+    if ((h[4] != 0 || h[5] != 0) && ((4 + n * 4 + 31) & ~31u) != end - at)
         return false;
     u32 prev = 0;
     for (u32 i = 0; i < n; ++i) {
@@ -1598,6 +1630,21 @@ bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind)
                                    read_be32(s.base + at + 0x3C) == 0x20030818u)) {
         k = "BIN";
         done = conv_model_bin(s, at, end);
+    } else if (s.has(at, 0x2C) && read_be32(s.base + at) == 0x20u && read_be32(s.base + at + 0x20) == 0x0020AF30u
+               && read_be32(s.base + at + 4) > 0x20u && read_be32(s.base + at + 4) < end - at) {
+        // Police rangee dans une archive (MesFontFile : decalage du TPL = 0x20, decalage de la table des largeurs, puis
+        // le TPL) : SS/<langue>/ss_cmmn.dat entree 0, que sscrn.cpp passe a cMes.setupFont (texte des sous-ecrans, dont
+        // le nom de l'objet dans la mallette). Meme conversion que les fichiers Font/*.fnt (swap_fnt).
+        k = "FNT";
+        swap_u32(s.base + at);
+        swap_u32(s.base + at + 4);
+        done = swap_tpl(s, at + 0x20);
+    } else if (s.has(at, 8) && (s.base[at] == '1' || s.base[at] == '2') && s.base[at + 1] == '.' && s.base[at + 2] == '0'
+               && s.base[at + 3] == '0' && s.base[at + 4] == 0) {
+        // Table d'unites "id" ("1.00" / "2.00") rangee dans une archive de personnage ou d'arme (wep09.drs : 28 entrees,
+        // balayage des .drs du 15/11) ; jusqu'ici reconnue seulement dans core.das et les archives a en-tete.
+        k = "ID";
+        done = swap_id_data(s, at);
     } else if (looks_like_motion(s, at, end)) {
         k = "MOT";
         done = conv_motion(s, at, end);
@@ -1664,12 +1711,30 @@ u32 conv_ofs_archive(const Span &s, const char *name)
         const u32 o = offs[i];
         if (!o || i == 0 || i == 1 || o >= s.size)
             continue;
+        // Deux entrees peuvent pointer les memes donnees (pl00.drs 38/39, wep02.drs 33/34 : une animation vide puis la
+        // vraie) : la seconde trouvait des donnees deja retournees et passait pour non convertie (fausse alerte, 15/11).
+        // Une entree qui pointe sur le module de code (mot 1 : em16.drs n692, wep30.drs n38...) n'est pas une donnee :
+        // le code est deja dans le binaire (fausse alerte du balayage du 15/11).
+        bool seen = o == offs[1];
+        for (u32 j = 2; j < i && !seen; ++j)
+            seen = offs[j] == o;
+        if (seen)
+            continue;
         u32 e = s.size;
         for (u32 j = 1; j < n; ++j)
             if (offs[j] > o && offs[j] < e)
                 e = offs[j];
         const char *kind = "?";
-        const bool done = conv_blob(s, o, e, 0, &kind);
+        // Donnees d'effets du personnage ou de l'arme (EspDataLoad : pl_leon.cpp lit l'entree 0x1A de pl00.drs, les
+        // armes et ennemis la leur). Version 0xB en tete, comme dans core.das et les EVD ; non reconnues ici, elles
+        // restaient gros-boutistes (sentinelle Studio du 15/11 : pl00.drs n26, wep02.drs n4).
+        bool done = false;
+        if (read_be32(s.base + o) == 0xBu && s.has(o, 0x30) && read_be32(s.base + o + 4) >= 0x30 && read_be32(s.base + o + 4) < e - o
+            && swap_eff_data(s, o)) {
+            done = true;
+            kind = "EFF";
+        } else
+            done = conv_blob(s, o, e, 0, &kind);
         if (g_trace_on)
             std::printf("[ARC] %s entree %u +0x%x (%u octets) : %s %s%s", name, (unsigned) i, (unsigned) o, (unsigned) (e - o), kind,
                         done ? "converti" : "NON converti", done ? "\n" : "  :");
@@ -2848,6 +2913,7 @@ extern "C" void port_room_arc_fix(void *arc, u32 size)
 {
     const Span s = { (u8 *) arc, size };
     track_begin(arc, size, "salle");
+    struct TrackEnd { ~TrackEnd() { g_trk.base = nullptr; g_trk.size = 0; } } track_end;   // voir port_endian_fix
     if (!arc || !s.has(0, 0x10)) {
         std::printf("[PORT] endian : archive de salle vide\n");
         return;
