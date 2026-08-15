@@ -131,6 +131,10 @@ def adresse(f, expr, binaire):
         a = int(head, 16)
     else:
         sy = symboles(binaire)
+        if head not in sy:   # fonction C++ : nom sans signature (« MesSet » -> « MessageControl::MesSet(int, ...) »)
+            cand = [k for k in sy if k.startswith(head + '(') or k.endswith('::' + head) or ('::' + head + '(') in k]
+            if len(cand) == 1:
+                head = cand[0]
         if head not in sy:
             cand = [k for k in sy if k.endswith(head)][:5]
             raise SystemExit('symbole inconnu %s (proches : %s)' % (head, cand))
@@ -201,6 +205,9 @@ def main():
             continue
         if w and w[0] == 'guetter':       # guetter <expr> <octets> [arret] : qui modifie cette valeur ?
             print(ask(f, 'surveiller %x %s' % (adresse(f, w[1], binaire), ' '.join(w[2:])))[0], flush=True)
+            continue
+        if w and w[0] == 'appeler':      # appeler <fonction|adresse> [args entiers] : sur le fil du jeu
+            print(ask(f, 'appeler %x %s' % (adresse(f, w[1], binaire), ' '.join(w[2:])))[0], flush=True)
             continue
         if w and w[0] == 'adresse':
             print('%x' % adresse(f, w[1], binaire), flush=True)
