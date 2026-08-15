@@ -244,6 +244,7 @@ bool conv_blob(const Span &s, u32 at, u32 end, int depth, const char **kind);
 // Les sous-fichiers pointes sont pour beaucoup des TPL (speculaire, illumination globale,
 // textures d interface). `swap_tpl` se reconnait lui-meme a son numero de version : on le
 // propose a chaque entree, il ne touche que celles qui en sont.
+bool swap_mes_tbl(const Span &s, u32 at, u32 end);   // plus bas
 bool swap_arc(const Span &s, bool core = false, bool blobs = false)
 {
     if (!s.has(0, 0x10))
@@ -343,6 +344,13 @@ bool swap_arc(const Span &s, bool core = false, bool blobs = false)
                 const u32 oj = (j > i) ? read_be32(s.base + 0x10 + j * 4) : read_le32(s.base + 0x10 + j * 4);
                 if (oj > o && oj < e)
                     e = oj;
+            }
+            // Archives des sous-ecrans (SS/<langue>/ss_*.dat : inventaire, puzzles et carte, fichiers, boutique) : leurs
+            // tables de messages n'ont pas de signature et restaient gros-boutistes (15/11, Studio : texte sans code de
+            // fin en r101 apres le chargement de ss_pzzl.dat). swap_mes_tbl verifie toute la forme avant d'ecrire.
+            if (blobs && !core && swap_mes_tbl(s, o, e)) {
+                if (g_trace_on) std::printf("[ARC]   entree %u +0x%x : table de messages\n", (unsigned) i, (unsigned) o);
+                continue;
             }
             const char *kind = "?";
             const bool okb = conv_blob(s, o, e, 0, &kind);
