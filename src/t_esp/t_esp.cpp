@@ -32,7 +32,9 @@ void DB_WorkPush(int a, int b);
 void DB_WorkPop(int a, int b);
 void DB_GetCamFrontPos(f32 dist, f32* x, f32* y, f32* z);
 void DB_DrawCursor2D(Vec* pos);
-void DB_DrawCursor3D(EspSeqData* head, void* seq, f32 size, int col);
+// Portage : signature alignee sur la definition (16/11, audit_prototypes.py). Sur PowerPC entiers et flottants passent
+// dans des registres separes, l ordre melange de l ancienne declaration y etait indifferent ; pas sur x86 / ARM softfp.
+extern "C" void DB_DrawCursor3D(EspSeqData* head, void* seq, int col, f32 size);
 void DB_DrawCross3D(Vec* pos, int col, f32 size);
 int DB_isGetComeEventTool();
 void DB_EventCamLoad(int a, int b);
@@ -6007,7 +6009,7 @@ void DrawPosCursor()
             if (g_pBasePosWin->win->select) col = 1;
             size = 1.0f;
             if (g_pEditActive == g_pEditWin1 && sel->selX == 3) size = 100.0f;
-            DB_DrawCursor3D(g_pSeqHead, g_pEditSeq, size, col);
+            DB_DrawCursor3D(g_pSeqHead, g_pEditSeq, col, size);
         }
     }
     if (g_pEditSeq->id == 0xFE && g_pEditActive == g_pEditWin3 && sel->selX == 0) {

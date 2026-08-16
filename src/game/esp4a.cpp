@@ -9,7 +9,9 @@ struct Esp4aWork {
     f32 range;  // 0x04 distance from the camera at which the quake fades to zero (0 = no fade)
 };
 
-extern "C" void QuakeExec(int a, int b, int c, u8 type, f32 power);
+// Portage : signature alignee sur la definition (16/11, audit_prototypes.py). Sur PowerPC entiers et flottants passent
+// dans des registres separes, l ordre melange de l ancienne declaration y etait indifferent ; pas sur x86 / ARM softfp.
+extern "C" void QuakeExec(u8 id, u16 delay, s16 time, f32 power, u8 axis);   // game/quake.cpp (nom non decore)
 
 // Camera quake driven by the effect's alpha, attenuated by the distance to the camera.
 class cEsp4a : public cEsp {
@@ -40,7 +42,7 @@ void cEsp4a::move()
                 power = 0.0f;
             }
         }
-        QuakeExec(0, 0, 1, w->type, power);
+        QuakeExec(0, 0, 1, power, w->type);
     }
 }
 

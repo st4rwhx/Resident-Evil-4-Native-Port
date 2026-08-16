@@ -30,7 +30,10 @@ void EffectEspDelete(int a, int b, cModel* m, int c);     // game/est.cpp
 void EffectEspgenDelete(int a, int b, cModel* m);
 void EffectEfmDelete(int a, int b, cModel* m);
 void ReadWepData(int no, int type);                       // game/read.cpp
-u32 GetWepTargetListBomb(Vec* pos, WepTarget* list, u32 prio, int type, int flag, f32 len);  // game/em_sub.cpp
+// game/em_sub.cpp : le rayon flottant est le 2e parametre. L ancienne declaration le mettait en dernier - indifferent
+// sur PowerPC (registres flottants a part), fatal sur x86 / ARM softfp : list recevait le nombre max (coup de pied :
+// plantage en ecrivant list[0], Studio 16/11).
+int GetWepTargetListBomb(Vec* pos, f32 r, WepTarget* list, int max, int type, int flag);
 u32 GetWepTargetList2(Vec* p0, Vec* p1, WepTarget* list, u32 prio, Vec* hit, Vec* nrm, u32* attr, int type,
                       int flag, f32 len);
 void EspSetEatEffect(Vec* pos, Vec* nrm, int type, u8 wep);  // game/est.cpp
@@ -344,7 +347,7 @@ u32 PlWepHitCheck2(cModel* plm, Vec* p0, Vec* p1, int type, u32 flag, f32 len)
     case 0x17:
     case 0x29:
     case 0x2D:
-        n = GetWepTargetListBomb(p0, list, prio, type, f4, len);
+        n = GetWepTargetListBomb(p0, len, list, prio, type, f4);
         break;
     default:
         n = GetWepTargetList2(p0, p1, list, prio, &hit, &nrm, &attr, type, f4, len);
@@ -492,7 +495,7 @@ u32 PlWepHitCheck3(Vec* pos, int type, u32 prio, f32 len)
     if (prio > 0x14) {
         prio = 0x14;
     }
-    n = GetWepTargetListBomb(pos, list, prio, type, 0, len);
+    n = GetWepTargetListBomb(pos, len, list, prio, type, 0);
     for (i = 0; i < n; i++) {
         cEm* em = list[i].em;
         cDmgInfo* dmg = &em->dmg;

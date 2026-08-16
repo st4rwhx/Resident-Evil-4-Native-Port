@@ -7,8 +7,10 @@
 
 extern "C" {
 int MotionMove(cModel* m, int a);
-void YarareInit(cEm* em, s16 no, u16 flag, f32 x, f32 y, f32 z, f32 w, f32 h);            // at_mod.cpp
-void YarareInitCube(cEm* em, s16 no, u16 flag, f32 x, f32 y, f32 z, f32 w, f32 h, f32 rad);
+// Portage : signature alignee sur la definition (16/11, audit_prototypes.py). Sur PowerPC entiers et flottants passent
+// dans des registres separes, l ordre melange de l ancienne declaration y etait indifferent ; pas sur x86 / ARM softfp.
+void YarareInit(cEm* em, f32 x, f32 y, f32 z, f32 w, f32 h, s16 no, u16 flag);            // at_mod.cpp
+void YarareInitCube(cEm* em, f32 x, f32 y, f32 z, f32 w, f32 h, f32 rad, s16 no, u16 flag);
 }
 
 // cSatMgr::create(pos, rot, poly, attr, flag, h) with the `lfs h` argument move issued before the
@@ -203,9 +205,9 @@ void cEmObj::setYarare(s16 no, Vec* pos, u16 flag, int cube, f32 w, f32 h, f32 r
     #endif
     f |= 1;
     if (cube == 0) {
-        YarareInitCube(this, n, f, p.x, p.y, p.z, w, h, rad);
+        YarareInitCube(this, p.x, p.y, p.z, w, h, rad, n, f);
     } else {
-        YarareInit(this, n, f, p.x, p.y, p.z, w, h);
+        YarareInit(this, p.x, p.y, p.z, w, h, n, f);
     }
 }
 
