@@ -144,7 +144,13 @@ def main():
     bindir = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin')
     # PORT_ABI=x86 (14/11, banc G0) : meme code, Android x86 32 bits (MuMu sur le PC) ; meme modele memoire que
     # l'ARM32 (pointeurs 32 bits, petit-boutiste). Defaut : ARM32, le telephone.
-    triple = 'i686-linux-android28' if os.environ.get('PORT_ABI') == 'x86' else 'armv7a-linux-androideabi28'
+    # PORT_ABI=x86_64 / arm64 (17/11, phase N7 « 64 bits ») : essai de compilation 64 bits (iOS, Android 64 bits ; MuMu
+    # fait tourner x86_64). Pas encore liable : sert à lister les endroits 32 bits (--errlog), sans limite d'erreurs.
+    abi = os.environ.get('PORT_ABI')
+    triple = {'x86': 'i686-linux-android28', 'x86_64': 'x86_64-linux-android28',
+              'arm64': 'aarch64-linux-android28'}.get(abi, 'armv7a-linux-androideabi28')
+    if abi in ('x86_64', 'arm64'):
+        COMMON.append('-ferror-limit=0')
     cxx = os.path.join(bindir, triple + '-clang++.cmd')
     cc = os.path.join(bindir, triple + '-clang.cmd')
     for t in (cxx, cc):
