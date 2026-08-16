@@ -118,15 +118,42 @@ def lire(f, a, n):
     return bytes.fromhex(r['octets'])
 
 
+# ---- 17/11 : champs par leur nom (types DWARF de la build PORT_TYPES=1, voir LIRE_EN_PREMIER §2 ter)
+# `*pPL+cModel.pos` au lieu de `*pPL+0x94`. Les decalages viennent des objets compiles avec -g ; ils ne dependent pas
+# du binaire installe (meme source, memes en-tetes). STUDIO_TYPES = dossier des objets (defaut : build typee x86).
+_types = None
+
+
+def champ(nom):
+    global _types
+    if _types is None:
+        d = os.environ.get('STUDIO_TYPES', 'C:/re4n/re4port_types_x86/obj')
+        cache = os.path.join(d, '..', 'types.json')
+        objs = [os.path.join(d, x) for x in os.listdir(d) if x.endswith('.o')]
+        if os.path.exists(cache) and os.path.getmtime(cache) >= max(os.path.getmtime(o) for o in objs):
+            _types = json.load(open(cache))
+        else:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import verite_dwarf
+            _types = verite_dwarf.table_types(objs)
+            json.dump(_types, open(cache, 'w'))
+    t, _, c = nom.partition('.')
+    if t not in _types or c not in _types[t]:
+        proches = [k for k in _types.get(t, {}) if c.lower() in k.lower()][:8] if t in _types else []
+        raise SystemExit('champ inconnu %s (proches : %s)' % (nom, proches))
+    return _types[t][c]
+
+
 def adresse(f, expr, binaire):
-    """NOM | NOM+0x10 | *NOM+0x10 (pointeur lu puis decalage) | **NOM+8+0x20 | 0x8012abcd"""
+    """NOM | NOM+0x10 | *NOM+0x10 (pointeur lu puis decalage) | **NOM+8+0x20 | 0x8012abcd | *pPL+cModel.pos"""
     e = expr.strip()
     deref = 0
     while e.startswith('*'):
         deref += 1
         e = e[1:]
     parts = re.split(r'\+', e)
-    head, offs = parts[0], [int(x, 0) for x in parts[1:]]
+    head = parts[0]
+    offs = [champ(x) if re.match(r'[A-Za-z_]', x) else int(x, 0) for x in parts[1:]]
     if re.fullmatch(r'0x[0-9a-fA-F]+|[0-9a-fA-F]{8}', head):
         a = int(head, 16)
     else:

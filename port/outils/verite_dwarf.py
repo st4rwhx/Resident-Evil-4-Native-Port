@@ -88,4 +88,42 @@ def check(objs):
         print('ECART %s::%s natif 0x%X commentaire 0x%X (ecart %+d)  %s:%d' % (b[0], b[1], b[2], b[3], b[3] - b[2], b[4], b[5]))
     print('concordants', ok, 'ecarts', len(bad), 'sans commentaire', nocom)
 
-check(sys.argv[1:])
+def table_types(objs):
+    """{type: {champ ou a.b.c: decalage natif}} pour le Studio (`*pPL+cModel.pos`)."""
+    tab = {}
+    for obj in objs:
+        dies, children = parse(obj)
+        def strip(t):
+            while t in dies and dies[t]['tag'] in ('typedef', 'const_type', 'volatile_type'):
+                t = dies[t].get('type')
+            return t
+        def walk(t, base, pre, depth, out):
+            if depth > 6:
+                return
+            for c in children.get(t, ()):
+                d = dies[c]
+                if d['tag'] == 'inheritance':
+                    st = strip(d.get('type'))
+                    if st in dies:
+                        walk(st, base + int(d.get('loc', '0x0'), 16), pre, depth + 1, out)
+                    continue
+                if d['tag'] != 'member':
+                    continue
+                o = base + int(d.get('loc', '0x0'), 16)
+                nm = d.get('name')
+                st = strip(d.get('type'))
+                if nm:
+                    out.setdefault(pre + nm, o)
+                if st in dies and dies[st]['tag'] in AGG:
+                    walk(st, o, pre + nm + '.' if nm else pre, depth + 1, out)
+        for off, d in dies.items():
+            if d['tag'] in AGG and 'name' in d and 'decl' not in d and d['name'] not in tab:
+                out = {}
+                walk(off, 0, '', 0, out)
+                if out:
+                    tab[d['name']] = out
+    return tab
+
+
+if __name__ == '__main__':
+    check(sys.argv[1:])
