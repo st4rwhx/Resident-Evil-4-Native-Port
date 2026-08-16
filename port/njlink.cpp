@@ -28,6 +28,8 @@
 #include <cstdlib>
 #include <cstring>
 
+extern float g_nj_accel;   // port/studio.cpp : acceleration « Wiimote » en g (commandes Wii, lue par port_accel)
+
 namespace {
 
 int g_fd = -1;
@@ -115,6 +117,7 @@ void poll_host()
         switch (m.type) {
         case NJ_MSG_PAD:
             std::memcpy(&g_pad, m.data, sizeof g_pad);
+            g_nj_accel = (float) m.a / 1000.0f;   // commandes Wii (17/11) : milliemes de g, 0 depuis une appli ancienne
             break;
         case NJ_MSG_RELEASE:
             if (m.a < (unsigned) kSlots)

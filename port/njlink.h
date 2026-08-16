@@ -13,7 +13,7 @@ enum {
     NJ_MSG_BUFFERS = 2,  // coeur -> appli : a = nombre, b = largeur, c = hauteur ; puis a AHardwareBuffer
     NJ_MSG_FRAME = 3,    // coeur -> appli : a = emplacement, b = numero, c = zone XFB (largeur << 16 | hauteur, 0 inconnue) ; barriere GPU jointe ou aucune
     NJ_MSG_STATE = 4,    // coeur -> appli : NjMsg puis NjState dans le meme paquet (etat du jeu, une fois par image)
-    NJ_MSG_PAD = 16,     // appli -> coeur : data = NjPad
+    NJ_MSG_PAD = 16,     // appli -> coeur : data = NjPad ; a = acceleration « Wiimote » en milliemes de g (commandes Wii, 0 = aucune)
     NJ_MSG_RELEASE = 17, // appli -> coeur : a = emplacement qu'elle n'affiche plus
     NJ_MSG_QUIT = 18,    // appli -> coeur
     NJ_MSG_CASE = 19,    // appli -> coeur : mallette au doigt ; a = 1 curseur (data : int32 i, j), 2 piece en main (data : f32 x, y) ; b = grille
