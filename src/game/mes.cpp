@@ -62,7 +62,16 @@ struct OSFontHeader {
 static inline void SetU16(u16& d, u16 v) { d = v; }
 // Message slot address as an expression (not an inline call): the multiply lands in the same pseudo
 // as the sum, which is what the original codegen shows.
+/* Portage : Message et MessageControl ont un destructeur virtuel. CodeWarrior range le pointeur de table virtuelle
+ * apres les champs (mes[] a +4) ; clang le met en tete (mes[] a +8, champs de Message decales de 4). Le calcul « +4 »
+ * d origine visait donc 4 octets trop tot : MesSet initialisait chaque message a cote de son emplacement et Delete
+ * effacait un bit du pointeur de table virtuelle - le message de l appel radio continuait apres la sortie du sous-menu
+ * et lisait la police remise a la place de sa table (plantage Message::WidthCk, textes absents ; Studio 16/11). */
+#ifdef RE4_PORT
+#define MES(no) (&this->mes[no])
+#else
 #define MES(no) ((Message*) ((no) * sizeof(Message) + (u32) this + sizeof(u32)))
+#endif
 static inline void PtrSet(void*& d, void* v) { d = v; }
 
 // Font file: offsets to the TPL and to the width table.

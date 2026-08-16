@@ -182,7 +182,11 @@ public:
 
     MesWork* getWork() { return &mes[0]; }
     // Slot address the way the original computes it (index scaled first, then the base).
+#ifdef RE4_PORT
+    Message* getMes(int no) { return &mes[no]; }
+#else
     Message* getMes(int no) { return (Message*) (no * sizeof(Message) + (u32) this + sizeof(u32)); }
+#endif
 
     void setLayout(int no, int layout);
     void setLanguage(int lang);

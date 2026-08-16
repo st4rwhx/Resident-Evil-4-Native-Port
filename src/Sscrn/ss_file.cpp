@@ -34,7 +34,11 @@ public:
 // a reference argument built from it is computed in place into the parameter register, so cse
 // loses the `slot * sizeof` product and gcse PRE re-copies it for the next store (the `mr` +
 // duplicated `add` chain of dispFileList / mes.cpp setLayout).
+#ifdef RE4_PORT
+#define SS_MES(pm, no) (&(pm)->mes[no])   /* voir MES, game/mes.cpp : pointeur de table virtuelle en tete */
+#else
 #define SS_MES(pm, no) ((Message*) ((no) * sizeof(Message) + (u32) (pm) + sizeof(u32)))
+#endif
 
 #define DVD_READ_N(name, dst, a, b, c, mode) DvdReadN(name, dst, a, b, c, mode, __FILE__, __LINE__)
 
