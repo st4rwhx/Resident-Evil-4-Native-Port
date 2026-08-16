@@ -955,7 +955,11 @@ void PlWepLockCtrl(cModel* plm)
         spd2 = spd;
         break;
     }
+#ifdef RE4_PORT
+    if (Joy[0].sx | Joy[0].sy) {  // octets sx, sy (le masque haut lisait ssx, ssy en petit-boutiste)
+#else
     if (*(u32*) &Joy[0].sx & 0xFFFF0000) {  // main stick (sx, sy) deflected
+#endif
         if (repCtr < 7.0f) {
             repCtr = repCtr + 1.0f;
         }
