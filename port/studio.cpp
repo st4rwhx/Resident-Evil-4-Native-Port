@@ -27,6 +27,9 @@
 #include <dlfcn.h>
 
 // Sites de conversions flottant -> entier hors intervalle (version PORT_UBSAN_FLOAT=1), voir plus bas.
+extern "C" int port_guard_page(unsigned long a);
+extern "C" unsigned long port_guard_hit(void);
+
 namespace {
 struct ConvSite { void* pc; unsigned n; };
 ConvSite g_conv[256];
@@ -404,6 +407,20 @@ void handle(char* l)
         w.on = 1; w.hits = 0;
         char out[96];
         std::snprintf(out, sizeof out, "{\"ok\":\"surveillance %d\",\"arret\":%d}", slot, w.stop);
+        send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "garder ", 7)) {   // garder <adr> : page en lecture seule, auteur de la 1re ecriture -> journal [GARDE]
+        const unsigned long a = std::strtoul(l + 7, nullptr, 16);
+        const int r = port_guard_page(a);
+        char out[96];
+        std::snprintf(out, sizeof out, "{\"ok\":\"garde\",\"page\":\"%08lx\",\"resultat\":%d}", a & ~4095ul, r);
+        send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "garde", 5)) {   // garde : pc de la derniere ecriture attrapee (0 = rien encore)
+        char out[64];
+        std::snprintf(out, sizeof out, "{\"garde_pc\":\"%lx\"}", port_guard_hit());
         send_line(out);
         return;
     }

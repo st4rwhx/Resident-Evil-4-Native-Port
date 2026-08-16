@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <sys/syscall.h>
 #include <pthread.h>
+#include <sys/mman.h>
 
 namespace {
 
@@ -119,8 +120,34 @@ _Unwind_Reason_Code on_frame(struct _Unwind_Context *ctx, void *)
 #define CTX_FAULT(uc, info) ((unsigned long) (uc)->uc_mcontext.fault_address)
 #endif
 
+// Garde en ecriture du Studio (commande « garder <adr> », 16/11) : la page est mise en lecture seule ; la premiere
+// ecriture leve SIGSEGV ici : on journalise l'auteur (fil, pc, pile), on rend la page inscriptible et l'ecriture se
+// refait au retour du signal. Sert a trouver qui ecrase une donnee quand ce n'est pas une tache du jeu.
+volatile unsigned long g_guard = 0;
+volatile unsigned long g_guard_hit = 0;   // dernier pc fautif (lu par le Studio)
+
 void on_fault(int sig, siginfo_t *info, void *ctx)
 {
+    {
+        const unsigned long fa = (unsigned long) info->si_addr;
+        const unsigned long gp = g_guard;
+        if (sig == SIGSEGV && gp && fa >= gp && fa < gp + 4096) {
+            const ucontext_t *gu = (const ucontext_t *) ctx;
+            const unsigned long gpc = CTX_PC(gu);
+            g_load_bias = 0;
+            g_module[0] = 0;
+            compute_load_bias(gpc);
+            std::printf("[GARDE] ecriture a %lx par le fil %d : pc = %s + 0x%lx ; pile :\n", fa, (int) gettid(),
+                        g_module[0] ? g_module : "?", gpc - g_load_bias);
+            g_depth = 0;
+            _Unwind_Backtrace(on_frame, nullptr);
+            std::fflush(stdout);
+            mprotect((void *) gp, 4096, PROT_READ | PROT_WRITE);
+            g_guard_hit = gpc - g_load_bias;
+            g_guard = 0;
+            return;
+        }
+    }
     // Les messages du jeu (printf de cLog, erreurs d'allocation...) sont dans le tampon de stdout :
     // sans ce vidage ils disparaissent avec le processus, et ce sont eux qui disent la cause.
     std::fflush(stdout);
@@ -311,3 +338,19 @@ extern "C" void port_install_crash_handler(void)
 #endif
     sigaction(SIGFPE, &sa, nullptr);
 }
+
+// Studio : garder la page contenant `a` (lecture seule jusqu'a la premiere ecriture). 0 = posee.
+extern "C" int port_guard_page(unsigned long a)
+{
+    const unsigned long page = a & ~4095ul;
+    if (g_guard)
+        mprotect((void *) g_guard, 4096, PROT_READ | PROT_WRITE);
+    g_guard = 0;
+    if (mprotect((void *) page, 4096, PROT_READ) != 0)
+        return -1;
+    g_guard_hit = 0;
+    g_guard = page;
+    return 0;
+}
+
+extern "C" unsigned long port_guard_hit(void) { return g_guard_hit; }
