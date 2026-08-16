@@ -40,6 +40,12 @@ COMMON = ['-DRE4_PORT', '-DDEBUG=1', '-DVERSION_G4BE08', '-D__GEKKO__',
           # l'autre, des calculs signes debordent volontairement, et l'image doit rester celle des
           # flottants separes (pas de fusion multiplication-addition).
           '-fno-strict-return', '-fno-strict-aliasing', '-fwrapv', '-ffp-contract=off']
+# PORT_TYPES=1 (17/11, phase Vérité) : types complets dans le binaire non épuré (-g au lieu de -g1). L'APK n'en garde
+# rien (build_apk.sh épure libnjcore.so). Sert à port/outils/verite_dwarf.py (décalages réels contre commentaires du
+# décompilé) et à l'oracle typé (noms et types de chaque champ). Utiliser un --out séparé : l'option invalide le cache.
+if os.environ.get('PORT_TYPES'):
+    COMMON[COMMON.index('-g1')] = '-g'
+    COMMON += ['-fstandalone-debug']
 # PORT_UBSAN_FLOAT=1 : version de diagnostic (15/11). Chaque conversion flottant -> entier hors de l'intervalle du type
 # (surtout negatif -> non signe : le PowerPC et le x86 font le tour, l'ARM bloque a 0) appelle
 # __ubsan_handle_float_cast_overflow_minimal, defini par port/studio.cpp, qui note l'adresse pour le Studio.
