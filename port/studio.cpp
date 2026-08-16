@@ -253,6 +253,10 @@ void handle(char* l)
         // Comme roomJumpExec (room_jmp.cpp) : sans la remise a zero des messages, une fenetre de texte de la salle
         // precedente etait mesuree sur une memoire liberee (boucle sans fin dans Message::WidthCk, 15/11).
         ri->setNextPos();
+        // Comme roomJumpExec (room_jmp.cpp) : marqueur « saut de salle » lu au chargement de la salle suivante. Oublie
+        // jusqu'au 16/11 : la table de messages de la salle precedente restait referencee (WidthCk sur memoire ecrasee,
+        // plantage au saut vers r101) et des sauts repetes laissaient le jeu fige.
+        pG->flags_68 |= 0x80000000;
         pG->x4F9F = (u8) pt;
         cMes.roomInit();
         for (int i = 0; i <= 0xF; i++)
