@@ -29,6 +29,8 @@
 // Sites de conversions flottant -> entier hors intervalle (version PORT_UBSAN_FLOAT=1), voir plus bas.
 extern "C" int port_guard_page(unsigned long a);
 extern "C" unsigned long port_guard_hit(void);
+// Enregistreur FIFO du moteur + journal [FL] de l'image (port/njgfx/njgfx.cpp ; <atomic> ici heurte math_sub.h).
+extern "C" void njgfx_studio_fifo(int frames);
 
 namespace {
 struct ConvSite { void* pc; unsigned n; };
@@ -407,6 +409,15 @@ void handle(char* l)
         w.on = 1; w.hits = 0;
         char out[96];
         std::snprintf(out, sizeof out, "{\"ok\":\"surveillance %d\",\"arret\":%d}", slot, w.stop);
+        send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "fifo", 4)) {   // fifo [n] : enregistre n images (.dff, 6 par defaut) + journal [FL] de l'image
+        int n = l[4] ? std::atoi(l + 5) : 6;
+        if (n <= 0 || n > 60) n = 6;
+        njgfx_studio_fifo(n);
+        char out[96];
+        std::snprintf(out, sizeof out, "{\"ok\":\"fifo\",\"images\":%d,\"fichier\":\"fifo_*.dff (dossier de l'appli)\"}", n);
         send_line(out);
         return;
     }

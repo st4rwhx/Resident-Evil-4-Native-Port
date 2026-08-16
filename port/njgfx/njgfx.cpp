@@ -59,6 +59,11 @@ extern "C" void port_vi_mode(unsigned out[6]);   // port/vi.cpp
 extern "C" void njlink_set_xfb(unsigned w, unsigned h);   // port/njlink.cpp : zone de l'EFB copiee dans l'XFB
 
 extern std::atomic<bool> g_gx_framelog_request;   // renderer_gl.cpp (F12 dans l'appli)
+// Studio (port/studio.cpp, commande « fifo [n] ») : .dff de n images + journal [FL] de l'image en cours.
+extern "C" void njgfx_studio_fifo(int frames) {
+  nj::runtime::gx::rec::request(frames);
+  g_gx_framelog_request = true;
+}
 extern "C" int port_host_scope;
 extern "C" unsigned long port_render_thread;   // port/arm_hooks.cpp : fil de rendu (NJ_RTHREAD=1)
 extern "C" void njstate_fill(NjState *out);
