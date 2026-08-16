@@ -1054,7 +1054,12 @@ static void emlist_r0_target()
                 p->hp = EmList.wk->cur.hp;
                 memcpy((u32*) ((u8*) p + 0x12), (u32*) ((u8*) &EmList.wk->cur + 0x12), 6);
                 p->flags |= 1;
+#ifdef RE4_PORT
+                ((u8*) p)[0x18] = pG->stage_no;   // famille 9 : octet fort d'abord comme sur GC
+                ((u8*) p)[0x19] = pG->room_no;
+#else
                 *(u16*) ((u8*) p + 0x18) = (pG->stage_no << 8) | pG->room_no;
+#endif
                 p->xA = 0;
                 PSVECSubtract(&pG->Cam.param.at, &pG->Cam.param.pos, &v);
                 {

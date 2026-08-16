@@ -345,7 +345,11 @@ static void r119_EventGolemAppear()
                 cObj* o;
 
                 for (o = ObjMgr.pAlive; o != 0; o = (cObj*) o->next) {
+#ifdef RE4_PORT
+                    if (o->id == 0x1A || o->id == 0x29 || o->id == 0x2A || (o->id == 0x22 && o->type == 0x01)) {   // famille 9
+#else
                     if (o->id == 0x1A || o->id == 0x29 || o->id == 0x2A || (*(u32*) &o->id & 0xFFFF0000) == 0x22010000) {
+#endif
                         cnt = 600;
                     }
                 }

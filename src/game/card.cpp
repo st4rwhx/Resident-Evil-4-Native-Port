@@ -1793,7 +1793,11 @@ int cCard::initialize(int type)
             s = Snd.str_work;
             i = 0;
             do {
+#ifdef RE4_PORT
+                if (s->used == 1 && s->stat == 0) {   // octets 0, 1 (famille 9)
+#else
                 if ((*(u32*) s & 0xFFFF0000) == 0x01000000) {
+#endif
                     str[i].id = s->id;
                     str[i].vol = s->vol;
                     SndStrReq(s->id, 4, 100, 1);

@@ -7085,7 +7085,11 @@ int em39AppearCk(cEm39* em)
         if (w->x8C0 != -1 && retry) {
             u32 ofs = w->x8C0 * 0x40 + 8;
 
+#ifdef RE4_PORT
+            if (((u8*) ((u32) EM39_EMI + ofs))[1] == ((u8*) e)[1] && ((u8*) ((u32) EM39_EMI + ofs))[3] == ((u8*) e)[3]) {   // octets 1, 3 (famille 9)
+#else
             if ((*(u32*) ((u32) EM39_EMI + ofs) & 0x00FF00FF) == (*(u32*) e & 0x00FF00FF)) {
+#endif
                 continue;
             }
         }

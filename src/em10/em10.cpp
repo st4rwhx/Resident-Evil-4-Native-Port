@@ -529,7 +529,7 @@ static inline void IntSet(int& d, int v) { d = v; }
 
 static inline int em10DmgDeadCk(cDmgInfo* d)
 {
-    return (*(u32*) d & 0xFFFF0000) ? 1 : 0;
+    return (*(u32*) d & PORT_DMG_HI16) ? 1 : 0;   // stat, x1 (famille 9)
 }
 
 #define EM10_WINDOW(w) ((w)->pWindow)
@@ -16607,7 +16607,11 @@ extern "C" void em10GetWanderRoutePos(cEm10* em, Vec* pos)
 
     if (emi && (int) w->x63C >= 0 && (int) w->x63C < emi->n) {
         EmiEntry* e = &emi->entry[w->x63C];
+#ifdef RE4_PORT
+        if (e->type == 0x01 && e->sub == 0x03) {   // octets 0, 1 (famille 9)
+#else
         if ((*(u32*) e & 0xFFFF0000) == 0x01030000) {
+#endif
             *pos = e->pos;
             return;
         }
