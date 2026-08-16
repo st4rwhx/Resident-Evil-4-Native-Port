@@ -758,15 +758,28 @@ cModel* SearchTargetEm(Vec* pos, cModel* skip, f32 range)
 // ---- Commandes Wii (W3, 17/11) : couteau à visée automatique de la Wii Edition ----------------------------------
 // Repris du DOL Wii RB4P08 (8013A784 KnifeAutoTarget, 8013A584 KnifeTargetOk ; S:/RE4_CODE/out/wii/W1_COUTEAU_AUTO.md),
 // écrit avec les champs GC : pl->pLockEm (Wii pl+0x52C), em->hp (Wii 0x322), em->lockOfs/lockParts (la Wii a un point
-// « couteau » à part, égal au point de verrouillage pour le Ganado em10). Réglage : `wii_couteau` (Studio) ou NJ_WII=1.
+// « couteau » à part, égal au point de verrouillage pour le Ganado em10). Réglage : `wii` (Studio) ou NJ_WII=1.
 #include <stdlib.h>
 #include <math.h>
 extern "C" int port_knob(const char* name, int def);   // port/studio.cpp
 
-int PortWiiKnife()
+int PortWiiMode()
 {
     static const int def = getenv("NJ_WII") ? 1 : 0;
-    return port_knob("wii_couteau", def);
+    return port_knob("wii", def);
+}
+
+int PortWiiKnife()
+{
+    return PortWiiMode();
+}
+
+// Actions Wii lues par le couteau (Wii 8013804C / 80138068 / 801382D4) : secousse > 2 g tenue / apparue, > 3 g tenue.
+// 801382D4 ajoute des conditions (pG+0x4FC8 et état de manette) : ici réduit au bit 49.
+int PortWiiShake()
+{
+    const u64 m48 = (u64) 1 << 48, m49 = (u64) 1 << 49;
+    return (Key.trg & m48) || (Key.on & m48) || (Key.on & m49);
 }
 
 static int knifeTargetOk(cEm* em, cPlayer* pl)

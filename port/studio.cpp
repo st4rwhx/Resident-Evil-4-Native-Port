@@ -85,6 +85,7 @@ int g_text = -1;   // -1 : reglage d'origine (RE4_EPRINTF)
 struct Knob { char name[24]; int value; };
 Knob g_knobs[32];
 int g_nknobs = 0;
+static int g_sec_val = 0, g_sec_n = 0;   // commande « secousse » (W3) : dixiemes de g, images restantes (port_accel)
 int g_capture = 0;   // capture demandee (lue par port/njgfx a la fin de l'image)
 
 // S2 (16/11) : pause, images a pas compte, surveillance d'adresses aux points de la boucle de jeu (ProcessTickGet).
@@ -285,6 +286,15 @@ void handle(char* l)
         char out[96];
         std::snprintf(out, sizeof out, "{\"ok\":\"saut vers %x%02x point %u\"}", st, rm, pt);
         send_line(out);
+        return;
+    }
+    if (!std::strncmp(l, "secousse ", 9)) {   // secousse <dixiemes de g> <images> : acceleration Wii simulee (W3)
+        int v = 0, n = 0;
+        if (std::sscanf(l + 9, "%d %d", &v, &n) == 2) {
+            g_sec_val = v;
+            g_sec_n = n;
+            send_line("{\"ok\":\"secousse\"}");
+        } else send_line("{\"erreur\":\"secousse <dixiemes_de_g> <images>\"}");
         return;
     }
     if (!std::strncmp(l, "reglage ", 8)) {   // reglage <nom> <valeur> : lu par port_knob(nom) sans recompiler
@@ -563,6 +573,19 @@ extern "C" int port_knob(const char* name, int def)
         if (!std::strcmp(g_knobs[k].name, name))
             return g_knobs[k].value;
     return def;
+}
+
+// Commandes Wii (W3, 17/11) : acceleration totale de la « Wiimote » en g, lue une fois par image par PadRead (pad.cpp),
+// qui en tire les actions 48/49/50 comme la Wii (2 / 3 / 1,5 g). Sources : la commande Studio « secousse <dixiemes de g>
+// <images> » (essais), puis Nightjar (g_nj_accel : glisser / accelerometre / souris, a brancher par njlink).
+float g_nj_accel = 0.0f;
+extern "C" float port_accel()
+{
+    if (g_sec_n > 0) {
+        --g_sec_n;
+        return (float) g_sec_val / 10.0f;
+    }
+    return g_nj_accel;
 }
 
 // Manette imposee par le Studio (port/pad.cpp, apres celle de l'appli)

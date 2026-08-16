@@ -115,7 +115,9 @@ public:
     cObjWep* pObj2;      // 0x38  second weapon object (rifles / launchers display part)
     u8 pad_3C[4];
     u8 x40;              // 0x40  lock frames left (lockInit/lockNext: 10; lockMove clears it on a stick move)
-    u8 pad_41[3];
+    u8 pad_41;
+    s8 x42;              // 0x42  (libre au GC) Wii : commandes Wii actives (couteau à visée auto, secousse)
+    s8 x43;              // 0x43  (libre au GC) Wii : coup de couteau demandé par une secousse pendant le coup en cours
 
     cPlWep();
     f32 getAngle();

@@ -14,6 +14,8 @@
 #include "eprintf.h"
 #ifdef RE4_PORT
 #include <dolphin/os.h>
+extern "C" float port_accel();   // port/studio.cpp : acceleration « Wiimote » en g (commandes Wii, W3)
+int PortWiiMode();               // game/pl_wep.cpp : reglage « wii » / NJ_WII
 #endif
 
 static inline void U64Set(u64& d, u64 v) { d = v; }
@@ -280,6 +282,22 @@ void PadRead()
     }
 
 #ifdef RE4_PORT
+    // Commandes Wii (W3, 17/11) : la secousse de la Wiimote devient des actions, comme dans le PadRead Wii (RB4P08
+    // 8012A3A0 + 8012AEF0..8012AF80) : acceleration totale > 3 g -> action 49, > 2 g -> action 48 (le couteau),
+    // > 1,5 g -> action 50 ; `on` a chaque image, `trg` a l'apparition. Source : port_accel() (Studio « secousse »,
+    // Nightjar). Seulement avec le reglage « wii » (NJ_WII=1).
+    if (PortWiiMode()) {
+        static u64 prev = 0;
+        const f32 acc = port_accel();
+        u64 sh = 0;
+
+        if (acc > 3.0f) sh |= KEY_BIT(49);
+        if (acc > 2.0f) sh |= KEY_BIT(48);
+        if (acc > 1.5f) sh |= KEY_BIT(50);
+        Key.on |= sh;
+        Key.trg |= sh & ~prev;
+        prev = sh;
+    }
     {   // mesure du portage : chaque changement des drapeaux d'arret (un -1 garde fige le jeu)
         static u32 last170 = 0x12345678u;
         static u32 nframe;

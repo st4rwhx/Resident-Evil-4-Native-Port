@@ -20,6 +20,7 @@ int MotionCheckCrossFrame(void* work, f32 frame);  // game/motion.cpp
 
 #ifdef RE4_PORT
 int PortWiiKnife();                                  // game/pl_wep.cpp : commandes Wii (W3), couteau à visée automatique
+int PortWiiShake();                                  // game/pl_wep.cpp : actions de secousse 48/49 (pad.cpp)
 cModel* PortWiiKnifeTarget(cPlWep* w, int keep);
 #endif
 
@@ -135,6 +136,7 @@ void knife_r3_ready00(cPlayer* pl)
     pl->pNeck->init(0, 0, 0);
 #ifdef RE4_PORT
     if (PortWiiKnife()) {
+        pl->pWep->x43 = 0;
         PortWiiKnifeTarget(pl->pWep, 0);   // Wii 80065124 : nouvelle recherche à la sortie du couteau
     }
 #endif
@@ -208,13 +210,22 @@ void knife_r2_set(cPlayer* pl)
             pl->xFE = 3;
             pl->xFF = 0;
         }
+#ifdef RE4_PORT
+    } else if (PortWiiKnife() ? (PortWiiShake() || joyFireTrg() || joyFireOn() || pl->pWep->x43 != 0)
+                              : (joyFireTrg() || joyFireOn())) {
+        // Wii 800655D4..80065680 : une secousse (actions 48/49) ou un coup demandé pendant le précédent (x43) frappe
+        // comme le bouton de tir ; la cible est recherchée à nouveau au moment du coup (garder = 1).
+        pl->xFE = 2;
+        pl->xFF = 0;
+        if (PortWiiKnife()) {
+            pl->pWep->x43 = 0;
+            PortWiiKnifeTarget(pl->pWep, 1);
+        }
+    }
+#else
     } else if (joyFireTrg() || joyFireOn()) {
         pl->xFE = 2;
         pl->xFF = 0;
-    }
-#ifdef RE4_PORT
-    if (PortWiiKnife()) {
-        PortWiiKnifeTarget(pl->pWep, 1);   // Wii 800654B4 : suivi de la cible tant que le couteau est tenu
     }
 #endif
 }
@@ -384,6 +395,13 @@ void knife_r3_fire10(cPlayer* pl)
         pl->xFE = 1;
         pl->xFF = 4;
     }
+#ifdef RE4_PORT
+    // Wii 800660A0..800660EC : passé la fin de la fenêtre de coup (seuil 12, seule constante nouvelle de la version Wii),
+    // une secousse demande le coup suivant (pWep->x43), que knife_r2_set enchaîne.
+    if (PortWiiKnife() && pl->frame >= 12.0f && PortWiiShake()) {
+        pl->pWep->x43 = 1;
+    }
+#endif
 }
 
 void knife_r2_down(cPlayer* pl)
