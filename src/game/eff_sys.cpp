@@ -139,7 +139,9 @@ char* owner_name_tbl[0xD1] = {
 
 cEsp g_DmyEsp;
 static cCoord g_EffParentWorld;
+#ifndef RE4_PORT   // portage : en MEM1, voir include/esp.h
 u8 g_EspCommonDisplayList[0x60] __attribute__((aligned(32)));
+#endif
 u32 g_nLoop = 0;
 cCoord* pEffParentWorld;
 cEspSystem* g_pEspSys;
@@ -162,7 +164,7 @@ void EspInit()
     g_pEspSys = NULL;
     EspFuncTblInit();
     EffSetId();
-    memclr_asm(d, sizeof(g_EspCommonDisplayList));
+    memclr_asm(d, 0x60);
     *d = 0;
     d++;
     *d = 0x80;
@@ -240,7 +242,7 @@ void EspInit()
     *d = 0;
     d++;
     *d = 1;
-    DCStoreRange(g_EspCommonDisplayList, sizeof(g_EspCommonDisplayList));
+    DCStoreRange(g_EspCommonDisplayList, 0x60);
 }
 
 void EspRoomInit()

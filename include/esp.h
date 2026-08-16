@@ -427,7 +427,17 @@ int EspDataLoad(u32 addr, u32 owner, int flag);
 // game/eff_sys.cpp (C++ linkage): the TPL of effect model `id`; 0 when not registered
 int EspGetEfmTplAddr(int id, void** tpl);
 // game/eff_sys.cpp: quad display list shared by the sprite effects (esp_sub)
+/* Portage : la liste du quad des sprites d effets doit etre en MEM1 - le parseur du flux GX ne lit que la MEM1
+ * emulee (expand_list). En tableau statique elle vivait dans la memoire de l hote : chaque GXCallDisplayList etait
+ * ignore ([DLHORS]) et tous les sprites « communs » disparaissaient, dont les cartes de feuillage des arbres de r100
+ * (16/11 : jumeau Dolphin + garde en lecture + bissection FIFO). Adresse reservee sous l arene du jeu (port/os.cpp,
+ * ARENA_LO = 0x80300000), vide dans le natif. */
+#ifdef RE4_PORT
+#define PORT_ESP_COMMON_DL_ADDR 0x802FFF00u
+#define g_EspCommonDisplayList ((u8*) (unsigned long) PORT_ESP_COMMON_DL_ADDR)
+#else
 extern u8 g_EspCommonDisplayList[0x60];
+#endif
 // game/trans.cpp: fallback texture used when an effect texture id has no object
 extern GXTexObj Specular;
 
