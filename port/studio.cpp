@@ -28,6 +28,7 @@
 
 // Sites de conversions flottant -> entier hors intervalle (version PORT_UBSAN_FLOAT=1), voir plus bas.
 extern "C" int port_guard_page(unsigned long a);
+extern "C" int port_guard_page2(unsigned long a, int lecture);
 extern "C" unsigned long port_guard_hit(void);
 // Enregistreur FIFO du moteur + journal [FL] de l'image (port/njgfx/njgfx.cpp ; <atomic> ici heurte math_sub.h).
 extern "C" void njgfx_studio_fifo(int frames);
@@ -441,7 +442,7 @@ void handle(char* l)
     }
     if (!std::strncmp(l, "garder ", 7)) {   // garder <adr> : page en lecture seule, auteur de la 1re ecriture -> journal [GARDE]
         const unsigned long a = std::strtoul(l + 7, nullptr, 16);
-        const int r = port_guard_page(a);
+        const int r = port_guard_page2(a, std::strstr(l + 7, "lecture") != nullptr);   // garder <adr> [lecture]
         char out[96];
         std::snprintf(out, sizeof out, "{\"ok\":\"garde\",\"page\":\"%08lx\",\"resultat\":%d}", a & ~4095ul, r);
         send_line(out);

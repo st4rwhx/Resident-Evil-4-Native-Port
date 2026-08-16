@@ -137,7 +137,7 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
             g_load_bias = 0;
             g_module[0] = 0;
             compute_load_bias(gpc);
-            std::printf("[GARDE] ecriture a %lx par le fil %d : pc = %s + 0x%lx ; pile :\n", fa, (int) gettid(),
+            std::printf("[GARDE] acces a %lx par le fil %d : pc = %s + 0x%lx ; pile :\n", fa, (int) gettid(),
                         g_module[0] ? g_module : "?", gpc - g_load_bias);
             g_depth = 0;
             _Unwind_Backtrace(on_frame, nullptr);
@@ -340,13 +340,17 @@ extern "C" void port_install_crash_handler(void)
 }
 
 // Studio : garder la page contenant `a` (lecture seule jusqu'a la premiere ecriture). 0 = posee.
-extern "C" int port_guard_page(unsigned long a)
+extern "C" int port_guard_page2(unsigned long a, int lecture);
+extern "C" int port_guard_page(unsigned long a) { return port_guard_page2(a, 0); }
+// lecture = 1 : page inaccessible (PROT_NONE) -> le premier code qui LIT la page est designe (ex. qui lit une liste
+// d'affichage) ; 0 : lecture seule -> le premier qui ECRIT.
+extern "C" int port_guard_page2(unsigned long a, int lecture)
 {
     const unsigned long page = a & ~4095ul;
     if (g_guard)
         mprotect((void *) g_guard, 4096, PROT_READ | PROT_WRITE);
     g_guard = 0;
-    if (mprotect((void *) page, 4096, PROT_READ) != 0)
+    if (mprotect((void *) page, 4096, lecture ? PROT_NONE : PROT_READ) != 0)
         return -1;
     g_guard_hit = 0;
     g_guard = page;
