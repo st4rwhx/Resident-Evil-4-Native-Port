@@ -27,7 +27,7 @@ struct Em38Para {
     f32 phase;            // 0x10  scale wobble phase
     f32 ang;              // 0x14  swing angle
     f32 angSpd;           // 0x18  swing speed per frame
-    cEm38* pEm;           // 0x1C  the tentacle enemy (em38SearchParts)
+    P32<cEm38> pEm;       // 0x1C  the tentacle enemy (em38SearchParts)
 };
 
 // Work of the em38 enemy (em38 module, D:/Bio4/Prog/em38.cpp), overlaid on cEm from 0x3E0. The boss
@@ -52,20 +52,20 @@ struct Em38Work {
     Vec routePos;         // 0x584 (0x964)  RouteCkToPos result towards the player
     Vec subRoutePos;      // 0x590 (0x970)  towards the partner
     Vec targetPos;        // 0x59C (0x97C)  chosen target position
-    cEm* pTarget;         // 0x5A8 (0x988)  pPL or pSUB
-    cEm38* pBody;         // 0x5AC (0x98C)  the body enemy (em38SearchParts)
-    cEm38* pTent[2];      // 0x5B0 (0x990)  the two tentacles
-    cEm38* pUpper;        // 0x5B8 (0x998)  the upper body
-    cEm38* pLower;        // 0x5BC (0x99C)  the lower body
-    cModelInfo* pInfo;    // 0x5C0 (0x9A0)  extra model (type 0)
+    P32<cEm> pTarget;     // 0x5A8 (0x988)  pPL or pSUB
+    P32<cEm38> pBody;     // 0x5AC (0x98C)  the body enemy (em38SearchParts)
+    P32<cEm38> pTent[2];  // 0x5B0 (0x990)  the two tentacles
+    P32<cEm38> pUpper;    // 0x5B8 (0x998)  the upper body
+    P32<cEm38> pLower;    // 0x5BC (0x99C)  the lower body
+    P32<cModelInfo> pInfo; // 0x5C0 (0x9A0)  extra model (type 0)
     Em38Para para[2];     // 0x5C4 (0x9A4)
     f32 eyeX;             // 0x604 (0x9E4)  eye pitch (em38EyeMove: parts 0x3A addRot)
     f32 eyeY;             // 0x608 (0x9E8)  eye yaw
-    cObj* pWeak;          // 0x60C (0x9EC)  weak point object (em38WeakInit, obj00)
+    P32<cObj> pWeak;      // 0x60C (0x9EC)  weak point object (em38WeakInit, obj00)
     int atkWait;          // 0x610 (0x9F0)  frames until the next attack (setAtkWait)
     int birthTimer;       // 0x614 (0x9F4)  frames until the next parasite (em38BirthParasite)
     int dmgCnt;           // 0x618 (0x9F8)  damage on the weak parts since the last down
-    cCtrl* pCtrl11;       // 0x61C (0x9FC)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl11;   // 0x61C (0x9FC)  GetCtrlCtrl11()
     u16 seTimer;          // 0x620 (0xA00)  frames until the next voice
     u8 pad_622[2];
     int seWait;           // 0x624 (0xA04)  frames the ctrl11 SEs are held off
@@ -83,7 +83,7 @@ struct Em38Work {
     f32 blendRate;        // 0x640 (0xA20)  em38BlendMotSet weight (-255..255)
     int blendA;           // 0x644 (0xA24)  interpolation frames left
     u32 blendB;           // 0x648 (0xA28)  frame counter of the blended motion
-    void* mot[4];         // 0x64C (0xA2C)  motions blended by em38BlendMotSet
+    P32<void> mot[4];     // 0x64C (0xA2C)  motions blended by em38BlendMotSet
     u8 pad_65C[8];
     int blendKind;        // 0x664 (0xA44)  MotionSetCore flags of the blend
     MotionWorkSub blendMot;  // 0x668 (0xA48)  the blend motion work (cModel::blendMot)

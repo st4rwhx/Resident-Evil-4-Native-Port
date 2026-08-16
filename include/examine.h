@@ -23,7 +23,7 @@ struct ExamInfo {
 
 class ItemExamine {
 public:
-    IDSystem* pIdSys;    // 0x00  IdSys (mode 0) / IdSub (mode 1, 2)
+    P32<IDSystem> pIdSys; // 0x00  IdSys (mode 0) / IdSub (mode 1, 2)
     u32 saveFlag;        // 0x04  model->be_flag at init
     Vec savePos;         // 0x08
     Vec saveRot;         // 0x14
@@ -31,14 +31,14 @@ public:
     u8 mode;             // 0x21  0 in game, 1 sub screen, 2 puzzle
     s8 lv[4];            // 0x22  weapon tune levels (power, speed, reload, bullet)
     u8 pad_26[2];
-    cCoord* saveParent;  // 0x28  model->pParts->pParent at init
+    P32<cCoord> saveParent; // 0x28  model->pParts->pParent at init
     Vec savePartsPos;    // 0x2C
     Vec savePartsRot;    // 0x38
     u16 id;              // 0x44  item id
     u8 pad_46[2];
-    cModel* model;       // 0x48
-    ExamInfo* info;      // 0x4C
-    cLight* light[3];    // 0x50
+    P32<cModel> model;   // 0x48
+    P32<ExamInfo> info;  // 0x4C
+    P32<cLight> light[3]; // 0x50
 
     void setup();
     void idSet();

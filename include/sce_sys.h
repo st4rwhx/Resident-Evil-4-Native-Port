@@ -14,19 +14,19 @@ struct ScePrim {
     u8 running;   // 0x04  scheduled this frame
     u8 cancel;    // 0x05  1 = this task is the event-cancel target
     u8 pad_6[2];
-    TASK* task;   // 0x08
+    P32<TASK> task; // 0x08
 };
 
 // Deferred scenario execution condition (0x14 bytes, SceExecOt list)
 struct SceCond {
     u32 next;             // 0x00
-    void (*func)();       // 0x04
+    FnP32<void(*)()> func; // 0x04
     int arg;              // 0x08
     u8 prio;              // 0x0C
     u8 flag;              // 0x0D
     u8 type;              // 0x0E  0 em dead flag, 1 camera area, 2 enemy life, 3 callback, 4 etc break, 5 item flag
     u8 pad_F;
-    void* param;          // 0x10
+    P32<void> param;      // 0x10
 };
 
 class cSceSys {
@@ -37,7 +37,7 @@ public:
     int xC;               // 0x0C
     int x10;              // 0x10
     int x14;              // 0x14
-    void (*cancelFunc)(); // 0x18  task started by SceExecEventCancel
+    FnP32<void(*)()> cancelFunc; // 0x18  task started by SceExecEventCancel
     int cancelArg;        // 0x1C
     u32 otag[16];         // 0x20  ordering table, otag[15] is the list head
     u32 x60;              // 0x60  pG->flags_170 saved by SceUpCutStart
@@ -60,7 +60,7 @@ public:
     int sndFlag;          // 0x7C  1 = SndEventStrStop on event cancel
     cDmgInfo dmg;         // 0x80
     ScePrim prim[13];     // 0x98  slots 5..17
-    ScePrim* x134;        // 0x134  task SceEventStart(!0) kills
+    P32<ScePrim> x134;    // 0x134  task SceEventStart(!0) kills
 
     void scheduler();
     int checkCTaskRange();

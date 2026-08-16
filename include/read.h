@@ -11,11 +11,11 @@ public:
     u16 id;                     // 0x80
     u16 flag;                   // 0x82  bit0 dll copied to its own block, bit1 linked,
                                 //       bit2 data allocated by DvdReadN, bit3 debug heap
-    void* pArc;                 // 0x84
-    OSModuleHeader* pModule;    // 0x88
+    P32<void> pArc;             // 0x84
+    P32<OSModuleHeader> pModule; // 0x88
     u32 size;                   // 0x8C  data size
     u32 bssSize;                // 0x90  size of the part after the data (dll + bss)
-    void* pInitFunc;            // 0x94  EmInitFunc set by the dll prolog
+    P32<void> pInitFunc;        // 0x94  EmInitFunc set by the dll prolog
 
     ReadModule() { flag = 0; }
 };

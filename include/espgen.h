@@ -73,8 +73,8 @@ struct SstData {
     u32 ofs[1];        // 0x04 byte offsets of the EspSeqData blocks from this header
 };
 struct SstTbl {
-    SstData* data;     // 0x00
-    SstList* list;     // 0x04
+    P32<SstData> data; // 0x00
+    P32<SstList> list; // 0x04
     int owner;         // 0x08 0xD2 = unused entry
 };
 
@@ -96,14 +96,14 @@ struct SstArea {
 
 // One registered effect texture set (eff_sys espTexRegist), 0x54 bytes; owner 0xD2 = free.
 struct EspTexWk {
-    GXTexObj* pTexObj;   // 0x00 first of nTex objects pulled from cEspSystem::texObj
+    P32<GXTexObj> pTexObj; // 0x00 first of nTex objects pulled from cEspSystem::texObj
     u16 nTex;            // 0x04
     u8 pad_6[2];
     GXTlutObj tlut;      // 0x08
-    TEXHeader* texHdr;   // 0x14 header of texture 0
+    P32<TEXHeader> texHdr; // 0x14 header of texture 0
     Mtx mtx;             // 0x18
-    TEXPalette* pTpl;    // 0x48
-    EspAnmData* pAnm;    // 0x4C
+    P32<TEXPalette> pTpl; // 0x48
+    P32<EspAnmData> pAnm; // 0x4C
     u32 owner;           // 0x50
 };
 
@@ -113,10 +113,10 @@ struct EspEfmMotTbl {
     u32 ofs[1];        // 0x04 byte offsets of the motions from this header
 };
 struct EspEfmWk {
-    void* model;       // 0x00 model bin
-    void* tpl;         // 0x04
-    EspEfmMotTbl* mot; // 0x08 motion table (NULL when none)
-    void* x0C;         // 0x0C
+    P32<void> model;   // 0x00 model bin
+    P32<void> tpl;     // 0x04
+    P32<EspEfmMotTbl> mot; // 0x08 motion table (NULL when none)
+    P32<void> x0C;     // 0x0C
     u32 owner;         // 0x10 0xD2 = free
 };
 
@@ -129,16 +129,16 @@ struct cEspSystem {
     SstTbl pathTbl[0xD3];        // 0x7BC8 path tables by owner id
     u8 ownerCnt[0xD3];           // 0x85AC EspDataLoad count per owner
     u8 pad_867F;
-    SstArea* pSstArea;           // 0x8680
+    P32<SstArea> pSstArea;       // 0x8680
     GXTexObj texObj[0x1F4];      // 0x8684 texture object pool
     u8 texObjFlag[0x3F];         // 0xC504 one bit per pool entry
     u8 pad_C543[5];
     u32 xC548;         // 0xC548 number of esp slots in use
-    u8* pEspBuf;       // 0xC54C esp pool (0x150 bytes per cEsp)
-    u8* pEspBufSave;   // 0xC550 pool saved by EspArrayPush (esp.cpp)
+    P32<u8> pEspBuf;   // 0xC54C esp pool (0x150 bytes per cEsp)
+    P32<u8> pEspBufSave; // 0xC550 pool saved by EspArrayPush (esp.cpp)
     u32 xC554;         // 0xC554 number of esp slots
     u32 numSave;       // 0xC558 slot count saved by EspArrayPush
-    cEsp* pDmy;        // 0xC55C dummy esp returned when the pool is full
+    P32<cEsp> pDmy;    // 0xC55C dummy esp returned when the pool is full
     u8 coreKind;       // 0xC560 next effect kind handed out by EspPullCoreKind (0x45..)
     u8 toolState;      // 0xC561
     u8 pad_C562[2];
@@ -175,8 +175,8 @@ struct EspgenWork {
 // Effect controller 10 work (game/espgen10.cpp): plays an effect sequence (EspSeqData) record by
 // record. est.cpp EstSet fills it directly.
 struct Espgen10Work {
-    EspSeqData* head;  // 0x14
-    cModel* model;     // 0x18
+    P32<EspSeqData> head; // 0x14
+    P32<cModel> model; // 0x18
     u32 serial;        // 0x1C model serial the controller was set up with
     u16 cnt;           // 0x20 frame counter
     u8 no;             // 0x22 next record
@@ -188,7 +188,7 @@ struct Espgen10Work {
     Vec pos;           // 0x5C
     Vec rot;           // 0x68
     EspSeqOpt opt;     // 0x74 copy of the option block p8 points at
-    EspSeqOpt* p8;     // 0x90
+    P32<EspSeqOpt> p8; // 0x90
 };
 
 // Water surface work shared by generators 42 (room water, game/Espgen42.cpp) and 45 (weather water,
@@ -209,13 +209,13 @@ struct Espgen42Work {
     u16 ny;            // 0x82 grid cells along z
     u8 pad_84[4];
     f32 size;          // 0x88 cell size
-    f32* hA;           // 0x8C height buffers (pG->flags_51E4 bit 0 selects the current one)
-    f32* hB;           // 0x90
-    Vec* nrm;          // 0x94
-    Vec* pos;          // 0x98
-    u8* dl;            // 0x9C display list
+    P32<f32> hA;       // 0x8C height buffers (pG->flags_51E4 bit 0 selects the current one)
+    P32<f32> hB;       // 0x90
+    P32<Vec> nrm;      // 0x94
+    P32<Vec> pos;      // 0x98
+    P32<u8> dl;        // 0x9C display list
     u32 dlSize;        // 0xA0
-    u8* bump;          // 0xA4 I8 bump texture (nx x ny)
+    P32<u8> bump;      // 0xA4 I8 bump texture (nx x ny)
     GXColor col;       // 0xA8 tev colour
     GXColor amb;       // 0xAC ambient colour (amb.a: light alpha)
     u8 mode;           // 0xB0 wave model (1: second variant)

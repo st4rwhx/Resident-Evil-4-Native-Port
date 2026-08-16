@@ -67,7 +67,7 @@ static inline u8 LightInfoShape(cLightInfo* li) { return li->x51; }
         cLightInfo* li = &(m)->lightInfo;                                           \
         if (li->x52 > 0) {                                                          \
             cModel* p = (m)->getPartsPtr(li->x52 - 1);                              \
-            if ((u32) p < PORT_PTR_MIN || (u32) p > PORT_PTR_MAX) {                     \
+            if ((u32)(uintptr_t)(p) < PORT_PTR_MIN || (u32)(uintptr_t)(p) > PORT_PTR_MAX) {                     \
                 pLog->err(0, 0, msg, LightInfoParts(&(m)->lightInfo));              \
                 p = (m);                                                            \
             }                                                                       \
@@ -135,7 +135,7 @@ int ShdInit(ShdHeader* data)
                 e->shdCol = 0xFF;
             }
         }
-        if (obj->modelInit((u8*) ofsTbl + ofsTbl[e->model], (void*) (pG->pArc->ofs_10 + (u32) pG->pArc)) == 0) {
+        if (obj->modelInit((u8*) ofsTbl + ofsTbl[e->model], (void*)port_ptr64((pG->pArc->ofs_10 + (u32) pG->pArc))) == 0) {
             ObjMgr.destroy(obj);
             continue;
         }
@@ -1188,7 +1188,7 @@ int shadowChkInFrustum(ShadowMng* mng, cModel* m)
     }
     if (li->x52 > 0) {
         cModel* p = m->getPartsPtr(li->x52 - 1);
-        if ((u32) p < PORT_PTR_MIN || (u32) p > PORT_PTR_MAX) {
+        if ((u32)(uintptr_t)(p) < PORT_PTR_MIN || (u32)(uintptr_t)(p) > PORT_PTR_MAX) {
             pLog->err(0, 0, "shadowChkInFrustum() cCoord NO ERR %d", li->x52);
             p = m;
         }

@@ -364,10 +364,10 @@ static const char* em28_chicken_set[] = {"END"};
 // Per enemy id: display name and the name lists of its em flags, type, set and character fields.
 struct EmListIdInfo {
     char name[16];
-    const char** flag;
-    const char** type;
-    const char** set;
-    const char** chr;
+    P32<P32<const char>> flag;
+    P32<P32<const char>> type;
+    P32<P32<const char>> set;
+    P32<P32<const char>> chr;
 };
 
 static EmListIdInfo EmListIdTbl[64] = {
@@ -547,7 +547,7 @@ u8 EmListCommon::block[0x34];
 
 // The work pointer is a struct member: every store through it reloads the pointer.
 struct EmListCtrl {
-    EmListWork* wk;
+    P32<EmListWork> wk;
 };
 
 static EmListCtrl EmList = {NULL};

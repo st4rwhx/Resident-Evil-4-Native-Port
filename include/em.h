@@ -22,7 +22,7 @@ struct EmHitInfo {
     s16 partsNo;          // 0x26  parts the effect is placed at (0 = the model itself), 1-based
     f32 rad;              // 0x28  squared distance hit point -> line start (em_sub emLineAtCk / emBoxAtCk)
     f32 dist;             // 0x2C  squared distance of the hit from the aim line (em_sub GetWepTargetList sorts on it)
-    EmHitInfo* next;      // 0x30  next hit box of the model (YarareAdd)
+    P32<EmHitInfo> next;  // 0x30  next hit box of the model (YarareAdd)
 };
 
 // Damage info at cEm+0x324 (game/em.cpp), 0x18 bytes. set(0, 10, kind, pos, rad, part) registers a hit.
@@ -43,7 +43,7 @@ public:
     };
     Vec pos;              // 0x04  hit position
     f32 rad;              // 0x10
-    EmHitInfo* part;      // 0x14  hit part
+    P32<EmHitInfo> part;  // 0x14  hit part
 
 #ifdef RE4_PORT
     // Portage : pas de constructeur, sinon GCC refuse ce type dans les unions anonymes de
@@ -69,7 +69,7 @@ struct PlRoomEff {
 // Blend motion work (0xD0 bytes): a MotionWork (model.h) without the trailing blend/flip/blendTbl
 // pointers. cEm::neckMot (0x42C) and cMot3::work are one; MotionWork::blend points at it.
 struct MotionWorkSub {
-    void* data;           // 0x00  MotionData*, NULL = no motion
+    P32<void> data;       // 0x00  MotionData*, NULL = no motion
     u8 pad_4[0x44 - 0x4];
     u32 flags2;           // 0x44  MotionWork::flags2 (bit28: no IK, bit31)
     u8 pad_48[0xC0 - 0x48];
@@ -113,7 +113,7 @@ public:
             };
             Vec x328;             // 0x328  (obj14: damage position when EmGetDmPos has none)
             f32 dmRad;            // 0x334  cDmgInfo::set rad
-            EmHitInfo* dmPart;    // 0x338  cDmgInfo::set part (emswitch: its rad decides the blood type)
+            P32<EmHitInfo> dmPart; // 0x338  cDmgInfo::set part (emswitch: its rad decides the blood type)
         };
     };
     EmHitInfo hitInfo;    // 0x33C .. 0x370  (obj08: the player's hit part for the damage effect)
@@ -121,17 +121,17 @@ public:
     f32 x374;             // 0x374  (em_set: 1e16 at creation)
     union {
         u32 x378;         // 0x378  (pl_sub EndPlDamage/EndSubDamage: x378 = x37C)
-        PlArc* subArc;          // 0x378  cSubChar: motion archive the routines index (pl_npc.cpp)
+        P32<PlArc> subArc;      // 0x378  cSubChar: motion archive the routines index (pl_npc.cpp)
     };
     union {
         u32 x37C;         // 0x37C
-        PlArc* subArc2;         // 0x37C  cSubChar: the archive restored after a damage routine
+        P32<PlArc> subArc2;     // 0x37C  cSubChar: the archive restored after a damage routine
     };
     Vec lockOfs;          // 0x380  lock-on point offset in the lockParts' matrix (pl_wep)
     u8 lockParts;         // 0x38C  parts the lock-on point follows (pl_wep; AutoTrack uses the low 3 bits)
     u8 x38D;              // 0x38D  (db_cam "set=")
     u8 pad_38E[2];
-    void (*pScenario)(cEm*);  // 0x390  em_sub EmScenario: called with the enemy when set
+    FnP32<void(*)(cEm*)> pScenario; // 0x390  em_sub EmScenario: called with the enemy when set
     u8 pad_394[4];
     u8 emsetNo;           // 0x398
     u8 pad_399[3];
@@ -164,7 +164,7 @@ public:
     u8 pad_3DE[2];
     union {
         u32 x3E0;         // 0x3E0  player: event walk flag / damage timer
-        cSubChar* subSelf;         // 0x3E0  cSubChar: the model the routines animate (itself)
+        P32<cSubChar> subSelf;     // 0x3E0  cSubChar: the model the routines animate (itself)
     };
     // 0x3E4 .. 0x400: player fields, and the partner's neck control (cSubChar::neckCtrl) on the same bytes
     union {
@@ -199,8 +199,8 @@ public:
             Vec evTarget2;        // 0x410  player: position setPos'd while flags_420 bit7 is set (objRobo R0WaitGondola)
             u32 flags_41C;        // 0x41C  player: bit8 (0x100) event motion done -> reset routine
             u32 flags_420;        // 0x420  player: bit6 (0x40) knife routine ends into routine 0x11
-            void** pMotTbl;       // 0x424  player: motion data table ([0] walk, [2] turn, [0x5F..0x6C] set by setMotion)
-            void** pRegistMot;    // 0x428  player: registered motion table (pl_sub PlRegistMotion fills [0..11])
+            P32<P32<void>> pMotTbl; // 0x424  player: motion data table ([0] walk, [2] turn, [0x5F..0x6C] set by setMotion)
+            P32<P32<void>> pRegistMot; // 0x428  player: registered motion table (pl_sub PlRegistMotion fills [0..11])
             MotionWorkSub neckMot;   // 0x42C .. 0x4FC  player: neck turn motion (pl_class cPlNeck::motSet), blended via blendMot
             u8 x4FC;              // 0x4FC  (pl_sub PlChangeData/PlMotionReset clear it)
             u8 x4FD;              // 0x4FD
@@ -208,9 +208,9 @@ public:
             u8 xButtonWait;       // 0x4FF  player: frames until the X button (partner command) is accepted again
             f32 blendRate500;     // 0x500  player: em2b plBlendMotSet: neckMot blend rate source (the strangle button mash 0..255)
             u32 sndId504;         // 0x504  player: SndCall handle cPlayer::interrupt stops
-            cModel* pLockEm;      // 0x508  player: locked-on enemy (pl_wep lock, knife aim)
-            cEm* pBoat;           // 0x50C  player: the jet ski the player rides (pl0e cPl0e::setRide / PlBoatMove)
-            class cObjSpear* pSpear;  // 0x510  player: the harpoon in hand (pl0f plboatSetSpear / plboatSpearThrow)
+            P32<cModel> pLockEm;  // 0x508  player: locked-on enemy (pl_wep lock, knife aim)
+            P32<cEm> pBoat;       // 0x50C  player: the jet ski the player rides (pl0e cPl0e::setRide / PlBoatMove)
+            P32<class cObjSpear> pSpear; // 0x510  player: the harpoon in hand (pl0f plboatSetSpear / plboatSpearThrow)
             f32 sightRate;        // 0x514  player: pl0f harpoon aim: vertical sight rate (-0.3927 .. 0.3927)
             int gachaCnt;         // 0x518  player: button mash counter (pl_sub PlGacha*)
             u8 pad_51C[2];
@@ -241,7 +241,7 @@ public:
             MotionWorkSub subBackMot;   // 0x454 .. 0x524  look-back motion blended in (backCheckSet -> blendMot)
         };
     };
-    cModelInfo* subHand[2];   // 0x524  cSubChar: hand model infos (pl11 cSubAshley::setHand)
+    P32<cModelInfo> subHand[2]; // 0x524  cSubChar: hand model infos (pl11 cSubAshley::setHand)
     f32 sub52C;           // 0x52C  cSubChar: fence / window action direction
     int subHideMode;      // 0x530  cSubChar (pl_sub SubCharCtrlHide); pl_npc: general step counter
     int subX534;          // 0x534  cSubChar (SubCharCtrlHide mode 0 sets 1)
@@ -251,7 +251,7 @@ public:
     Vec subHidePos;       // 0x544  cSubChar hide position
     u8 sub550;            // 0x550  cSubChar: frames until the route is re-checked
     u8 pad_551[3];
-    struct EmiEntry* sub554;   // 0x554  cSubChar: EMI route entry (type 0xB) walked to (embarrel.h)
+    P32<struct EmiEntry> sub554; // 0x554  cSubChar: EMI route entry (type 0xB) walked to (embarrel.h)
     Vec sub558;           // 0x558  cSubChar: ledge position to wait at (catchOn / actionCheck)
     f32 sub564;           // 0x564  cSubChar: angle to turn to while waiting to be caught
     int subAux0;          // 0x568  cSubChar (SetSubAux/SetSubBulldozer arguments)
@@ -260,8 +260,8 @@ public:
     u8 sub580;            // 0x580  cSubChar: timer
     u8 sub581;            // 0x581
     u8 pad_582[2];
-    void* subMot0;        // 0x584  cSubChar registered motions (SubCharRegistMotion, SetSubDamage)
-    void* subMot1;        // 0x588
+    P32<void> subMot0;    // 0x584  cSubChar registered motions (SubCharRegistMotion, SetSubDamage)
+    P32<void> subMot1;    // 0x588
     // 0x58C .. 0x5C4 is the partner's cMotBase (pl_npc.cpp / obj13: `(cMotBase*) &subFlags58C`)
     u8 subFlags58C;       // 0x58C  cSubChar (SetSubDamage sets 0x40)
     u8 pad_58D[0x5C4 - 0x58D];
@@ -270,10 +270,10 @@ public:
     EmHitInfo subHit[3];  // 0x5CC .. 0x668  cSubChar: extra hit boxes (YarareAdd in cSubChar::init)
     u8 pad_668[0x738 - 0x668];
     int satCheckFlag;     // 0x738  player: SatMgr.check flag (player.cpp startUp / move)
-    void (*pAuxFunc)(class cPlayer*);  // 0x73C  player: routine 1/0xA (pl_R1_Aux) handler
-    struct PlRoomEff* pRoomEff;  // 0x740  player: room water effect table (pl_sub PlRegistRoomEff/PlWaterProc)
-    void* boss0;          // 0x744  player (pl_sub PlRegistBoss)
-    void* boss1;          // 0x748
+    FnP32<void(*)(class cPlayer*)> pAuxFunc; // 0x73C  player: routine 1/0xA (pl_R1_Aux) handler
+    P32<struct PlRoomEff> pRoomEff; // 0x740  player: room water effect table (pl_sub PlRegistRoomEff/PlWaterProc)
+    P32<void> boss0;      // 0x744  player (pl_sub PlRegistBoss)
+    P32<void> boss1;      // 0x748
     Vec fallDir;          // 0x74C  player: -wallNrm of the ledge to drop from (pl_class fallCheck)
     Vec jumpDir;          // 0x758  player: -normal of the jump-over wall (pl_class jumpCheck)
     f32 jumpHeight;       // 0x764  player: floor height behind the jump wall minus pos.y
@@ -281,18 +281,18 @@ public:
     Vec actWallNrm;       // 0x774  player: its normal
     u32 actWallAttr;      // 0x780  player: its scenario attribute (0 = no wall in front)
     u8 pad_784[4];
-    class cPlWep* pWep;   // 0x788  player: weapon control (pl_wep.cpp, 0x44 bytes)
-    class cPlNeck* pNeck; // 0x78C  player: neck control (pl_class.cpp, 0x1C bytes)
-    class cPlWaist* pWaist;  // 0x790  player: waist control (pl_class.cpp, 0xC bytes)
-    class cPlBody* pBody; // 0x794  player: body / face / hand model set (pl_body.cpp, 0xF0 bytes)
+    P32<class cPlWep> pWep; // 0x788  player: weapon control (pl_wep.cpp, 0x44 bytes)
+    P32<class cPlNeck> pNeck; // 0x78C  player: neck control (pl_class.cpp, 0x1C bytes)
+    P32<class cPlWaist> pWaist; // 0x790  player: waist control (pl_class.cpp, 0xC bytes)
+    P32<class cPlBody> pBody; // 0x794  player: body / face / hand model set (pl_body.cpp, 0xF0 bytes)
     u8 pad_798[8];
-    class cPlPush* pPush; // 0x7A0  player: push-object control (pl_push.cpp, 0x10 bytes)
-    class cMotBase* pMotBase;  // 0x7A4  (0x38 bytes)
+    P32<class cPlPush> pPush; // 0x7A0  player: push-object control (pl_push.cpp, 0x10 bytes)
+    P32<class cMotBase> pMotBase; // 0x7A4  (0x38 bytes)
     u8 pad_7A8[4];
     union {
         Vec bustBase[3];      // 0x7AC  Ashley: rest positions of parts 0x1D, 0x1E, 0x1A (pl_ashley moveBust)
         struct {              // Krauser (pl0a pl_klauser.cpp): the three fading model infos and their state
-            cModelInfo* krModel[3];   // 0x7AC  [0]/[1] arm models faded against each other, [2] the tex-render one
+            P32<cModelInfo> krModel[3]; // 0x7AC  [0]/[1] arm models faded against each other, [2] the tex-render one
             int krX7B8;               // 0x7B8  (ctor: 0)
             int krX7BC;               // 0x7BC
             int krX7C0;               // 0x7C0  (ctor: 0)
@@ -300,9 +300,9 @@ public:
         };
     };
     u8 pad_7D0[4];
-    cLight* subLight;         // 0x7D4  cSubChar: back light (cLightMgr::createBack)
-    void* subShape;       // 0x7D8  cSubChar: ShapeMove work (NULL = none)
-    void (*subFunc)();        // 0x7DC  cSubChar: routine 4 (damage) handler (cSubChar::move)
+    P32<cLight> subLight;     // 0x7D4  cSubChar: back light (cLightMgr::createBack)
+    P32<void> subShape;   // 0x7D8  cSubChar: ShapeMove work (NULL = none)
+    FnP32<void(*)()> subFunc; // 0x7DC  cSubChar: routine 4 (damage) handler (cSubChar::move)
     Vec subBustBase[3];   // 0x7E0  cSubChar: rest positions of parts 0x1D, 0x1E, 0x1A (moveBust)
     u8 pad_804[0x880 - 0x804];
     f32 x880;             // 0x880  player (Krauser): ctor 1.0

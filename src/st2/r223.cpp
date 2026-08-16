@@ -35,15 +35,15 @@
 
 struct R223Work {
     cEmWrap em[23];   // 0x000
-    cObj* toroko;     // 0x114  the cart
-    cObj* dai;        // 0x118  the lift platform (item model 0x8D)
+    P32<cObj> toroko; // 0x114  the cart
+    P32<cObj> dai;    // 0x118  the lift platform (item model 0x8D)
     u32 str;          // 0x11C  SndStrReq handle
     u32 se[3];        // 0x120  SndCall handles
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R223WorkPtr {
-    R223Work* p;
+    P32<R223Work> p;
 };
 
 static R223WorkPtr r223_work;

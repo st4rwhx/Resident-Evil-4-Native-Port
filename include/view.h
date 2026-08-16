@@ -23,7 +23,7 @@ struct ViewSphere {
 class VIEW {
 public:
     u8 pad_0[4];
-    Camera* pCam;             // 0x04
+    P32<Camera> pCam;         // 0x04
     f32 aspect;               // 0x08
     f32 fovy;                 // 0x0C
     f32 zfar;                 // 0x10

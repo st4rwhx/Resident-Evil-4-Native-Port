@@ -216,7 +216,7 @@ void objTrolley_R0_Move(cObjTrolley* obj)
     case 5:
         if (MotionMove(obj, 0) && w->ride) {
             w->ride = 0;
-            SetPlDamage((int) obj, plobjTrolleyDie);
+            SetPlDamage((int)(uintptr_t)(obj), plobjTrolleyDie);
             obj->xFC = 2;
             obj->xFD = 0;
             obj->xFE = 0;
@@ -226,13 +226,13 @@ void objTrolley_R0_Move(cObjTrolley* obj)
                 pG->flags_5014 |= 0x08000000;
             }
             if (obj->motFrame > 2300.0f) {
-                EstSet((int) obj, -1, 0, 0, 1, 0x13, 0, 0, (u32) obj, 0);
+                EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 0x13, 0, 0, (u32)(uintptr_t)(obj), 0);
             }
             if (obj->motFrame > 2865.0f) {
                 if (obj->xFF) {
-                    ActBtn.set(4, 0xB, (int) objTrolleyEscapeAction, (int) obj, 1, 3, 0, 0);
+                    ActBtn.set(4, 0xB, (int)(uintptr_t)(objTrolleyEscapeAction), (int)(uintptr_t)(obj), 1, 3, 0, 0);
                 } else {
-                    ActBtn.set(4, 0xB, (int) objTrolleyEscapeAction, (int) obj, 1, 4, 0, 0);
+                    ActBtn.set(4, 0xB, (int)(uintptr_t)(objTrolleyEscapeAction), (int)(uintptr_t)(obj), 1, 4, 0, 0);
                 }
             }
         }
@@ -355,7 +355,7 @@ void objTrolleySatSet(cObjTrolley* obj)
 void objTrolleyEscapeAction(cObjTrolley* obj)
 {
     obj->trolley.ride = 0;
-    SetPlDamage((int) obj, plobjTrolleyEscape);
+    SetPlDamage((int)(uintptr_t)(obj), plobjTrolleyEscape);
     obj->xFC = 2;
     obj->xFD = 0;
     obj->xFE = 0;
@@ -365,11 +365,11 @@ void objTrolleyEscapeAction(cObjTrolley* obj)
 void plobjTrolleyEscape(cPlayer* pl)
 {
     cEm* em = (cEm*) pl;
-    cObjTrolley* obj = (cObjTrolley*) em->dmgType;
+    cObjTrolley* obj = (cObjTrolley*)port_ptr64(em->dmgType);
     TrolleyWork* w = &obj->trolley;
     cModel* parts = em->getPartsPtr(4);
 
-    em->x378 = ((cEm*) pPL->dmgType)->x378;
+    em->x378 = ((cEm*)port_ptr64(pPL->dmgType))->x378;
     em->dmg.set(0, 0xF);
     switch (em->xFE) {
     case 0:
@@ -470,11 +470,11 @@ void plobjTrolleyEscape(cPlayer* pl)
 void plobjTrolleyDie(cPlayer* pl)
 {
     cEm* em = (cEm*) pl;
-    cObjTrolley* obj = (cObjTrolley*) em->dmgType;
+    cObjTrolley* obj = (cObjTrolley*)port_ptr64(em->dmgType);
     TrolleyWork* w = &obj->trolley;
     u8 step;
 
-    em->x378 = ((cEm*) pPL->dmgType)->x378;
+    em->x378 = ((cEm*)port_ptr64(pPL->dmgType))->x378;
     em->dmg.set(0, 0xF);
     step = em->xFE;
     switch (step) {
@@ -608,8 +608,8 @@ void objTrolleySetAdjust(cObjTrolley* obj, cEm* em)
     em->setPos(&v);
     if (em->id == 0) {
         if (CamCtrl.x250) {
-            PSVECAdd(&((Camera*) CamCtrl.x250)->param.at, &d, &((Camera*) CamCtrl.x250)->param.at);
-            PSVECAdd(&((Camera*) CamCtrl.x250)->param.pos, &d, &((Camera*) CamCtrl.x250)->param.pos);
+            PSVECAdd(&((Camera*)port_ptr64(CamCtrl.x250))->param.at, &d, &((Camera*)port_ptr64(CamCtrl.x250))->param.at);
+            PSVECAdd(&((Camera*)port_ptr64(CamCtrl.x250))->param.pos, &d, &((Camera*)port_ptr64(CamCtrl.x250))->param.pos);
         }
         pG->quake_ofs = d;
     }

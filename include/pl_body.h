@@ -39,21 +39,21 @@ struct PlBodyParts {
 // they were built from (pl_leon setModel/setRightHand/...), the waist twist and the weapon hand.
 class cPlBody {
 public:
-    void* pRightData;            // 0x00  right hand model data (0 = none)
-    void* pLeftData;             // 0x04  left hand model data (0 = none)
-    void* pHeadData;             // 0x08  head model data
-    void* pWepHand;              // 0x0C  weapon hand model data (initWepHand; setRightHand(1) uses it)
-    cModelInfo* pShape;          // 0x10  head model info (face shape animation target of ShapeSet/ShapeEnd)
+    P32<void> pRightData;        // 0x00  right hand model data (0 = none)
+    P32<void> pLeftData;         // 0x04  left hand model data (0 = none)
+    P32<void> pHeadData;         // 0x08  head model data
+    P32<void> pWepHand;          // 0x0C  weapon hand model data (initWepHand; setRightHand(1) uses it)
+    P32<cModelInfo> pShape;      // 0x10  head model info (face shape animation target of ShapeSet/ShapeEnd)
     u32 x14;                     // 0x14
     u32 x18;                     // 0x18
-    cModelInfo* pRight;          // 0x1C  right hand model info
-    cModelInfo* pLeft;           // 0x20  left hand model info
-    cModelInfo* pHair;           // 0x24
-    cModelInfo* pEye;            // 0x28  (flags |= 0x40)
-    cModelInfo* pFace;           // 0x2C  face model info (pl_knife zeroes/ones its 0x5C/0x70/0x84)
+    P32<cModelInfo> pRight;      // 0x1C  right hand model info
+    P32<cModelInfo> pLeft;       // 0x20  left hand model info
+    P32<cModelInfo> pHair;       // 0x24
+    P32<cModelInfo> pEye;        // 0x28  (flags |= 0x40)
+    P32<cModelInfo> pFace;       // 0x2C  face model info (pl_knife zeroes/ones its 0x5C/0x70/0x84)
     u32 leftNo;                  // 0x30  current left hand item no
     u32 leftNoPrev;              // 0x34  previous one (setLeftHand(0x63) restores it)
-    cModel* pModel;              // 0x38
+    P32<cModel> pModel;          // 0x38
     f32 waist;                   // 0x3C  waist twist angle (waistSet)
     SpaeData spae[2];            // 0x40
 

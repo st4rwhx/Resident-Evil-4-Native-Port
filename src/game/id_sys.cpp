@@ -37,7 +37,7 @@ struct IdBlend2 {
 };
 
 // Bit tables indexed by table type (ck / disp).
-#define ID_BIT_WORD(tbl, n) (*(u32*) (((n) >> 5 << 2) + (u32) (tbl)))
+#define ID_BIT_WORD(tbl, n) (*(u32*)port_ptr64((((n) >> 5 << 2) + (u32)(uintptr_t)((tbl)))))
 static inline u32 IdBitGet(u32* tbl, u8 n) { return ID_BIT_WORD(tbl, n) & (0x80000000 >> (n & 0x1F)); }
 static inline int IdBitChk(u32* tbl, u8 n) { return IdBitGet(tbl, n) ? 1 : 0; }
 static inline void IdBitOn(u32* tbl, u8 n) { ID_BIT_WORD(tbl, n) |= 0x80000000 >> (n & 0x1F); }
@@ -294,37 +294,37 @@ void IDSystem::set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode)
                     u->transSub = p1->transSub;
                     a = p1->ofs[0];
                     if (a) {
-                        u->path0 = (void*) (a + (u32) data);
+                        u->path0 = (void*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->path0 = 0;
                     }
                     a = p1->ofs[1];
                     if (a) {
-                        u->path1 = (void*) (a + (u32) data);
+                        u->path1 = (void*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->path1 = 0;
                     }
                     a = p1->ofs[2];
                     if (a) {
-                        u->curve[0] = (Hermite1*) (a + (u32) data);
+                        u->curve[0] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[0] = 0;
                     }
                     a = p1->ofs[3];
                     if (a) {
-                        u->curve[1] = (Hermite1*) (a + (u32) data);
+                        u->curve[1] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[1] = 0;
                     }
                     a = p1->ofs[4];
                     if (a) {
-                        u->curve[2] = (Hermite1*) (a + (u32) data);
+                        u->curve[2] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[2] = 0;
                     }
                     a = p1->ofs[5];
                     if (a) {
-                        u->curve[3] = (Hermite1*) (a + (u32) data);
+                        u->curve[3] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[3] = 0;
                     }
@@ -402,37 +402,37 @@ void IDSystem::set(void* data, u8 id, u8 type, u8 ot, u8 prio, u8 mode)
                     u->transSub = p2->transSub;
                     a = p2->ofs[0];
                     if (a) {
-                        u->path0 = (void*) (a + (u32) data);
+                        u->path0 = (void*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->path0 = 0;
                     }
                     a = p2->ofs[1];
                     if (a) {
-                        u->path1 = (void*) (a + (u32) data);
+                        u->path1 = (void*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->path1 = 0;
                     }
                     a = p2->ofs[2];
                     if (a) {
-                        u->curve[0] = (Hermite1*) (a + (u32) data);
+                        u->curve[0] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[0] = 0;
                     }
                     a = p2->ofs[3];
                     if (a) {
-                        u->curve[1] = (Hermite1*) (a + (u32) data);
+                        u->curve[1] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[1] = 0;
                     }
                     a = p2->ofs[4];
                     if (a) {
-                        u->curve[2] = (Hermite1*) (a + (u32) data);
+                        u->curve[2] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[2] = 0;
                     }
                     a = p2->ofs[5];
                     if (a) {
-                        u->curve[3] = (Hermite1*) (a + (u32) data);
+                        u->curve[3] = (Hermite1*)port_ptr64((a + (u32)(uintptr_t)(data)));
                     } else {
                         u->curve[3] = 0;
                     }

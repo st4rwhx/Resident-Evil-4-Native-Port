@@ -36,13 +36,13 @@ public:
     EmHitInfo hitInfo;    // 0x33C .. 0x370
     f32 plDist2;          // 0x370
     f32 x374;             // 0x374
-    PlArc* subArc;        // 0x378  motion archive the routines index
-    PlArc* subArc2;       // 0x37C
+    P32<PlArc> subArc;    // 0x378  motion archive the routines index
+    P32<PlArc> subArc2;   // 0x37C
     Vec lockOfs;          // 0x380
     u8 lockParts;         // 0x38C
     u8 x38D;              // 0x38D  scenario floor: 1 = ground floor, 2 = upstairs (cAction::chasePlAreaCheck)
     u8 pad_38E[2];
-    void (*pScenario)(cEm*);  // 0x390
+    FnP32<void(*)(cEm*)> pScenario; // 0x390
     u8 pad_394[4];
     u8 emsetNo;           // 0x398
     u8 pad_399[0x3B8 - 0x399];
@@ -50,7 +50,7 @@ public:
     u8 pad_3BC[0x3C4 - 0x3BC];
     u32 status;           // 0x3C4
     u8 pad_3C8[0x3E0 - 0x3C8];
-    cSubLuis* subSelf;    // 0x3E0  the model the routines animate (itself)
+    P32<cSubLuis> subSelf; // 0x3E0  the model the routines animate (itself)
     u8 pad_3E4[0x3FC - 0x3E4];
 
     cEmLuisBase() asm("__3cEm");
@@ -79,7 +79,7 @@ public:
 // (damage, die) interrupt lower ones.
 class cRoutine {
 public:
-    cSubLuis* owner;      // 0x000
+    P32<cSubLuis> owner;  // 0x000
     cMot3 mot3;           // 0x004 .. 0x0EC  three-way blend (aim up / level / down)
     f32 rate;             // 0x0EC  mot3 rate (aim elevation)
     int xF0;              // 0x0F0
@@ -96,7 +96,7 @@ public:
     f32 dist;             // 0x120  walk / run: arrival distance
     u8 pad124[0xC];
     Vec target;           // 0x130  walk / run target
-    cEm* pTarget;         // 0x13C  enemy aimed at
+    P32<cEm> pTarget;     // 0x13C  enemy aimed at
     int cnt;              // 0x140  frames the dead target was kept
 
     void init(cSubLuis* o);
@@ -128,12 +128,12 @@ public:
 // Target analysis.
 class cAnalysis {
 public:
-    cSubLuis* owner;      // 0x00
+    P32<cSubLuis> owner;  // 0x00
     int idx;              // 0x04  EmMgr index the round-robin isTarget scan is at
     f32 plDist;           // 0x08  route distance to the player
     int cnt;              // 0x0C  frames
     s8 greCnt;            // 0x10  frames the player has aimed a grenade at him (bit7 = handled)
-    cEm* pTarget;         // 0x14  nearest target
+    P32<cEm> pTarget;     // 0x14  nearest target
     f32 targetDist;       // 0x18  its squared distance
     s8 flags;             // 0x1C  bit1 aimed at by the player, bit2 down, bit3 periodic, bit4 grenade, bit5 spoke, bit6 damaged, bit7 rack
     u8 pad1D[3];
@@ -147,7 +147,7 @@ public:
 // 5 damage, 6 die, 7 give the item, 8 down, 9 up, 0xA avoid, 0xB room 11C opening, 0xC escape the rack.
 class cAction {
 public:
-    cSubLuis* owner;      // 0x00
+    P32<cSubLuis> owner;  // 0x00
     int mode;             // 0x04
     int req;              // 0x08  mode move() dispatches on
     u8 step;              // 0x0C
@@ -181,18 +181,18 @@ public:
     cRoutine routine;     // 0x3FC .. 0x540
     cAction action;       // 0x540 .. 0x564
     cAnalysis analysis;   // 0x564 .. 0x584
-    void (*evFunc)();     // 0x584  routine 4 (event): the scenario's function
-    cObjLuisItem* pItem;  // 0x588  the weapon object (ObjMgr id 0xB) / thrown item
+    FnP32<void(*)()> evFunc; // 0x584  routine 4 (event): the scenario's function
+    P32<cObjLuisItem> pItem; // 0x588  the weapon object (ObjMgr id 0xB) / thrown item
     s8 flags;             // 0x58C  bit0 damaged, bit1 dead, bit2 upstairs, bit3 neck set this frame, bit6 damage from an enemy
     u8 pad58D[3];
     int cnt;              // 0x590  frames of the damage reaction voice
     EmHitInfo hit[10];    // 0x594 .. 0x79C
     u8 pad79C[4];
-    cModelInfo* pFace;    // 0x7A0
+    P32<cModelInfo> pFace; // 0x7A0
     u16 lifeOld;          // 0x7A4  player life the last worry line was spoken at
     u8 dmgCnt;            // 0x7A6  hits left before he goes down
     u8 voiceWait;         // 0x7A7
-    cEm* rack[3];         // 0x7A8  the room's racks (getRoomEtcRack)
+    P32<cEm> rack[3];     // 0x7A8  the room's racks (getRoomEtcRack)
     f32 neckAng;          // 0x7B4
 
     cSubLuis();

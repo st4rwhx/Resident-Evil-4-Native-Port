@@ -25,9 +25,9 @@ struct Espgen43Work {
     u16 ny;            // 0x76 grid cells along z
     u8 pad_78[4];
     f32 size;          // 0x7C cell size
-    Vec* nrm;          // 0x80
-    Vec* pos;          // 0x84
-    u8* dl;            // 0x88 display list
+    P32<Vec> nrm;      // 0x80
+    P32<Vec> pos;      // 0x84
+    P32<u8> dl;        // 0x88 display list
     u32 dlSize;        // 0x8C
     GXColor color;     // 0x90
     GXColor color2;    // 0x94
@@ -346,7 +346,7 @@ static int SetSand(Vec* pos, Vec* rot, f32 size, u32 nx, u32 ny)
         pLog->err(0, 0, "Espgen43 : work pull failed");
         return 0;
     }
-    return (int) SetSandWork(w, pos, rot, size, 1.0f, nx, ny);
+    return (int)(uintptr_t)(SetSandWork(w, pos, rot, size, 1.0f, nx, ny));
 }
 
 // Texture coordinate wrap: keeps the repeat in 0..1 by mirroring at 1.

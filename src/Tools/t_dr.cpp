@@ -70,18 +70,18 @@ struct DrWork {
     u32 saveSize;     // 0x0098
     u8 pad_9C[4];
     DrArea area[128];        // 0x00A0
-    char* fileName[128];     // 0x1CA0
+    P32<char> fileName[128]; // 0x1CA0
     DrHeader hdr;            // 0x1EA0  save image
     DrArea hdrArea[128];     // 0x1EB0
     char strBuf[0x8000];     // 0x3AB0
-    u8* pData;               // 0xBAB0
-    DrArea* pArea;           // 0xBAB4
-    char* pStr;              // 0xBAB8
+    P32<u8> pData;           // 0xBAB0
+    P32<DrArea> pArea;       // 0xBAB4
+    P32<char> pStr;          // 0xBAB8
 };
 
 // every store through the work pointer reloads it: the pointer is a struct member
 struct DrWorkPtr {
-    DrWork* p;
+    P32<DrWork> p;
 };
 static DrWorkPtr drWork;
 #define DR (drWork.p)

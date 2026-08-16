@@ -10,8 +10,8 @@
 // One menu line for ToolMenuDisp_cur (0xC bytes).
 struct TOOL_MENU {
     u8 enable;          // 0x00  0 = greyed out (color 0x14) and not selectable
-    const char* name;   // 0x04
-    void (*func)();     // 0x08  called when selected (may be NULL)
+    P32<const char> name; // 0x04
+    FnP32<void(*)()> func; // 0x08  called when selected (may be NULL)
 };
 
 // ToolMenuDisp_cur flag bits

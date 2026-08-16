@@ -27,7 +27,7 @@
 // r102s00 event and the battle BGM.
 
 struct R102Work {
-    cDataUnit* evd;   // 0x00  the event data file
+    P32<cDataUnit> evd; // 0x00  the event data file
 };
 
 static R102Work* r102_work;

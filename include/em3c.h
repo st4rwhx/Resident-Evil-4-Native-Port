@@ -29,7 +29,7 @@ struct Em3cWork {
     Vec routePos;         // 0x040 (0x620)  RouteCkToPos result
     u8 pad_4C[0xC];
     Vec targetPos;        // 0x058 (0x638)
-    cEm* pTarget;         // 0x064 (0x644)  the player
+    P32<cEm> pTarget;     // 0x064 (0x644)  the player
     u8 pad_68[0xC];
     int timer74;          // 0x074 (0x454)
     int voiceTimer;       // 0x078 (0x458)  frames until the next parasite voice
@@ -39,10 +39,10 @@ struct Em3cWork {
     EmHitInfo hit[11];    // 0x098 (0x478)  extra hit boxes (YarareAdd); [9] the parasite, [10] the head object
     u8 pad_2D4[0x3A4 - 0x2D4];
     int bombTimer;        // 0x3A4 (0x784)  frames until the head parts are hidden (em3cPartsBombHead)
-    cModelInfo* pInfo3A8; // 0x3A8 (0x788)  em3cModelInit extra models
-    cModelInfo* pInfo3AC; // 0x3AC (0x78C)
-    cObj16* pParasite;    // 0x3B0 (0x790)  head object (em3cSetParasite)
-    cObj16* pPara[4];     // 0x3B4 (0x794)  its four parasites (types 0 / 1)
+    P32<cModelInfo> pInfo3A8; // 0x3A8 (0x788)  em3cModelInit extra models
+    P32<cModelInfo> pInfo3AC; // 0x3AC (0x78C)
+    P32<cObj16> pParasite; // 0x3B0 (0x790)  head object (em3cSetParasite)
+    P32<cObj16> pPara[4]; // 0x3B4 (0x794)  its four parasites (types 0 / 1)
     u8 pad_3C4[4];
     int atkWait;          // 0x3C8 (0x7A8)  frames until the next attack
     int hitCnt;           // 0x3CC (0x7AC)  damage left before the head bursts

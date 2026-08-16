@@ -40,7 +40,7 @@ struct IdTexData {
 
 int IdTexDataLoad(void* data, int id)
 {
-    u32 addr = (u32) data;
+    u32 addr = (u32)(uintptr_t)(data);
     IdTexData* d;
     TexIdTbl* idTbl;
     TexOfsTbl* tplTbl;
@@ -55,14 +55,14 @@ int IdTexDataLoad(void* data, int id)
     #else
     asm("" : "+r"(addr));
     #endif
-    d = (IdTexData*) addr;
+    d = (IdTexData*)port_ptr64(addr);
     if (d->version != 0xB) {
         pLog->err(0, 0, "IdDataLoad():EffData [0x%x] Invalid.", addr);
         return 0;
     }
-    idTbl = (TexIdTbl*) (addr + d->ofsId);
-    tplTbl = (TexOfsTbl*) (addr + d->ofsTpl);
-    anmTbl = (TexOfsTbl*) (addr + d->ofsAnm);
+    idTbl = (TexIdTbl*)port_ptr64((addr + d->ofsId));
+    tplTbl = (TexOfsTbl*)port_ptr64((addr + d->ofsTpl));
+    anmTbl = (TexOfsTbl*)port_ptr64((addr + d->ofsAnm));
     for (i = 0; i < idTbl->num; i++) {
         TEXPalette* tpl = (TEXPalette*) ((u8*) tplTbl + tplTbl->ofs[i]);
         TexAnm* anm = (TexAnm*) ((u8*) anmTbl + anmTbl->ofs[i]);

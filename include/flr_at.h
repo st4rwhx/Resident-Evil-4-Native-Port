@@ -33,8 +33,8 @@ struct FlrAtHead {
 
 // Floor system work (`pFlrSys` -> FlrAt_sys, 0x8C bytes).
 struct FlrSys {
-    void* pData;         // 0x00  room floor attribute data (NULL when the room has none)
-    FlrAt* pList;        // 0x04  its records
+    P32<void> pData;     // 0x00  room floor attribute data (NULL when the room has none)
+    P32<FlrAt> pList;    // 0x04  its records
     u8 group;            // 0x08  current group (0xFF = any)
     u8 foot_se[0x41];    // 0x09  foot SE variation per material (FlrAtSetDefVal a)
     u8 foot_esp[0x42];   // 0x4A  foot effect per material (FlrAtSetDefVal b)

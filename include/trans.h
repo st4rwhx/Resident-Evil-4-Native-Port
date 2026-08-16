@@ -26,12 +26,12 @@ struct ModelTexInfo {
     u8 frame;         // 0x04  texture animation frame
     u8 blendType;     // 0x05
     u8 pad_6[2];
-    u8* blendTbl;     // 0x08  = texBlendTbl
+    P32<u8> blendTbl; // 0x08  = texBlendTbl
     f32 u;            // 0x0C  uv scroll offset
     f32 v;            // 0x10
     f32 su;           // 0x14  uv scroll speed
     f32 sv;           // 0x18
-    u8* anim;         // 0x1C  texture animation table ([1] frames, [4 + frame] texture id)
+    P32<u8> anim;     // 0x1C  texture animation table ([1] frames, [4 + frame] texture id)
 };
 #define MODEL_TEX(info) ((ModelTexInfo*) &(info)->flagsDC)
 

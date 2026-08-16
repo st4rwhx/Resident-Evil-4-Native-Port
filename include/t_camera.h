@@ -16,7 +16,7 @@ extern CameraBSpline CamBSpline;
 // One menu line of tcMenuSelect (8 bytes).
 struct TcMenu {
     u8 enable;         // 0x00  0 = greyed out (colour 0x14) and not selectable
-    const char* name;  // 0x04
+    P32<const char> name; // 0x04
 };
 
 // Tool-side records (the file records of cam_ctrl.h with the arrays inline).
@@ -86,8 +86,8 @@ struct TcWork {
     s8 subCursor;                // 0x005  sub menu cursor
     s8 x6;                       // 0x006  editor menu cursor
     s8 x7;                       // 0x007  area vertex insert/delete menu cursor
-    TcAdat* pAdat;               // 0x008  current area
-    TcLdat* pLdat;               // 0x00C  link being edited (tcEdit_select)
+    P32<TcAdat> pAdat;           // 0x008  current area
+    P32<TcLdat> pLdat;           // 0x00C  link being edited (tcEdit_select)
     Camera cam;                  // 0x010  tool copy of pG->Cam
     u8 pad_108[0x10C - 0x108];
     JOY joy;                     // 0x10C  pad snapshot (Joy[0]; trg at 0x120, rep at 0x128)
@@ -125,7 +125,7 @@ struct TcWork {
     u8 areaDetail;               // 0x639
     u8 blink;                    // 0x63A  frame counter
     u8 pad_63B;
-    cLightTool* pLightTool;      // 0x63C
+    P32<cLightTool> pLightTool;  // 0x63C
     u8 x640;                     // 0x640  core camera data (CoreDataRead) instead of room data
     u8 pad_641[0x644 - 0x641];
 };

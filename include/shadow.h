@@ -12,8 +12,8 @@ class cObj;
 // One projected shadow (game/shadow.cpp `ShadowMngWork`, 0xD4 bytes): the light that casts it,
 // the models it covers and the texture the models are rendered into from the light.
 struct ShadowMng {
-    cLight* pLight;      // 0x00
-    cModel* pModel[8];   // 0x04
+    P32<cLight> pLight;  // 0x00
+    P32<cModel> pModel[8]; // 0x04
     u8 self;             // 0x24  1: self shadow (the model's own shadow map, SelfShadowSetup)
     u8 num;              // 0x25  models in pModel
     u16 no;              // 0x26  index in ShadowMngWork
@@ -24,7 +24,7 @@ struct ShadowMng {
     Vec dir;             // 0xA0  normalised target - lightPos
     f32 fov;             // 0xAC  light perspective angle (degrees)
     GXTexObj texObj;     // 0xB0
-    void* pTex;          // 0xD0  g_Shd_tex_size^2 I8 shadow texture
+    P32<void> pTex;      // 0xD0  g_Shd_tex_size^2 I8 shadow texture
 };
 
 // cLight::work of a type 4 (shadow) light.

@@ -17,7 +17,7 @@ class cCoord : public cUnit {
 public:
     Mtx mat;        // 0x0C local matrix (rot * trans * scale)
     Mtx worldMat;   // 0x3C
-    cCoord* pParent;  // 0x6C  parent coord (parts: the model; pl_ashley concatenates its mat)
+    P32<cCoord> pParent; // 0x6C  parent coord (parts: the model; pl_ashley concatenates its mat)
     Vec worldPos;   // 0x70
     Vec oldWorldPos;  // 0x7C  worldPos of the previous frame (cAtariInfo::getSpeedVector)
     Vec x88;        // 0x88  (pl_ashley moveBust: GetDistance3 from worldPos)
@@ -90,23 +90,23 @@ struct ModelDataHead {
 
 // Model data referenced by a bin (game/model.cpp `ModelData`); only the flag word is known.
 struct ModelData {
-    ModelDataHead* pHead;  // 0x00
+    P32<ModelDataHead> pHead; // 0x00
     u8 pad_4[0xC - 0x4];
-    void* pClr;      // 0x0C  vertex colour array (GX_VA_CLR0, RGBA8; used when flags bit31 is set)
-    void* pTex;      // 0x10  texture coordinate array (GX_VA_TEX0)
-    void* pWeight;   // 0x14  skinning weights (trans MakeWeightPalette: Weight[x18] or WeightExt[x2A])
+    P32<void> pClr;  // 0x0C  vertex colour array (GX_VA_CLR0, RGBA8; used when flags bit31 is set)
+    P32<void> pTex;  // 0x10  texture coordinate array (GX_VA_TEX0)
+    P32<void> pWeight; // 0x14  skinning weights (trans MakeWeightPalette: Weight[x18] or WeightExt[x2A])
     u8 x18;          // 0x18  (mirror: 1 with x19 == 1 and x2A <= 0xFF selects the original vertex arrays); weight entries
     u8 x19;          // 0x19
     u16 nParts;      // 0x1A  primitive part count (dbmodule DrawObjWireframe)
-    struct ModelPart* pParts;  // 0x1C  first part header (0x20 bytes + primitive stream)
+    P32<struct ModelPart> pParts; // 0x1C  first part header (0x20 bytes + primitive stream)
     u32 flags;       // 0x20  bit31: s16 tex coords (frac 8), bit30 (0x40000000): SmxGetFlag bit1, bit29: s8 normals
     u32 nTex;        // 0x24  texture count (trans: must be <= 0xF7)
     u8 shift;        // 0x28  vertex fixed-point shift (dbmodule: scale = 1 / (1 << shift))
     u8 pad_29;
     u16 x2A;         // 0x2A  extended weight entries (> 0xFF: WeightExt table)
     u32 shapeOfs;    // 0x2C  offset of the shape (vertex delta) table (shape.cpp)
-    void* vtxOrig;   // 0x30  original vertex positions (shape.cpp ResetShape source)
-    void* nrmOrig;   // 0x34  original vertex normals
+    P32<void> vtxOrig; // 0x30  original vertex positions (shape.cpp ResetShape source)
+    P32<void> nrmOrig; // 0x34  original vertex normals
     u16 nVtx;        // 0x38  vertex count (8 bytes each)
     u16 nNrm;        // 0x3A  normal count
     u32 version;     // 0x3C  0x20010801 / 0x20030817 / 0x20030818 (model.cpp: the two tables below exist from 0x20030818)
@@ -126,7 +126,7 @@ struct ShapeData {
 // One active shape channel of a model (cModelInfo+0xA8, 5 entries).
 struct ShapeKey {
     f32 rate;        // 0x00
-    ShapeData* data; // 0x04
+    P32<ShapeData> data; // 0x04
 };
 
 // Bounding volume of a model (cModelInfo+0x38).
@@ -141,9 +141,9 @@ struct ModelBound {
 // vptr 0x08). Partial layout.
 class cModelInfo : public cUnit {
 public:
-    ModelData* pData;    // 0x0C
-    void* pTpl;          // 0x10  texture palette of the model (eff_sys RoomEfmRegist)
-    cModelInfo* pNext;   // 0x14  next parts info
+    P32<ModelData> pData; // 0x0C
+    P32<void> pTpl;      // 0x10  texture palette of the model (eff_sys RoomEfmRegist)
+    P32<cModelInfo> pNext; // 0x14  next parts info
     u8 pad_18[0x38 - 0x18];
     ModelBound bound;    // 0x38
     union {
@@ -162,9 +162,9 @@ public:
         u32 colorWord;   // 0x8C  (cModelInfo::cModelInfo: 0xFFFFFFFF)
     };
     u8 color2[4];        // 0x90  second RGBA (0x93 = 0 or 0xFF)
-    void* pPosBuf[2];    // 0x94  double-buffered vertex position arrays (pG->vtx_buf_no selects)
-    void* pNrmBuf[2];    // 0x9C  double-buffered vertex normal arrays
-    ShapeData* pShape;   // 0xA4  current shape animation, NULL when none (shape.cpp)
+    P32<void> pPosBuf[2]; // 0x94  double-buffered vertex position arrays (pG->vtx_buf_no selects)
+    P32<void> pNrmBuf[2]; // 0x9C  double-buffered vertex normal arrays
+    P32<ShapeData> pShape; // 0xA4  current shape animation, NULL when none (shape.cpp)
     ShapeKey shape[5];   // 0xA8  blended shapes
     u32 shapeFlags;      // 0xD0  1: loop, 2: hold last frame, 4: reverse, 8: x100 weights
     s16 shapeFrame;      // 0xD4
@@ -176,15 +176,15 @@ public:
     u8 xE0;              // 0xE0  texture animation frame (trans commonScreenMatSub)
     u8 blendType;        // 0xE1
     u8 pad_E2[2];
-    void* texBlendTbl;   // 0xE4  (TexRender: 6-byte table {1, 0, ?, ?, 0xF7, tex id})
+    P32<void> texBlendTbl; // 0xE4  (TexRender: 6-byte table {1, 0, ?, ?, 0xF7, tex id})
     f32 uvU;             // 0xE8  current uv scroll offset (trans materialSetup tex matrix)
     f32 uvV;             // 0xEC
     f32 uvScrollU;       // 0xF0  uv scroll speed per frame
     f32 uvScrollV;       // 0xF4
-    u8* pTexAnim;        // 0xF8  texture animation table: [1] = frame count, [4 + frame] = texture id
+    P32<u8> pTexAnim;    // 0xF8  texture animation table: [1] = frame count, [4 + frame] = texture id
     u8 pad_FC[0x11C - 0xFC];
     u32 nAddTex;         // 0x11C  textures of pAddTpl appended after pTpl's (commonModelTrans)
-    struct TEXPalette* pAddTpl;  // 0x120  additional texture palette (addTplAddr)
+    P32<struct TEXPalette> pAddTpl; // 0x120  additional texture palette (addTplAddr)
 
     cModelInfo();
     void setTplAddr(void* tpl);   // pTpl = tpl, relocated
@@ -200,7 +200,7 @@ public:
 class cLightInfo {
 public:
     Mtx mat;         // 0x00  light space matrix (lightHitCheckBBox transforms the light into it)
-    cLight* pLight[8];        // 0x30  lights applied to the model (cLightMgr::setModel2 / setCloth)
+    P32<cLight> pLight[8];    // 0x30  lights applied to the model (cLightMgr::setModel2 / setCloth)
     u8 x50;          // 0x50  cLight::xF kind mask the model accepts (0x41: parent lights only)
     u8 x51;          // 0x51  bits 0-1: 2 = follow the model matrix (obj04: updateMatrix each frame); hit check shape (0 cylinder, 1/3 sphere, 2 box)
     s8 x52;          // 0x52  parts index + 1 the light origin follows (getPos), 0 = model
@@ -237,8 +237,8 @@ struct AttachCamera;   // cam_ctrl.h
 // Per-model motion work (game/motion.cpp), cModel::mot at cModel+0x1D8, 0xDC bytes. The first
 // 0xD0 bytes are what cModel::cModel clears (MotionWorkSub in em.h is that prefix).
 struct MotionWork {
-    MotionData* data;     // 0x00  NULL = no motion
-    u32* keyTbl;          // 0x04  per parts key data
+    P32<MotionData> data; // 0x00  NULL = no motion
+    P32<u32> keyTbl;      // 0x04  per parts key data
     u16 hist[2][2][3];    // 0x08  root key history [flip][rot/pos][axis]
     f32 maxFrame;         // 0x20
     f32 frame;            // 0x24
@@ -246,8 +246,8 @@ struct MotionWork {
     f32 prevFrame2;       // 0x2C
     u8 nParts;            // 0x30
     u8 pad_31[3];
-    u8* partsNo;          // 0x34  model parts index per motion parts
-    u16* partsInfo;       // 0x38  low byte: kind (1 root pos, 0x40 root rot, 2/4/8/0x30 rot/pos/scale), bits 8-11: attach camera channel, bits 12-15: Fcc type
+    P32<u8> partsNo;      // 0x34  model parts index per motion parts
+    P32<u16> partsInfo;   // 0x38  low byte: kind (1 root pos, 0x40 root rot, 2/4/8/0x30 rot/pos/scale), bits 8-11: attach camera channel, bits 12-15: Fcc type
     u16 rootPosIdx;       // 0x3C  motion parts index of the root position (0xFFFF = none)
     u16 rootRotIdx;       // 0x3E  motion parts index of the root rotation
     u16 flags;            // 0x40  bit0: move the model by the root speed, bit1: reverse, bit2: loop, bit3: pause, bit6: flip, bit8, bit10: hokan speed blend, bit12: sequence reverse, bit13: blend parts, bit15: frame from seqFrame
@@ -261,7 +261,7 @@ struct MotionWork {
     Vec rot;              // 0x84  root rotation (current)
     Vec rotPrev;          // 0x90
     Vec rotDelta;         // 0x9C
-    MotionSeqKey* seq;    // 0xA8  sequence table (NULL = linear)
+    P32<MotionSeqKey> seq; // 0xA8  sequence table (NULL = linear)
     MotionSeqKey key0;    // 0xAC  current
     MotionSeqKey key1;    // 0xB0  previous
     MotionSeqKey key2;    // 0xB4  before previous
@@ -273,10 +273,10 @@ struct MotionWork {
     u8 hokanCnt;          // 0xC5  frames left
     u8 pad_C6[2];
     f32 blendRate;        // 0xC8  weight of this work when it is another model's blend motion
-    AttachCamera* cam;    // 0xCC
-    MotionWork* blend;    // 0xD0  second motion blended in by MotionMove
-    u16* flip;            // 0xD4  parts index remap for flipped motions
-    u16* blendTbl;        // 0xD8  {count, (dst, a, b, percent)...} quaternion blended parts
+    P32<AttachCamera> cam; // 0xCC
+    P32<MotionWork> blend; // 0xD0  second motion blended in by MotionMove
+    P32<u16> flip;        // 0xD4  parts index remap for flipped motions
+    P32<u16> blendTbl;    // 0xD8  {count, (dst, a, b, percent)...} quaternion blended parts
 };
 
 // Parts-side motion state (cParts::motParts at 0x174): a parts has no light set, the cLightInfo
@@ -323,7 +323,7 @@ struct ObjSub2B4 {
         };
     };
     u8 pad_4C[0x54 - 0x4C];
-    void* pFootShadowTbl; // 0x54 (cModel+0x308)  foot shadow table (event ExePacket_SetOm)
+    P32<void> pFootShadowTbl; // 0x54 (cModel+0x308)  foot shadow table (event ExePacket_SetOm)
     u8 pad_58[0x6C - 0x58];
 
     void clrFlags(u16 mask) { atari.flags &= mask; }
@@ -355,7 +355,7 @@ extern cModInfoMgr ModInfoMgr;
 // this type (`((cParts*) m->pParts)[2]`, objBull), a cModel* has the wrong stride.
 class cParts : public cCoord {
 public:
-    cParts* pNext;   // 0xF4  next parts of the model (the cModel::pParts chain; createSequential links them). Not `next`: cManager<cParts> must keep using cUnit::next
+    P32<cParts> pNext; // 0xF4  next parts of the model (the cModel::pParts chain; createSequential links them). Not `next`: cManager<cParts> must keep using cUnit::next
     Mtx bindMat;     // 0xF8  bind pose matrix (motion.h PARTS_BIND_MAT); setPartsOffset: identity with -mat translation
     Vec addRot;      // 0x128  rotation partsWorldCalc applies (x, then z, then y) while motParts.flags bit30 is set (ik.cpp overlays IkParts len / mat here)
     u8 pad_134[0x174 - 0x134];
@@ -391,8 +391,8 @@ class cTexChg;          // trans.h
 class cModel : public cCoord {
 public:
     union {
-        cModel* pParts;      // 0xF4 child parts list (a cParts chain; every source addresses it as cModel*)
-        cParts* pPartsHead;  // 0xF4 the same pointer typed as the parts (model.cpp)
+        P32<cModel> pParts;  // 0xF4 child parts list (a cParts chain; every source addresses it as cModel*)
+        P32<cParts> pPartsHead; // 0xF4 the same pointer typed as the parts (model.cpp)
     };
     u32 serial;      // 0xF8  identity check for parent links (obj04: parent->serial == work.parentSerial)
     union {
@@ -413,12 +413,12 @@ public:
     Vec wallNrm;     // 0x11C  normal of the wall the scenario check pushed the model out of (atari scrAtCheckSphere), zero when none
     union {
         struct {
-            Vec* pFloorNrm;  // 0x128  player: floor normal the shoulder camera tilts with (cam_qfps setPlayerLocation)
+            P32<Vec> pFloorNrm; // 0x128  player: floor normal the shoulder camera tilts with (cam_qfps setPlayerLocation)
             u8 x12C;         // 0x12C  (TexRenderModSet sets 2)
             u8 x12D;         // 0x12D  (pl_leon setModel sets 1)
             u8 x12E;         // 0x12E  2 = scroll (Smd) object
             u8 x12F;         // 0x12F  scroll: SmxWork.type2 (3 by default)
-            void* pCldShMd;  // 0x130  (db_work "pCldShMd")
+            P32<void> pCldShMd; // 0x130  (db_work "pCldShMd")
             u8 shdCol;       // 0x134  (db_work "SHD COL")
             u8 x135;         // 0x135  scroll: SmxWork.x3, db_work "CullMode"
             u8 x136;         // 0x136  TexRender: 2 while rendered to texture, 0 after
@@ -449,8 +449,8 @@ public:
     };
     f32 alpha;             // 0x154  0..1 (obj04: work color a / 255)
     f32 x158;              // 0x158
-    cModelInfo* pInfo;     // 0x15C
-    cModelInfo* pShMdInfo; // 0x160  (db_work "pShMdIfo")
+    P32<cModelInfo> pInfo; // 0x15C
+    P32<cModelInfo> pShMdInfo; // 0x160  (db_work "pShMdIfo")
     cLightInfo lightInfo;  // 0x164 .. 0x1D8
 
     // 0x1D8 .. 0x2B4  motion work (motion.h MOTION(m), cMotBase `m->mot`). The names the
@@ -458,7 +458,7 @@ public:
     union {
         MotionWork mot;                // 0x1D8
         struct {
-            void* pMotion;             // 0x1D8  mot.data: current motion data, NULL = stopped (pl_push stopTarget)
+            P32<void> pMotion;         // 0x1D8  mot.data: current motion data, NULL = stopped (pl_push stopTarget)
             u8 pad_1DC[0x218 - 0x1DC];
             u16 motFlags;              // 0x218  mot.flags (bit0: move the model by the root speed; pl_npc clears it)
             u16 motState;              // 0x21A  mot.state (emobj EmObjMove clears it when no motion plays)
@@ -488,12 +488,12 @@ public:
             u8 pad_29C;
             u8 x29D;                   // 0x29D  mot.hokanCnt (emrock plemRockEscape: MotionSetCore hokan of the escape run motion)
             u8 pad_29E[6];
-            void* p2A4;                // 0x2A4  mot.cam: AttachCamera / 0x98-byte EmWork2A4 (player.cpp mem_alloc; cam_ctrl reads its byte 5; objRobo SetObjRobo)
+            P32<void> p2A4;            // 0x2A4  mot.cam: AttachCamera / 0x98-byte EmWork2A4 (player.cpp mem_alloc; cam_ctrl reads its byte 5; objRobo SetObjRobo)
             union {
-                MotionWorkSub* blendMot;   // 0x2A8  mot.blend: second motion blended in (pl_class: &neckMot / cMot3::work)
-                MotionWork* motBlend;      // 0x2A8  (objGondola setVib: the sub motion work)
+                P32<MotionWorkSub> blendMot; // 0x2A8  mot.blend: second motion blended in (pl_class: &neckMot / cMot3::work)
+                P32<MotionWork> motBlend;  // 0x2A8  (objGondola setVib: the sub motion work)
             };
-            u16* motFlip;              // 0x2AC  mot.flip: parts index remap of flipped motions (emdoor: emDoor_xflip_tbl)
+            P32<u16> motFlip;          // 0x2AC  mot.flip: parts index remap of flipped motions (emdoor: emDoor_xflip_tbl)
             u32 x2B0;                  // 0x2B0  mot.blendTbl (obj18: parts matrices are only recomputed while 0)
         };
     };
@@ -505,9 +505,9 @@ public:
             cAtariInfo atari;          // 0x2B4 .. 0x300  (rect size at 0x2C0/0x2C4)
             u32 x300;                  // 0x300  (cModel::cModel clears it)
             u32 x304;                  // 0x304  (cModel::cModel clears it)
-            void* pFootShadowTbl;      // 0x308  foot shadow table (pl_leon: pl_fs_tbl; trans FootShadow)
+            P32<void> pFootShadowTbl;  // 0x308  foot shadow table (pl_leon: pl_fs_tbl; trans FootShadow)
             EmLightArea litArea;       // 0x30C .. 0x31C  light_area: per-light colour scale (trans_lit lightSetColor)
-            cTexChg* pTexChg;          // 0x31C  texture change work (trans commonModelTrans: pTexChg->move)
+            P32<cTexChg> pTexChg;      // 0x31C  texture change work (trans commonModelTrans: pTexChg->move)
         };
         struct {
             ObjSub2B4 sub2B4;          // 0x2B4  the object units' names for the same bytes

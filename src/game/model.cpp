@@ -20,7 +20,7 @@
     }
 
 // A relocated pointer into main memory.
-#define PTR_OK(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define PTR_OK(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 extern "C" {
 void OSReport(const char* fmt, ...);
@@ -54,7 +54,7 @@ cPartsMgr* cModel::pm = &PartsMgr;
 
 // `mm` read as a struct member: keeps its load below a preceding store through `this`
 struct ModInfoMgrPtr {
-    cModInfoMgr* p;
+    P32<cModInfoMgr> p;
 };
 #define MM (((ModInfoMgrPtr*) &cModel::mm)->p)
 
@@ -175,7 +175,7 @@ int cModel::modelInit(void* bin, void* tpl)
     mot.speedRate = 1.0f;
     pCldShMd = 0;
     p2A4 = 0;
-    return (int) info;
+    return (int)(uintptr_t)(info);
 }
 
 int cModel::initJoint(void* bin)
@@ -956,10 +956,10 @@ void calcModelAddr(ModelData* d)
     d->nrmOrig = base + (u32) d->nrmOrig;
     if (d->version > 0x20030817) {
         if (d->blendTbl != 0) {
-            d->blendTbl = (u32) base + d->blendTbl;
+            d->blendTbl = (u32)(uintptr_t)(base) + d->blendTbl;
         }
         if (d->flipTbl != 0) {
-            d->flipTbl = (u32) base + d->flipTbl;
+            d->flipTbl = (u32)(uintptr_t)(base) + d->flipTbl;
         }
     }
     if ((u32) d->pParts & 0x1F) {
@@ -984,10 +984,10 @@ void calcModelOffset(ModelData* d)
     d->nrmOrig = (void*) ((u8*) d->nrmOrig - base);
     if (d->version > 0x20030817) {
         if (d->blendTbl != 0) {
-            d->blendTbl -= (u32) base;
+            d->blendTbl -= (u32)(uintptr_t)(base);
         }
         if (d->flipTbl != 0) {
-            d->flipTbl -= (u32) base;
+            d->flipTbl -= (u32)(uintptr_t)(base);
         }
     }
 }
@@ -995,7 +995,7 @@ void calcModelOffset(ModelData* d)
 // The bin moved by `ofs` bytes (block.cpp compaction): shift its pointers.
 void slideModelAddr(u32 addr, int ofs)
 {
-    ModelData* d = (ModelData*) addr;
+    ModelData* d = (ModelData*)port_ptr64(addr);
 
     if ((int) d->pClr >= 0) {
         calcModelAddr(d);
@@ -1027,12 +1027,12 @@ void calcTplAddr(TEXPalette* tpl)
     if ((int) tpl->descriptorArray < 0) {
         return;
     }
-    tpl->descriptorArray = (TEXDescriptor*) ((u32) tpl->descriptorArray + (u32) tpl);
+    tpl->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) tpl->descriptorArray + (u32)(uintptr_t)(tpl)));
     for (i = 0; i < tpl->numDescriptors; i++) {
         if (tpl->descriptorArray[i].textureHeader != NULL) {
-            tpl->descriptorArray[i].textureHeader = (TEXHeader*) ((u32) tpl->descriptorArray[i].textureHeader + (u32) tpl);
+            tpl->descriptorArray[i].textureHeader = (TEXHeader*)port_ptr64(((u32) tpl->descriptorArray[i].textureHeader + (u32)(uintptr_t)(tpl)));
             if (tpl->descriptorArray[i].textureHeader->unpacked == 0) {
-                tpl->descriptorArray[i].textureHeader->data = (void*) ((u32) tpl->descriptorArray[i].textureHeader->data + (u32) tpl);
+                tpl->descriptorArray[i].textureHeader->data = (void*)port_ptr64(((u32) tpl->descriptorArray[i].textureHeader->data + (u32)(uintptr_t)(tpl)));
                 tpl->descriptorArray[i].textureHeader->unpacked = 1;
             }
         }
@@ -1122,12 +1122,12 @@ void cModel::setJointInfo(void* bin)
 
     if (d->version == 0x20030818) {
         if (d->blendTbl != 0) {
-            mot.blendTbl = (u16*) d->blendTbl;
+            mot.blendTbl = (u16*)port_ptr64(d->blendTbl);
         } else {
             mot.blendTbl = 0;
         }
         if (d->flipTbl != 0) {
-            mot.flip = (u16*) (d->flipTbl + 4);
+            mot.flip = (u16*)port_ptr64((d->flipTbl + 4));
         } else {
             mot.flip = 0;
         }

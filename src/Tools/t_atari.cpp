@@ -15,7 +15,7 @@
 // (EatMgr) collision set, shows their attributes and lets a sphere / a line probe the collision.
 
 struct AtariToolWork {
-    cSat* sat;        // 0x000  piece being edited (satTbl0 / satTbl1)
+    P32<cSat> sat;    // 0x000  piece being edited (satTbl0 / satTbl1)
     int camMode;      // 0x004  bit0: the pad drives the debug camera (Joy[1] = Joy[0])
     int x8;           // 0x008
     JOY joy;          // 0x00C  copy of Joy[0] (cleared in camera mode)

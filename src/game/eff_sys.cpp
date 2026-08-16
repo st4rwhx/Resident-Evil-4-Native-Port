@@ -348,7 +348,7 @@ done:
 
 int EspDataLoad(u32 addr, u32 owner, int flag)
 {
-    EffData* data = (EffData*) addr;
+    EffData* data = (EffData*)port_ptr64(addr);
     cEspSystem* sys = g_pEspSys;
     EffIdTbl* ids;
     EffOfsTbl* tpls;
@@ -557,7 +557,7 @@ static void EspCalcTplAddr(TEXPalette* tpl)
     if ((s32) tpl->descriptorArray < 0) {
         return;
     }
-    tpl->descriptorArray = (TEXDescriptor*) ((u32) tpl->descriptorArray + (u32) tpl);
+    tpl->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) tpl->descriptorArray + (u32)(uintptr_t)(tpl)));
     for (i = 0; i < tpl->numDescriptors; i++) {
         desc = &tpl->descriptorArray[i];
         desc->textureHeader = (TEXHeader*) ((u8*) tpl + (u32) desc->textureHeader);

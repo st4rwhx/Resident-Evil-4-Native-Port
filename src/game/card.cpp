@@ -73,11 +73,11 @@ struct CardArc {
 // Pointers of the game save block (pSaveData).
 struct SaveDataPtrs {
     u8 pad_0[8];
-    u8* p8;    // 0x08
-    u8* pC;    // 0x0C
-    u8* p10;   // 0x10  room save records (RoomData.num * 0xD8 + 0x10)
-    u8* p14;   // 0x14  sub screen data
-    u8* p18;   // 0x18  merchant data
+    P32<u8> p8; // 0x08
+    P32<u8> pC; // 0x0C
+    P32<u8> p10; // 0x10  room save records (RoomData.num * 0xD8 + 0x10)
+    P32<u8> p14; // 0x14  sub screen data
+    P32<u8> p18; // 0x18  merchant data
 };
 #define SD ((SaveDataPtrs*) pSaveData)
 
@@ -153,12 +153,12 @@ static inline u32 bitChk(u32 f, u32 b) { return f & b; }
 class CardID {
 public:
     u32 x0;
-    void* pTex;      // 0x04
-    void* pSaveDat;  // 0x08  save frame
-    void* pFile;     // 0x0C  file list entries (types 0x40..0x46)
-    void* pFrame;    // 0x10
-    void* pLoadDat;  // 0x14  load frame
-    void* pBg;       // 0x18  message background
+    P32<void> pTex;  // 0x04
+    P32<void> pSaveDat; // 0x08  save frame
+    P32<void> pFile; // 0x0C  file list entries (types 0x40..0x46)
+    P32<void> pFrame; // 0x10
+    P32<void> pLoadDat; // 0x14  load frame
+    P32<void> pBg;   // 0x18  message background
     s32 action;      // 0x1C  1 up, 2 down, 4 decided, 8 moving
     IDSystem idsys;  // 0x20
     s32 type;        // 0x70
@@ -788,7 +788,7 @@ void cCard::loadMain()
 void cCard::makeSaveData()
 {
     int i;
-    TEXPalette* tpl = (TEXPalette*) (pSubData->ofs[0] + (u32) pSubData);
+    TEXPalette* tpl = (TEXPalette*)port_ptr64((pSubData->ofs[0] + (u32) pSubData));
     u8* buf = pSaveBuf;
     TEXDescriptor* d;
     u8* src;
@@ -843,7 +843,7 @@ void cCard::makeSaveData()
 void cCard::makeSystemSaveData()
 {
     int i;
-    TEXPalette* tpl = (TEXPalette*) (pSubData->ofs[0] + (u32) pSubData);
+    TEXPalette* tpl = (TEXPalette*)port_ptr64((pSubData->ofs[0] + (u32) pSubData));
     u8* buf = pSysBuf;
     TEXDescriptor* d;
     u8* src;
@@ -1183,7 +1183,7 @@ void cCard::exit()
             }
         }
         BitOff(pG->x8, 0x7FFFFFF8);
-        MesData.ptr[0] = (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc);
+        MesData.ptr[0] = (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc));
         exitFlag = 1;
         break;
     }
@@ -1824,8 +1824,8 @@ int cCard::initSub()
     if (workAlloc() == 0) {
         return 0;
     }
-    pSubData = (CardArc*) SndMem.sub_adr;
-    calcTplAddr((TEXPalette*) (pSubData->ofs[0] + (u32) pSubData));
+    pSubData = (CardArc*)port_ptr64(SndMem.sub_adr);
+    calcTplAddr((TEXPalette*)port_ptr64((pSubData->ofs[0] + (u32) pSubData)));
     if (!(pG->x8 & 0x80)) {
         void* addr;
         int req;
@@ -1836,7 +1836,7 @@ int cCard::initSub()
         }
         pIdData = addr;
     }
-    MesData.ptr[0] = (u8*) (pSubData->ofs[1] + (u32) pSubData);
+    MesData.ptr[0] = (u8*)port_ptr64((pSubData->ofs[1] + (u32) pSubData));
     return 1;
 }
 
@@ -3049,7 +3049,7 @@ void cCard::calcTplAddr(TEXPalette* tpl)
     if ((s32) tpl->descriptorArray < 0) {
         return;
     }
-    tpl->descriptorArray = (TEXDescriptor*) ((u32) tpl->descriptorArray + (u32) tpl);
+    tpl->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) tpl->descriptorArray + (u32)(uintptr_t)(tpl)));
     desc = tpl->descriptorArray;
     for (i = 0; i < tpl->numDescriptors; i++, desc++) {
         desc->textureHeader = (TEXHeader*) ((u8*) tpl + (u32) desc->textureHeader);
@@ -3351,12 +3351,12 @@ void CardID::init(int type, CardArc* data)
     f32 zero;
 
     this->type = type;
-    pTex = (u8*) (data->ofs[0] + (u32) data);
-    pSaveDat = (u8*) (data->ofs[1] + (u32) data);
-    pFile = (u8*) (data->ofs[2] + (u32) data);
-    pFrame = (u8*) (data->ofs[3] + (u32) data);
-    pLoadDat = (u8*) (data->ofs[4] + (u32) data);
-    pBg = (u8*) (data->ofs[5] + (u32) data);
+    pTex = (u8*)port_ptr64((data->ofs[0] + (u32)(uintptr_t)(data)));
+    pSaveDat = (u8*)port_ptr64((data->ofs[1] + (u32)(uintptr_t)(data)));
+    pFile = (u8*)port_ptr64((data->ofs[2] + (u32)(uintptr_t)(data)));
+    pFrame = (u8*)port_ptr64((data->ofs[3] + (u32)(uintptr_t)(data)));
+    pLoadDat = (u8*)port_ptr64((data->ofs[4] + (u32)(uintptr_t)(data)));
+    pBg = (u8*)port_ptr64((data->ofs[5] + (u32)(uintptr_t)(data)));
     idsys.gameInit(0x100);
     IdTexRoomInit();
     IdTexDataLoad(pTex, 6);

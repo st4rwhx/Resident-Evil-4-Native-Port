@@ -35,7 +35,7 @@ struct Pl0fWork {
     int timer;        // 0x004
     int timer2;       // 0x008
     int cnt;          // 0x00C  frame counter of the R10d / R10e entrances (wake effect every 2nd frame)
-    cEm* pBoss;       // 0x010  Del Lago (testSearchEm2f)
+    P32<cEm> pBoss;   // 0x010  Del Lago (testSearchEm2f)
     Vec swayAmp;      // 0x014  roll sway amplitude (x / z used), decays by 0.96 per frame
     Vec swayPhase;    // 0x020
     u8 pad_2C[0x10];
@@ -61,11 +61,11 @@ struct Pl0fWork {
     Vec getoffPos;    // 0x0F0  pl0fGetoffActEvtCk: landing position
     f32 getoffAng;    // 0x0FC
     PenCloth cloth;   // 0x100  long rope pendulum (pl0fLongRopeSet)
-    cObjChain* pRope; // 0x160  long rope chain object
-    cObj* pAnchor;    // 0x164  anchor object (pl0fSetAnchor)
+    P32<cObjChain> pRope; // 0x160  long rope chain object
+    P32<cObj> pAnchor; // 0x164  anchor object (pl0fSetAnchor)
     Pl0fNode node[2]; // 0x168  bow / stern
     u8 pad_200[0x548 - 0x200];
-    cPl0f* pSelf;     // 0x548  testSearchEm2f
+    P32<cPl0f> pSelf; // 0x548  testSearchEm2f
 };
 
 #define PL0F_WK(em) ((Pl0fWork*) &(em)->x3E0)

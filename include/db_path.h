@@ -16,8 +16,8 @@ struct DbPathWork {
     u8 pad_5[3];
     int x;          // 0x08  menu position
     int y;          // 0x0C
-    FuncPathData* path;  // 0x10
-    Vec* pEnd;      // 0x14  &path->pos[path->n]
+    P32<FuncPathData> path; // 0x10
+    P32<Vec> pEnd;  // 0x14  &path->pos[path->n]
     s8 grab;        // 0x18  grabbed control point, -1 = none
     s8 insertIdx;   // 0x19  insertion index found on the curve, -1 = none
     u8 yes;         // 0x1A  YES/NO of the delete / insert prompt

@@ -28,13 +28,13 @@ public:
     QfpsOfs (*trans_tbl[6])[3];   // 0x130  transition table per type (0..5)
     QfpsOfs (*blend_src)[3];      // 0x148  current ready table
     QfpsOfs (*blend_dst)[3];      // 0x14C  current transition table
-    QfpsOfs* cur;                 // 0x150  offsets of the current site
-    QfpsOfs* old;                 // 0x154  offsets blended from (g_readyOfs[15] / g_transOfs[6] copies)
-    void* lr_info;                // 0x158
+    P32<QfpsOfs> cur;             // 0x150  offsets of the current site
+    P32<QfpsOfs> old;             // 0x154  offsets blended from (g_readyOfs[15] / g_transOfs[6] copies)
+    P32<void> lr_info;            // 0x158
     Vec pos_ofs;                  // 0x15C  one-shot translation applied to the base matrix
     Vec dir_ofs;                  // 0x168  one-shot look direction applied to the base matrix
     Mtx pl_mat;                   // 0x174  player matrix saved by setPlayerLocation
-    Vec* pl_nrm;                  // 0x1A4  player floor normal (cModel::pFloorNrm)
+    P32<Vec> pl_nrm;              // 0x1A4  player floor normal (cModel::pFloorNrm)
     f32 x1A8;                     // 0x1A8
     f32 smooth_ratio;             // 0x1AC  CamSmth.ratio while the player moves
     u8 trans_type;                // 0x1B0

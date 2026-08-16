@@ -24,7 +24,7 @@ void make_lf4(u32 tag);
 void AddPrim(u32* ot, u32* prim)
 {
     *prim = *ot;
-    *ot = (u32) prim;
+    *ot = (u32)(uintptr_t)(prim);
 }
 
 void DelPrim(u32* ot, u32* prim)
@@ -33,12 +33,12 @@ void DelPrim(u32* ot, u32* prim)
         return;
     }
     do {
-        u32* p = (u32*) *ot;
+        u32* p = (u32*)port_ptr64(*ot);
         if (OT_IS_PRIM(*ot) && p == prim) {
             *ot = *p;
             return;
         }
-        ot = (u32*) OT_ADDR(*ot);
+        ot = (u32*)port_ptr64(OT_ADDR(*ot));
     } while (*ot != 0xFFFFFFFF);
 }
 
@@ -82,11 +82,11 @@ void DrawOTag(u32* ot)
         return;
     }
     do {
-        u32* p = (u32*) *ot;
+        u32* p = (u32*)port_ptr64(*ot);
         if (OT_IS_PRIM(p)) {
-            tbl[p[1] & 0x1F]((u32) p);
+            tbl[p[1] & 0x1F]((u32)(uintptr_t)(p));
         }
-        ot = (u32*) OT_ADDR(*ot);
+        ot = (u32*)port_ptr64(OT_ADDR(*ot));
     } while (*ot != 0xFFFFFFFF);
 }
 
@@ -111,7 +111,7 @@ static inline void gpuSetup(int prim, int nverts)
 
 void make_g3(u32 tag)
 {
-#define p ((POLY_G3*) tag)
+#define p ((POLY_G3*)port_ptr64(tag))
     gpuSetup(0x90, 3);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -124,7 +124,7 @@ void make_g3(u32 tag)
 
 void make_g4(u32 tag)
 {
-#define p ((POLY_G4*) tag)
+#define p ((POLY_G4*)port_ptr64(tag))
     gpuSetup(0x98, 4);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -139,7 +139,7 @@ void make_g4(u32 tag)
 
 void make_f3(u32 tag)
 {
-#define p ((POLY_F3*) tag)
+#define p ((POLY_F3*)port_ptr64(tag))
     POLY_G3 g;
 
     g.x0 = p->x0;
@@ -155,13 +155,13 @@ void make_f3(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = p->c0.cd;
-    make_g3((u32) &g);
+    make_g3((u32)(uintptr_t)(&g));
 }
 #undef p
 
 void make_f4(u32 tag)
 {
-#define p ((POLY_F4*) tag)
+#define p ((POLY_F4*)port_ptr64(tag))
     POLY_G4 g;
 
     g.x0 = p->x0;
@@ -180,13 +180,13 @@ void make_f4(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = g.c3.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = g.c3.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = g.c3.cd = p->c0.cd;
-    make_g4((u32) &g);
+    make_g4((u32)(uintptr_t)(&g));
 }
 #undef p
 
 void make_tile(u32 tag)
 {
-#define p ((TILE*) tag)
+#define p ((TILE*)port_ptr64(tag))
     POLY_G4 g;
 
     g.x0 = g.x2 = p->x0;
@@ -198,13 +198,13 @@ void make_tile(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = g.c3.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = g.c3.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = g.c3.cd = p->c0.cd;
-    make_g4((u32) &g);
+    make_g4((u32)(uintptr_t)(&g));
 }
 #undef p
 
 void make_lg2(u32 tag)
 {
-#define p ((LINE_G2*) tag)
+#define p ((LINE_G2*)port_ptr64(tag))
     gpuSetup(0xB0, 2);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -215,7 +215,7 @@ void make_lg2(u32 tag)
 
 void make_lg3(u32 tag)
 {
-#define p ((LINE_G3*) tag)
+#define p ((LINE_G3*)port_ptr64(tag))
     gpuSetup(0xB0, 3);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -228,7 +228,7 @@ void make_lg3(u32 tag)
 
 void make_lg4(u32 tag)
 {
-#define p ((LINE_G4*) tag)
+#define p ((LINE_G4*)port_ptr64(tag))
     gpuSetup(0xB0, 4);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -243,7 +243,7 @@ void make_lg4(u32 tag)
 
 void make_lf2(u32 tag)
 {
-#define p ((LINE_F2*) tag)
+#define p ((LINE_F2*)port_ptr64(tag))
     LINE_G2 g;
 
     g.x0 = p->x0;
@@ -256,13 +256,13 @@ void make_lf2(u32 tag)
     g.c0.g = g.c1.g = p->c0.g;
     g.c0.b = g.c1.b = p->c0.b;
     g.c0.cd = g.c1.cd = p->c0.cd;
-    make_lg2((u32) &g);
+    make_lg2((u32)(uintptr_t)(&g));
 }
 #undef p
 
 void make_lf3(u32 tag)
 {
-#define p ((LINE_F3*) tag)
+#define p ((LINE_F3*)port_ptr64(tag))
     LINE_G3 g;
 
     g.x0 = p->x0;
@@ -278,13 +278,13 @@ void make_lf3(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = p->c0.cd;
-    make_lg3((u32) &g);
+    make_lg3((u32)(uintptr_t)(&g));
 }
 #undef p
 
 void make_lf4(u32 tag)
 {
-#define p ((LINE_F4*) tag)
+#define p ((LINE_F4*)port_ptr64(tag))
     LINE_G4 g;
 
     g.x0 = p->x0;
@@ -303,6 +303,6 @@ void make_lf4(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = g.c3.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = g.c3.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = g.c3.cd = p->c0.cd;
-    make_lg4((u32) &g);
+    make_lg4((u32)(uintptr_t)(&g));
 }
 #undef p

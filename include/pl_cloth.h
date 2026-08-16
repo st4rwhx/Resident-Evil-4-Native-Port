@@ -22,19 +22,19 @@ struct PlClothAt {
 // pendulum.h's PenCloth is the same object with the obj units' field names.
 struct PlCloth {
     int num;             // 0x00  number of chain links
-    u8* pParts;          // 0x04  model parts index per link
-    u8* pLeft;           // 0x08  left neighbour per link (0xFF = none)
-    u8* pRight;          // 0x0C  right neighbour
-    u8* pUpLeft;         // 0x10  (Ada dress)
+    P32<u8> pParts;      // 0x04  model parts index per link
+    P32<u8> pLeft;       // 0x08  left neighbour per link (0xFF = none)
+    P32<u8> pRight;      // 0x0C  right neighbour
+    P32<u8> pUpLeft;     // 0x10  (Ada dress)
     u32 x14;             // 0x14
-    u8* pUp;             // 0x18  upper neighbour per link
-    u8* pDown;           // 0x1C  lower neighbour per link
+    P32<u8> pUp;         // 0x18  upper neighbour per link
+    P32<u8> pDown;       // 0x1C  lower neighbour per link
     u32 x20;             // 0x20
-    f32* pRate;          // 0x24  per-link rate (em_cloth: em18ClothRate, em37HairRate, ...)
-    f32* pMax;           // 0x28  max swing per link
-    f32* pWindS;         // 0x2C  wind phase per link
-    f32* pWindR;         // 0x30  wind rate per link
-    PlClothAt* pAt;      // 0x34  collision volumes
+    P32<f32> pRate;      // 0x24  per-link rate (em_cloth: em18ClothRate, em37HairRate, ...)
+    P32<f32> pMax;       // 0x28  max swing per link
+    P32<f32> pWindS;     // 0x2C  wind phase per link
+    P32<f32> pWindR;     // 0x30  wind rate per link
+    P32<PlClothAt> pAt;  // 0x34  collision volumes
     int nAt;             // 0x38
     f32 x3C;             // 0x3C  link length
     f32 x40;             // 0x40
@@ -43,7 +43,7 @@ struct PlCloth {
     f32 x4C;             // 0x4C
     f32 x50;             // 0x50  gravity / stiffness rate (skirt: 0.9 under water, 0.5 otherwise)
     u32 x54;             // 0x54
-    cModel* pModel;      // 0x58  (AdaRibbonSet)
+    P32<cModel> pModel;  // 0x58  (AdaRibbonSet)
     u32 flags;           // 0x5C  0x100 / 0x200 / 0x302
 };
 

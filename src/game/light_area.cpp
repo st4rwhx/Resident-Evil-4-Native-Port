@@ -36,12 +36,12 @@ void LightAreaUpdateSub(cEm* em, int type);
 // pl_wep.h view: the weapon object and the rocket a launcher carries
 struct LightAreaWep {
     u8 pad_0[0x34];
-    cEm* pObj;   // 0x34
+    P32<cEm> pObj; // 0x34
 };
 
 struct LightAreaLauncher {
     u8 pad_0[0x384];
-    cEm* rocket;  // 0x384
+    P32<cEm> rocket; // 0x384
 };
 
 #define WEP_OBJ() (((LightAreaWep*) em->pWep)->pObj)

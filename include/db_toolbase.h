@@ -26,7 +26,7 @@ public:
     u32 y;          // 0x04  row inside the window
     int cx;         // 0x08  cursor column
     int cy;         // 0x0C  cursor row
-    char* pName;    // 0x10  own copy of the label
+    P32<char> pName; // 0x10  own copy of the label
     u32 nameLen;    // 0x14  strlen + 1
     // 0x18 vptr
 
@@ -67,7 +67,7 @@ public:
     u32 h;              // 0x0C  height in rows
     int cxMax;          // 0x10  largest button cursor column
     int cyMax;          // 0x14  largest button cursor row
-    const char* pName;  // 0x18  title
+    P32<const char> pName; // 0x18  title
     int x1C;
     int x20;
     // 0x24 vptr
@@ -83,8 +83,8 @@ public:
 
 class cDbgButton : public cDbgButtonBase {
 public:
-    void (*pFunc)(cDbgButton*);    // 0x1C  pushed
-    void (*pUpdate)(cDbgButton*);  // 0x20  called every frame by ButtonAllUpdate
+    FnP32<void(*)(cDbgButton*)> pFunc; // 0x1C  pushed
+    FnP32<void(*)(cDbgButton*)> pUpdate; // 0x20  called every frame by ButtonAllUpdate
 
     // inlined into cDbgWindow::AddButton; the tool modules are compiled with -fno-implement-inlines,
     // so no out-of-line body exists although cDbgButton's vtable is emitted there
@@ -95,10 +95,10 @@ public:
 class cDbgWindow : public cDbgWindowBase {
 public:
     u32 num;                   // 0x28
-    cDbgButton* pButton[128];  // 0x2C
-    cDbgButton* pCur;          // 0x22C
-    cDbgButton* pTop;          // 0x230
-    cDbgButton* pBottom;       // 0x234
+    P32<cDbgButton> pButton[128]; // 0x2C
+    P32<cDbgButton> pCur;      // 0x22C
+    P32<cDbgButton> pTop;      // 0x230
+    P32<cDbgButton> pBottom;   // 0x234
 
     // Init: declared here for every user (both t_esp_area/t_lightarea and t_event call it out of
     // line, `bl Init__10cDbgWindowiiPCc`), but db_toolbase.cpp emits it as an in-class inline

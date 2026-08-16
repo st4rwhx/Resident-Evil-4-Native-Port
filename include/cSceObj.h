@@ -15,8 +15,8 @@ public:
     u8 reverse;       // 0x01  1: run from the end position back to the start
     u8 mode;          // 0x02  0 move1, 1 move2, 2 move3
     u8 flags;         // 0x03  bit0 no rotation, bit1 no position, bit2 rotate the parts parent, bit3 vibration, bit4 move3 bounce
-    cModel* obj;      // 0x04
-    cModel* sub[4];   // 0x08  attached models, moved with obj
+    P32<cModel> obj;  // 0x04
+    P32<cModel> sub[4]; // 0x08  attached models, moved with obj
     u32 cnt;          // 0x18  frame counter
     u32 frame;        // 0x1C  total frames
     u32 accFrame;     // 0x20

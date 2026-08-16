@@ -171,7 +171,7 @@ void emItemDmCk(cEmItem* em)
                 em->hp = 0;
                 em->xFE = 0;
                 em->xFF = 0;
-                EstSet((int) em, -1, 0, 0, w->eff, 0, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 0, 0, 0, (u32)(uintptr_t)(em), 0);
                 break;
             }
             return;
@@ -219,7 +219,7 @@ void emItemDmCk(cEmItem* em)
         em->hp = 0;
         em->xFE = 0;
         em->xFF = 0;
-        EstSet((int) em, -1, 0, 0, w->eff, 0, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 0, 0, 0, (u32)(uintptr_t)(em), 0);
         break;
     }
     if (em->type == 1) {

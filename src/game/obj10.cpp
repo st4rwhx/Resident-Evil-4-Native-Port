@@ -65,7 +65,7 @@ void cWepItem::move00()
                 PlWepHitCheck2(0, &pos, &pos, 0x13, 0, 6000.0f);
                 hitCkPl();
                 BitOn(pG->flags_5010, 0x20000000);
-                memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &pos, sizeof(Vec));
+                memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &pos, sizeof(Vec));
                 pG->bell_stat = 1;
                 ObjMgr.destroy(this);
                 return;

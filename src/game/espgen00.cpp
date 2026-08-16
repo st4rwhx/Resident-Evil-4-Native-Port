@@ -19,8 +19,8 @@ static f32 Calc_D256(Espgen00Work* p, u8 d, f32 rate);
 
 // Effect controller 00: emits one esp record repeatedly (num at a time, every wait frames).
 struct Espgen00Work {
-    EspGenWork* rec;   // 0x14
-    cModel* model;     // 0x18
+    P32<EspGenWork> rec; // 0x14
+    P32<cModel> model; // 0x18
     u32 serial;        // 0x1C model serial the controller was set up with
     u16 cnt;           // 0x20 frame counter
     u16 life;          // 0x24 life time (0 = infinite)
@@ -41,7 +41,7 @@ struct Espgen00Work {
     u8 colD;           // 0x7A
     u8 waitD;          // 0x7B
     EspSeqOpt opt;     // 0x7C
-    EspSeqOpt* pOpt;   // 0x98
+    P32<EspSeqOpt> pOpt; // 0x98
 };
 
 void espgen00_UpdateMatrix(EspgenWork* w)
@@ -250,7 +250,7 @@ int Espgen00_SetFreeWork(EspgenWork* w, EspGenWork* rec, EspSeqData* head, cMode
     if (model != NULL) {
         p->serial = model->serial;
     } else {
-        p->serial = (u32) model;
+        p->serial = (u32)(uintptr_t)(model);
     }
     p->waitCnt = p->cnt = 0;
     p->life = rec->x110;

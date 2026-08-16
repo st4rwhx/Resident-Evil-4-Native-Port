@@ -26,16 +26,16 @@ void memset_asm(void* dst, int c, u32 n);
 
 // Dolphin OSAlloc structures (the SDK header pulls in the CodeWarrior libc).
 struct OSHeapCell {
-    OSHeapCell* prev;  // 0x00
-    OSHeapCell* next;  // 0x04
+    P32<OSHeapCell> prev; // 0x00
+    P32<OSHeapCell> next; // 0x04
     s32 size;          // 0x08  including this 0x20-byte header
     u8 pad_C[0x20 - 0x0C];
 };
 
 struct OSHeapDescriptor {
     s32 size;               // 0x00
-    OSHeapCell* free;       // 0x04
-    OSHeapCell* allocated;  // 0x08
+    P32<OSHeapCell> free;   // 0x04
+    P32<OSHeapCell> allocated; // 0x08
 };
 
 // Heap table entry (main_mem.cpp `Heap[13]`).

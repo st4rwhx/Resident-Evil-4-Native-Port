@@ -175,7 +175,7 @@ void cObjRobo::R0Init(cObjRobo* robo)
         Vec pos2 = { 0.0f, 0.0f, 0.0f };
         Vec rot2 = { 0.0f, 0.0f, 0.0f };
 
-        smd = SetObjSmd((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        smd = SetObjSmd((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                         &pos2, &rot2, 0x10, 1);
         w->smd[i] = smd;
         if (smd) {
@@ -217,7 +217,7 @@ void cObjRobo::R0Init(cObjRobo* robo)
 
     for (i = 0; i < 14; i++) {
         w->hit[i] = 0;
-        hit = SetEmHit((void*) (GRef(pG)->pArc->ofs_20 + (u32) GRef(pG)->pArc), (void*) (GRef(pG)->pArc->ofs_24 + (u32) GRef(pG)->pArc), 0, 0, 1);
+        hit = SetEmHit((void*)port_ptr64((GRef(pG)->pArc->ofs_20 + (u32) GRef(pG)->pArc)), (void*)port_ptr64((GRef(pG)->pArc->ofs_24 + (u32) GRef(pG)->pArc)), 0, 0, 1);
         if (hit) {
             hit->setParent(robo, tbl[i].parts, 0);
             if (tbl[i].parts == 0x15 || tbl[i].parts == 0x16) {
@@ -244,7 +244,7 @@ void cObjRobo::R0WaitGondola(cObjRobo* robo)
 
     switch (w->step) {
     case 0:
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x62), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x67), 0, 4, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x62), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x67)), 0, 4, 0);
         w->step++;
     case 1:
         if (robo->motEvent & 1) {
@@ -275,10 +275,10 @@ void cObjRobo::R0WaitGondola(cObjRobo* robo)
             robo->SatMove(robo, &ft[i], i);
         }
         if (w->hit[13] && w->hit[13]->ckStatus() == 1 && !(pG->flags_174 & 0x80000000)) {
-            SceExec(0x12, (TaskFunc) TaskSwitchFront, (int) robo, 0, 2, 0);
+            SceExec(0x12, (TaskFunc) TaskSwitchFront, (int)(uintptr_t)(robo), 0, 2, 0);
         }
         if (w->hit[12] && w->hit[12]->ckStatus() == 1 && !(pG->flags_174 & 0x40000000)) {
-            SceExec(0x12, (TaskFunc) TaskSwitchBack, (int) robo, 0, 2, 0);
+            SceExec(0x12, (TaskFunc) TaskSwitchBack, (int)(uintptr_t)(robo), 0, 2, 0);
         }
         for (i = 0; i < 14; i++) {
             hit = w->hit[i];
@@ -298,8 +298,8 @@ void cObjRobo::R0WalkPassage(cObjRobo* robo)
 
     switch (w->step) {
     case 0:
-        EstSet((int) robo, -1, 0, 0, 1, 7, 1, 3, 0, 0);
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x25), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x26), 0x3C, 5, 0);
+        EstSet((int)(uintptr_t)(robo), -1, 0, 0, 1, 7, 1, 3, 0, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x25), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x26)), 0x3C, 5, 0);
         w->step++;
     case 1:
         robo->WalkSequence(robo, 1);
@@ -322,7 +322,7 @@ void cObjRobo::R0WaitDoor(cObjRobo* robo)
 
     switch (w->step) {
     case 0:
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x25), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x26), 0x3C, 5, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x25), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x26)), 0x3C, 5, 0);
         w->step++;
     case 1:
         robo->WalkSequence(robo, 0);
@@ -333,7 +333,7 @@ void cObjRobo::R0WaitDoor(cObjRobo* robo)
             EffectEspgenDelete(1, 3, 0);
             EffectEfmDelete(1, 3, 0);
             BitOn(pG->flags_174, 0x10000);
-            MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x5C), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x65), 0x3C, 4, 0);
+            MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x5C), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x65)), 0x3C, 4, 0);
             v.x = -55597.8984375f;
             v.y = robo->pos.y;
             v.z = robo->pos.z;
@@ -344,7 +344,7 @@ void cObjRobo::R0WaitDoor(cObjRobo* robo)
         break;
     case 2:
         if (robo->motEvent & 1) {
-            EstSet((int) robo, -1, 0, 0, 1, 0xC, 1, 4, 0, 0);
+            EstSet((int)(uintptr_t)(robo), -1, 0, 0, 1, 0xC, 1, 4, 0, 0);
             w->timer = 0;
         }
         w->timer++;
@@ -385,8 +385,8 @@ void cObjRobo::R0WalkBridge(cObjRobo* robo)
             pv->z = -16560.0f;
             robo->setPos(pv);
         }
-        EstSet((int) robo, -1, 0, 0, 1, 7, 1, 3, 0, 0);
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x25), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x26), 0, 5, 0);
+        EstSet((int)(uintptr_t)(robo), -1, 0, 0, 1, 7, 1, 3, 0, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x25), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x26)), 0, 5, 0);
         for (i = 0; i < 6; i++) {
             w->hitCnt[i] = 0;
         }
@@ -413,7 +413,7 @@ void cObjRobo::R0WalkBridge(cObjRobo* robo)
             EffectEspgenDelete(1, 3, 0);
             EffectEfmDelete(1, 3, 0);
             MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x63), 0, 0xA, 1, 0);
-            EstSet((int) robo, -1, 0, 0, 1, 0x20, 1, 0, 0, 0);
+            EstSet((int)(uintptr_t)(robo), -1, 0, 0, 1, 0x20, 1, 0, 0, 0);
             w->fallX = robo->pos.x;
             w->fallSpdY = FRef(RoboFallSpdY);
         }
@@ -514,7 +514,7 @@ void cObjRobo::WalkSequence(cObjRobo* robo, int hitCk)
         if (hitCk == 1) {
             robo->WalkHitCk(robo);
         }
-        EstSet((int) robo, -1, 0, 0, 1, 8, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(robo), -1, 0, 0, 1, 8, 1, 2, 0, 0);
         parts = robo->getPartsPtr(0xD);
         if (parts) {
             SndCall(6, 8, &parts->worldPos, 0, 0, 0);
@@ -524,7 +524,7 @@ void cObjRobo::WalkSequence(cObjRobo* robo, int hitCk)
         if (hitCk == 1) {
             robo->WalkHitCk(robo);
         }
-        EstSet((int) robo, -1, 0, 0, 1, 9, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(robo), -1, 0, 0, 1, 9, 1, 2, 0, 0);
         parts = robo->getPartsPtr(0x10);
         if (parts) {
             SndCall(6, 8, &parts->worldPos, 0, 0, 0);
@@ -571,7 +571,7 @@ void cObjRobo::TaskSwitchFront(cObjRobo* robo)
             SceSleep(1);
         }
         FSet(parts->rot.y, to);
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x61), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x66), 0xF0, 4, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x61), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x66)), 0xF0, 4, 0);
     } else {
         BitOff(pG->flags_174, 0x8000);
         for (j = 0; j < i; j++) {
@@ -581,7 +581,7 @@ void cObjRobo::TaskSwitchFront(cObjRobo* robo)
             SceSleep(1);
         }
         FSet(parts->rot.y, from);
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x62), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x67), 0xF0, 4, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x62), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x67)), 0xF0, 4, 0);
     }
     BitOff(pG->flags_174, 0x4000);
     robo->getPartsPtr(0x15)->rot.x = 0.0f;
@@ -625,7 +625,7 @@ void cObjRobo::TaskSwitchBack(cObjRobo* robo)
             SceSleep(1);
         }
         FSet(parts->rot.x, to);
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x22), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x45), 0xF0, 4, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x22), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x45)), 0xF0, 4, 0);
     } else {
         BitOff(pG->flags_174, 0x4000);
         for (j = 0; j < i; j++) {
@@ -635,7 +635,7 @@ void cObjRobo::TaskSwitchBack(cObjRobo* robo)
             SceSleep(1);
         }
         FSet(parts->rot.x, from);
-        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x62), (int) ROOM_ARC_PTR(pG->pRoomArc, 0x67), 0xF0, 4, 0);
+        MotionSetCore(robo, &robo->pMotion, ROOM_ARC_PTR(pG->pRoomArc, 0x62), (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x67)), 0xF0, 4, 0);
     }
     BitOff(pG->flags_174, 0x8000);
     robo->getPartsPtr(0x16)->rot.y = 0.0f;

@@ -22,8 +22,8 @@
 
 // GetWepTargetList entry (em_sub.cpp).
 struct WepTarget {
-    cEm* em;
-    EmHitInfo* part;
+    P32<cEm> em;
+    P32<EmHitInfo> part;
 };
 
 extern "C" {
@@ -242,7 +242,7 @@ void emMine_R1_Shot(cEmMine* em)
 
     switch (em->xFE) {
     case 0:
-        EstSet((int) em, -1, 0, 0, 0, 0x38, 0, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0, 0x38, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         w->life = 210;
         em->xFE++;
     case 1:
@@ -412,7 +412,7 @@ void emMine_R1_ShotArrow(cEmMine* em)
 
     switch (em->xFE) {
     case 0:
-        EstSet((int) em, -1, 0, 0, 0, 0x4C, 0, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0, 0x4C, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         w->life = 210;
         em->xFE++;
     case 1:
@@ -708,7 +708,7 @@ void emMine_R1_Set(cEmMine* em)
                 if (w->count <= 4) {
                     w->count = 5;
                 }
-                EstSet((int) em, -1, 0, 0, 0, 0x37, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, 0, 0x37, 0, 0, (u32)(uintptr_t)(em), 0);
                 p.x = 0.0f;
                 p.y = 0.0f;
                 p.z = -250.0f;
@@ -800,7 +800,7 @@ void emMine_R1_Parent(cEmMine* em)
                 if (w->count <= 4) {
                     w->count = 5;
                 }
-                EstSet((int) em, -1, 0, 0, 0, 0x37, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, 0, 0x37, 0, 0, (u32)(uintptr_t)(em), 0);
                 p.x = 0.0f;
                 p.y = 0.0f;
                 p.z = -250.0f;
@@ -1158,7 +1158,7 @@ void cEmMine::setBomb()
     EffectEfmDelete(0, w->espKind, this);
     BitOn(pG->flags_500C, 0x800000);
     BitOn(pG->flags_5010, 0x20000000);
-    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &p, sizeof(Vec));
+    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &p, sizeof(Vec));
     pG->bell_stat = 1;
     setLost();
     // COMPILER-DIFF: candidate #12 (cse wider-mode zero fold): the original stores the known-zero

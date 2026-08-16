@@ -28,7 +28,7 @@
 // event of area 3.
 
 struct R229Work {
-    TexRenderMng* tex[2];   // 0x00  water render targets
+    P32<TexRenderMng> tex[2]; // 0x00  water render targets
     u8 pad_8[4];
     int eff;                // 0x0C  EspPullCoreKind of the camera event's effect
     u32 str;                // 0x10  SndStrReq handle of the camera event
@@ -36,7 +36,7 @@ struct R229Work {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R229WorkPtr {
-    R229Work* p;
+    P32<R229Work> p;
 };
 
 static u8 r229_texTbl0[0x20];

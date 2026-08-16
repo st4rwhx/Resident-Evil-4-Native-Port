@@ -107,7 +107,7 @@ static inline void U32Set(u32& d, u32 v) { d = v; }
 static inline void S16Set(s16& d, s16 v) { d = v; }
 static inline void S8Set(s8& d, s8 v) { d = v; }
 static inline void PSet(void*& d, void* v) { d = v; }
-static inline void PSet(u32& d, void* v) { d = (u32) v; }
+static inline void PSet(u32& d, void* v) { d = (u32)(uintptr_t)(v); }
 static inline void PSet(cModel*& d, cModel* v) { d = v; }
 
 static inline u32* eventFlags()
@@ -140,24 +140,24 @@ static inline SceAtSaveItem* saveItemTbl()
 // every store and the field offset is added to pG before the index (sthx base, idx).
 static inline u32 saveItemBase(int ofs)
 {
-    return (u32) pG + ofs;
+    return (u32)(uintptr_t)(pG) + ofs;
 }
 // Non-struct store at a constant offset from a struct pointer (aliases every following global load, so
 // the original's `lwz pPL` stays behind the store).
-#define RAW_F32(p, ofs) (*(f32*) ((u32) (p) + (ofs)))
-#define RAW_U32(p, ofs) (*(u32*) ((u32) (p) + (ofs)))
+#define RAW_F32(p, ofs) (*(f32*)port_ptr64(((u32)(uintptr_t)((p)) + (ofs))))
+#define RAW_U32(p, ofs) (*(u32*)port_ptr64(((u32)(uintptr_t)((p)) + (ofs))))
 
 // em_dead row address as an integer (the original adds the list offset after the row index).
 static inline u32 emDeadRow(int n)
 {
-    return n * 32 + (u32) pG + 0x501C;
+    return n * 32 + (u32)(uintptr_t)(pG) + 0x501C;
 }
-#define EM_DEAD_BIT(n, i) (*(u32*) (((i) << 2) + emDeadRow(n)))
-#define SAVE_ITEM_HALF(i, ofs) (*(u16*) (saveItemBase(ofs) + ((i) << 4)))
+#define EM_DEAD_BIT(n, i) (*(u32*)port_ptr64((((i) << 2) + emDeadRow(n))))
+#define SAVE_ITEM_HALF(i, ofs) (*(u16*)port_ptr64((saveItemBase(ofs) + ((i) << 4))))
 #define SAVE_ITEM_ROOM(i) SAVE_ITEM_HALF(i, 0x72EC)
 #define SAVE_ITEM_ID(i) SAVE_ITEM_HALF(i, 0x72EE)
 #define SAVE_ITEM_NUM(i) SAVE_ITEM_HALF(i, 0x72F0)
-#define SAVE_ITEM_POS(i, k) (*(s16*) (saveItemBase(0x72F2 + (k) * 2) + ((i) << 4)))
+#define SAVE_ITEM_POS(i, k) (*(s16*)port_ptr64((saveItemBase(0x72F2 + (k) * 2) + ((i) << 4))))
 #define SAVE_ITEM_TYPE(i) pG->save_item[i].type
 #define SAVE_ITEM_ATNO(i) pG->save_item[i].atNo
 #define SAVE_ITEM_EFF(i) pG->save_item[i].effType
@@ -182,9 +182,9 @@ struct SceAtReserve {
 };
 
 struct SceAtSysWork {
-    void* pAtData;             // 0x00   AEV file
+    P32<void> pAtData;         // 0x00   AEV file
     u32 pAtWork;               // 0x04   its records (+0x10), kept as an address
-    void* pItemData;           // 0x08   ITA file
+    P32<void> pItemData;       // 0x08   ITA file
     u32 pItemWork;             // 0x0C
     u32 hitFlg[8];             // 0x10   areas hit this frame
     u32 execFlg[8];            // 0x30   areas executed this frame
@@ -197,14 +197,14 @@ struct SceAtSysWork {
     u8 x11C;
     u8 x11D;
     u8 pad_11E[2];
-    SceAtCamCtrl* pCamAt;      // 0x120  camera control area in effect
+    P32<SceAtCamCtrl> pCamAt;  // 0x120  camera control area in effect
 };
 
 struct SceAtReleaseModel {
     s16 cnt;          // 0x00
     u8 pad_2[2];
-    void* bin;        // 0x04
-    void* tpl;        // 0x08
+    P32<void> bin;    // 0x04
+    P32<void> tpl;    // 0x08
 };
 
 // Data file headers.
@@ -223,7 +223,7 @@ struct SceAtViewCone {
 };
 
 struct SceAtFuncTbl {
-    int (*func)(SceAtWork* w, cModel* m);
+    FnP32<int(*)(SceAtWork* w, cModel* m)> func;
     u32 exclusive;    // 1 = only one such area fires per check
 };
 
@@ -235,7 +235,7 @@ static SceAtSysWork SceAtSys;
 #endif
 // Struct-member view of pS (the pLog trick): keeps its load below preceding stores through a work.
 struct SceAtSysPtr {
-    SceAtSysWork* p;
+    P32<SceAtSysWork> p;
 };
 #define pSS (((SceAtSysPtr*) &pS)->p)
 static SceAtReleaseModel releaseModelTbl[8];
@@ -360,7 +360,7 @@ SceAtWork* sceAtGetOtAddr(SceAtWork* p)
     u32 v;
 
     while ((v = p->next) != 0xFFFFFFFF) {
-        p = (SceAtWork*) OT_ADDR(v);
+        p = (SceAtWork*)port_ptr64(OT_ADDR(v));
         if (OT_IS_PRIM(v)) {
             return p;
         }
@@ -578,7 +578,7 @@ int sceAtCheck_main(cEm* em, int type)
                     continue;
                 }
                 if (RouteCkPosToPosDis(&pPL->pos, &pSUB->pos) < 5000.0f) {
-                    ActBtn.set(kind, w->x44, (int) sceAtFunc_tbl[0x12].func, (int) w, 1, 6, 2, (int) em);
+                    ActBtn.set(kind, w->x44, (int) sceAtFunc_tbl[0x12].func, (int)(uintptr_t)(w), 1, 6, 2, (int)(uintptr_t)(em));
                 }
                 continue;
             case 3:
@@ -590,7 +590,7 @@ int sceAtCheck_main(cEm* em, int type)
                 }
                 break;
             }
-            ActBtn.set(kind, w->x44, (int) sceAtFunc_tbl[ft].func, (int) w, c, 1, 2, (int) em);
+            ActBtn.set(kind, w->x44, (int) sceAtFunc_tbl[ft].func, (int)(uintptr_t)(w), c, 1, 2, (int)(uintptr_t)(em));
             continue;
         }
         if (!(t == 1 && w->func == 0 && (w->x38 & 2) && (flag & 4))) {
@@ -821,7 +821,7 @@ static int sceAtFunc_door(SceAtWork* w, cModel* m)
         switch (lt) {
         case 1:
         case 2:
-            TaskExec(1, (TaskFunc) sceInLock, (int) w);
+            TaskExec(1, (TaskFunc) sceInLock, (int)(uintptr_t)(w));
             w->flag &= ~1;
             return 1;
         }
@@ -1235,9 +1235,9 @@ static void sceAtGetItem(SceAtWork* w_)
     } else {
         LightMgr.update(0, 0);
     }
-    EffectEspDelete(1, 0x3B, (u32) model, 0);
-    EffectEspgenDelete(1, 0x3B, (int) model);
-    EffectEfmDelete(1, 0x3B, (int) model);
+    EffectEspDelete(1, 0x3B, (u32)(uintptr_t)(model), 0);
+    EffectEspgenDelete(1, 0x3B, (int)(uintptr_t)(model));
+    EffectEfmDelete(1, 0x3B, (int)(uintptr_t)(model));
     if (sub_screen_open != 0) {
         while (SubScreenWk.x34 == 0) {
             SceSleep(1);
@@ -1518,14 +1518,14 @@ static int sceAtFunc_item(SceAtWork* w, cModel* m)
     KeyClear(0xEFCF0000);
     ret = itemZoom(w);
     if (ret == 1) {
-        p = SceExec(5, (TaskFunc) sceAtGetItem, (int) w, 0, 0xF, 0);
+        p = SceExec(5, (TaskFunc) sceAtGetItem, (int)(uintptr_t)(w), 0, 0xF, 0);
         if (p != 0) {
             SceSys.x76 = ret;
             p->task->flag |= 2;
             it->pModel->setNoSuspend(1);
         }
     } else {
-        p = SceExec(5, (TaskFunc) sceAtGetItem_NoModel, (int) w, 0, 0xF, 0);
+        p = SceExec(5, (TaskFunc) sceAtGetItem_NoModel, (int)(uintptr_t)(w), 0, 0xF, 0);
         if (p != 0) {
             SceSys.x76 = 1;
             p->task->flag |= 2;
@@ -1797,7 +1797,7 @@ static int sceAtFunc_skey(SceAtWork* w, cModel* m)
     pS->x94 = pG->flags_170;
     KeyStop(0xEFCF0000);
     pG->flags_170 = -1;
-    TaskExec(1, (TaskFunc) sceAtSkey, (int) w);
+    TaskExec(1, (TaskFunc) sceAtSkey, (int)(uintptr_t)(w));
     return 0;
 }
 
@@ -1844,7 +1844,7 @@ static int sceAtFunc_ladder(SceAtWork* w, cModel* m)
     sceAtGetLadderPos(&w->ladder, &pos, &ang);
     PlSetLadder(&pos, w->ladder.level, ang);
     if (w->ladder.cut1 != 0) {
-        SceSys.x134 = SceExec(5, (TaskFunc) sceAtLadder, (int) w, 0, 2, 0);
+        SceSys.x134 = SceExec(5, (TaskFunc) sceAtLadder, (int)(uintptr_t)(w), 0, 2, 0);
     }
     return 0;
 }
@@ -2240,7 +2240,7 @@ SceAtWork* SceAtPtr(int no)
 // lands in a base register and comes first in `lwzx`.
 static inline u32 bitTblChk(u32 tbl, u32 i)
 {
-    return *(u32*) (((i >> 5) << 2) + tbl) & (0x80000000 >> (i & 31));
+    return *(u32*)port_ptr64((((i >> 5) << 2) + tbl)) & (0x80000000 >> (i & 31));
 }
 
 int sceAtPullAtNo(u8* out)
@@ -2255,7 +2255,7 @@ int sceAtPullAtNo(u8* out)
         ((u32*) used)[w->no >> 5] |= 0x80000000 >> (w->no & 31);
     }
     for (i = 0; i < 256; i++) {
-        if (!bitTblChk((u32) used, i)) {
+        if (!bitTblChk((u32)(uintptr_t)(used), i)) {
             *out = i;
             return 1;
         }
@@ -2306,7 +2306,7 @@ void SceAtDataSet_exec(int no, int prio, int a, TaskFunc func, void* obj, int b)
         w->prio = prio;
     }
     w->func = func;
-    w->arg = (int) obj;
+    w->arg = (int)(uintptr_t)(obj);
     w->x45 = b;
 }
 
@@ -2733,7 +2733,7 @@ static void sceAtCamCtrlCheck()
         found = c;
     }
     if (found != 0) {
-        RAW_U32(pS, 0x120) = (u32) found;
+        RAW_U32(pS, 0x120) = (u32)(uintptr_t)(found);
         CamCtrl.qfps.LRinfo(found);
         return;
     }
@@ -2743,7 +2743,7 @@ static void sceAtCamCtrlCheck()
     }
     if (ret > 1) {
         if (ret == 2) {
-            RAW_U32(pS, 0x120) = (u32) &auto_work;
+            RAW_U32(pS, 0x120) = (u32)(uintptr_t)(&auto_work);
             auto_work.pos = pPL->pos;
             auto_work.angle = pPL->rot.y;
             CamCtrl.qfps.LRinfo(&auto_work);
@@ -4010,8 +4010,8 @@ void sceAtSetItem(SceAtWork* w)
     if (it->pModel == 0) {
         ok2 = ItemGetBinTplAddr(it->id, &bin, &tpl) ? 1 : 0;
         if (ok2 == 0) {
-            bin = (void*) (pG->pArc->ofs_20 + (u32) pG->pArc);
-            tpl = (void*) (pG->pArc->ofs_24 + (u32) pG->pArc);
+            bin = (void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc));
+            tpl = (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc));
         }
         if (it->flag2 & 0x10) {
             SceAtSetShootDownItem(w, bin, tpl);
@@ -4118,33 +4118,33 @@ void sceAtItemEffSet(SceAtWork* w, cModel* m)
             p.z = it->pos.z + it->ofs.z;
             switch (it->effType) {
             case 1:
-                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 3:
-                EstSet(0, -1, &p, 0, 0, 0x2C, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x2C, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 5:
-                EstSet(0, -1, &p, 0, 0, 0x2F, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x2F, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 4:
-                EstSet(0, -1, &p, 0, 0, 0x31, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x31, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 2:
-                EstSet(0, -1, &p, 0, 0, 0x33, 0xC00, it->effNo, (u32) parent, parent);
-                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x33, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
+                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 7:
-                EstSet(0, -1, &p, 0, 0, 0x46, 0xC00, it->effNo, (u32) parent, parent);
-                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x46, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
+                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 8:
                 q = p;
                 q.y -= 800.0f;
-                EstSet(0, -1, &q, 0, 0, 0x33, 0xC00, it->effNo, (u32) parent, parent);
-                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &q, 0, 0, 0x33, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
+                EstSet(0, -1, &p, 0, 0, 0x21, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 9:
-                EstSet(0, -1, &p, 0, 0, 0x4D, 0xC00, it->effNo, (u32) parent, parent);
+                EstSet(0, -1, &p, 0, 0, 0x4D, 0xC00, it->effNo, (u32)(uintptr_t)(parent), parent);
                 break;
             case 6:
                 break;
@@ -4161,7 +4161,7 @@ void sceAtItemEffSet(SceAtWork* w, cModel* m)
             }
             switch (it->effType) {
             case 1:
-                EstSet((int) m, -1, &p, 0, 0, 0x2D, 0xC00, it->effNo, 0, 0);
+                EstSet((int)(uintptr_t)(m), -1, &p, 0, 0, 0x2D, 0xC00, it->effNo, 0, 0);
                 break;
             case 3:
                 EstSet(0, -1, &p, 0, 0, 0x2C, 0xC00, it->effNo, 0, 0);
@@ -4239,7 +4239,7 @@ void sceAtItemEffSet(SceAtWork* w, cModel* m)
             kind = 0xC;
             break;
         }
-        EstSet((int) parent, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(parent), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 5:
         switch (w->parentParts) {
@@ -4260,7 +4260,7 @@ void sceAtItemEffSet(SceAtWork* w, cModel* m)
             kind = 0xE;
             break;
         }
-        EstSet((int) parent, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(parent), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 4:
         switch (w->parentParts) {
@@ -4281,7 +4281,7 @@ void sceAtItemEffSet(SceAtWork* w, cModel* m)
             kind = 0x10;
             break;
         }
-        EstSet((int) parent, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(parent), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 2:
         switch (w->parentParts) {
@@ -4297,13 +4297,13 @@ void sceAtItemEffSet(SceAtWork* w, cModel* m)
         case 8:
             return;
         }
-        EstSet((int) parent, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(parent), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         // fall through
     case 1:
     case 7:
     case 8:
     case 9:
-        EstSet((int) parent, -1, &p, 0, 0, 0x2D, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(parent), -1, &p, 0, 0, 0x2D, 0xC00, it->effNo, 0, 0);
         break;
     case 6:
         break;
@@ -4335,23 +4335,23 @@ void sceAtItemDisappearEffSet(SceAtWork* w, cModel* m)
             p.z = it->pos.z + it->ofs.z;
             switch (it->effType) {
             case 3:
-                EstSet(0, -1, &p, 0, 0, 0x2E, 0xC00, it->effNo, (u32) m, m);
+                EstSet(0, -1, &p, 0, 0, 0x2E, 0xC00, it->effNo, (u32)(uintptr_t)(m), m);
                 break;
             case 5:
-                EstSet(0, -1, &p, 0, 0, 0x30, 0xC00, it->effNo, (u32) m, m);
+                EstSet(0, -1, &p, 0, 0, 0x30, 0xC00, it->effNo, (u32)(uintptr_t)(m), m);
                 break;
             case 4:
-                EstSet(0, -1, &p, 0, 0, 0x32, 0xC00, it->effNo, (u32) m, m);
+                EstSet(0, -1, &p, 0, 0, 0x32, 0xC00, it->effNo, (u32)(uintptr_t)(m), m);
                 break;
             case 2:
-                EstSet(0, -1, &p, 0, 0, 0x34, 0xC00, it->effNo, (u32) m, m);
+                EstSet(0, -1, &p, 0, 0, 0x34, 0xC00, it->effNo, (u32)(uintptr_t)(m), m);
                 break;
             case 7:
-                EstSet(0, -1, &p, 0, 0, 0x47, 0xC00, it->effNo, (u32) m, m);
+                EstSet(0, -1, &p, 0, 0, 0x47, 0xC00, it->effNo, (u32)(uintptr_t)(m), m);
                 break;
             case 8:
                 p.y -= 800.0f;
-                EstSet(0, -1, &p, 0, 0, 0x34, 0xC00, it->effNo, (u32) m, m);
+                EstSet(0, -1, &p, 0, 0, 0x34, 0xC00, it->effNo, (u32)(uintptr_t)(m), m);
                 break;
             case 1:
             case 6:
@@ -4434,7 +4434,7 @@ void sceAtItemDisappearEffSet(SceAtWork* w, cModel* m)
             kind = 0xD;
             break;
         }
-        EstSet((int) m, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 5:
         switch (w->parentParts) {
@@ -4455,7 +4455,7 @@ void sceAtItemDisappearEffSet(SceAtWork* w, cModel* m)
             kind = 0xF;
             break;
         }
-        EstSet((int) m, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 4:
         switch (w->parentParts) {
@@ -4476,7 +4476,7 @@ void sceAtItemDisappearEffSet(SceAtWork* w, cModel* m)
             kind = 0x11;
             break;
         }
-        EstSet((int) m, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 2:
         switch (w->parentParts) {
@@ -4491,7 +4491,7 @@ void sceAtItemDisappearEffSet(SceAtWork* w, cModel* m)
         default:
             return;
         }
-        EstSet((int) m, -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &p, 0, c, kind, 0xC00, it->effNo, 0, 0);
         break;
     case 1:
     case 6:

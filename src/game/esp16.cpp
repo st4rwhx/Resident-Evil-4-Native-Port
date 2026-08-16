@@ -8,14 +8,14 @@
 
 struct Esp16Work {
     u32 nPt;        // 0x00 number of chain points (gen->xC8 + 2)
-    cEsp3f* pos;    // 0x04 point positions
-    cEsp3f* spd;    // 0x08 point speeds
+    P32<cEsp3f> pos; // 0x04 point positions
+    P32<cEsp3f> spd; // 0x08 point speeds
     Vec grav;       // 0x0C acceleration added every frame (gen->xE4..)
     Vec rnd;        // 0x18 random jitter amplitude (gen->xF0..)
     f32 spdRate;    // 0x24 how much of the constraint correction feeds back into the speed (gen->xE0 / 100)
     f32 damp;       // 0x28 speed damping (gen->xDC / 100)
     f32 len;        // 0x2C segment length (gen->xD8)
-    cModel* parts;  // 0x30 model part the far end is attached to
+    P32<cModel> parts; // 0x30 model part the far end is attached to
 };
 
 // Rope / chain: a string of points held together by distance constraints, drawn as a textured

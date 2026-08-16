@@ -12,9 +12,9 @@ void Yz2DecodeExec(void* dst);
 
 // Input state shared with the assembly decoder (yz2asm).
 struct Yz2InEv {
-    u8* src;      // 0x00  compressed stream read pointer
-    u8* heap;     // 0x04  work buffer start
-    u8* free;     // 0x08  work buffer allocation pointer
+    P32<u8> src;  // 0x00  compressed stream read pointer
+    P32<u8> heap; // 0x04  work buffer start
+    P32<u8> free; // 0x08  work buffer allocation pointer
     u32 size0;    // 0x0C  first hex field of the header string
     u32 size1;    // 0x10  second hex field of the header string
 };
@@ -23,11 +23,11 @@ static Yz2InEv in_ev;
 
 // Adaptive frequency table.
 struct Yz2Freq {
-    u16* freq;    // 0x00
+    P32<u16> freq; // 0x00
     u32 max;      // 0x04
     int bits;     // 0x08
     u32 range;    // 0x0C
-    u16* cum;     // 0x10
+    P32<u16> cum; // 0x10
     int n;        // 0x14
     u32 acc;      // 0x18
 };
@@ -35,9 +35,9 @@ struct Yz2Freq {
 struct Yz2Dec;
 
 struct Yz2Model {
-    Yz2Dec* dec;    // 0x00
+    P32<Yz2Dec> dec; // 0x00
     Yz2Freq fd;     // 0x04
-    u8* table;      // 0x20
+    P32<u8> table;  // 0x20
 };
 
 // Bit reader and the two models.
@@ -56,7 +56,7 @@ struct Yz2DicEnt {
 };
 
 struct Yz2Ctx {
-    Yz2DicEnt* dic; // 0x00
+    P32<Yz2DicEnt> dic; // 0x00
     Yz2Dec d;       // 0x04
     u32 pad_54;     // 0x54
     int n;          // 0x58
@@ -73,7 +73,7 @@ u32 Yz2DecodeSet(char* str, void* buf)
     in_ev.size1 = size;
     in_ev.heap = (u8*) buf;
     in_ev.free = (u8*) buf;
-    p = (char*) (((u32) p + 0x20) & ~0x1F);
+    p = (char*)port_ptr64((((u32)(uintptr_t)(p) + 0x20) & ~0x1F));
     in_ev.src = (u8*) p;
     return size;
 }

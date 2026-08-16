@@ -50,7 +50,7 @@
 struct R206Work {
     cEmWrap em[14];        // 0x000  [0..2] first wave (0x60..0x62), [4..7] the four chasers (0x64..0x67, [7] = the
                            //        leader), [8..13] the three extra pairs (0x5A..0x5F)
-    cObj* head;            // 0x0A8  the leader's head object
+    P32<cObj> head;        // 0x0A8  the leader's head object
     u8 esp;                // 0x0AC  effect kind of the head fire
     u8 pad_AD[3];
     u32 snd;               // 0x0B0  SndCall handle of the taunt
@@ -60,13 +60,13 @@ struct R206Work {
     u32 cnt3;              // 0x0C0  funcAshley3 wait counter
     u32 cnt;               // 0x0C4  taunts since the last long one
     u32 gotoNo;            // 0x0C8  leader waypoint
-    TexRenderMng* tex;     // 0x0CC
+    P32<TexRenderMng> tex; // 0x0CC
     u8 texTbl[0x454 - 0xD0];  // 0x0D0
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R206WorkPtr {
-    R206Work* p;
+    P32<R206Work> p;
 };
 
 static R206WorkPtr r206_work;

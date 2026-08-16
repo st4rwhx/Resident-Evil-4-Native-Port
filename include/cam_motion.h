@@ -8,16 +8,16 @@
 
 // Camera key-frame playback work (same layout as the front of MotionWork, 0xD0 bytes).
 struct CameraMotionWork {
-    MotionData* data;   // 0x00
-    u32* keyTbl;        // 0x04
+    P32<MotionData> data; // 0x00
+    P32<u32> keyTbl;    // 0x04
     u16 hist[4][3];     // 0x08  key history per motion parts (pos, at, roll, fovy)
     f32 maxFrame;       // 0x20
     f32 frame;          // 0x24
     u8 pad_28[8];
     u8 nParts;          // 0x30
     u8 pad_31[3];
-    u8* partsNo;        // 0x34
-    u16* partsInfo;     // 0x38
+    P32<u8> partsNo;    // 0x34
+    P32<u16> partsInfo; // 0x38
     u8 pad_3C[4];
     u16 flags;          // 0x40  bit2: loop, bit3: pause
     u8 pad_42[2];
@@ -32,7 +32,7 @@ class CameraMotion : public cCamera {
 public:
     s32 end;                       // 0xFC  1 when the motion has finished
     CameraMotionWork info;         // 0x100 motion work (getMotionInfoPtr)
-    Mtx* base_mat;                 // 0x1D0
+    P32<Mtx> base_mat;             // 0x1D0
 
     CameraMotion(void* data, int hokan, int flags, f32 frame);
     virtual ~CameraMotion();

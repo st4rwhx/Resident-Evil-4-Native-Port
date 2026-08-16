@@ -45,8 +45,8 @@ public:
 
 class PieceCommand : public Widget<SUB_SCREEN> {
 public:
-    IdUnit* id[16];   // 0x10
-    IdUnit* sub[11];  // 0x50
+    P32<IdUnit> id[16]; // 0x10
+    P32<IdUnit> sub[11]; // 0x50
     u8 pad_7C[0x90 - 0x7C];
     int mode;         // 0x90  0 command, 1 open sub menu, 2 sub menu, 3 message
     s8 num;           // 0x94
@@ -73,8 +73,8 @@ public:
 
 class CaseChange : public Widget<SUB_SCREEN> {
 public:
-    IdUnit* a;  // 0x10
-    IdUnit* b;  // 0x14
+    P32<IdUnit> a; // 0x10
+    P32<IdUnit> b; // 0x14
 
     virtual void init(SUB_SCREEN* wk);
     virtual void quit(SUB_SCREEN* wk);

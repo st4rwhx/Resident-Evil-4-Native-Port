@@ -39,9 +39,9 @@
 // escape.
 
 struct R11eWork {
-    cEmRock* rock[2];   // 0x00  the boulders on the props
-    cSat* sat[4];       // 0x08  hut A / hut B / fence A / fence B collision
-    cSat* eat[4];       // 0x18  ... attribute collision
+    P32<cEmRock> rock[2]; // 0x00  the boulders on the props
+    P32<cSat> sat[4];   // 0x08  hut A / hut B / fence A / fence B collision
+    P32<cSat> eat[4];   // 0x18  ... attribute collision
     cEmWrap em;         // 0x28  the giant
     u32 strId;          // 0x34  SndStrReq handle of the giant stream
 };

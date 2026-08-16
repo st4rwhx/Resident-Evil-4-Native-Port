@@ -7,7 +7,7 @@
 
 struct Esp12Work {
     u32 n;         // 0x00 number of trail points
-    cEsp3f* buf;   // 0x04 vector buffer (esp3f)
+    P32<cEsp3f> buf; // 0x04 vector buffer (esp3f)
 };
 
 // Ribbon trail: keeps the last n positions in an esp3f buffer and draws a textured strip

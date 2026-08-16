@@ -31,14 +31,14 @@ struct CameraAreaInfo {  // hit area
     f32 height;   // 0x20
     f32 base_y;   // 0x24
     s32 num;      // 0x28  polygon vertex count
-    Vec* points;  // 0x2C
+    P32<Vec> points; // 0x2C
 };
 
 struct CameraAreaRec {  // area -> cut link
     u8 type;              // 0x00  camera type of the linked cut (t_camera tcTypeTbl)
     u8 pad_1[7];
-    CameraAreaInfo* area; // 0x08
-    CameraCut* cut;       // 0x0C
+    P32<CameraAreaInfo> area; // 0x08
+    P32<CameraCut> cut;   // 0x0C
 };
 
 struct CameraCut {
@@ -47,14 +47,14 @@ struct CameraCut {
     s8 type;        // 0x02  CameraControl state selector
     u8 flags;       // 0x03  bit 0: aim_ofs valid
     Vec aim_ofs;    // 0x04  added to the player position to get the aim point
-    u16* frames;    // 0x10  key frame times
+    P32<u16> frames; // 0x10  key frame times
     f32 floor_ratio; // 0x14  shoulder camera floor ratio (cam_qfps setAreaData)
     u8 pad_18[0x20 - 0x18];
     s32 num;        // 0x20  key count
-    Vec* pos;       // 0x24
-    Vec* at;        // 0x28
-    f32* roll;      // 0x2C
-    f32* fovy;      // 0x30
+    P32<Vec> pos;   // 0x24
+    P32<Vec> at;    // 0x28
+    P32<f32> roll;  // 0x2C
+    P32<f32> fovy;  // 0x30
 };
 
 struct CameraLerp {
@@ -82,7 +82,7 @@ struct AttachCamera {
     u8 type;        // 0x05  0 = off, 1 = follows the model matrix, 2 = own matrix copy (MotionSetCore)
     u8 frame;       // 0x06  (u8)(out[4].y / 100)
     u8 pad_7;
-    Mtx* pMat;      // 0x08  &model->mat or &mat
+    P32<Mtx> pMat;  // 0x08  &model->mat or &mat
     Mtx mat;        // 0x0C
     Vec out[5];     // 0x3C  interpolated channels (MotionMoveCore)
     u16 hist[5][3]; // 0x78  key history per channel / axis
@@ -139,9 +139,9 @@ public:
     u8 x1;                        // 0x01
     u8 attach_num;                // 0x02
     u8 x3;                        // 0x03
-    AttachCamera* attach_cam[3];  // 0x04
-    cModel* attach_model[3];      // 0x10
-    cModel* attach_cur;           // 0x1C
+    P32<AttachCamera> attach_cam[3]; // 0x04
+    P32<cModel> attach_model[3];  // 0x10
+    P32<cModel> attach_cur;       // 0x1C
     f32 scope_param0;             // 0x20
     f32 scope_param1;             // 0x24
     u8 flags_28;                  // 0x28  bit 0 = data valid, bit 2 = disabled
@@ -154,7 +154,7 @@ public:
     u8 prev_state;                // 0x37
     CameraParam cur;              // 0x38
     u32 counter_58;               // 0x58
-    CameraDataHeader* data;       // 0x5C
+    P32<CameraDataHeader> data;   // 0x5C
     Camera camera;                // 0x60
     Mtx prev_mat;                 // 0x158  camera matrix CamStick2World keeps while the cut changes
     u8 pad_188[0x250 - 0x188];
@@ -162,12 +162,12 @@ public:
     CameraInterpolation interp;   // 0x254
     CameraQuasiFPS qfps;          // 0x278
     u8 extra_buf[0x200];          // 0x48C  placement storage for cCamera subclasses
-    cCamera* extra;               // 0x68C
+    P32<cCamera> extra;           // 0x68C
     s8 area_no;                   // 0x690
     s8 x691;                      // 0x691
     s8 camera_no;                 // 0x692
     u8 area_attr;                 // 0x693
-    CameraAreaRec* area_rec;      // 0x694
+    P32<CameraAreaRec> area_rec;  // 0x694
     s32 battle_timer;             // 0x698
     Vec aim;                      // 0x69C
     Vec up_pos;                   // 0x6A8

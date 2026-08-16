@@ -40,8 +40,8 @@ struct R404Work {
     u32 cnt;             // 0x00  enemies alive (SceCountEmAlive)
     u32 emId;            // 0x04  id of list entry 0xF5 (the chainsaw one)
     u32 total;           // 0x08  enemies set so far
-    TexRenderMng* tex;   // 0x0C
-    cObj* slide;         // 0x10  the banister slide object (SetObjSmd)
+    P32<TexRenderMng> tex; // 0x0C
+    P32<cObj> slide;     // 0x10  the banister slide object (SetObjSmd)
     u32 cnt1_4;          // 0x14  per-area set counts
     u32 cnt2_5;          // 0x18
     u32 cnt3;            // 0x1C
@@ -53,7 +53,7 @@ struct R404Work {
 
 // One-member struct: every store through the work reloads the pointer.
 struct R404WorkPtr {
-    R404Work* p;
+    P32<R404Work> p;
 };
 
 // Typed view of pG->emlist (r400): pG is loaded before the index shift.
@@ -78,7 +78,7 @@ struct R404MercInit {
 
 // Struct view of pPL: the in-struct load is invalidated by the collision flag stores (pPL reloaded per statement).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

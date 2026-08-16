@@ -43,7 +43,7 @@ void cEmDoorSetCloseLock(cEm* door) asm("setCloseLock__7cEmDoori");
 
 // One dial part of the door puzzle: the object and its rest matrix.
 struct R105MarkObj {
-    cObj* obj;    // 0x00
+    P32<cObj> obj; // 0x00
     Mtx mat;      // 0x04
 };
 

@@ -41,7 +41,7 @@ struct R400Work {
 
 // One-member struct: every store through the work reloads the pointer.
 struct R400WorkPtr {
-    R400Work* p;
+    P32<R400Work> p;
 };
 
 // Typed view of pG->emlist: the original indexes an EmListData array, so pG is loaded before the

@@ -160,7 +160,7 @@ u32* scenarioGetOtAddr(u32* p)
     u32 v;
 
     while ((v = *p) != 0xFFFFFFFF) {
-        p = (u32*) OT_ADDR(v);
+        p = (u32*)port_ptr64(OT_ADDR(v));
         if (OT_IS_PRIM(v)) {
             return p;
         }
@@ -383,7 +383,7 @@ void SceExecInitCondition()
 // em_dead row address as an integer (the original adds the list offset after the row index), as in sce_at.
 static inline u32 emDeadRow(int n)
 {
-    return n * 32 + (u32) pG + 0x501C;
+    return n * 32 + (u32)(uintptr_t)(pG) + 0x501C;
 }
 
 int SceExecCheckCondition_sub(SceCond* c)
@@ -398,7 +398,7 @@ int SceExecCheckCondition_sub(SceCond* c)
         no = (u32) c->param;
         if (pG->emlist_no >= 0) {
             // Row address as integer arithmetic (index first, the list offset added last), like sce_at.
-            bit = *(u32*) (((no >> 5) << 2) + emDeadRow(pG->emlist_no)) & (0x80000000 >> (no & 31));
+            bit = *(u32*)port_ptr64((((no >> 5) << 2) + emDeadRow(pG->emlist_no))) & (0x80000000 >> (no & 31));
         } else {
             bit = 0;
         }
@@ -414,7 +414,7 @@ int SceExecCheckCondition_sub(SceCond* c)
     case 2:
         em = (cEm*) c->param;
         // Raw (non-struct) read: keeps the load behind the store of `em` to its stack slot.
-        if (*(s16*) ((u32) em + 0x320) <= 0 && em->xFC == 3) {
+        if (*(s16*)port_ptr64(((u32)(uintptr_t)(em) + 0x320)) <= 0 && em->xFC == 3) {
             return 1;
         }
         break;
@@ -446,7 +446,7 @@ void SceExecCheckCondition()
         return;
     }
     do {
-        c = (SceCond*) OT_ADDR(v);
+        c = (SceCond*)port_ptr64(OT_ADDR(v));
         if (OT_IS_PRIM(v)) {
             if (SceExecCheckCondition_sub(c) == 1) {
                 if (c->func != 0) {

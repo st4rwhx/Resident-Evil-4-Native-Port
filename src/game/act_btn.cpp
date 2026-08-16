@@ -42,7 +42,7 @@ void cActionButton::move()
         return;
     }
     for (tag = ot[15]; tag != 0xFFFFFFFF; tag = w->tag) {
-        w = (ActBtnWork*) OT_ADDR(tag);
+        w = (ActBtnWork*)port_ptr64(OT_ADDR(tag));
         if (!OT_IS_PRIM(tag)) {
             continue;
         }
@@ -67,10 +67,10 @@ void cActionButton::move()
                 ((ActBtnFunc) w->func)(w->arg, w->d);
                 break;
             case 1:
-                SceExec(0x12, (TaskFunc) w->func, w->arg, flag, w->slot, (void*) w->d);
+                SceExec(0x12, (TaskFunc) w->func, w->arg, flag, w->slot, (void*)port_ptr64(w->d));
                 break;
             case 2: {
-                SceAtWork* at = (SceAtWork*) w->arg;
+                SceAtWork* at = (SceAtWork*)port_ptr64(w->arg);
 
                 SceAtSetExecFlg(at->no);
                 ((ActBtnFunc) w->func)(w->arg, w->d);
@@ -348,7 +348,7 @@ void cActionButton::set(int kind, int slot, int func, int arg, int flags, int bt
         kind = 0x41;
     }
     w->kind = kind;
-    w->func = (void*) func;
+    w->func = (void*)port_ptr64(func);
     w->arg = arg;
     w->type = type;
     w->flags = flags;

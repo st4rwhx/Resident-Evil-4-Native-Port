@@ -214,7 +214,7 @@ static u16 em31_flip1[120] = {
 // The object the player holds on to while climbing the back (plem31_Climb); a one-member struct so
 // every store through it reloads the pointer.
 static struct {
-    cObj* p;
+    P32<cObj> p;
 } em31CatchObj = { 0 };
 
 // Cloth chains: the (unused) single link of Em31ClothSet, the hanging chains of Em31ClothSet2 and
@@ -253,7 +253,7 @@ static f32 em31ClothMax3[18] = {
 // Struct-member views of the player pointer / pG: a load through them is not hoisted above the
 // preceding stores through the work pointer (cam_ctrl.cpp PlayerPtr).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

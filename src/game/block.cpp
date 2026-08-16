@@ -73,7 +73,7 @@ u32* cBlock::getOtAddr()
     u32 v;
 
     while ((v = *pOt) != 0xFFFFFFFF) {
-        pOt = (u32*) OT_ADDR(v);
+        pOt = (u32*)port_ptr64(OT_ADDR(v));
         if (OT_IS_PRIM(v)) {
             return pOt;
         }
@@ -524,7 +524,7 @@ int cBlockUnit::checkBlockLoadToMramSet()
             if (p == 0) {
                 return 1;
             }
-            pData->setCommand(1, (u32) p, arg);
+            pData->setCommand(1, (u32)(uintptr_t)(p), arg);
         }
     case 2:
     case 5:
@@ -637,7 +637,7 @@ void cBlockUnit::moveBlockData(void* dst)
     int ofs;
 
     memcpy(dst, pData->addr, pData->size);
-    ofs = (int) dst - (int) pData->addr;
+    ofs = (int)(uintptr_t)(dst) - (int) pData->addr;
     pData->addr = dst;
     DCFlushRange(dst, pData->size);
     recalcModelAddr(ofs);
@@ -816,7 +816,7 @@ void cBlock::checkBlockMemSort()
         addr = (u8*) memTop;
         for (i = 0; i < cnt; i++) {
             u = tbl[i];
-            if ((u32) addr < (u32) u->pData->addr) {
+            if ((u32)(uintptr_t)(addr) < (u32) u->pData->addr) {
                 u->moveBlockData(addr);
             }
             addr += tbl[i]->pData->size;

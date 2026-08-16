@@ -71,7 +71,7 @@ struct EmInfoTool {
 
 // The work pointer is a struct member: every store through it reloads the pointer.
 struct EmInfoToolPtr {
-    EmInfoTool* p;
+    P32<EmInfoTool> p;
 };
 
 static EmInfoToolPtr emInfo;

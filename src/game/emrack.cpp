@@ -263,7 +263,7 @@ void emRackDmCk(cEmRack* em)
                 cModel* p;
 
                 if (w->eff != 0xFF) {
-                    EstSet((int) em, -1, 0, 0, w->eff, 6, 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 6, 0, 0, (u32)(uintptr_t)(em), 0);
                 }
                 SndCall(6, 0x36, &em->pos, 0, 0, em);
                 p = em->getPartsPtr(1);
@@ -335,9 +335,9 @@ void emRack_R1_Set(cEmRack* em)
     if (MotionCheckCrossFrame((MotionWork*) &em->pMotion, 2.0f)) {
         if (w->eff != 0xFF) {
             if (em->type == 1) {
-                EstSet((int) em, -1, 0, 0, w->eff, 7, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 7, 0, 0, (u32)(uintptr_t)(em), 0);
             } else {
-                EstSet((int) em, -1, 0, 0, w->eff, 5, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 5, 0, 0, (u32)(uintptr_t)(em), 0);
             }
         }
     }
@@ -421,19 +421,19 @@ void emRack_R1_Break(cEmRack* em)
             switch (em->xFF) {
             case 0:
             default:
-                EstSet((int) em, -1, 0, 0, w->eff, 3, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 3, 0, 0, (u32)(uintptr_t)(em), 0);
                 SndCall(6, 0x33, &em->pos, 0, 0, em);
                 break;
             case 1:
-                EstSet((int) em, -1, 0, 0, w->eff, 5, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 5, 0, 0, (u32)(uintptr_t)(em), 0);
                 SndCall(6, 0x33, &em->pos, 0, 0, em);
                 break;
             case 2:
-                EstSet((int) em, -1, 0, 0, w->eff, 0, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 0, 0, 0, (u32)(uintptr_t)(em), 0);
                 SndCall(6, 0x33, &em->pos, 0, 0, em);
                 break;
             case 3:
-                EstSet((int) em, -1, 0, 0, w->eff, 4, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 4, 0, 0, (u32)(uintptr_t)(em), 0);
                 SndCall(6, 0x33, &em->pos, 0, 0, em);
                 break;
             case 4:

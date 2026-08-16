@@ -107,7 +107,7 @@ int ShapeSet(void* work, int frame, void* data, int flags);
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -253,12 +253,12 @@ int Event::init(char* nm, EvtHeader* data)
     u32 i;
     int j;
 
-    if ((int) data >= 0) {
+    if ((int)(uintptr_t)(data) >= 0) {
         pLog->err(0, 0, "Event::init : non addr");
         return 0;
     }
     pData = data;
-    pPacket = (EvtPacket*) (data->pacOfs + (u32) data);
+    pPacket = (EvtPacket*)port_ptr64((data->pacOfs + (u32)(uintptr_t)(data)));
     if (datTbl.init(0x60) == 0) {
         pLog->err(0, 0, "Event::init : memory failed");
         return 0;
@@ -384,11 +384,11 @@ func:
 
 void Event::EspSetModelPtr(cModel* m)
 {
-    u32 tbl = (u32) EspEvModList;
+    u32 tbl = (u32)(uintptr_t)(EspEvModList);
     int n = nEspModel;
 
     if (n >= 0 && n < 0x80) {
-        *(cModel**) (tbl + (n << 2)) = m;
+        *(cModel**)port_ptr64((tbl + (n << 2))) = m;
     }
     nEspModel++;
 }
@@ -488,7 +488,7 @@ void Event::EspToolSetMod(int no, char* nm)
         }
     }
     if (GetModelPtrNo(&modNo, &mod, mname)) {
-        EvtDebug.pModel[no].pModel = (cModel*) modNo;
+        EvtDebug.pModel[no].pModel = (cModel*)port_ptr64(modNo);
         EvtDebug.pModel[no].x638 = mod->x12F;
         EvtDebug.pModel[no].x639 = mod->lightInfo.x50;
         if (mod->x12C == 1) {
@@ -583,7 +583,7 @@ int Event::RunTool(int mode, int arg)
         }
         break;
     }
-    pPacket = (EvtPacket*) (pData->pacOfs + (u32) pData);
+    pPacket = (EvtPacket*)port_ptr64((pData->pacOfs + (u32)(uintptr_t)(pData)));
     toolCut = c;
     totalFrame = 0;
     frame = 0;
@@ -1076,7 +1076,7 @@ int Event::ExePacket_SetEff(Event* evt)
         pLog->err(0, 0, "Event::ExePacket_SetEff : dat failed");
         return 1;
     }
-    if (EspDataLoad((u32) dat, evt->effNo + 0xC4, 0) == 0) {
+    if (EspDataLoad((u32)(uintptr_t)(dat), evt->effNo + 0xC4, 0) == 0) {
         pLog->err(0, 0, "Event::ExePacket_SetEff : failed");
         return 1;
     }
@@ -1312,7 +1312,7 @@ int Event::ExePacket_Esp(Event* evt)
         rot.z += evt->pPosOya->rot.z;
     }
     if (pac->esp.type == 0) {
-        EstSet((int) m, -1, &pos, &rot, 1, pac->esp.parts, 1, 0, 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &pos, &rot, 1, pac->esp.parts, 1, 0, 0, 0);
     }
     if (pac->esp.type == 5) {
         e = evt->effNo;
@@ -1320,10 +1320,10 @@ int Event::ExePacket_Esp(Event* evt)
             pLog->err(0, 0, "Event::ExePacket_SetEff : NoWork failed");
             return 1;
         }
-        EstSet((int) m, -1, &pos, &rot, e + 0xC4, pac->esp.parts, 1, (u8) (e + 0x37), 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &pos, &rot, e + 0xC4, pac->esp.parts, 1, (u8) (e + 0x37), 0, 0);
     }
     if (pac->esp.type == 6) {
-        EstSet((int) m, -1, &pos, &rot, 0x54, pac->esp.parts, 1, 0, 0, 0);
+        EstSet((int)(uintptr_t)(m), -1, &pos, &rot, 0x54, pac->esp.parts, 1, 0, 0, 0);
     }
     return 1;
 }
@@ -1459,7 +1459,7 @@ int Event::ExePacket_Func(Event* evt)
         pLog->err(0, 0, "Event::ExePacket_Func: func failed");
         return 1;
     }
-    fn = *(EvtFunc*) (pac->val.no * 4 + tbl);
+    fn = *(EvtFunc*)port_ptr64((pac->val.no * 4 + tbl));
     fn(evt, pac->val.arg);
     return 1;
 }
@@ -1531,8 +1531,8 @@ void Event::ExeBeginEvt(Event* evt, int mode)
         EvtMgr.SetBin("em/pl00/pl000b.tpl", PL_ARC_PTR(pG->pPlArc, 7), 0, 2);
         EvtMgr.SetBin("em/pl00/pl000e.bin", PL_ARC_PTR(pG->pPlArc, 0xA), 0, 2);
         EvtMgr.SetBin("em/pl00/pl000l.bin", PL_ARC_PTR(pG->pPlArc, 0x10), 0, 2);
-        EvtMgr.SetBin("etc/core/dummy.bin", (void*) (pG->pArc->ofs_20 + (u32) pG->pArc), 0, 2);
-        EvtMgr.SetBin("etc/core/dummy.tpl", (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), 0, 2);
+        EvtMgr.SetBin("etc/core/dummy.bin", (void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), 0, 2);
+        EvtMgr.SetBin("etc/core/dummy.tpl", (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), 0, 2);
     }
     EvtMesDeleteAll();
     pG->flags_54 |= 0x400;
@@ -1661,7 +1661,7 @@ void Event::CalNextPacket()
 {
     pPrevPacket = pPacket;
     pPacket = (EvtPacket*) ((u8*) pPacket + pPacket->size);
-    if ((u32) pPacket >= (u32) pData + pData->pacOfs + pData->pacSize) {
+    if ((u32)(uintptr_t)(pPacket) >= (u32)(uintptr_t)(pData) + pData->pacOfs + pData->pacSize) {
         status |= 0x00800000;
     }
 }
@@ -1710,7 +1710,7 @@ int Event::CalMaxCut(int* out)
     }
     *out = 0;
     n = 0;
-    p = (EvtPacket*) (pData->pacOfs + (u32) pData);
+    p = (EvtPacket*)port_ptr64((pData->pacOfs + (u32)(uintptr_t)(pData)));
     while (p->id != 0x1B) {
         if (p->id > 0x20) {
             pLog->err(0, 0, "Event::CalMaxFrame : id over");
@@ -1739,7 +1739,7 @@ int Event::CalMaxFrame(int* out, int c)
     }
     *out = 0;
     n = 0;
-    p = (EvtPacket*) (pData->pacOfs + (u32) pData);
+    p = (EvtPacket*)port_ptr64((pData->pacOfs + (u32)(uintptr_t)(pData)));
     while (p->id != 0x1B) {
         if (p->id > 0x20) {
             pLog->err(0, 0, "Event::CalMaxFrame : id over");
@@ -2231,7 +2231,7 @@ int EventMgr::IsAliveEvt(u32* key, int out, int chk)
             continue;
         }
         if (out != 0) {
-            *(Event**) out = e;
+            *(Event**)port_ptr64(out) = e;
         }
         return 1;
     }
@@ -2342,7 +2342,7 @@ int EventMgr::EvtReadSub(char* nm, int aram, int em, int* out, int wait, u32 sz)
                 }
                 r = EmReadSearch(em, 0, size);
                 if (out != 0) {
-                    *out = (int) r;
+                    *out = (int)(uintptr_t)(r);
                 }
                 unit->setCommand(2, 0, 1);
             }
@@ -2368,7 +2368,7 @@ int EventMgr::EvtReadSub(char* nm, int aram, int em, int* out, int wait, u32 sz)
             readEm[no].swapped = 1;
             r = mod->pArc;
             if (out != 0) {
-                *out = (int) r;
+                *out = (int)(uintptr_t)(r);
             }
         } else {
             unit->setCommand(1, 0, 1);
@@ -2380,7 +2380,7 @@ int EventMgr::EvtReadSub(char* nm, int aram, int em, int* out, int wait, u32 sz)
             }
             addr = unit->addr;
             if (out != 0) {
-                *out = (int) addr;
+                *out = (int)(uintptr_t)(addr);
             }
         }
     } else {
@@ -2392,7 +2392,7 @@ int EventMgr::EvtReadSub(char* nm, int aram, int em, int* out, int wait, u32 sz)
             }
             r = EmReadSearch(em, 0, size);
             if (out != 0) {
-                *out = (int) r;
+                *out = (int)(uintptr_t)(r);
             }
         }
         if (wait == 0) {
@@ -2428,7 +2428,7 @@ int EventMgr::EvtReadExec(char* nm, int em, u32 flags)
         SceSleep(2);
     }
     if (EvtReadMram(nm, em, &addr, 0, 0)) {
-        if (EvtMgr.SetEvt((void*) addr, (u32*) &evt)) {
+        if (EvtMgr.SetEvt((void*)port_ptr64(addr), (u32*) &evt)) {
             if (flags & 2) {
                 BitOn(evt->status, 0x00100000);
                 BitOn(evt->status, 0x200);
@@ -2530,7 +2530,7 @@ int EventMgr::SetEvt(void* data, u32* key)
     if (key != 0) {
         *key = 0;
     }
-    if ((int) hdr >= 0) {
+    if ((int)(uintptr_t)(hdr) >= 0) {
         pLog->err(0, 0, "EventMgr::SetEvs : non addr[%x]", hdr);
         return 0;
     }
@@ -2547,7 +2547,7 @@ int EventMgr::SetEvt(void* data, u32* key)
         return 0;
     }
     if (key != 0) {
-        *key = (u32) evt;
+        *key = (u32)(uintptr_t)(evt);
     }
     return 1;
 }
@@ -2594,7 +2594,7 @@ int EventMgr::SetEvt(char* nm, Event** out)
 
 int EventMgr::GetEvt(u32* key, void** out)
 {
-    return IsAliveEvt(key, (int) out, 1);
+    return IsAliveEvt(key, (int)(uintptr_t)(out), 1);
 }
 
 int EventMgr::DelEvt(void* evt_, int flag)
@@ -2646,7 +2646,7 @@ int EventMgr::DelEvt(void* evt_, int flag)
 
 int EventMgr::SetBin(char* nm, void* data, void* dat2, int flag)
 {
-    if ((int) data >= 0) {
+    if ((int)(uintptr_t)(data) >= 0) {
         pLog->err(0, 0, "EventMgr::SetBin : non addr[%s]", nm);
         return 0;
     }
@@ -2704,7 +2704,7 @@ int EventMgr::SetEvd(char* nm, void* data, void* dat2, int flag)
     EvtBinEntry* e;
     int i;
 
-    if ((int) hdr >= 0) {
+    if ((int)(uintptr_t)(hdr) >= 0) {
         pLog->err(0, 0, "EventMgr::SetEvd : non addr[%s]", nm);
         return 0;
     }
@@ -2720,8 +2720,8 @@ int EventMgr::SetEvd(char* nm, void* data, void* dat2, int flag)
         return 0;
     }
     for (i = 0; i < hdr->nBin; i++) {
-        e = (EvtBinEntry*) (i * sizeof(EvtBinEntry) + (hdr->binOfs + (u32) hdr));
-        if (SetBin(e->name, (u8*) (e->ofs + (u32) hdr), 0, flag) == 0) {
+        e = (EvtBinEntry*) (i * sizeof(EvtBinEntry) + (hdr->binOfs + (u32)(uintptr_t)(hdr)));
+        if (SetBin(e->name, (u8*)port_ptr64((e->ofs + (u32)(uintptr_t)(hdr))), 0, flag) == 0) {
             pLog->err(0, 0, "EventMgr::SetEvd : failed");
             return 0;
         }
@@ -2771,7 +2771,7 @@ int EventMgr::DelEvd(char* nm)
         return 0;
     }
     for (i = 0; i < hdr->nBin; i++) {
-        DelBin(((EvtBinEntry*) (hdr->binOfs + (u32) hdr))[i].name);
+        DelBin(((EvtBinEntry*)port_ptr64((hdr->binOfs + (u32)(uintptr_t)(hdr))))[i].name);
     }
     if (evdTbl.DelDat(nm) == 0) {
         pLog->err(0, 0, "EventMgr::DelEvd : failed");
@@ -2844,7 +2844,7 @@ int EventMgr::GetRead(void** out, int* wkNo, char* nm)
     if (readTbl.GetDat((void**) &d, &type, nm, 0) == 0) {
         return 0;
     }
-    *out = (void*) d;
+    *out = (void*)port_ptr64(d);
     if (readTbl.GetWkNo(&d, nm) == 0) {
         return 0;
     }
@@ -2868,14 +2868,14 @@ int EventMgr::SetEvs(void* evs)
     u8* p;
     int i;
 
-    if ((int) hdr >= 0) {
+    if ((int)(uintptr_t)(hdr) >= 0) {
         pLog->err(0, 0, "EventMgr::SetEvs : non addr");
         return 0;
     }
-    tbl = (EvsEntry*) (hdr->tblOfs + (u32) hdr);
+    tbl = (EvsEntry*)port_ptr64((hdr->tblOfs + (u32)(uintptr_t)(hdr)));
     for (i = 0; i < hdr->num; i++) {
         EvsEntry* e = &tbl[i];
-        p = (u8*) (e->ofs + (u32) hdr);
+        p = (u8*)port_ptr64((e->ofs + (u32)(uintptr_t)(hdr)));
         if (SetEvd((char*) p, p, 0, 0) == 0) {
             pLog->err(0, 0, "EventMgr::SetEvs : SetEvd failed[%s]", p);
             return 0;
@@ -2887,8 +2887,8 @@ int EventMgr::SetEvs(void* evs)
 // Event stream slot accessors through an integer base: `evt->strNo[blk]` forces `evt + 0xC0` into a
 // pointer-flagged temp (regclass then wants the index in GENERAL_REGS, r0); a `u32` base variable
 // keeps both unflagged so the shifted index takes a BASE register (`lwzx r29,r10,r11`).
-static inline int& evtStrNo(Event* evt, int blk) { u32 p = (u32) evt->strNo; return *(int*) (p + (blk << 2)); }
-static inline u32& evtStrId(Event* evt, int blk) { u32 p = (u32) evt->strId; return *(u32*) (p + (blk << 2)); }
+static inline int& evtStrNo(Event* evt, int blk) { u32 p = (u32)(uintptr_t)(evt->strNo); return *(int*)port_ptr64((p + (blk << 2))); }
+static inline u32& evtStrId(Event* evt, int blk) { u32 p = (u32)(uintptr_t)(evt->strId); return *(u32*)port_ptr64((p + (blk << 2))); }
 
 int EventMgr::EvtSndStrStop(u32* key, int blk, int mode)
 {
@@ -3278,7 +3278,7 @@ int DatTbl::ChkDatWkNoName(int wkNo, const char* nm)
         pLog->err(0, 0, "cDatTbl::GetDatWkNo : work_no failed[%d]", wkNo);
         return 0;
     }
-    e = (DatTblEntry*) (wkNo * sizeof(DatTblEntry) + (u32) pWork);
+    e = (DatTblEntry*) (wkNo * sizeof(DatTblEntry) + (u32)(uintptr_t)(pWork));
     if ((e->flag & 1) && strcmp(e->name, nm) == 0) {
         return 1;
     }

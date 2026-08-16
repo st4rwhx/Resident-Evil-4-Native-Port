@@ -37,19 +37,19 @@
 // floating islands, the binocular view of the cliff event and the boss's tentacle heads.
 
 struct R10bWork {
-    cEm* boss;             // 0x00  the lake boss (list entry 0xA1)
-    cEm* boat;             // 0x04  the boat enemy (list entry 0xA2 / 0xA3)
-    cEm* em0;              // 0x08  list entry 0xA0
+    P32<cEm> boss;         // 0x00  the lake boss (list entry 0xA1)
+    P32<cEm> boat;         // 0x04  the boat enemy (list entry 0xA2 / 0xA3)
+    P32<cEm> em0;          // 0x08  list entry 0xA0
     int count;             // 0x0C  action button count of the s20 event
-    cDataUnit* evt[16];    // 0x10  event data units by readEvent index
-    IdBinocular* bino;     // 0x50
-    FocusAnimation* focus; // 0x54
+    P32<cDataUnit> evt[16]; // 0x10  event data units by readEvent index
+    P32<IdBinocular> bino; // 0x50
+    P32<FocusAnimation> focus; // 0x54
     u8 pad_58[4];
     IdBinocular binoObj;   // 0x5C
     FocusAnimation focusObj;  // 0x9C
-    cObj* island[4];       // 0xAC
+    P32<cObj> island[4];   // 0xAC
     u8 pad_BC[4];
-    cObj* head[6];         // 0xC0  tentacle heads (obj 0x16)
+    P32<cObj> head[6];     // 0xC0  tentacle heads (obj 0x16)
 };
 
 static R10bWork* r10b_work;
@@ -57,7 +57,7 @@ static R10bWork* r10b_work;
 // readEvent stores into the event unit table and reloads both the work pointer and the entry after
 // it: the pointer is read through a one-member struct view there (see r10f).
 struct R10bWorkPtr {
-    R10bWork* p;
+    P32<R10bWork> p;
 };
 #define R10B_WORK (((R10bWorkPtr*) &r10b_work)->p)
 

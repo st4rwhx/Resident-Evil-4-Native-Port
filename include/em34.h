@@ -26,13 +26,13 @@ struct Em34Work {
     Vec routePos;         // 0x230 (0x610)  RouteCkToPos result towards the player
     Vec subRoutePos;      // 0x23C (0x61C)  towards the partner
     Vec targetPos;        // 0x248 (0x628)  chosen target position (R1_Walk / R1_Atk turn to it)
-    cEm* pTarget;         // 0x254 (0x634)  pPL or pSUB
+    P32<cEm> pTarget;     // 0x254 (0x634)  pPL or pSUB
     f32 neckAng;          // 0x258 (0x638)  smoothed neck yaw (em34NeckMove)
     PlCloth cloth1;       // 0x25C (0x63C)  Em34ClothSet1 / Em37HairSet / Em33ClothSet
     PlCloth cloth2;       // 0x2BC (0x69C)  Em34ClothSet2 / Em37CoatSet / Em33ClothSet2
-    cModelInfo* pInfo0;   // 0x31C (0x6FC)  em34 extra models (ARC 5, 6, 7)
-    cModelInfo* pInfo1;   // 0x320 (0x700)
-    cModelInfo* pInfo2;   // 0x324 (0x704)
+    P32<cModelInfo> pInfo0; // 0x31C (0x6FC)  em34 extra models (ARC 5, 6, 7)
+    P32<cModelInfo> pInfo1; // 0x320 (0x700)
+    P32<cModelInfo> pInfo2; // 0x324 (0x704)
     u8 atkHit;            // 0x328 (0x708)  the attack already hit (em34AtkCk)
 };
 

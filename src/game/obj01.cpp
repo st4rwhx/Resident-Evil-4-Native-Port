@@ -59,7 +59,7 @@ void cObj01::move00()
                 }
                 PlWepHitCheck2(0, &pos, &pos, 0x13, 0, 6000.0f);
                 BitOn(pG->flags_5010, 0x20000000);
-                memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &pos, sizeof(Vec));
+                memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &pos, sizeof(Vec));
                 pG->bell_stat = 1;
                 ObjMgr.destroy(this);
                 return;
@@ -79,7 +79,7 @@ void cObj01::move00()
             case 3:
                 BitOn(pG->flags_500C, 0x800000);
                 EstSet(0, -1, &pos, 0, w->estNo0, (u8) w->estPrm0, 0, 0, 0, 0);
-                EstSet((int) this, -1, 0, 0, w->estNo1, (u8) w->estPrm1, 0, 0, (u32) this, 0);
+                EstSet((int)(uintptr_t)(this), -1, 0, 0, w->estNo1, (u8) w->estPrm1, 0, 0, (u32)(uintptr_t)(this), 0);
                 SndCall(6, 0, &pos, 0, 0, 0);
                 if (w->type == 2) {
                     dmgSet(4);
@@ -285,7 +285,7 @@ int obj01AddSpeed(cObj01* obj)
         case 3:
             obj->dmgSet(4);
             EstSet(0, -1, &obj->pos, 0, w->estNo0, (u8) w->estPrm0, 0, 0, 0, 0);
-            EstSet((int) obj, -1, 0, 0, w->estNo1, (u8) w->estPrm1, 0, 0, (u32) obj, 0);
+            EstSet((int)(uintptr_t)(obj), -1, 0, 0, w->estNo1, (u8) w->estPrm1, 0, 0, (u32)(uintptr_t)(obj), 0);
             if (w->type == 3) {
                 SndCall(6, 0, &obj->pos, 0, 0, 0);
             } else {

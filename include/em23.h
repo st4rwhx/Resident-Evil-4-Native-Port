@@ -21,7 +21,7 @@ struct Em23Work {
     u8 pad_28[0x3C - 0x28];
     f32 x3C;              // 0x03C (0x41C)  1e8 at init
     u8 pad_40[0x64 - 0x40];
-    cEm* pCorpse;         // 0x064 (0x444)  the corpse the crow lands on (set by the room)
+    P32<cEm> pCorpse;     // 0x064 (0x444)  the corpse the crow lands on (set by the room)
     f32 dmRotSpd;         // 0x068 (0x448)  R1_Dm_Air: spin per frame
     f32 dmAng;            // 0x06C (0x44C)  R1_Dm_Air: heading the fall speed is applied along
     f32 flyHeight;        // 0x070 (0x450)  height above the player the crow flies at
@@ -29,9 +29,9 @@ struct Em23Work {
     int stateTimer;       // 0x078 (0x458)  Rnd() % 300 + 150 at takeoff
     u8 wing;              // 0x07C (0x45C)  em23SetWing: 1 = spread wing model, 0 = folded, 0xFF = none yet
     u8 pad_7D[3];
-    cCtrl* pCtrl12;       // 0x080 (0x460)  GetCtrlCtrl12()
-    cCtrl* pCtrl11;       // 0x084 (0x464)  GetCtrlCtrl11()
-    cModelInfo* pWingInfo;   // 0x088 (0x468)  the wing model info (em23SetWing)
+    P32<cCtrl> pCtrl12;   // 0x080 (0x460)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x084 (0x464)  GetCtrlCtrl11()
+    P32<cModelInfo> pWingInfo; // 0x088 (0x468)  the wing model info (em23SetWing)
 };
 
 #define EM23_WK(em) ((Em23Work*) &(em)->x3E0)

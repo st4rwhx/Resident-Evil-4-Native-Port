@@ -131,8 +131,8 @@ struct SndSurWork {
     u16 no;          // 0x16
     u32 id;          // 0x18
     Vec pos;         // 0x1C
-    Vec* ppos;       // 0x28  live position (followed while obj is alive)
-    cUnit* obj;      // 0x2C
+    P32<Vec> ppos;   // 0x28  live position (followed while obj is alive)
+    P32<cUnit> obj;  // 0x2C
 };
 
 struct SndEmHist {
@@ -148,17 +148,17 @@ struct SndWork {
     u32 blk_flag[1];         // 0x20  block loaded bits (SND_BIT_*)
     SndPlayWork bgm_work[2]; // 0x24
     SndPlayWork str_work[4]; // 0x44
-    u8* bgm_mram;            // 0x84  BGM MRAM allocation top (dvd.cpp grows it down)
+    P32<u8> bgm_mram;        // 0x84  BGM MRAM allocation top (dvd.cpp grows it down)
     u32 bgm_aram;            // 0x88  BGM ARAM allocation top (grows down)
     u8 bgm_id[2];            // 0x8C
     u16 door_no;             // 0x8E  door SE table loaded
     s32 room_ok;             // 0x90  room sound data initialised
-    struct SeAtHead* se_at;  // 0x94  room "ESE" sound area data (se_at.cpp), NULL when none
-    struct SeAt* se_at_list; // 0x98  its records
-    SndRoomHdr* hdr;         // 0x9C
+    P32<struct SeAtHead> se_at; // 0x94  room "ESE" sound area data (se_at.cpp), NULL when none
+    P32<struct SeAt> se_at_list; // 0x98  its records
+    P32<SndRoomHdr> hdr;     // 0x9C
     SndSurWork sur[48];      // 0xA0
     SndEmHist em_hist[32];   // 0x9A0
-    u8* mram_top;            // 0xAA0  MRAM allocation pointer (dvd.cpp)
+    P32<u8> mram_top;        // 0xAA0  MRAM allocation pointer (dvd.cpp)
     u32 aram_top;            // 0xAA4  ARAM allocation pointer (dvd.cpp)
     u8 em_id[8];             // 0xAA8  enemy id per enemy block (6 used)
     u32 room_bgm[6];         // 0xAB0  [0] current, [1..5] by pG->snd_tbl_no
@@ -206,13 +206,13 @@ u32 SeAtSndCall(int no);
 
 // ARAM / MRAM sound data map (`SndMem`, 0xA0 bytes).
 struct SndMemWork {
-    SndStrFile* str_file[2]; // 0x00
-    u32* bgm_file;           // 0x08  BGM file numbers
-    SndDoorTbl* door_tbl;    // 0x0C
-    SndBgmTbl* bgm_tbl;      // 0x10
-    u8* blk_mram[14];        // 0x14  per block MRAM data address (dvd.cpp fills it)
+    P32<SndStrFile> str_file[2]; // 0x00
+    P32<u32> bgm_file;       // 0x08  BGM file numbers
+    P32<SndDoorTbl> door_tbl; // 0x0C
+    P32<SndBgmTbl> bgm_tbl;  // 0x10
+    P32<u8> blk_mram[14];    // 0x14  per block MRAM data address (dvd.cpp fills it)
     u32 blk_aram[14];        // 0x4C  per block ARAM sample address
-    u8* mram_end;            // 0x84  end of the fixed sound data in MRAM
+    P32<u8> mram_end;        // 0x84  end of the fixed sound data in MRAM
     u32 str_buf[4];          // 0x88  stream buffers
     u32 sub_adr;             // 0x98  sub screen sound data
     u32 sub_end;             // 0x9C
@@ -246,7 +246,7 @@ extern u32 ARAM_FREE_BASE;
 // snd.cpp shows. `pSndRaw` is the same symbol seen as a plain pointer (scalar load, no reloads) for
 // the few functions whose code only matches that way.
 struct SndWorkPtr {
-    SndWork* p;
+    P32<SndWork> p;
     SndWork* operator->() { return p; }
 };
 extern SndWorkPtr pSnd;

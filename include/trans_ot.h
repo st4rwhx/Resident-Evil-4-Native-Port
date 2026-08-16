@@ -9,9 +9,9 @@
 #define OT_MAX 0x17
 
 struct OtData {
-    void* data;              // 0x00  argument of func
-    void (*func)(void*);     // 0x04
-    OtData* next;            // 0x08
+    P32<void> data;          // 0x00  argument of func
+    FnP32<void(*)(void*)> func; // 0x04
+    P32<OtData> next;        // 0x08
     u16 kind;                // 0x0C  OtGetPrevKind() of the entry drawn before the current one
     u8 pad_E[2];
 };
@@ -19,11 +19,11 @@ struct OtData {
 // Allocated (PrimBuff) entry: the list node plus the MakeOtData argument.
 struct OtPrim {
     OtData ot;               // 0x00
-    void* data;              // 0x10
+    P32<void> data;          // 0x10
 };
 
 struct OtWork {
-    OtData* list;  // 0x00  bucket heads (max entries)
+    P32<OtData> list; // 0x00  bucket heads (max entries)
     u16 max;       // 0x04
     u16 prev_kind; // 0x06  kind of the last entry executed
 };

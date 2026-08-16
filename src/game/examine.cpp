@@ -546,7 +546,7 @@ void ItemExamine::idSet()
     switch (mode) {
     case 0:
     case 1:
-        pIdSys->set((void*) (pG->pArc->ofs_78 + (u32) pG->pArc), 0xFF, 0x26, 0x13, 0, 0);
+        pIdSys->set((void*)port_ptr64((pG->pArc->ofs_78 + (u32) pG->pArc)), 0xFF, 0x26, 0x13, 0, 0);
         break;
     case 2:
         pIdSys->set(SS_ARC_PTR(wk->pExam, 7), 0xFF, 0x26, 0x13, 0, 0);
@@ -636,26 +636,26 @@ void ItemExamine::init(u16 id_, cModel* model_, u8 mode_)
         g_rad_x = 0.0f;
     } else {
         arc = pG->pArc;
-        lit = (cLit*) (arc->ofs_58 + (u32) arc);
+        lit = (cLit*)port_ptr64((arc->ofs_58 + (u32)(uintptr_t)(arc)));
         if (info) {
             switch (info->light) {
             case 0:
-                lit = (cLit*) (arc->ofs_58 + (u32) arc);
+                lit = (cLit*)port_ptr64((arc->ofs_58 + (u32)(uintptr_t)(arc)));
                 break;
             case 1:
-                lit = (cLit*) (arc->ofs_5C + (u32) arc);
+                lit = (cLit*)port_ptr64((arc->ofs_5C + (u32)(uintptr_t)(arc)));
                 break;
             case 2:
-                lit = (cLit*) (arc->ofs_60 + (u32) arc);
+                lit = (cLit*)port_ptr64((arc->ofs_60 + (u32)(uintptr_t)(arc)));
                 break;
             case 3:
-                lit = (cLit*) (arc->ofs_64 + (u32) arc);
+                lit = (cLit*)port_ptr64((arc->ofs_64 + (u32)(uintptr_t)(arc)));
                 break;
             case 4:
-                lit = (cLit*) (arc->ofs_68 + (u32) arc);
+                lit = (cLit*)port_ptr64((arc->ofs_68 + (u32)(uintptr_t)(arc)));
                 break;
             default:
-                lit = (cLit*) (pG->pArc->ofs_58 + (u32) pG->pArc);
+                lit = (cLit*)port_ptr64((pG->pArc->ofs_58 + (u32) pG->pArc));
                 break;
             }
         }

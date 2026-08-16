@@ -49,11 +49,11 @@ struct MercSysWork {
     int mode;        // 0x58  character: 0 Leon, 1 Ada, 2 Krauser, 3 HUNK, 4 Wesker (pG->x4FB8 0/2/4/3/5)
     int stage;       // 0x5C  0..3 from the room id (400, 402, 403, 404)
     u32 flags;       // 0x60
-    cObj* smd;       // 0x64  dummy model (SetObjSmd)
+    P32<cObj> smd;   // 0x64  dummy model (SetObjSmd)
     u32 x68;
     u32 strId;       // 0x6C  SndStrReq handle
-    void* x70;       // 0x70  copies of the MercInit block
-    void* smdMot;    // 0x74  MotionSetCore data of the dummy model
+    P32<void> x70;   // 0x70  copies of the MercInit block
+    P32<void> smdMot; // 0x74  MotionSetCore data of the dummy model
     u32 x78;         // 0x78
     int mesStart;    // 0x7C  start message
     int mes[10];     // 0x80  [4]: x4FB8 == 4 message, [5..8]: rank messages, [9]: result end message
@@ -70,8 +70,8 @@ struct MercSysWork {
 struct MercInit {
     Vec pos;         // 0x00  player start position
     Vec rot;         // 0x0C
-    void* x18;       // 0x18
-    void* smdMot;    // 0x1C
+    P32<void> x18;   // 0x18
+    P32<void> smdMot; // 0x1C
     u32 x20;         // 0x20
     int mesStart;    // 0x24
     int mes[10];     // 0x28
@@ -95,11 +95,11 @@ extern MercSysWork MercSysWk;
 // Mercenaries HUD id data (game/mercenaries.cpp `mercId`, 0x64 bytes).
 class MercID {
 public:
-    void* pTex;        // 0x00  id400.dat sub-files
-    void* pIdMain;     // 0x04  type 0x22
-    void* pIdStart;    // 0x08  type 0x2C "mission start"
-    void* pIdTimeUp;   // 0x0C  type 0x2C "time up"
-    void* pData;       // 0x10
+    P32<void> pTex;    // 0x00  id400.dat sub-files
+    P32<void> pIdMain; // 0x04  type 0x22
+    P32<void> pIdStart; // 0x08  type 0x2C "mission start"
+    P32<void> pIdTimeUp; // 0x0C  type 0x2C "time up"
+    P32<void> pData;   // 0x10
     IDSystem idsys;    // 0x14
 
     void init(int num);
@@ -114,12 +114,12 @@ extern MercID mercId;
 // Mercenaries result screen (omk_r1.dat), new'd by MercSysResultMove (0x34 bytes).
 class MercResult {
 public:
-    void* pTex;        // 0x00
-    void* pIdRank[5];  // 0x04  result id data per character
-    void* pIdExtra;    // 0x18  unlock screen
-    void* pIdEnd;      // 0x1C
+    P32<void> pTex;    // 0x00
+    P32<void> pIdRank[5]; // 0x04  result id data per character
+    P32<void> pIdExtra; // 0x18  unlock screen
+    P32<void> pIdEnd;  // 0x1C
     u8 pad_20[0xC];
-    void* pData;       // 0x2C
+    P32<void> pData;   // 0x2C
     s8 step;           // 0x30
     s8 cnt;            // 0x31
     u8 x32;
@@ -133,10 +133,10 @@ public:
 // Assignment Ada result screen (omk_r0.dat).
 class AdaResult {
 public:
-    void* pTex;        // 0x00
-    void* pId;         // 0x04
+    P32<void> pTex;    // 0x00
+    P32<void> pId;     // 0x04
     u8 pad_8[0x24];
-    void* pData;       // 0x2C
+    P32<void> pData;   // 0x2C
     s8 step;           // 0x30
     s8 cnt;            // 0x31
     u8 x32;

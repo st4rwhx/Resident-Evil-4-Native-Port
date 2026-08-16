@@ -22,7 +22,7 @@ struct Espgen01Work {
     u8 pad_48[4];
     u16 parts;         // 0x4C
     u8 pad_4E[2];
-    cModel* model;     // 0x50
+    P32<cModel> model; // 0x50
     u8 partsNo;        // 0x54
     u8 pad_55;
     u16 flags;         // 0x56 bit0: directional, bit1: hide check

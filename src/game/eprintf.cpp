@@ -356,7 +356,7 @@ void EprintfInit()
     req = DvdReadN(name, NULL, 0, 0, 0, 3, __FILE__, __LINE__);
     if (Dvd.ReadCheck(req, NULL, NULL, &addr) >= 0) {
         img = (TEXHeader*) ((u8*) addr + 0x14);
-        GXInitTexObj(&fontTexObj, (void*) ((u32) img->data + (u32) addr), img->width, img->height, img->format, img->wrapS,
+        GXInitTexObj(&fontTexObj, (void*)port_ptr64(((u32) img->data + (u32)(uintptr_t)(addr))), img->width, img->height, img->format, img->wrapS,
                      img->wrapT, 0);
         PSMTXScale(fontTMtx, 1.0f, 256.0f / img->height, 1.0f);
         mess_keep_buffer = (char*) Debug_alloc(MESS_KEEP_SIZE, 1);

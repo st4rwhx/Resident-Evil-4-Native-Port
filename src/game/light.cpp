@@ -21,16 +21,16 @@ extern f32 lod_bias;
 extern u32 aniso;
 
 // pointer to game memory (0x80000000 .. PORT_PTR_MAX)
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
-#define IN_RANGE(p) ((u32) (p) - PORT_PTR_MIN <= PORT_PTR_SPAN)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
+#define IN_RANGE(p) ((u32)(uintptr_t)((p)) - PORT_PTR_MIN <= PORT_PTR_SPAN)
 #define IS_ALIVE(p) (((p)->be_flag & 0x201) == 1)
 
 void funcDelCtrl(cCtrl* c);
 
 // Light control work (cCtrl::work): the electric power path
 struct LightCtrlWork {
-    cLightPathData* pPath;   // 0x00
-    cLightPathData* pPath2;  // 0x04
+    P32<cLightPathData> pPath; // 0x00
+    P32<cLightPathData> pPath2; // 0x04
     u8 idx;                  // 0x08
 };
 
@@ -1039,7 +1039,7 @@ cLightPathData* cLightMgr::getPathPtr(u8 no)
         pLog->err(0, 0, "cLightMgr::getPathPtr() INVALID ID %d.", no);
         return 0;
     }
-    ofs = *(u32*) (no * 4 + (u32) pPath + 4);
+    ofs = *(u32*)port_ptr64((no * 4 + (u32)(uintptr_t)(pPath) + 4));
     if (ofs == 0) {
         return 0;
     }

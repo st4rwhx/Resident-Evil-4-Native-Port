@@ -89,11 +89,11 @@ static void em2f_R1_Die_Normal(cEm2f* em);
 
 // Struct-member view of the player pointer (cam_ctrl.cpp PlayerPtr).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 struct SubCharPtr {
-    cSubChar* p;
+    P32<cSubChar> p;
 };
 #define pSUBS (((SubCharPtr*) &pSUB)->p)
 

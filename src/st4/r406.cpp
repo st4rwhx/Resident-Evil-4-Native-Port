@@ -25,13 +25,13 @@
 // Room 4-06 (D:/Bio4/Prog/r406.cpp): the enemy waves of the mine, the rock wall and a shelf.
 
 struct R406Work {
-    TexRenderMng* tex;   // 0x00
+    P32<TexRenderMng> tex; // 0x00
     cSceObj shelf;       // 0x04
 };
 
 // One-member struct: every store through the work reloads the pointer (setTexRender).
 struct R406WorkPtr {
-    R406Work* p;
+    P32<R406Work> p;
 };
 
 static u8 r406_texTbl[0x20];

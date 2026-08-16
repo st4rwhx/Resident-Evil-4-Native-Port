@@ -2,7 +2,7 @@
 #include "db_log.h"
 
 // pointer to game memory (0x80000000 .. PORT_PTR_MAX)
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 u32 cLightPathHeader::getSize()
 {
@@ -16,7 +16,7 @@ u32 cLightPathHeader::getSize()
         p++;
     }
     p++;
-    return (u32) p - (u32) this;
+    return (u32)(uintptr_t)(p) - (u32)(uintptr_t)(this);
 }
 
 cLightPathData* cLightPathHeader::getPathData(u32 no)
@@ -25,7 +25,7 @@ cLightPathData* cLightPathHeader::getPathData(u32 no)
         pLog->err(0, 0, "cLightPathHeader::getPathData() IDX OVER %d", no);
         return 0;
     }
-    return (cLightPathData*) ((u8*) this + *(u32*) (no * 4 + (u32) this + 4));
+    return (cLightPathData*) ((u8*) this + *(u32*)port_ptr64((no * 4 + (u32)(uintptr_t)(this) + 4)));
 }
 
 u32 cLightPathData::getSize()

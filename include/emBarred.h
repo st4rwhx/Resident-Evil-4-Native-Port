@@ -18,12 +18,12 @@ struct EmBarredWork {
     Vec pos0;             // 0x214 (0x5F4)  closed position
     f32 openH;            // 0x220 (0x600)  height the gate rises to
     f32 halfW;            // 0x224 (0x604)  half width of the under check
-    cSat* sat;            // 0x228 (0x608)  effect collision quad
-    cSat* sub[4];         // 0x22C (0x60C)  type 6: the four bar pieces
+    P32<cSat> sat;        // 0x228 (0x608)  effect collision quad
+    P32<cSat> sub[4];     // 0x22C (0x60C)  type 6: the four bar pieces
     int status;           // 0x23C (0x61C)  ckStatus: 0 moving, 1 open, 2 closed
     int open;             // 0x240 (0x620)  ckOpen: 1 while opening / open
     u32 sndId;            // 0x244 (0x624)  SndCall id of the moving sound (SndStop)
-    cEmBarred* pDouble;   // 0x248 (0x628)  the other gate of a pair (setDouble): opens / closes with this one
+    P32<cEmBarred> pDouble; // 0x248 (0x628)  the other gate of a pair (setDouble): opens / closes with this one
     u8 lockMode;          // 0x24C (0x62C)  setLockMode: 1 = the player cannot open it
     u8 eff;               // 0x24D (0x62D)  setEff: effect owner id, 0xFF = none
     u8 flagNo;            // 0x24E (0x62E)  etc flag number (bit0 broken, bit1 open)

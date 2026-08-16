@@ -19,7 +19,7 @@ void slideTplAddr(void* tpl, int ofs);
 // Scroll object id -> name table (unused in this build; keeps the strings and the table).
 struct ScrIdRef {
     u8 type;
-    const char* name;
+    P32<const char> name;
 };
 
 static u32 DmyZeroTpl[3] = {0x0020AF30, 0, 0x0000000C};
@@ -95,7 +95,7 @@ void SmdClear(int mode)
         for (i = 0; i < 250; i++) {
             // index-first integer address: the store through the plain pointer may alias the
             // scalar `scrObjTbl`, which is reloaded every iteration in the target.
-            cObj** p = (cObj**) (i * sizeof(cObj*) + (u32) scrObjTbl);
+            cObj** p = (cObj**) (i * sizeof(cObj*) + (u32)(uintptr_t)(scrObjTbl));
             if (*p != NULL && (*p)->blk != -1) {
                 *p = NULL;
             }
@@ -302,7 +302,7 @@ void smxInit(cObj* obj, SmxWork* w)
         pLog->err(0, 0, "SmdInit() SMX WORK NUM ERR %d", w->id);
         return;
     }
-    if ((u32) obj < PORT_PTR_MIN || (u32) obj > PORT_PTR_MAX || (obj->be_flag & 0x201) != 1) {
+    if ((u32)(uintptr_t)(obj) < PORT_PTR_MIN || (u32)(uintptr_t)(obj) > PORT_PTR_MAX || (obj->be_flag & 0x201) != 1) {
         pLog->err(0, 0, "SmdInit() SMX UNUSED cObj SELECT %d", w->id);
         return;
     }
@@ -370,7 +370,7 @@ cObj* SmdGetObjPtr(u32 id)
         id = 0;
     }
     obj = scrObjTbl[id];
-    if ((u32) obj < PORT_PTR_MIN || (u32) obj > PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(obj) < PORT_PTR_MIN || (u32)(uintptr_t)(obj) > PORT_PTR_MAX) {
         if (pG->flags_60 & 0x80000000) {
             if (!(pG->flags_60 & 0x2000000)) {
                 return NULL;
@@ -442,7 +442,7 @@ void cSmd::slide(int ofs)
     u32 addr;
     int i;
 
-    if ((u32) w < PORT_PTR_MIN || (u32) w > PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(w) < PORT_PTR_MIN || (u32)(uintptr_t)(w) > PORT_PTR_MAX) {
         pLog->err(0, 0, "cSmd::slide(%d) PTR ERROR", ofs);
         return;
     }
@@ -454,9 +454,9 @@ void cSmd::slide(int ofs)
     {
         // An integer base (not a pointer) ranks below the hoisted PORT_PTR_SPAN constant in the
         // callee-saved allocation (base r28, constant r29).
-        u32 base = (u32) this + ofsBin;
+        u32 base = (u32)(uintptr_t)(this) + ofsBin;
         for (i = 0; i < nBin; i++) {
-            addr = base + ((u32*) base)[i];
+            addr = base + ((u32*)port_ptr64(base))[i];
             if (addr < PORT_PTR_MIN || addr > PORT_PTR_MAX) {
                 pLog->err(0, 0, "cSmd::slide() PTR ERR %08X", addr);
                 return;
@@ -550,7 +550,7 @@ cObj* SmdGetGroupObjPtr(u32 id)
         id = 0;
     }
     obj = scrObjTbl[id];
-    if ((u32) obj < PORT_PTR_MIN || (u32) obj > PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(obj) < PORT_PTR_MIN || (u32)(uintptr_t)(obj) > PORT_PTR_MAX) {
         if (pG->flags_60 & 0x80000000) {
             if (!(pG->flags_60 & 0x2000000)) {
                 goto ng;
@@ -590,7 +590,7 @@ void SmdSetTrans(u32 id, int on)
 {
     cObj* obj = SmdGetGroupObjPtr(id);
 
-    if ((u32) obj < PORT_PTR_MIN || (u32) obj > PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(obj) < PORT_PTR_MIN || (u32)(uintptr_t)(obj) > PORT_PTR_MAX) {
         pLog->err(0, 0, "SmdSetTrans() INVALID INDEX %d", id);
         return;
     }

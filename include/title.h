@@ -18,15 +18,15 @@ struct TitleWork {
     u8 pad_D[7];
     int req;          // 0x14  DvdReadN request
     u32 sndId;        // 0x18  SndCall handle of the title BGM
-    struct TitleArc* pDat;  // 0x1C  title.dat (offset table)
+    P32<struct TitleArc> pDat; // 0x1C  title.dat (offset table)
     int cnt;          // 0x20  frame counter (setTime reads its low half)
     int menuNum;      // 0x24  menu entries
     int cursor;       // 0x28
-    IdUnit* menu[5];  // 0x2C  menu id units
+    P32<IdUnit> menu[5]; // 0x2C  menu id units
     int scroll;       // 0x40  1 = the background scroll follows the stick (titleLoop)
     f32 speed;        // 0x44  background scroll speed
     int x48;          // 0x48  1 = the title logo time was pushed forward (debug menu)
-    struct TitleArc* pOmk;  // 0x4C  omk_tX.dat (offset table)
+    P32<struct TitleArc> pOmk; // 0x4C  omk_tX.dat (offset table)
     int omkSize;      // 0x50
     s8 omkCursor;     // 0x54  omake menu: 0 start, 1 back
     s8 omkChar;       // 0x55  mercenaries character select (0..4)
@@ -52,7 +52,7 @@ struct TitleWork {
 struct TitleArc {
     u32 ofs[0x10];
 };
-#define TITLE_ARC_PTR(arc, no) ((void*) ((arc)->ofs[no] + (u32) (arc)))
+#define TITLE_ARC_PTR(arc, no) ((void*)port_ptr64(((arc)->ofs[no] + (u32)(uintptr_t)((arc)))))
 
 extern "C" void Title_task();
 

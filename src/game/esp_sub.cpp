@@ -36,7 +36,7 @@ extern f32 ZFAR;
 // The pulled effect is kept in a one-member struct: the original reloads the pointer from its
 // stack slot after every store through it (a struct-member slot aliases the member stores).
 struct EspPtr {
-    cEsp* p;
+    P32<cEsp> p;
 };
 
 #define ESP_PARTS_SCREEN(esp) ((s8) (esp)->partsNo >= -8 && (s8) (esp)->partsNo <= -3)

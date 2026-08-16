@@ -22,7 +22,7 @@ static inline u32* RsfFlags(u16 room)
 // the word is formed from RsfFlags()' pointer, not from the record pointer.
 static inline u32* RsfFlagWord(u16 room, int no)
 {
-    return (u32*) ((((u32) no >> 5) << 2) + (u32) RsfFlags(room));
+    return (u32*)port_ptr64(((((u32) no >> 5) << 2) + (u32)(uintptr_t)(RsfFlags(room))));
 }
 
 static inline void RsfSet(u16 room, int no)

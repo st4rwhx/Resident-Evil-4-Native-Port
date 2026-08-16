@@ -51,7 +51,7 @@ struct TvibWork {
 
 // The work pointer is a struct member: every store through it reloads the pointer.
 struct TvibWorkPtr {
-    TvibWork* p;
+    P32<TvibWork> p;
 };
 
 static TvibWorkPtr tvib = {0};

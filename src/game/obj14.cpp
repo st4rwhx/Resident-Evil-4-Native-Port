@@ -82,8 +82,8 @@ cObj* SetObjBell(void* bin, void* tpl, Vec* pos, Vec* rot)
     p1.x = 0.0f;
     p1.y = 0.0f;
     p1.z = 0.0f;
-    w->pEmHit = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc),
-                         (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &p0, &p1, 1);
+    w->pEmHit = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)),
+                         (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &p0, &p1, 1);
     if (w->pEmHit) {
         w->pEmHit->setParent(obj, 1, 0);
         YarareInit(w->pEmHit, 0.0f, -650.0f, 0.0f, 300.0f, 50.0f, 1, 1);
@@ -119,7 +119,7 @@ void obj14_R1_Set(cObjBell* obj)
         BitOn(pG->flags_5010, 0x20000000);
         // A byte-pointer destination: the copy is then a plain (non-struct) store and the
         // original reloads pG for the following store, as the target shows.
-        memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &p, sizeof(Vec));
+        memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &p, sizeof(Vec));
         pG->bell_stat = 2;
     }
 }

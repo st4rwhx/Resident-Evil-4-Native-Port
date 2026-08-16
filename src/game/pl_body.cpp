@@ -90,5 +90,5 @@ void cPlBody::initWepHand(u32 hand)
 {
     // Unused; local static consts are still emitted (trailing 0, PI/2, 256 in .rodata).
     static const f32 hand_tbl[3] = {0.0f, PI * 0.5f, 256.0f};
-    pWepHand = (void*) hand;
+    pWepHand = (void*)port_ptr64(hand);
 }

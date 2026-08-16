@@ -20,17 +20,17 @@ struct EmRockWork {
     u8 pad_18[0xC];
     u32 x24;              // 0x024 (0x404)
     int rollWait;         // 0x028 (0x408)  Roll: frames before the floor check starts
-    cEm* pParent;         // 0x02C (0x40C)  model the rock hangs on (setParent)
+    P32<cEm> pParent;     // 0x02C (0x40C)  model the rock hangs on (setParent)
     u32 x30;              // 0x030 (0x410)  pParent at the time of setFall / setThrow
     int partsNo;          // 0x034 (0x414)  parts of pParent
     u32 sndId;            // 0x038 (0x418)  SndCall handle of the always sound
     int timer3;           // 0x03C (0x41C)  Roll: start delay
-    void* mot0;           // 0x040 (0x420)  Drop motions (setDropMot)
-    void* mot1;           // 0x044 (0x424)
-    void* mot2;           // 0x048 (0x428)  player death motion (plemDropDie)
-    void* mot3;           // 0x04C (0x42C)  sub character death motion (subemDropDie)
-    void* mot4;           // 0x050 (0x430)  setDropMot2: player escape motion (plemDropEscape)
-    void* mot5;           // 0x054 (0x434)  player find motion (plemDropFind)
+    P32<void> mot0;       // 0x040 (0x420)  Drop motions (setDropMot)
+    P32<void> mot1;       // 0x044 (0x424)
+    P32<void> mot2;       // 0x048 (0x428)  player death motion (plemDropDie)
+    P32<void> mot3;       // 0x04C (0x42C)  sub character death motion (subemDropDie)
+    P32<void> mot4;       // 0x050 (0x430)  setDropMot2: player escape motion (plemDropEscape)
+    P32<void> mot5;       // 0x054 (0x434)  player find motion (plemDropFind)
     u8 pad_58[0x7C - 0x58];
     Vec spd;              // 0x07C (0x45C)
     u8 seFall[4];         // 0x088 (0x468)  SndCall blk / no / vol of the landing (setSeFall), 0xFF = none
@@ -47,16 +47,16 @@ struct EmRockWork {
     u8 xA1;               // 0x0A1 (0x481)
     u8 pad_A2[2];
     int routeIdx;         // 0x0A4 (0x484)  current EMI route point (type 6) of the rolling rock
-    EmiEntry* pRoute;     // 0x0A8 (0x488)
+    P32<EmiEntry> pRoute; // 0x0A8 (0x488)
     u8 started;           // 0x0AC (0x48C)  Set: the roll started
     u8 xAD;               // 0x0AD (0x48D)  Roll: room 104 flag
     u8 xAE;               // 0x0AE (0x48E)  Drop2 / escape: the player escaped / died
     u8 pad_AF;
     u32 sndId2;           // 0x0B0 (0x490)  Roll: rolling sound handle
-    void* plMot[16];      // 0x0B4 (0x494)  player motions of the roll escape (setPlMotion)
-    struct EmAtkInfo* pAtk;  // 0x0F4 (0x4D4)  attack parameters of the flying rock (emRockAtkCk)
+    P32<void> plMot[16];  // 0x0B4 (0x494)  player motions of the roll escape (setPlMotion)
+    P32<struct EmAtkInfo> pAtk; // 0x0F4 (0x4D4)  attack parameters of the flying rock (emRockAtkCk)
     u8 pad_F8[0x1FC - 0xF8];
-    class cSat* pSat;     // 0x1FC (0x5DC)  scenario piece of the room 11E rock (emRockSatSet)
+    P32<class cSat> pSat; // 0x1FC (0x5DC)  scenario piece of the room 11E rock (emRockSatSet)
 };
 
 #define EMROCK_WK(em) ((EmRockWork*) &(em)->x3E0)

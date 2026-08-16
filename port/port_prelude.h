@@ -32,6 +32,7 @@ static inline void PORT_SETCOLW(void* p, unsigned int v)
 }
 
 #include "disc_ptr.h"
+#include "ptr32.h"   // N7 (17/11) : P32<T> / FnP32<F>, champs pointeurs de 4 octets en 32 et 64 bits
 
 #ifdef __cplusplus
 extern "C" {

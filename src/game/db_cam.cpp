@@ -566,8 +566,8 @@ void debugCamera::menu(Camera* cam, JOY* joy)
                 u32 wy = campos.w[1];
                 u32 wz = campos.w[2];
                 *(u32*) d0 = wx;
-                *(u32*) ((u32) d0 + 4) = wy;
-                *(u32*) ((u32) d0 + 8) = wz;
+                *(u32*)port_ptr64(((u32)(uintptr_t)(d0) + 4)) = wy;
+                *(u32*)port_ptr64(((u32)(uintptr_t)(d0) + 8)) = wz;
                 // COMPILER-DIFF: candidate (sched2 tie: the target issues `lwz r0,4(r9)` before
                 // `lwz r8,8(r9)`; both loads have priority 29 and 13 dependents at sched2 and the
                 // LUID tie goes to z, which sched1 issues first because it kills the campos base).

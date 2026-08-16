@@ -26,14 +26,14 @@
 // and the enemy waves.
 
 struct R40dWork {
-    cEmBarred* door[2];   // 0x00
+    P32<cEmBarred> door[2]; // 0x00
     int eff[3];           // 0x08  EspPullCoreKind ids: the two door effects and the terminal one
-    ScePrim* se;          // 0x14  the terminal sound task
+    P32<ScePrim> se;      // 0x14  the terminal sound task
 };
 
 // One-member struct: every store through the work reloads the pointer.
 struct R40dWorkPtr {
-    R40dWork* p;
+    P32<R40dWork> p;
 };
 
 static R40dWorkPtr r40d_work;

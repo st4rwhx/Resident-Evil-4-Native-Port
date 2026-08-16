@@ -75,7 +75,7 @@ static inline void EmRoutineSet(cEm* em, int r0, int r1, int r2, int r3)
 // Struct-member view of the player pointer: a load through it is not hoisted above the preceding
 // stores of a stack copy (cam_ctrl.cpp PlayerPtr).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

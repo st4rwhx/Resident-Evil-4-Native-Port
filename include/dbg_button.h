@@ -16,7 +16,7 @@ public:
     u32 y;        // 0x04  text row
     int cx;       // 0x08  cursor cell
     int cy;       // 0x0C
-    char* name;   // 0x10  (allocated; freed by the destructor)
+    P32<char> name; // 0x10  (allocated; freed by the destructor)
     u32 w;        // 0x14  width in characters
     // 0x18 vptr
 
@@ -70,7 +70,7 @@ public:
 class cDbgButton : public cDbgButtonBase {
 public:
     int x1C;
-    void (*func)(cDbgButton* b);  // 0x20  called by cDbgWindow::ButtonAllUpdate when set
+    FnP32<void(*)(cDbgButton* b)> func; // 0x20  called by cDbgWindow::ButtonAllUpdate when set
 
     virtual ~cDbgButton() {}
 };

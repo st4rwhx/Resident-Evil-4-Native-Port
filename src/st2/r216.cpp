@@ -28,8 +28,8 @@ public:
     u8 mode;         // 0x00  state: 0 wait, 1 open, 2 close (index into r216_pole_tbl)
     u8 step;         // 0x01
     u8 no;           // 0x02
-    cModel* obj[3];  // 0x04
-    cEmWrap* em;     // 0x10  the armor on the pole (turned with it), NULL once in place
+    P32<cModel> obj[3]; // 0x04
+    P32<cEmWrap> em; // 0x10  the armor on the pole (turned with it), NULL once in place
     u32 x14;
     u32 x18;
     u32 x1C;
@@ -57,7 +57,7 @@ class cR216Door {
 public:
     u8 mode;         // 0x00  0 wait, 1 open, 2 close (index into r216_door_tbl)
     u8 step;         // 0x01
-    cModel* obj;     // 0x04
+    P32<cModel> obj; // 0x04
     Vec basePos;     // 0x08
     f32 height;      // 0x14
     f32 spd;         // 0x18
@@ -88,12 +88,12 @@ struct R216Work {
     R216Em armor[4];     // 0x090  the display armors (0xE5..0xE8)
     cR216Door door;      // 0x0D0
     cR216Pole pole[3];   // 0x0FC
-    ScePrim* prim;       // 0x198  r216_ArmorAppearCamera task
+    P32<ScePrim> prim;   // 0x198  r216_ArmorAppearCamera task
 };
 
 // One-member struct: every store through the work reloads the pointer.
 struct R216WorkPtr {
-    R216Work* p;
+    P32<R216Work> p;
 };
 
 static R216WorkPtr r216_work;

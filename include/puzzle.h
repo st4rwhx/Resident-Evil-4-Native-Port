@@ -30,7 +30,7 @@ class pzlPiece {
 public:
     u8 flags;         // 0x00  bit0 in use
     u8 pad_1[3];
-    PieceData* data;  // 0x04
+    P32<PieceData> data; // 0x04
     u32 x8;           // 0x08
     f32 cx;           // 0x0C  rotated centre offset
     f32 cy;           // 0x10
@@ -40,8 +40,8 @@ public:
     s8 orient;        // 0x20  0..3 rotations, 4..7 mirrored
     u8 state;         // 0x21  1 = on a board, 2 = in hand
     u8 pad_22[2];
-    ItemWork* item;   // 0x24
-    cModel* model;    // 0x28
+    P32<ItemWork> item; // 0x24
+    P32<cModel> model; // 0x28
 
     void orientation(int o);
     void rotate(int dir);
@@ -57,12 +57,12 @@ public:
 
 class pzlBoard {
 public:
-    u8* cells;        // 0x00  w * h state bytes (bit0 occupied, bit1 inside, bit6 wall)
+    P32<u8> cells;    // 0x00  w * h state bytes (bit0 occupied, bit1 inside, bit6 wall)
     s8 w;             // 0x04
     s8 h;             // 0x05
     u8 pieceMax;      // 0x06
     u8 pad_7;
-    pzlPiece** pieces;// 0x08
+    P32<P32<pzlPiece>> pieces; // 0x08
     Mtx mat;          // 0x0C  board -> world matrix (Sscrn ss_pzzl caseModelMove)
     s8 curX;          // 0x3C  cursor
     s8 curY;          // 0x3D
@@ -87,23 +87,23 @@ public:
 
 class pzlPlayer {
 public:
-    pzlBoard* caseBoard;   // 0x00
-    pzlBoard* spaceBoard;  // 0x04
-    pzlPiece* pieces;      // 0x08
+    P32<pzlBoard> caseBoard; // 0x00
+    P32<pzlBoard> spaceBoard; // 0x04
+    P32<pzlPiece> pieces;  // 0x08
     u8 pieceNum_;          // 0x0C
     u8 pad_D[3];
-    pzlPiece* hand;        // 0x10
-    pzlPiece* extra;       // 0x14
+    P32<pzlPiece> hand;    // 0x10
+    P32<pzlPiece> extra;   // 0x14
     f32 handX;             // 0x18
     f32 handY;             // 0x1C
     s8 handOrient;         // 0x20
     u8 pad_21[3];
-    pzlBoard* handBoard;   // 0x24
-    pzlBoard* saveBoard;   // 0x28
+    P32<pzlBoard> handBoard; // 0x24
+    P32<pzlBoard> saveBoard; // 0x28
     s8 saveX;              // 0x2C
     s8 saveY;              // 0x2D
     u8 pad_2E[2];
-    pzlBoard* cur;         // 0x30
+    P32<pzlBoard> cur;     // 0x30
 
     int init(int type);
     void quit();

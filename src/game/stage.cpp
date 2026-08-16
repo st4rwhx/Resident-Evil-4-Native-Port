@@ -318,7 +318,7 @@ void subMissionSt1()
             count++;
         }
         if (pG->x4 != 0) {
-            if (G_ROOM_ID == ((SubMissionTarget*) ((u32) t0 + ofs))->room1 && !(*p1 & 1)) {
+            if (G_ROOM_ID == ((SubMissionTarget*)port_ptr64(((u32)(uintptr_t)(t0) + ofs)))->room1 && !(*p1 & 1)) {
                 if (getRoomEtcItem(t->no, &item, 1)) {
                     item->flags &= ~2;
                     pCoin = item;
@@ -352,7 +352,7 @@ void subMissionSt1()
         int base = 0;
 
         IdSys.kill(0xFF, 0x33);
-        IdSys.set((void*) (pG->pArc->ofs_9C + (u32) pG->pArc), 0xFF, 0x33, 0x13, 5, 0);
+        IdSys.set((void*)port_ptr64((pG->pArc->ofs_9C + (u32) pG->pArc)), 0xFF, 0x33, 0x13, 5, 0);
         u = IdSys.unitPtr(0, 0x33);
         if (pCoin != NULL) {
             pos = pCoin->pos;

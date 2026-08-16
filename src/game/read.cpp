@@ -38,7 +38,7 @@ extern void* EmInitFunc;                  // game/em.cpp (set by the enemy dll p
 // The store into EmInitFunc in EmReadSearch keeps the following m->pArc load below it: the
 // original wrote it as a struct member (scalar-vs-struct alias heuristic), like pLog/pGS.
 struct EmInitFuncPtr {
-    void* p;
+    P32<void> p;
 };
 #define EM_INIT_FUNC (((EmInitFuncPtr*) &EmInitFunc)->p)
 
@@ -150,7 +150,7 @@ ReadModule WepReadModule __attribute__((aligned(32)));
 #define WEP_DATA_MAX 0x70000
 #define DLL_BSS_MAX 0x80
 
-#define ARC_PTR(field) ((void*) (pG->pArc->field + (u32) pG->pArc))
+#define ARC_PTR(field) ((void*)port_ptr64((pG->pArc->field + (u32) pG->pArc)))
 
 // Pointer store through a reference: the original reloads pG after every pG->pXxx = ... store.
 static inline void PSet(void*& d, void* v) { d = v; }
@@ -173,7 +173,7 @@ static void decodeData()
     char buf[64];
     u32 used;
 
-    out_data_size = Yz2DecodeSet((char*) in_data_addr, (void*) (MemGetHeapEndAddr(MemGetCurrentHeap()) - READ_BUFF_OFS));
+    out_data_size = Yz2DecodeSet((char*) in_data_addr, (void*)port_ptr64((MemGetHeapEndAddr(MemGetCurrentHeap()) - READ_BUFF_OFS)));
 #ifdef RE4_PORT
     port_room_real_size = out_data_size;
 #endif
@@ -186,7 +186,7 @@ static void decodeData()
     }
 #line 71 "D:/Bio4/Prog/read.cpp"
     PSet(pG->pRoomArc, MEM_ALLOC(out_data_size, 1, 0xD));
-    if (pG->pRoomArc == NULL || (u32) pG->pRoomArc + out_data_size >= (u32) in_data_addr) {
+    if (pG->pRoomArc == NULL || (u32) pG->pRoomArc + out_data_size >= (u32)(uintptr_t)(in_data_addr)) {
         sprintf(buf, "r%03x.dat", pG->room_id);
         OSReport("-- %s DATA ENCODE ERROR!\n", buf);
         OSReport("-- %s DATA TOO LARGE!\n", buf);
@@ -497,7 +497,7 @@ int readEmData(ReadModule* m, int id, void* addr, u32 size)
     len = info.size[0][0];
     if (addr == NULL) {
         m->flag |= 4;
-        pArc = (void*) info.addr[0][0];
+        pArc = (void*)port_ptr64(info.addr[0][0]);
         if (len < size) {
             void* old = pArc;
             newSize = size;
@@ -516,8 +516,8 @@ int readEmData(ReadModule* m, int id, void* addr, u32 size)
         newSize = len;
     }
     if (e->dll != 0) {
-        pModule = (void*) (*(u32*) ((u8*) pArc + 4) + (u32) pArc);
-        dataSize = (u32) pModule - (u32) pArc;
+        pModule = (void*)port_ptr64((*(u32*) ((u8*) pArc + 4) + (u32)(uintptr_t)(pArc)));
+        dataSize = (u32)(uintptr_t)(pModule) - (u32)(uintptr_t)(pArc);
         bssSize = len - dataSize;
         if (addr == NULL && dataSize < size) {
             void* old = pModule;
@@ -745,8 +745,8 @@ void ReadPlayerData(int type, int costume)
     if (dll != 0) {
         ReleasePlData();
         pArc = (void*) PL_DATA_ADDR;
-        pModule = (OSModuleHeader*) (*(u32*) (data + 4) + (u32) data);
-        dataSize = (u32) pModule - (u32) data;
+        pModule = (OSModuleHeader*)port_ptr64((*(u32*) (data + 4) + (u32)(uintptr_t)(data)));
+        dataSize = (u32)(uintptr_t)(pModule) - (u32)(uintptr_t)(data);
         bssSize = size - dataSize;
         size = dataSize;
         if (!BitChk16(PlReadModule.flag, 2)) {
@@ -1000,9 +1000,9 @@ void ReadWepData(u32 no, u32 type)
 #line 1560 "D:/Bio4/Prog/read.cpp"
         HALT();
     }
-    pG->pWepArc = (void*) info.addr[0][0];
-    pModule = (OSModuleHeader*) (*(u32*) (data + 4) + (u32) data);
-    size = (u32) pModule - (u32) data;
+    pG->pWepArc = (void*)port_ptr64(info.addr[0][0]);
+    pModule = (OSModuleHeader*)port_ptr64((*(u32*) (data + 4) + (u32)(uintptr_t)(data)));
+    size = (u32)(uintptr_t)(pModule) - (u32)(uintptr_t)(data);
     bssSize = total - size;
     if (!BitChk16(WepReadModule.flag, 2)) {
         bss = NULL;
@@ -1068,9 +1068,9 @@ void* GetDataExt(void* arc, const char* tag, int no)
         if (p[0] == tag[0] && p[1] == tag[1] && p[2] == tag[2]) {
             if (cnt == no) {
 #ifdef RE4_PORT
-                port_arc_access(arc, tag, no, (void*) (*(u32*) (i * 4 + (u32) arc + 0x10) + (u32) arc));
+                port_arc_access(arc, tag, no, (void*)port_ptr64((*(u32*)port_ptr64((i * 4 + (u32)(uintptr_t)(arc) + 0x10)) + (u32)(uintptr_t)(arc))));
 #endif
-                return (void*) (*(u32*) (i * 4 + (u32) arc + 0x10) + (u32) arc);
+                return (void*)port_ptr64((*(u32*)port_ptr64((i * 4 + (u32)(uintptr_t)(arc) + 0x10)) + (u32)(uintptr_t)(arc)));
             }
             cnt++;
         }

@@ -50,16 +50,16 @@ extern "C" void EventCarInit(Event* e);  // st1_0/r120.cpp
 void cEmDoorSetCloseLock(cEm* door) asm("setCloseLock__7cEmDoori");
 
 struct R100Work {
-    TexRenderMng* tex;    // 0x00  the pond render target (setTexRender)
-    cEm* em;              // 0x04  the s03 Ganado (enemy list entry set up by hand)
-    cEm* ems[7];          // 0x08  the ambush after s03 (r100_em_set)
-    cEm* emHouse;         // 0x24  the Ganado of the house event
-    cObj* car;            // 0x28  the police car
-    cObj* carSub;         // 0x2C  the car's second model
-    cObj* cop[2];         // 0x30  the two officers in the car (motion models)
-    cObj* smd;            // 0x38  the region-specific object
+    P32<TexRenderMng> tex; // 0x00  the pond render target (setTexRender)
+    P32<cEm> em;          // 0x04  the s03 Ganado (enemy list entry set up by hand)
+    P32<cEm> ems[7];      // 0x08  the ambush after s03 (r100_em_set)
+    P32<cEm> emHouse;     // 0x24  the Ganado of the house event
+    P32<cObj> car;        // 0x28  the police car
+    P32<cObj> carSub;     // 0x2C  the car's second model
+    P32<cObj> cop[2];     // 0x30  the two officers in the car (motion models)
+    P32<cObj> smd;        // 0x38  the region-specific object
     u8 pad_3C[4];
-    cDataUnit* evt[10];   // 0x40  evd/r100sXX.evd data units (r100_evtName)
+    P32<cDataUnit> evt[10]; // 0x40  evd/r100sXX.evd data units (r100_evtName)
     u8 pad_68[0x80 - 0x68];
     u32 cnt;              // 0x80  frames until the officers go back to their idle motion
     u32 se;               // 0x84  SndCall handle of the officers' line
@@ -67,7 +67,7 @@ struct R100Work {
 
 // One-member struct: every store into the work reloads the pointer afterwards.
 struct R100WorkPtr {
-    R100Work* p;
+    P32<R100Work> p;
 };
 static u8 r100_texTbl[0x20];
 static R100WorkPtr r100_work;
@@ -120,7 +120,7 @@ static void r100_mes_gaikotu_bgm_up();
 class R100Em : public cModel {
 public:
     u8 pad_320[0x378 - 0x320];
-    PlArc* subArc;        // 0x378
+    P32<PlArc> subArc;    // 0x378
     u8 pad_37C[0x3E0 - 0x37C];
 
     R100Em() asm("__3cEm");

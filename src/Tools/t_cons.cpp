@@ -24,7 +24,7 @@ struct ConsTable {
 };
 
 struct ConsParam {
-    const char* name;
+    P32<const char> name;
     int min;
     int max;
 };
@@ -60,7 +60,7 @@ struct ConsWork {
 static ConsWork consWork;
 // the work pointer is a struct member: every store through it reloads it (LightToolPtr idiom)
 struct ConsWorkPtr {
-    ConsWork* p;
+    P32<ConsWork> p;
 };
 static ConsWorkPtr consWorkPtr;
 #define pCons consWorkPtr.p

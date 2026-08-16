@@ -33,7 +33,7 @@ static void pl_R1_KlauserAttack(cPlayer* pl);
 
 // The tex-render manager pointer is a one-member struct: every store through it reloads it (r10c idiom).
 struct TexRenderMngPtr {
-    TexRenderMng* p;
+    P32<TexRenderMng> p;
 };
 static TexRenderMngPtr pl0aTex;
 static u8 pl0aTexTbl[0x20];

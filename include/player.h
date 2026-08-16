@@ -23,15 +23,15 @@ class cPlayer;
 // enemy with the neck motions blended into the player's motion (cEm::neckMot).
 class cPlNeck {
 public:
-    cPlayer* pl;         // 0x00
-    cEm* target;         // 0x04  enemy looked at
+    P32<cPlayer> pl;     // 0x00
+    P32<cEm> target;     // 0x04  enemy looked at
     int timer;           // 0x08  frames left looking (0x7FFFFFFF: until the target changes)
     u16 flags;           // 0x0C  bit0: the right-turn motion is set
     u8 mode;             // 0x0E  0 off, 1 on, 2 -> 1 next frame (PlSetNeck)
     u8 pad_F;
     f32 ang;             // 0x10  current neck angle
-    void* motL;          // 0x14  left turn motion data
-    void* motR;          // 0x18  right turn motion data
+    P32<void> motL;      // 0x14  left turn motion data
+    P32<void> motR;      // 0x18  right turn motion data
 
     cPlNeck(cPlayer* pl);
     void init(void* motL, void* motR, int frame);   // range-checked pointers (motSet), frame passed on
@@ -59,11 +59,11 @@ public:
 // motion (mot0) blended with mot1 (rate < 0) or mot2 (rate > 0) through MotionWork::blend.
 class cMot3 {
 public:
-    cModel* model;       // 0x00
+    P32<cModel> model;   // 0x00
     f32 rate;            // 0x04  last move() rate, clamped to -1..1
-    void* mot0;          // 0x08
-    void* mot1;          // 0x0C
-    void* mot2;          // 0x10
+    P32<void> mot0;      // 0x08
+    P32<void> mot1;      // 0x0C
+    P32<void> mot2;      // 0x10
     int x14;             // 0x14  set() 7th argument: 1 = the blend work gets flags2 bit31
     MotionWorkSub work;  // 0x18  the blended motion (em.h)
 
@@ -231,8 +231,8 @@ void pl01weaponSet(cPlayer* pl);  // game/pl_ashley.cpp: fills pMotTbl from the 
 struct PlMahoEntry {
     u8 x0;               // 0x00
     u8 x1;               // 0x01
-    void (*func)();      // 0x04
-    const char* code;    // 0x08  button sequence string
+    FnP32<void(*)()> func; // 0x04
+    P32<const char> code; // 0x08  button sequence string
 };
 
 class cPlMaho {

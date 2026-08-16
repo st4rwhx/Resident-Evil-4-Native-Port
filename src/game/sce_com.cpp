@@ -59,7 +59,7 @@ void SubScreenWait(int frames);
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -95,7 +95,7 @@ struct SceItemEvent {
     s16 atNo;             // 0x02  trigger area
     s16 cut;              // 0x04  camera cut (-1 = none)
     s16 item[8];          // 0x06  item areas enabled by the event (-1 = none)
-    void (*func)(int);    // 0x18
+    FnP32<void(*)(int)> func; // 0x18
     int arg;              // 0x1C
 };
 
@@ -571,7 +571,7 @@ void SceSetItemEvent(int atNo, int itemNo, int flagNo, int cut, void (*func)(int
             // and is allocated first (r9, e+6 r11, j*2 r10, e r8 = the target). Also keeps j a
             // pseudo: a hard-reg pin makes combine fold expand_mult's `copy + j` into `slwi` where
             // the target has `add`.
-            j = ((u32) e >> 16) & 0xFFFF0000;
+            j = ((u32)(uintptr_t)(e) >> 16) & 0xFFFF0000;
             if (e->item[0] >= 0) {
                 goto next;
             }
@@ -879,7 +879,7 @@ void SceCamMove(Vec* pos, Vec* at, f32 fovy)
     SceCam.up.z = 0.0f;
     SceCam.dist = vecDist(&SceCam.param.pos, &SceCam.param.at);
     CameraSetOrientationUp(&SceCam);
-    CamCtrl.x250 = (s32) &SceCam;
+    CamCtrl.x250 = (s32)(uintptr_t)(&SceCam);
 }
 
 void OpenBoxMain(int type, int mode, int se, u32 id1, u32 id2, int itemNo)

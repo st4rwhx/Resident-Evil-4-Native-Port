@@ -43,17 +43,17 @@ struct R20cWork {
     int resetIdx[2];      // 0x84  em[] indices of the two enemies the reset task watches
     int resetCnt;         // 0x8C  entries of r20c_resetTbl used so far
     u8 pad_90[4];
-    cSat* sat[1];         // 0x94
-    cSat* eat[1];         // 0x98
-    cEmHit* kaigaHit[2];  // 0x9C
-    cEmHit* hit;          // 0xA4  the shot target that opens the painting
+    P32<cSat> sat[1];     // 0x94
+    P32<cSat> eat[1];     // 0x98
+    P32<cEmHit> kaigaHit[2]; // 0x9C
+    P32<cEmHit> hit;      // 0xA4  the shot target that opens the painting
     f32 cageY;            // 0xA8  cage rest height
     f32 doorY[2];         // 0xAC  door rest heights
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R20cWorkPtr {
-    R20cWork* p;
+    P32<R20cWork> p;
 };
 
 static R20cWorkPtr r20c_work;
@@ -74,7 +74,7 @@ static int r20c_resetTbl[7] = {4, 9, 7, 5, 8, 6, 0};
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);

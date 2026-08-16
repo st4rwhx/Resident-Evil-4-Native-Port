@@ -200,16 +200,16 @@ void cDataUnit::setLoadToMram()
         if (fixAddr == 0) {
             if (arg == 0) {
                 if (DC.dbgHeap == 1) {
-                    dest = (u32) Debug_alloc(size, 1);
+                    dest = (u32)(uintptr_t)(Debug_alloc(size, 1));
                 } else {
 #line 200 "D:/Bio4/Prog/datactrl.cpp"
-                    dest = (u32) MEM_ALLOC(size, 1, 0xD);
+                    dest = (u32)(uintptr_t)(MEM_ALLOC(size, 1, 0xD));
                 }
                 if (dest == 0) {
                     err = 1;
                     return;
                 }
-                setMallocInfo(1, (void*) dest);
+                setMallocInfo(1, (void*)port_ptr64(dest));
             } else {
                 dest = arg;
                 setMallocInfo(0, NULL);
@@ -219,7 +219,7 @@ void cDataUnit::setLoadToMram()
             setMallocInfo(0, NULL);
         }
 #line 222 "D:/Bio4/Prog/datactrl.cpp"
-        no = DvdReadN(name, (void*) dest, 0, 0, 0, wait | 0x10, __FILE__, __LINE__);
+        no = DvdReadN(name, (void*)port_ptr64(dest), 0, 0, 0, wait | 0x10, __FILE__, __LINE__);
         if (pG->dev_mode == 1) {
 #line 226 "D:/Bio4/Prog/datactrl.cpp"
             DC.setDummyId(DvdReadN("dummy.dat", DC.dummyBuf, 0, 0, 0, wait | 0x10, __FILE__, __LINE__));
@@ -242,15 +242,15 @@ void cDataUnit::setLoadToMram()
         if (fixAddr == 0) {
             if (arg != 0 && arg != (u32) addr) {
                 checkMallocRelease();
-                memcpy((void*) arg, addr, size);
-                addr = (void*) arg;
-                DCFlushRange((void*) arg, size);
+                memcpy((void*)port_ptr64(arg), addr, size);
+                addr = (void*)port_ptr64(arg);
+                DCFlushRange((void*)port_ptr64(arg), size);
             }
         } else if (fixAddr != (u32) addr) {
             checkMallocRelease();
-            memcpy((void*) fixAddr, addr, size);
-            addr = (void*) fixAddr;
-            DCFlushRange((void*) arg, size);
+            memcpy((void*)port_ptr64(fixAddr), addr, size);
+            addr = (void*)port_ptr64(fixAddr);
+            DCFlushRange((void*)port_ptr64(arg), size);
         }
         command = 0;
         OSReport("DC:%s set MRAM_TO_MRAM\n", name);
@@ -259,16 +259,16 @@ void cDataUnit::setLoadToMram()
         if (fixAddr == 0) {
             if (arg == 0) {
                 if (DC.dbgHeap == 1) {
-                    dest = (u32) Debug_alloc(size, 1);
+                    dest = (u32)(uintptr_t)(Debug_alloc(size, 1));
                 } else {
 #line 290 "D:/Bio4/Prog/datactrl.cpp"
-                    dest = (u32) MEM_ALLOC(size, 1, 0xD);
+                    dest = (u32)(uintptr_t)(MEM_ALLOC(size, 1, 0xD));
                 }
                 if (dest == 0) {
                     err = 1;
                     return;
                 }
-                setMallocInfo(1, (void*) dest);
+                setMallocInfo(1, (void*)port_ptr64(dest));
             } else {
                 dest = arg;
                 setMallocInfo(0, NULL);
@@ -367,13 +367,13 @@ void cDataUnit::setLoadToAram()
     case 4:
         if (arg != 0 && arg != (u32) addr) {
             if (DC.dbgHeap == 1) {
-                dest = (u32) Debug_alloc(size, 1);
+                dest = (u32)(uintptr_t)(Debug_alloc(size, 1));
             } else {
 #line 452 "D:/Bio4/Prog/datactrl.cpp"
-                dest = (u32) MEM_ALLOC(size, 0, 0xD);
+                dest = (u32)(uintptr_t)(MEM_ALLOC(size, 0, 0xD));
             }
             if (dest != 0) {
-                setMallocInfo(1, (void*) dest);
+                setMallocInfo(1, (void*)port_ptr64(dest));
                 no = Aram.DmaTransReq(1, (u32) addr, dest, size, wait);
                 reqNo = no;
                 if (no >= 0) {
@@ -447,7 +447,7 @@ void cDataUnit::checkLoadToMram()
     ret = Dvd.ReadCheck(reqNo, NULL, NULL, NULL);
     if (ret > 0) {
         condition = 2;
-        addr = (void*) dest;
+        addr = (void*)port_ptr64(dest);
         OSReport("DC:%s check MRAM_OK\n", name);
     } else if (ret < 0) {
         err = 2;
@@ -467,7 +467,7 @@ void cDataUnit::checkLoadToAram()
     ret = Dvd.ReadCheck(reqNo, NULL, NULL, NULL);
     if (ret > 0) {
         condition = 4;
-        addr = (void*) dest;
+        addr = (void*)port_ptr64(dest);
         OSReport("DC:%s check ARAM_OK\n", name);
     } else if (ret < 0) {
         err = 2;
@@ -488,7 +488,7 @@ void cDataUnit::checkAramToMram()
     }
     if (Aram.TransCheck(reqNo) == 1 || done == 1) {
         condition = 2;
-        addr = (void*) dest;
+        addr = (void*)port_ptr64(dest);
         OSReport("DC:%s check MRAM_OK\n", name);
     }
 }
@@ -506,7 +506,7 @@ void cDataUnit::checkMramToAram()
     if (Aram.TransCheck(reqNo) == 1 || done == 1) {
         checkMallocRelease();
         condition = 4;
-        addr = (void*) dest;
+        addr = (void*)port_ptr64(dest);
         OSReport("DC:%s check ARAM_OK\n", name);
     }
 }
@@ -522,7 +522,7 @@ void cDataUnit::checkAramToAram()
         done = 1;
     }
     if (Aram.TransCheck(reqNo) == 1 || done == 1) {
-        addr = (void*) dest;
+        addr = (void*)port_ptr64(dest);
         reqNo = Aram.DmaTransReq(0, dest, arg, size, wait);
         dest = arg;
         if (reqNo >= 0) {

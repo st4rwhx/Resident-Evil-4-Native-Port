@@ -52,16 +52,16 @@ static inline int ExeWindowEventTask(cEmWindow* w) { return w->ExeWindowEvent();
 int ExeWindowEventTask(cEmWindow* w) asm("ExeWindowEvent__9cEmWindow");
 #endif
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 // cPlNeck's checks compile to the folded `addis 0x8000; cmplwi PORT_PTR_SPAN` range form.
-#define VALID_PTR2(p) ((u32) (p) - PORT_PTR_MIN <= PORT_PTR_SPAN)
+#define VALID_PTR2(p) ((u32)(uintptr_t)((p)) - PORT_PTR_MIN <= PORT_PTR_SPAN)
 
 // The original cUnit::beginEvent/endEvent take an int (KNOWN DEBT, cManager.h); view class for
 // the r4 argument (emwindow.cpp BEGIN_EVENT).
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -412,7 +412,7 @@ void fanceOn()
 // Action button: go through the window (its event as a scenario task).
 void windowOn(cEmWindow* w)
 {
-    SceExec(0x12, (TaskFunc) ExeWindowEventTask, (int) w, 2, 2, 0);
+    SceExec(0x12, (TaskFunc) ExeWindowEventTask, (int)(uintptr_t)(w), 2, 2, 0);
     PlFanceFlag = 1;
 }
 
@@ -551,9 +551,9 @@ void jumpFallOn()
 void cPlayer::motionSet(void* m0, void* seq0, void* m1, void* seq1, int hokan, int frame)
 {
     if (dmMotCk()) {
-        MotionSetCore(this, MOTION(this), m0, (int) seq0, hokan, 5, frame);
+        MotionSetCore(this, MOTION(this), m0, (int)(uintptr_t)(seq0), hokan, 5, frame);
     } else {
-        MotionSetCore(this, MOTION(this), m1, (int) seq1, hokan, 5, frame);
+        MotionSetCore(this, MOTION(this), m1, (int)(uintptr_t)(seq1), hokan, 5, frame);
     }
 }
 
@@ -629,49 +629,49 @@ int cPlayer::actionSelect()
     }
     actWallCheck(this);
     if (pPush->catchCheck()) {
-        ActBtn.set(6, 2, (int) holdOn, 0, 0x10, 1, 0, 0);
+        ActBtn.set(6, 2, (int)(uintptr_t)(holdOn), 0, 0x10, 1, 0, 0);
     }
     if (fallCheck_80172E38(this)) {
-        ActBtn.set(4, 2, (int) fallOn, 0, 0, 1, 0, 0);
+        ActBtn.set(4, 2, (int)(uintptr_t)(fallOn), 0, 0, 1, 0, 0);
     }
     if (fanceCheck(this)) {
-        ActBtn.set(5, 2, (int) fanceOn, 0, 0, 1, 0, 0);
+        ActBtn.set(5, 2, (int)(uintptr_t)(fanceOn), 0, 0, 1, 0, 0);
     }
     if (jumpCheck(this)) {
-        ActBtn.set(5, 2, (int) jumpFallOn, 0, 0, 1, 0, 0);
+        ActBtn.set(5, 2, (int)(uintptr_t)(jumpFallOn), 0, 0, 1, 0, 0);
     }
     if (windowCheck(this, &dir, &win)) {
         int broken = win->ChkStatus() & 1;
         if (broken) {
             if (dir == 2) {
-                ActBtn.set(2, 2, (int) windowOn, (int) win, 0, 1, 0, 0);
+                ActBtn.set(2, 2, (int)(uintptr_t)(windowOn), (int)(uintptr_t)(win), 0, 1, 0, 0);
             } else {
-                ActBtn.set(5, 2, (int) fanceOn, 0, 0, 1, 0, 0);
+                ActBtn.set(5, 2, (int)(uintptr_t)(fanceOn), 0, 0, 1, 0, 0);
             }
         } else {
             if (dir == 0) {
-                ActBtn.set(2, 2, (int) windowOn, (int) win, broken, 1, 0, 0);
+                ActBtn.set(2, 2, (int)(uintptr_t)(windowOn), (int)(uintptr_t)(win), broken, 1, 0, 0);
             }
             if (dir == 1) {
-                ActBtn.set(3, 2, (int) windowOn, (int) win, broken, 1, 0, 0);
+                ActBtn.set(3, 2, (int)(uintptr_t)(windowOn), (int)(uintptr_t)(win), broken, 1, 0, 0);
             }
             if (dir == 2) {
-                ActBtn.set(2, 2, (int) windowOn, (int) win, broken, 1, 0, 0);
+                ActBtn.set(2, 2, (int)(uintptr_t)(windowOn), (int)(uintptr_t)(win), broken, 1, 0, 0);
             }
         }
     }
     switch (upDownCk(this)) {
     case 1:
-        ActBtn.set(8, 2, (int) levelUpOn, 0, 0, 1, 0, 0);
+        ActBtn.set(8, 2, (int)(uintptr_t)(levelUpOn), 0, 0, 1, 0, 0);
         break;
     case 2:
-        ActBtn.set(9, 2, (int) levelDownOn, 0, 0, 1, 0, 0);
+        ActBtn.set(9, 2, (int)(uintptr_t)(levelDownOn), 0, 0, 1, 0, 0);
         break;
     case 3:
-        ActBtn.set(8, 2, (int) level2UpOn, 0, 0, 1, 0, 0);
+        ActBtn.set(8, 2, (int)(uintptr_t)(level2UpOn), 0, 0, 1, 0, 0);
         break;
     case 4:
-        ActBtn.set(0x40, 2, (int) level2DownOn, 0, 0, 1, 0, 0);
+        ActBtn.set(0x40, 2, (int)(uintptr_t)(level2DownOn), 0, 0, 1, 0, 0);
         break;
     }
     checkXbutton();

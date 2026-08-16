@@ -298,7 +298,7 @@ void emTorchDmCk(cEmTorch* em)
             SndCall(1, 0x3F, &em->pos, 0, 0, em);
         }
         if (w->eff != 0xFF) {
-            EstSet((int) em, -1, 0, 0, w->eff, 1, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 1, 0, 0, (u32)(uintptr_t)(em), 0);
         }
     }
 }
@@ -314,16 +314,16 @@ void emTorchSetBreak(cEmTorch* em, u32 kind)
         EffectEfmDelete(1, w->estNo, em);
         switch (kind) {
         default:
-            EstSet((int) em, -1, 0, 0, w->eff, 2, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 2, 0, 0, (u32)(uintptr_t)(em), 0);
             break;
         case 0:
-            EstSet((int) em, -1, 0, 0, w->eff, 2, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 2, 0, 0, (u32)(uintptr_t)(em), 0);
             break;
         case 1:
-            EstSet((int) em, -1, 0, 0, w->eff, 2, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 2, 0, 0, (u32)(uintptr_t)(em), 0);
             break;
         case 2:
-            EstSet((int) em, -1, 0, 0, w->eff, 3, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 3, 0, 0, (u32)(uintptr_t)(em), 0);
             break;
         }
     }
@@ -568,7 +568,7 @@ void cEmTorch::setEff(u8 eff)
 
     w->eff = eff;
     if (hp > 0) {
-        EstSet((int) this, -1, 0, 0, w->eff, 0, 1, w->estNo, (u32) this, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, w->eff, 0, 1, w->estNo, (u32)(uintptr_t)(this), 0);
     }
 }
 

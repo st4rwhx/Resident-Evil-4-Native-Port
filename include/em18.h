@@ -16,11 +16,11 @@ struct Em18Work {
     u8 pad_1E0[0x258 - 0x1E0];
     f32 neckAng;          // 0x258 (0x638)  smoothed neck yaw (em18NeckMove)
     PlCloth cloth;        // 0x25C (0x63C)  Em18ClothSet / Em18ClothMove
-    cModelInfo* pHandL;   // 0x2BC (0x69C)  em18HandSet (ARC 0x12)
-    cModelInfo* pHandR;   // 0x2C0 (0x6A0)  em18HandSet (ARC 0x13)
-    cModelInfo* pCloth;   // 0x2C4 (0x6A4)  em18ClothPartsSet
-    cModelInfo* pGoods;   // 0x2C8 (0x6A8)  em18GoodsPartsSet
-    cModelInfo* pInfoE;   // 0x2CC (0x6AC)  extra model (ARC 0xE / 0xF)
+    P32<cModelInfo> pHandL; // 0x2BC (0x69C)  em18HandSet (ARC 0x12)
+    P32<cModelInfo> pHandR; // 0x2C0 (0x6A0)  em18HandSet (ARC 0x13)
+    P32<cModelInfo> pCloth; // 0x2C4 (0x6A4)  em18ClothPartsSet
+    P32<cModelInfo> pGoods; // 0x2C8 (0x6A8)  em18GoodsPartsSet
+    P32<cModelInfo> pInfoE; // 0x2CC (0x6AC)  extra model (ARC 0xE / 0xF)
     u32 sndId;            // 0x2D0 (0x6B0)  SndCall handle of the current voice
 };
 

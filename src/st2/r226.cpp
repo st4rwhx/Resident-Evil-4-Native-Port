@@ -46,9 +46,9 @@ class cObjWep;
 
 struct R226Work {
     u32 x0;                 // 0x000
-    cObjRobo* robo;         // 0x004
-    cSat* sat[4];           // 0x008
-    cSat* eat[4];           // 0x018  effect pieces (passage switch sides, bridge)
+    P32<cObjRobo> robo;     // 0x004
+    P32<cSat> sat[4];       // 0x008
+    P32<cSat> eat[4];       // 0x018  effect pieces (passage switch sides, bridge)
     u32 x28;                // 0x028
     cEmWrap em[22];         // 0x02C
     int hitPoint;           // 0x134  button-mash gauge
@@ -66,7 +66,7 @@ struct R226Work {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R226WorkPtr {
-    R226Work* p;
+    P32<R226Work> p;
 };
 
 // sce_com.cpp SceElevatorData

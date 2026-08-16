@@ -10,7 +10,7 @@ struct EmWindowWork {
     u8 pad_0[0x25C];
     u8 eff;               // 0x25C (0x63C)  EmObjWork::eff
     u8 pad_25D[3];
-    void* arc;            // 0x260 (0x640)  room etc archive (GetEtcAddr source of the break model / fcv)
+    P32<void> arc;        // 0x260 (0x640)  room etc archive (GetEtcAddr source of the break model / fcv)
     u32 etcFlag[3];       // 0x264 (0x644)  bit array (bit0 = damage disabled, bit1/2 = fence kind 1/2 disabled, bit3 = broken)
     int fieldAt[2];       // 0x270 (0x650)  SceAtCreateFieldAt ids (-1 = none)
     u8 pad_278[0x2A8 - 0x278];

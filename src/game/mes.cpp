@@ -184,7 +184,7 @@ void MessageFont::create(int w, int h, TEXPalette* tpl, u8* width)
 
     pTpl = tpl;
     if ((s32) tpl->descriptorArray >= 0) {
-        tpl->descriptorArray = (TEXDescriptor*) ((u32) tpl->descriptorArray + (u32) tpl);
+        tpl->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) tpl->descriptorArray + (u32)(uintptr_t)(tpl)));
         d = tpl->descriptorArray;
         for (i = 0; i < tpl->numDescriptors; i++, d++) {
             d->textureHeader = (TEXHeader*) ((u8*) tpl + (u32) d->textureHeader);
@@ -435,10 +435,10 @@ void MessageControl::init()
     // Les tables sont dans etc/core.das, deja en memoire a ce stade : il n'y a rien a attendre.
     // gameInit() refera exactement les memes affectations plus tard, sans effet de bord.
     if (pG != NULL && pG->pArc != NULL) {
-        MesData.setPtr(0, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
-        MesData.setPtr(1, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
-        MesData.setPtr(2, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
-        MesData.setPtr(3, (u8*) (pG->pArc->ofs_54 + (u32) pG->pArc));
+        MesData.setPtr(0, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
+        MesData.setPtr(1, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
+        MesData.setPtr(2, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
+        MesData.setPtr(3, (u8*)port_ptr64((pG->pArc->ofs_54 + (u32) pG->pArc)));
     }
 #endif
     x11F8 = 0;
@@ -455,10 +455,10 @@ void MessageControl::init()
 
 void MessageControl::gameInit()
 {
-    MesData.setPtr(0, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
-    MesData.setPtr(1, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
-    MesData.setPtr(2, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
-    MesData.setPtr(3, (u8*) (pG->pArc->ofs_54 + (u32) pG->pArc));
+    MesData.setPtr(0, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
+    MesData.setPtr(1, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
+    MesData.setPtr(2, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
+    MesData.setPtr(3, (u8*)port_ptr64((pG->pArc->ofs_54 + (u32) pG->pArc)));
     pG->x1C = 1;
     loadCommonFont();
     setLanguage(pSys->language);
@@ -473,7 +473,7 @@ void MessageControl::roomInit()
     for (i = 0; i < 16; i++) {
         Delete(i);
     }
-    MesData.setPtr(0, (u8*) (pG->pArc->ofs_28 + (u32) pG->pArc));
+    MesData.setPtr(0, (u8*)port_ptr64((pG->pArc->ofs_28 + (u32) pG->pArc)));
     MesData.setPtr(1, (u8*) pG->pRoomMes);
     setLayout(0, 0);
     if (checkState(1)) {

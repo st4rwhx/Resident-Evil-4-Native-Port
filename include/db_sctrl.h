@@ -33,7 +33,7 @@ struct DbSctrlWork {
     f32 scaleX;      // 0x48  Scale menu factors
     f32 scaleY;      // 0x4C
     Mtx mtx;         // 0x50  screen -> world (the camera matrix moved in front of the camera)
-    Hermite1* curve; // 0x80
+    P32<Hermite1> curve; // 0x80
     s8 grab;         // 0x84  grabbed key, -1 = none
     s8 insertIdx;    // 0x85  insertion index found on the curve, -1 = none
     u8 pad_86[2];

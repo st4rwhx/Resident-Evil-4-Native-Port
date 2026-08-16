@@ -34,7 +34,7 @@ struct Em2dWork {
     Vec routePos;         // 0x350 (0x730)  RouteCkToPos result towards the player
     u8 pad_35C[0xC];
     Vec targetPos;        // 0x368 (0x748)  chosen target position
-    cPlayer* pTarget;     // 0x374 (0x754)
+    P32<cPlayer> pTarget; // 0x374 (0x754)
     f32 jumpAng;          // 0x378 (0x758)  yaw the jump-down / wall-over turns to (Muku2)
     Vec homePos;          // 0x37C (0x75C)  position the enemy returns to (em2dInitRtnSet)
     Vec startPos;         // 0x388 (0x768)  pos at init
@@ -65,8 +65,8 @@ struct Em2dWork {
     int x50C;             // 0x50C (0x8EC)
     u32 sndId;            // 0x510 (0x8F0)  poison SE handle
     f32 waterH;           // 0x514 (0x8F4)  water height (-99999 below the floor when none)
-    cCtrl* pCtrl12;       // 0x518 (0x8F8)  GetCtrlCtrl12()
-    cCtrl* pCtrl11;       // 0x51C (0x8FC)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl12;   // 0x518 (0x8F8)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x51C (0x8FC)  GetCtrlCtrl11()
     Vec wallTarget;       // 0x520 (0x900)  em2d_R1_W_Walk: point the wall walk turns to
     u8 kickSide;          // 0x52C (0x90C)  Rnd() & 1 (action button variant)
     u8 atkHit;            // 0x52D (0x90D)  the attack hit (em2dAtkCk)

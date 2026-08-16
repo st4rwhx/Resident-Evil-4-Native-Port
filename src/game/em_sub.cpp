@@ -59,9 +59,9 @@ public:
 
 // Entry `n` of a target list written index first: the sum is formed with the index as the base
 // register (`add r9, r9, r31` / `stwx r29, r9, r31`) instead of the pointer.
-#define WEP_LIST(n) ((WepTarget*) ((n) * sizeof(WepTarget) + (u32) list))
+#define WEP_LIST(n) ((WepTarget*) ((n) * sizeof(WepTarget) + (u32)(uintptr_t)(list)))
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 // Position offset by the trolley / bulldozer movement (adjust_add_set / VehicleAdjust).
 static Vec adjust_add = {0.0f, 0.0f, 0.0f};
@@ -108,7 +108,7 @@ static inline void MaskAnd16(u16& f, u16 mask)
 // Struct-member view of pPL (the pGS trick, global.h): loads through it stay after preceding
 // stores through other pointers instead of being shared across them.
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

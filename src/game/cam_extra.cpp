@@ -236,7 +236,7 @@ void FocusAnimation::clear()
     }
 
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 CameraScope::CameraScope(Vec* pos, Vec* at)

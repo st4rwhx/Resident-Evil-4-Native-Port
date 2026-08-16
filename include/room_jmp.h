@@ -25,16 +25,16 @@ struct CRoomInfo {
     };
     Vec pos;        // 0x04
     f32 angle;      // 0x10
-    char* name;     // 0x14
-    char* scr;      // 0x18
-    char* soft;     // 0x1C
+    P32<char> name; // 0x14
+    P32<char> scr;  // 0x18
+    P32<char> soft; // 0x1C
 
     void setNextPos();
 };
 
 class cRoomJmp {
 public:
-    u32* tbl;  // 0x00
+    P32<u32> tbl; // 0x00
 
     cRoomJmp(void* tbl);
     s8 getIndexNum(s8 stage);

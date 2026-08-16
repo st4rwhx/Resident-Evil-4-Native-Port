@@ -59,7 +59,7 @@ char* strncpy(char* dst, const char* src, unsigned int n);
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -75,7 +75,7 @@ public:
 // Struct-member view of the cModel manager pointers: a plain scalar store lets the scheduler hoist
 // the following pG load above it (the read.cpp EmInitFunc trick).
 struct MgrPtr {
-    void* p;
+    P32<void> p;
 };
 #define MGR_PTR(g) (((MgrPtr*) &(g))->p)
 
@@ -480,10 +480,10 @@ void SubScreenExec()
             MemSetCurrentHeap(12);
             if (wk->relAddr >= 0) {
                 wk->relAddr = wk->relOfs + (u32) wk->pBuf;
-                wk->pCmmn = (SsArc*) (wk->cmmnOfs + (u32) wk->pBuf);
-                wk->pPzzl = (SsArc*) (wk->pzzlOfs + (u32) wk->pBuf);
+                wk->pCmmn = (SsArc*)port_ptr64((wk->cmmnOfs + (u32) wk->pBuf));
+                wk->pPzzl = (SsArc*)port_ptr64((wk->pzzlOfs + (u32) wk->pBuf));
             }
-            wk->pModule = (OSModuleHeader*) wk->relAddr;
+            wk->pModule = (OSModuleHeader*)port_ptr64(wk->relAddr);
             {
                 MessageControl* mes = &cMes;
                 int i;

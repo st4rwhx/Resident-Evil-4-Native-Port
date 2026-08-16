@@ -28,11 +28,11 @@ struct Em3dWork {
     u8 targetSet;         // 0x2B8 (0x698)  setTarget / setTargetPos: leave the patrol
     u8 pad_2B9[3];
     int x2BC;             // 0x2BC (0x69C)  (ctor: 150)
-    cEm* pTargetEm;       // 0x2C0 (0x6A0)  enemy the rockets aim at (em3dGetTargetEm)
+    P32<cEm> pTargetEm;   // 0x2C0 (0x6A0)  enemy the rockets aim at (em3dGetTargetEm)
     u32 sndId;            // 0x2C4 (0x6A4)  voice handle (SndStop before the next one)
     int mesTimer;         // 0x2C8 (0x6A8)  frames the radio message is held
     f32 range;            // 0x2CC (0x6AC)  enemy search range (setTarget)
-    cObj* pMissile[4];    // 0x2D0 (0x6B0)  the rockets hung on parts 0xC..0xF
+    P32<cObj> pMissile[4]; // 0x2D0 (0x6B0)  the rockets hung on parts 0xC..0xF
     u8 pad_2E0;
     u8 gunTimer;          // 0x2E1 (0x6C1)  frames between chain gun shots
 };

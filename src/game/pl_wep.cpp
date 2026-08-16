@@ -21,8 +21,8 @@
 
 // GetWepTargetList entry (em_sub.cpp).
 struct WepTarget {
-    cEm* em;
-    EmHitInfo* part;
+    P32<cEm> em;
+    P32<EmHitInfo> part;
 };
 
 extern "C" {
@@ -388,7 +388,7 @@ u32 PlWepHitCheck2(cModel* plm, Vec* p0, Vec* p1, int type, u32 flag, f32 len)
                 // ahead of the bl); the byte-pointer memcpy keeps the pG reload below the Vec stores
                 EspSetEatEffect(&hit, &nrm, EatGetEffectType(attr), type);
                 BitOn(pG->flags_5010, 0x20000000);
-                memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &hit, sizeof(Vec));
+                memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &hit, sizeof(Vec));
                 pG->bell_stat = 0;
             }
         }
@@ -396,7 +396,7 @@ u32 PlWepHitCheck2(cModel* plm, Vec* p0, Vec* p1, int type, u32 flag, f32 len)
     if (pl != 0 && !(flag & 1)) {
         if (pl->pWep->pObj != 0) {
             wepSetWaterShot(p0, p1, type);
-            memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &pl->pWep->pObj->wep.marker, sizeof(Vec));
+            memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &pl->pWep->pObj->wep.marker, sizeof(Vec));
             switch (type) {
             case 0xD:
             case 0x12:

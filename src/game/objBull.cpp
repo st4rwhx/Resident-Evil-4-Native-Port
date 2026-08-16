@@ -191,7 +191,7 @@ void objBull_R0_Break1st(cObjBull* obj)
         MotionSetCore(obj, &obj->pMotion, w->mot[0], 0, 0, 0x8001, 0);
         MotionMove(obj, 0);
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_operation, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_operation), (int)(uintptr_t)(Sub_dm_bull));
         }
         obj->xFE++;
         break;
@@ -274,7 +274,7 @@ void objBull_R0_Break2nd(cObjBull* obj)
         MotionSetCore(obj, &obj->pMotion, w->mot[2], 0, 0, 0x8001, 0);
         MotionMove(obj, 0);
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_operation, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_operation), (int)(uintptr_t)(Sub_dm_bull));
         }
         obj->xFE++;
         break;
@@ -469,7 +469,7 @@ void objBull_R0_Break3rd(cObjBull* obj)
         MotionSetCore(obj, &obj->pMotion, w->mot[6], 0, 0, 0x8001, 0);
         MotionMove(obj, 0);
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_operation, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_operation), (int)(uintptr_t)(Sub_dm_bull));
         }
         obj->xFE++;
         break;
@@ -552,7 +552,7 @@ void objBull_R0_Break4th(cObjBull* obj)
         MotionSetCore(obj, &obj->pMotion, w->mot[8], 0, 0, 0x8001, 0);
         MotionMove(obj, 0);
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_operation, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_operation), (int)(uintptr_t)(Sub_dm_bull));
         }
         obj->xFE++;
         break;
@@ -615,7 +615,7 @@ void objBull_R0_Collision(cObjBull* obj)
     case 2:
         MotionSetCore(obj, &obj->pMotion, w->mot[10], 0, 0, 0x8201, 0);
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_operation, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_operation), (int)(uintptr_t)(Sub_dm_bull));
         }
         obj->xFE++;
     case 3:
@@ -807,8 +807,8 @@ void objBullSetAdjust(cObjBull* obj, cEm* em)
     em->setPos(&v);
     if (em->id == 0) {
         if (CamCtrl.x250) {
-            PSVECAdd(&((Camera*) CamCtrl.x250)->param.at, &d, &((Camera*) CamCtrl.x250)->param.at);
-            PSVECAdd(&((Camera*) CamCtrl.x250)->param.pos, &d, &((Camera*) CamCtrl.x250)->param.pos);
+            PSVECAdd(&((Camera*)port_ptr64(CamCtrl.x250))->param.at, &d, &((Camera*)port_ptr64(CamCtrl.x250))->param.at);
+            PSVECAdd(&((Camera*)port_ptr64(CamCtrl.x250))->param.pos, &d, &((Camera*)port_ptr64(CamCtrl.x250))->param.pos);
         }
         pG->quake_ofs = d;
     }
@@ -1042,7 +1042,7 @@ static inline void SubBullSeat(cEm* em)
     cModel* parts;
 
     if (em->dmgType) {
-        parts = ((cObj*) em->dmgType)->getPartsPtr(2);
+        parts = ((cObj*)port_ptr64(em->dmgType))->getPartsPtr(2);
         v.x = 0.0f;
         v.y = 452.29f;
         v.z = 3173.64f;
@@ -1076,7 +1076,7 @@ void Sub_bull_drive(cEm* em)
             em->subHideMode--;
         } else if (SubCkNearEm()) {
             if ((s16) pG->sub_life > 0) {
-                SetSubBulldozer((int) Sub_bull_lookback, (int) Sub_dm_bull);
+                SetSubBulldozer((int)(uintptr_t)(Sub_bull_lookback), (int)(uintptr_t)(Sub_dm_bull));
             }
         }
         break;
@@ -1096,7 +1096,7 @@ void Sub_bull_operation(cEm* em)
         SubBullSeat(em);
         if (MotionMove(em, 0)) {
             if ((s16) pG->sub_life > 0) {
-                SetSubBulldozer((int) Sub_bull_drive, (int) Sub_dm_bull);
+                SetSubBulldozer((int)(uintptr_t)(Sub_bull_drive), (int)(uintptr_t)(Sub_dm_bull));
             }
         }
         break;
@@ -1126,7 +1126,7 @@ void Sub_bull_lookback(cEm* em)
         SubBullSeat(em);
         if (MotionMove(em, 0)) {
             if ((s16) pG->sub_life > 0) {
-                SetSubBulldozer((int) Sub_bull_drive, (int) Sub_dm_bull);
+                SetSubBulldozer((int)(uintptr_t)(Sub_bull_drive), (int)(uintptr_t)(Sub_dm_bull));
             }
         }
         break;
@@ -1146,7 +1146,7 @@ void Sub_bull_look(cEm* em)
         SubBullSeat(em);
         if (MotionMove(em, 0)) {
             if ((s16) pG->sub_life > 0) {
-                SetSubBulldozer((int) Sub_bull_drive, (int) Sub_dm_bull);
+                SetSubBulldozer((int)(uintptr_t)(Sub_bull_drive), (int)(uintptr_t)(Sub_dm_bull));
             }
         }
         break;
@@ -1202,7 +1202,7 @@ void Sub_dm_bull(cEm* em)
         SubBullSeat(em);
         if (MotionMove(em, 0)) {
             if ((s16) pG->sub_life > 0) {
-                SetSubBulldozer((int) Sub_bull_drive, (int) Sub_dm_bull);
+                SetSubBulldozer((int)(uintptr_t)(Sub_bull_drive), (int)(uintptr_t)(Sub_dm_bull));
             }
         }
         break;
@@ -1213,9 +1213,9 @@ void cObjBull::setSubBullDrive()
 {
     if (pSUB) {
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_drive, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_drive), (int)(uintptr_t)(Sub_dm_bull));
             pSUB->xFF = 1;
-            pSUB->dmgType = (int) this;
+            pSUB->dmgType = (int)(uintptr_t)(this);
         }
     }
 }
@@ -1224,8 +1224,8 @@ void cObjBull::setSubBullFinger()
 {
     if (pSUB) {
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_look, (int) Sub_dm_bull);
-            pSUB->dmgType = (int) this;
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_look), (int)(uintptr_t)(Sub_dm_bull));
+            pSUB->dmgType = (int)(uintptr_t)(this);
         }
     }
 }
@@ -1234,9 +1234,9 @@ void cObjBull::setSubBullLookBack()
 {
     if (pSUB) {
         if ((s16) pG->sub_life > 0) {
-            SetSubBulldozer((int) Sub_bull_lookback, (int) Sub_dm_bull);
+            SetSubBulldozer((int)(uintptr_t)(Sub_bull_lookback), (int)(uintptr_t)(Sub_dm_bull));
             pSUB->xFF = 1;
-            pSUB->dmgType = (int) this;
+            pSUB->dmgType = (int)(uintptr_t)(this);
         }
     }
 }

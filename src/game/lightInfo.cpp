@@ -3,7 +3,7 @@
 #include "math_sub.h"
 
 // pointer to game memory (0x80000000 .. PORT_PTR_MAX)
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 cLightInfo::cLightInfo()
 {

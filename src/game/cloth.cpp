@@ -152,14 +152,14 @@ void ClothCalcTplAddr(void* tpl)
     if ((s32) pal->descriptorArray < 0) {
         return;
     }
-    pal->descriptorArray = (TEXDescriptor*) ((u32) pal->descriptorArray + (u32) pal);
+    pal->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) pal->descriptorArray + (u32)(uintptr_t)(pal)));
     for (i = 0; i < pal->numDescriptors; i++) {
         d = &pal->descriptorArray[i];
-        d->textureHeader = (TEXHeader*) ((u32) pal + (u32) d->textureHeader);
-        d->textureHeader->data = (void*) ((u32) pal + (u32) d->textureHeader->data);
+        d->textureHeader = (TEXHeader*)port_ptr64(((u32)(uintptr_t)(pal) + (u32) d->textureHeader));
+        d->textureHeader->data = (void*)port_ptr64(((u32)(uintptr_t)(pal) + (u32) d->textureHeader->data));
         if (d->CLUTHeader != 0) {
-            d->CLUTHeader = (CLUTHeader*) ((u32) pal + (u32) d->CLUTHeader);
-            d->CLUTHeader->data = (void*) ((u32) pal + (u32) d->CLUTHeader->data);
+            d->CLUTHeader = (CLUTHeader*)port_ptr64(((u32)(uintptr_t)(pal) + (u32) d->CLUTHeader));
+            d->CLUTHeader->data = (void*)port_ptr64(((u32)(uintptr_t)(pal) + (u32) d->CLUTHeader->data));
         }
     }
 }

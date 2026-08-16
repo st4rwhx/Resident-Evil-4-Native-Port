@@ -68,23 +68,23 @@ void Snd_str_aram_dma_sub(SND_STR_WORK* str)
         }
     }
     if (str->flag & 0x1) {
-        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
+        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)(src), str->aram_L + ofs,
                        str->blk_half, NULL);
-        ARQPostRequest(&str->arqR, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) (src + 0x4000),
+        ARQPostRequest(&str->arqR, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)((src + 0x4000)),
                        str->aram_R + ofs, str->blk_half, cb_aram_dma_end);
     } else {
-        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
+        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)(src), str->aram_L + ofs,
                        str->blk_half, cb_aram_dma_end);
     }
     return;
 #endif
     if (str->flag & 0x1) {
-        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
+        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)(src), str->aram_L + ofs,
                        str->blk_half, NULL);
-        ARQPostRequest(&str->arqR, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) (src + 0x4000),
+        ARQPostRequest(&str->arqR, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)((src + 0x4000)),
                        str->aram_R + ofs, str->blk_half, cb_aram_dma_end);
     } else {
-        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) src, str->aram_L + ofs,
+        ARQPostRequest(&str->arqL, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)(src), str->aram_L + ofs,
                        str->blk_half, cb_aram_dma_end);
     }
     str->dma_busy = 1;
@@ -132,7 +132,7 @@ void cb_aram_dma_end(u32 task)
     int i;
     s8 last;
 
-    req = (ARQRequest*) task;
+    req = (ARQRequest*)port_ptr64(task);
     str = NULL;
     for (i = 0; i < SND_STR_MAX; i++) {
         str = &Snd_str_work[i];

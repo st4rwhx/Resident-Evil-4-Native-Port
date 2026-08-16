@@ -15,15 +15,15 @@ public:
     f32 x4;            // 0x04 cell width
     f32 x8;            // 0x08 cell height
     f32 xC;            // 0x0C
-    Vec* pos;          // 0x10 grid positions (nx*ny)
-    Vec* nrm;          // 0x14 grid normals (calcNormal; {0,0,1} initially)
-    Vec* spd;          // 0x18
+    P32<Vec> pos;      // 0x10 grid positions (nx*ny)
+    P32<Vec> nrm;      // 0x14 grid normals (calcNormal; {0,0,1} initially)
+    P32<Vec> spd;      // 0x18
     Mtx mat;           // 0x1C
     Vec x4C;           // 0x4C
     f32 x58;           // 0x58
-    GXTexObj* tex;     // 0x5C
-    GXTlutObj* tlut;   // 0x60
-    void* x64;         // 0x64
+    P32<GXTexObj> tex; // 0x5C
+    P32<GXTlutObj> tlut; // 0x60
+    P32<void> x64;     // 0x64
     union {
         GXColor color; // 0x68 material colour (clothTrans passes it by value)
         struct {
@@ -33,7 +33,7 @@ public:
             u8 colA;   // 0x6B
         };
     };
-    void* mem;         // 0x6C
+    P32<void> mem;     // 0x6C
     int x70;           // 0x70
     int x74;           // 0x74
 

@@ -15,7 +15,7 @@
 int lifeLevel(int levels, s16 max, int base);
 extern "C" u16 WeaponId2BulletId(u16 id, int attr);
 
-#define ARC_PTR(ofs) ((void*) (pG->pArc->ofs + (u32) pG->pArc))
+#define ARC_PTR(ofs) ((void*)port_ptr64((pG->pArc->ofs + (u32) pG->pArc)))
 
 #define ID_LIFE 0x21
 #define ID_ACT 0x20

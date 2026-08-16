@@ -33,23 +33,23 @@ struct Em39Work {
     Vec routePos;         // 0x460 (0x840)  RouteCkToPos result towards the player
     u8 pad_46C[0xC];
     Vec targetPos;        // 0x478 (0x858)  chosen target position
-    cPlayer* pTarget;     // 0x484 (0x864)
+    P32<cPlayer> pTarget; // 0x484 (0x864)
     u8 pad_488[0x580 - 0x488];
-    cEmWep* pWep;         // 0x580 (0x960)  knife
-    cEmWep* pWep2;        // 0x584 (0x964)  machine gun
-    cEmWep* pWep3;        // 0x588 (0x968)  bow
-    cEmWep* x58C;         // 0x58C (0x96C)  thrown knife (setFall when the enemy moves)
-    cEmWep* pGrenade;     // 0x590 (0x970)  grenade in hand (AppearGR / AppearGR2)
-    cEmWep* pFlash;       // 0x594 (0x974)  flash grenade in hand (Flash)
+    P32<cEmWep> pWep;     // 0x580 (0x960)  knife
+    P32<cEmWep> pWep2;    // 0x584 (0x964)  machine gun
+    P32<cEmWep> pWep3;    // 0x588 (0x968)  bow
+    P32<cEmWep> x58C;     // 0x58C (0x96C)  thrown knife (setFall when the enemy moves)
+    P32<cEmWep> pGrenade; // 0x590 (0x970)  grenade in hand (AppearGR / AppearGR2)
+    P32<cEmWep> pFlash;   // 0x594 (0x974)  flash grenade in hand (Flash)
     f32 x598;             // 0x598 (0x978)
     f32 x59C;             // 0x59C (0x97C)
     u8 pad_5A0[0x664 - 0x5A0];
-    cModelInfo* pHandInfo;   // 0x664 (0xA44)  em39HandSet: right hand parts info
-    cModelInfo* pHandInfo2;  // 0x668 (0xA48)  em39HandSet: left hand parts info
-    cModelInfo* x66C;     // 0x66C (0xA4C)
+    P32<cModelInfo> pHandInfo; // 0x664 (0xA44)  em39HandSet: right hand parts info
+    P32<cModelInfo> pHandInfo2; // 0x668 (0xA48)  em39HandSet: left hand parts info
+    P32<cModelInfo> x66C; // 0x66C (0xA4C)
     u8 handType;          // 0x670 (0xA50)  em39HandSet type (0xFF = none)
     u8 pad_671[3];
-    cObj* pObj12;         // 0x674 (0xA54)  hanging object (SetObj12)
+    P32<cObj> pObj12;     // 0x674 (0xA54)  hanging object (SetObj12)
     int x678;             // 0x678 (0xA58)
     u8 pad_67C[2];
     u16 dmgTotal;         // 0x67E (0xA5E)  damage taken
@@ -67,16 +67,16 @@ struct Em39Work {
     Vec gotoPos;          // 0x6B4 (0xA94)  goto target (em39RouteCk overrides the player target)
     u8 gotoOn;            // 0x6C0 (0xAA0)
     u8 pad_6C1[3];
-    struct EmiEntry* pGotoPoint;  // 0x6C4 (0xAA4)  EMI point the enemy sits / waits at
-    class cEmDoor* pDoor; // 0x6C8 (0xAA8)  door the knife swing opens / breaks (em39DoorOpenCk)
+    P32<struct EmiEntry> pGotoPoint; // 0x6C4 (0xAA4)  EMI point the enemy sits / waits at
+    P32<class cEmDoor> pDoor; // 0x6C8 (0xAA8)  door the knife swing opens / breaks (em39DoorOpenCk)
     f32 gunPitch;         // 0x6CC (0xAAC)  machine gun pitch in 1/1024 turns (-255..255)
     int x6D0;             // 0x6D0 (0xAB0)
     int x6D4;             // 0x6D4 (0xAB4)
     MotionWorkSub blendMot;  // 0x6D8 (0xAB8)  em39BlendMotSet second motion
-    void* bowMot0;        // 0x7A8 (0xB88)  bow shot blend motions (em39BlendMotSet)
-    void* bowMot1;        // 0x7AC (0xB8C)
-    void* bowMot2;        // 0x7B0 (0xB90)
-    void* bowMot3;        // 0x7B4 (0xB94)
+    P32<void> bowMot0;    // 0x7A8 (0xB88)  bow shot blend motions (em39BlendMotSet)
+    P32<void> bowMot1;    // 0x7AC (0xB8C)
+    P32<void> bowMot2;    // 0x7B0 (0xB90)
+    P32<void> bowMot3;    // 0x7B4 (0xB94)
     u8 pad_7B8[0xC];
     MotionWorkSub armMot;  // 0x7C4 (0xBA4)  tower form left arm motion (em39ArmControl)
     int stuckCnt;         // 0x894 (0xC74)  frames the enemy moved less than half of the intended distance

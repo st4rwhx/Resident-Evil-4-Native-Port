@@ -44,10 +44,10 @@
 
 // The room work.
 struct R208Work {
-    TexRenderMng* tex;    // 0x000  water render target (setTexRender)
+    P32<TexRenderMng> tex; // 0x000  water render target (setTexRender)
     int pad_004[3];       // 0x004
     cEmWrap em[32];       // 0x010
-    cObj* crank;          // 0x190  crank / winch object the player or Ashley turns
+    P32<cObj> crank;      // 0x190  crank / winch object the player or Ashley turns
     int pad_194;          // 0x194
     int emSetWait;        // 0x198  frames before the next enemy comes over the wall (R208Main)
     int side19C;          // 0x19C  alternates the wall entry (far side)
@@ -60,7 +60,7 @@ struct R208Work {
     f32 doorB;            // 0x1B8  gate B opening
     cEmWrap under[20];    // 0x1BC  enemies below the footings
     int underCnt;         // 0x2AC  under[] entries in use
-    cSat* sat;            // 0x2B0  bridge collision
+    P32<cSat> sat;        // 0x2B0  bridge collision
     int strOn;            // 0x2B4  battle stream playing
     int pad_2B8;          // 0x2B8
     int strFlag;          // 0x2BC  stream restarted after the bridge went down
@@ -73,7 +73,7 @@ struct R208Work {
 
 // One-member struct: every store through the work reloads the pointer.
 struct R208WorkPtr {
-    R208Work* p;
+    P32<R208Work> p;
 };
 static u8 r208_texTbl[0x20];
 static R208WorkPtr r208_work;

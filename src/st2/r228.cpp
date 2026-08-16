@@ -32,24 +32,24 @@
 // boss fight and the render-to-texture setup.
 
 struct R228Work {
-    TexRenderMng* tex[2];   // 0x000  the two room render targets
+    P32<TexRenderMng> tex[2]; // 0x000  the two room render targets
     u8 pad_8[0x100 - 0x8];
     int eff;                // 0x100  EspPullCoreKind of the fight effects
-    cObj* obj77;            // 0x104
-    cObj* obj79;            // 0x108
-    cObj* obj76;            // 0x10C
-    cObj* obj78;            // 0x110
-    ScePrim* se;            // 0x114  the neck-down camera task
+    P32<cObj> obj77;        // 0x104
+    P32<cObj> obj79;        // 0x108
+    P32<cObj> obj76;        // 0x10C
+    P32<cObj> obj78;        // 0x110
+    P32<ScePrim> se;        // 0x114  the neck-down camera task
     int eff2;               // 0x118  EspPullCoreKind of the event effect
-    cSat* sat;              // 0x11C
-    cSat* eat;              // 0x120
-    TexRenderMng* texEvt;   // 0x124  event render target
+    P32<cSat> sat;          // 0x11C
+    P32<cSat> eat;          // 0x120
+    P32<TexRenderMng> texEvt; // 0x124  event render target
     u8 texTbl[0x384];       // 0x128  its blend table
 };
 
 // One-member struct: every store through the work reloads the pointer.
 struct R228WorkPtr {
-    R228Work* p;
+    P32<R228Work> p;
 };
 
 static u8 r228_texTbl0[0x20];
@@ -71,7 +71,7 @@ static inline void PSet(cObj*& d, cObj* v) { d = v; }
 static inline void PSetSat(cSat*& d, cSat* v) { d = v; }
 // Struct view of pPL: the load stays below a preceding store through the work pointer.
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

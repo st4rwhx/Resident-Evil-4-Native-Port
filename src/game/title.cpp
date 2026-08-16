@@ -81,7 +81,7 @@ static inline u32 omkFlagChk(u32 no)
 #endif
 
 // Sub-file of the core archive (pG->pArc): `ofs + (u32) arc` (integer arithmetic, ofs first).
-#define G_ARC_PTR(field) ((void*) (pG->pArc->field + (u32) pG->pArc))
+#define G_ARC_PTR(field) ((void*)port_ptr64((pG->pArc->field + (u32) pG->pArc)))
 
 // Fade colours: word constants passed by address (see sscrn.cpp).
 union FadeColor {
@@ -954,7 +954,7 @@ void titleSub(TitleWork* w)
                             int ofs;
                             for (ofs = 0; ofs < 0x10; ofs += 4) {
                                 u8* tbl = (u8*) pSys + 0x10;
-                                *(u32*) ((u32) tbl + ofs) = 0;
+                                *(u32*)port_ptr64(((u32)(uintptr_t)(tbl) + ofs)) = 0;
                             }
                         }
                         // Index form: the eliminable biv gives check_dbra_loop's bct (insert_bct refuses a
@@ -964,7 +964,7 @@ void titleSub(TitleWork* w)
                             int i;
                             for (i = 0; i < 2; i++) {
                                 u8* tbl = (u8*) pSys + 0x20;
-                                *(u32*) ((u32) tbl + (i << 2)) = 0;
+                                *(u32*)port_ptr64(((u32)(uintptr_t)(tbl) + (i << 2))) = 0;
                             }
                         }
                     }
@@ -1293,7 +1293,7 @@ int stageSelect(TitleWork* w)
         // constant), earlier it is hoisted. A mask cse cannot fold (no nonzero-bits logic) is not a
         // constant for jump1; combine folds it to `(set mode 0)` (no REG_EQUAL note) after cse2.
         // COMPILER-DIFF: #13 (constant spelled as a combine-folded mask)
-        mode = ((u32) u >> 16) & 0xFFFF0000;
+        mode = ((u32)(uintptr_t)(u) >> 16) & 0xFFFF0000;
     }
     {
         MercSysGetSaveWork(&save);

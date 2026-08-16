@@ -48,14 +48,14 @@ struct Em35Work {
     Vec routePos;         // 0x658 (0xA38)  RouteCkToPos result towards the player
     Vec subRoutePos;      // 0x664 (0xA44)
     Vec targetPos;        // 0x670 (0xA50)  chosen target position
-    cEm* pTarget;         // 0x67C (0xA5C)  pPL
+    P32<cEm> pTarget;     // 0x67C (0xA5C)  pPL
     Camera cam;           // 0x680 (0xA60)  event camera (em35EscapeCamMove / em35StampCamMove)
     f32 neckAng;          // 0x778 (0xB58)  smoothed neck yaw (em35NeckMove)
     PlCloth cloth1;       // 0x77C (0xB5C)  em35ClothSet / em35ClothMove (type 1 tail)
     PlCloth cloth2;       // 0x7DC (0xBBC)  em35ClothSet2 / ClothSet3 (the hanging skin)
     f32 scaleAng;         // 0x83C (0xC1C)  em35ScaleMove phase
-    cModelInfo* pInfo;    // 0x840 (0xC20)  extra model (type 0)
-    cObj* pWeak[4];       // 0x844 (0xC24)  weak point objects (em35WeakInit, obj00)
+    P32<cModelInfo> pInfo; // 0x840 (0xC20)  extra model (type 0)
+    P32<cObj> pWeak[4];   // 0x844 (0xC24)  weak point objects (em35WeakInit, obj00)
     int atkWait;          // 0x854 (0xC34)  frames until the next attack
     int lockWait;         // 0x858 (0xC38)  frames the attack-double / hook are held off
     int weakDmg;          // 0x85C (0xC3C)  damage on the weak parts since the last down

@@ -8,7 +8,7 @@ struct Esp11Work {
     u8 no;           // 0x01 light number (gen->xCA)
     u8 kind;         // 0x02 0/1: create a light, 2: fixed type 8, 3: no light (gen->xC8)
     u8 mode;         // 0x03 1: light follows the sprite (gen->xCB)
-    cLight* pLight;  // 0x04
+    P32<cLight> pLight; // 0x04
     GXColor col;     // 0x08 base color of the light
     u8 toolState;    // 0x0C (gen->xFC)
 };

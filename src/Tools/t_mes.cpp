@@ -16,7 +16,7 @@ extern "C" unsigned int strlen(const char* s);
 // simple vertical text menu: tbl[0] is the header, the list ends with "\\"
 class cIdToolMenu {
 public:
-    char** tbl;     // 0x00
+    P32<P32<char>> tbl; // 0x00
     int num;        // 0x04  entries (without the header)
     int cursor;     // 0x08
     int maxLen;     // 0x0C
@@ -36,8 +36,8 @@ public:
     u8 sub;               // 0x01
     u8 x2;                // 0x02
     u8 x3;                // 0x03
-    u8* buf;              // 0x04
-    cIdToolMenu* pMenu;   // 0x08
+    P32<u8> buf;          // 0x04
+    P32<cIdToolMenu> pMenu; // 0x08
     int xC;               // 0x0C
     u32 attr;             // 0x10
     s16 mesNo;            // 0x14

@@ -66,8 +66,8 @@ struct R104Work {
     u32 resetCnt;     // 0x08  waves done
     EmReset reset[4]; // 0x0C
     u32 strId;        // 0x10C
-    cEmDoor* door0;   // 0x110
-    cEmDoor* door1;   // 0x114
+    P32<cEmDoor> door0; // 0x110
+    P32<cEmDoor> door1; // 0x114
 };
 
 static R104Work* r104_work;

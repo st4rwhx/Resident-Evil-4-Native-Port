@@ -11,7 +11,7 @@ void ObjKnife_init(cObj* obj);
 
 // pPL read as a struct member: the load stays below the collision-flag store before it.
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

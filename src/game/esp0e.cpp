@@ -23,7 +23,7 @@ struct Esp0eWork {
     u16 flags;      // 0x4C bit0: direction test, bit1: visibility test
     u16 hideCnt;    // 0x4E frames the visibility test is forced to 0
     u32 seed;       // 0x50 random seed for the screen jitter
-    EspGenWork* gen;  // 0x54
+    P32<EspGenWork> gen; // 0x54
 };
 
 // Screen-space glow (lens flare style): the sprite is drawn in screen mode at the projected

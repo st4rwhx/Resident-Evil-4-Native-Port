@@ -67,7 +67,7 @@ s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CardStat* stat, CardCallback callba
 
 // One memory card slot (chan 0 = slot A, 1 = slot B, 2 = the host "HARD DISK" of the dev kit).
 struct CardSlot {
-    void* workArea;         // 0x00  CARDMountAsync work area (0xA000, slot A only)
+    P32<void> workArea;     // 0x00  CARDMountAsync work area (0xA000, slot A only)
     s32 chan;               // 0x04
     u32 flags;              // 0x08  error bits (2 no card, 4 no space, 0x10 broken, 0x20 wrong device,
                             //       0x40 fatal, 0x80 sector size, 0x100 save file seen, 0x200 system
@@ -109,16 +109,16 @@ public:
     s32 errCode;         // 0x020  CARD result / -0x2xx game error shown by errorDisp
     u8 pad_24[4];
     CardSlot slotw[3];   // 0x028
-    u8* pSaveBuf;        // 0x310
+    P32<u8> pSaveBuf;    // 0x310
     u32 saveBufSize;     // 0x314  0xEAFC
     u32 saveBlocks;      // 0x318  8
-    u8* pInfoBuf;        // 0x31C  20 * 0x200 save headers
-    u8* pInfo[20];       // 0x320
-    u8* pSysBuf;         // 0x370
+    P32<u8> pInfoBuf;    // 0x31C  20 * 0x200 save headers
+    P32<u8> pInfo[20];   // 0x320
+    P32<u8> pSysBuf;     // 0x370
     u32 sysBufSize;      // 0x374  0x1E7C
     u32 sysBlocks;       // 0x378  1
-    struct CardArc* pSubData;  // 0x37C  sub screen data archive (SndMem.sub_adr)
-    void* pIdData;       // 0x380  ss/cmn/save_?.dat
+    P32<struct CardArc> pSubData; // 0x37C  sub screen data archive (SndMem.sub_adr)
+    P32<void> pIdData;   // 0x380  ss/cmn/save_?.dat
     s32 timer;           // 0x384
     s32 bgmTimer;        // 0x388
     s32 result;          // 0x38C  last CARD result code
@@ -178,7 +178,7 @@ public:
     void setMsgWindow(int a, int b);
 
 #line 386 "D:/Bio4/Prog/card.h"
-    void* operator new(unsigned int size) { return MEM_CALLOC(size, 1, 13); }
+    void* operator new(size_t size) { return MEM_CALLOC(size, 1, 13); }
     void operator delete(void* p) { Mem_free(p); }
 };
 

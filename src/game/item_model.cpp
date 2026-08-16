@@ -46,7 +46,7 @@ void ItemModelRoomInit()
 
 int ItemModelDataLoad(void* data)
 {
-    return g_pItemModelSys->DataLoad((u32) data);
+    return g_pItemModelSys->DataLoad((u32)(uintptr_t)(data));
 }
 
 int ItemGetBinAddr(u8 no, void** pAddr)
@@ -87,10 +87,10 @@ void cItmSys::Init()
 
 int cItmSys::DataLoad(u32 addr)
 {
-    ItemModelPack* pack = (ItemModelPack*) addr;
-    ItemModelIdTbl* idTbl = (ItemModelIdTbl*) (addr + pack->ofsId);
-    ItemModelOfsTbl* binTbl = (ItemModelOfsTbl*) (addr + pack->ofsBin);
-    ItemModelOfsTbl* tplTbl = (ItemModelOfsTbl*) (addr + pack->ofsTpl);
+    ItemModelPack* pack = (ItemModelPack*)port_ptr64(addr);
+    ItemModelIdTbl* idTbl = (ItemModelIdTbl*)port_ptr64((addr + pack->ofsId));
+    ItemModelOfsTbl* binTbl = (ItemModelOfsTbl*)port_ptr64((addr + pack->ofsBin));
+    ItemModelOfsTbl* tplTbl = (ItemModelOfsTbl*)port_ptr64((addr + pack->ofsTpl));
     u32 i;
 
     for (i = 0; i < idTbl->num; i++) {

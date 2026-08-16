@@ -97,17 +97,17 @@ cObj* SetObjGatling(void* bin, void* tpl, Vec* pos, Vec* rot)
         hrot.x = 0.0f;
         hrot.y = 0.0f;
         hrot.z = 0.0f;
-        w->hit[0] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &hpos, &hrot, 1);
+        w->hit[0] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &hpos, &hrot, 1);
         if (w->hit[0]) {
             w->hit[0]->setParent(obj, 0, 0);
             YarareInitCube(w->hit[0], 430.0f, 0.0f, 520.0f, 300.0f, 1600.0f, 50.0f, 1, 1);
         }
-        w->hit[1] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &hpos, &hrot, 1);
+        w->hit[1] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &hpos, &hrot, 1);
         if (w->hit[1]) {
             w->hit[1]->setParent(obj, 0, 0);
             YarareInitCube(w->hit[1], -430.0f, 0.0f, 520.0f, 300.0f, 1600.0f, 50.0f, 1, 1);
         }
-        w->hit[2] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &hpos, &hrot, 1);
+        w->hit[2] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &hpos, &hrot, 1);
         if (w->hit[2]) {
             w->hit[2]->setParent(obj, 0, 0);
             YarareInitCube(w->hit[2], 0.0f, 0.0f, 0.0f, 300.0f, 1600.0f, 300.0f, 1, 1);
@@ -360,7 +360,7 @@ int obj15GunHitck(cObjGatling* obj)
     cModel* parts;
     u32 attr;
 
-    EstSet((int) obj, -1, 0, 0, 1, 0x1F, 0, 0, (u32) obj, 0);
+    EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 0x1F, 0, 0, (u32)(uintptr_t)(obj), 0);
     SndCall(6, 9, &obj->pos, 0, 0, 0);
     ofs.x = 0.0f;
     ofs.y = 0.0f;
@@ -401,7 +401,7 @@ int obj15GunHitck(cObjGatling* obj)
         }
         return 0;
     }
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
     SndCall(6, 0x15, &pPL->pos, 0, 0, 0);
     QuakeExec(0, 0, 5, 22.0f, 2);
     EmPlBloodSet2(obj, &obj->pos, 1, 1, 0x1C);

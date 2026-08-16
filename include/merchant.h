@@ -79,11 +79,11 @@ struct MerchantInfo {
 // The merchant selected for the current room (merchantChar).
 class MerchantCharacter {
 public:
-    MerchantInfo* info;      // 0x00
-    MerchantData* data;      // 0x04
-    PriceEntry* pSell;       // 0x08
-    PriceEntry* pExer;       // 0x0C
-    LevelPrice* pLevel;      // 0x10
+    P32<MerchantInfo> info;  // 0x00
+    P32<MerchantData> data;  // 0x04
+    P32<PriceEntry> pSell;   // 0x08
+    P32<PriceEntry> pExer;   // 0x0C
+    P32<LevelPrice> pLevel;  // 0x10
 
     MerchantCharacter() {}
     ~MerchantCharacter() {}
@@ -93,10 +93,10 @@ public:
 // Shop session: a working copy of the merchant data plus the item lists shown in the shop.
 class Merchant {
 public:
-    MerchantInfo* info;      // 0x000
-    PriceEntry* pSell;       // 0x004  selling price table
-    PriceEntry* pExer;       // 0x008  exercise (buy-up) price table
-    LevelPrice* pLevel;      // 0x00C  weapon tune price table
+    P32<MerchantInfo> info;  // 0x000
+    P32<PriceEntry> pSell;   // 0x004  selling price table
+    P32<PriceEntry> pExer;   // 0x008  exercise (buy-up) price table
+    P32<LevelPrice> pLevel;  // 0x00C  weapon tune price table
     StockTable stock;        // 0x010
     LevelTable level;        // 0x210
     s8 favor;                // 0x310

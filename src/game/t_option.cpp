@@ -54,7 +54,7 @@ static cDbOption* pT;
 // the first copy's stores. GCC 2.95 only keeps the order when the load is a struct member
 // (MEM_IN_STRUCT_P, see cLogPtr in db_log.h), so joySet reads pT through this view.
 struct cDbOptionPtr {
-    cDbOption* p;
+    P32<cDbOption> p;
 };
 #define PT_MEMBER (((cDbOptionPtr*) &pT)->p)
 

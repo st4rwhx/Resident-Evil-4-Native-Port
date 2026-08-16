@@ -14,7 +14,7 @@ static int emSetDummy = 0;
 // Death bit of list entry `no` in the current enemy list (0 when no list is loaded).
 // Death bit table of the current enemy list (pG->em_dead[pG->emlist_no]); the original computes
 // it with byte arithmetic: the row offset is added to pG before the table offset.
-#define EM_DEAD_TBL() ((u32*) (pG->emlist_no * 0x20 + (u32) pG + 0x501C))
+#define EM_DEAD_TBL() ((u32*)port_ptr64((pG->emlist_no * 0x20 + (u32)(uintptr_t)(pG) + 0x501C)))
 
 static inline u32 EmSetDieCk(u32 no)
 {

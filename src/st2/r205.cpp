@@ -41,7 +41,7 @@ asm(".section .rodata\n\t.balign 8\n\t.text");
 // One pendulum blade: the scroll object and its rotation of the current / previous frame
 // (SceAtDataSet_exec hands the entry to r205_ExecDieDemo as the task argument).
 struct R205Pend {
-    cObj* obj;     // 0x00
+    P32<cObj> obj; // 0x00
     f32 rotPrev;   // 0x04
     f32 rot;       // 0x08
 };
@@ -52,20 +52,20 @@ struct R205Em {
 };
 
 struct R205Work {
-    TexRenderMng* tex;   // 0x00
+    P32<TexRenderMng> tex; // 0x00
     u8 pad_4[4];
     R205Pend pend[4];    // 0x08
-    cObj* pole[4];       // 0x38  the blade poles that rise with the swing ([1] unused)
-    cEmHit* hit[4];      // 0x48
+    P32<cObj> pole[4];   // 0x38  the blade poles that rise with the swing ([1] unused)
+    P32<cEmHit> hit[4];  // 0x48
     R205Em ems[8];       // 0x58
-    cEm* door0;          // 0xD8
-    cEm* door1;          // 0xDC
+    P32<cEm> door0;      // 0xD8
+    P32<cEm> door1;      // 0xDC
 };
 
 static u8 r205_texTbl[0x20];
 // The work pointer is a struct member: every store through the work reloads it.
 struct R205WorkPtr {
-    R205Work* p;
+    P32<R205Work> p;
 };
 
 static R205WorkPtr r205_work;
@@ -91,7 +91,7 @@ int cEmWrapSetEmI(cEmWrap* w, int no, int list, int errOn, int chkDead, int setA
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);

@@ -167,14 +167,14 @@ static void port_free(void* q)
     free(q);
 }
 
-void* operator new(unsigned int size)
+void* operator new(size_t size)
 {
     if (!MemReady || !port_on_game_thread())
         return calloc(size ? size : 1, 1);
     return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
 }
 
-void* operator new[](unsigned int size)
+void* operator new[](size_t size)
 {
     if (!MemReady || !port_on_game_thread())
         return calloc(size ? size : 1, 1);
@@ -184,12 +184,12 @@ void* operator new[](unsigned int size)
 void operator delete(void* q, unsigned long long) { port_free(q); }
 void operator delete[](void* q, unsigned long long) { port_free(q); }
 #else
-void* operator new(unsigned int size)
+void* operator new(size_t size)
 {
     return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
 }
 
-void* operator new[](unsigned int size)
+void* operator new[](size_t size)
 {
     return mem_calloc(size, "operator new", 0, 1, MEM_HEAP_CURRENT);
 }
@@ -227,23 +227,23 @@ void SystemMemInit()
     SysMem.weapon = (u32) PORT_MEM1(0x80974000);
     SysMem.usb = (u32) PORT_MEM1(0x81800000);
     SysMem.debug = (u32) PORT_MEM1(0x8181FB00);
-    SysMem.arena_lo = (u32) OSGetArenaLo();
+    SysMem.arena_lo = (u32)(uintptr_t)(OSGetArenaLo());
     if (SysMem.arena_lo > (u32) PORT_MEM1(0x8034FFFF)) {
         OSReport("ELF size overflow\n");
 #line 100 "D:/Bio4/Prog/main_mem.cpp"
         HALT();
     }
     arenaLo = SysMem.weapon;
-    arenaHi = (u32) OSGetArenaHi();
+    arenaHi = (u32)(uintptr_t)(OSGetArenaHi());
     if (SysMem.heap_end > arenaHi) {
         arenaHi = SysMem.heap_end;
     }
     arenaLo = (arenaLo + 0x1F) & ~0x1F;
     arenaHi &= ~0x1F;
-    HeapHead = (OSHeapDescriptor*) arenaLo;
-    arenaLo = (u32) OSInitAlloc((void*) arenaLo, (void*) arenaHi, MEM_HEAP_NUM);
-    OSSetArenaLo((void*) arenaLo);
-    OSSetArenaHi((void*) arenaHi);
+    HeapHead = (OSHeapDescriptor*)port_ptr64(arenaLo);
+    arenaLo = (u32)(uintptr_t)(OSInitAlloc((void*)port_ptr64(arenaLo), (void*)port_ptr64(arenaHi), MEM_HEAP_NUM));
+    OSSetArenaLo((void*)port_ptr64(arenaLo));
+    OSSetArenaHi((void*)port_ptr64(arenaHi));
     memInitHeapTbl();
     MemCreateHeap(0, arenaLo, SysMem.heap_end);
     MemSetCurrentHeap(0);

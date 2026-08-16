@@ -40,7 +40,7 @@ struct Em2cWork {
     Vec routePos;         // 0x354 (0x734)  RouteCkToPos result towards the player
     u8 pad_360[0xC];
     Vec targetPos;        // 0x36C (0x74C)
-    cPlayer* pTarget;     // 0x378 (0x758)
+    P32<cPlayer> pTarget; // 0x378 (0x758)
     f32 jumpAng;          // 0x37C (0x75C)
     Vec homePos;          // 0x380 (0x760)
     Vec startPos;         // 0x38C (0x76C)  pos at init
@@ -71,18 +71,18 @@ struct Em2cWork {
     Vec wallTarget;       // 0x578 (0x958)  wall walk target (em2cGetPlDir at the wall walk start)
     f32 x584;             // 0x584 (0x964)
     int guardCnt;         // 0x588 (0x968)  damage guard: frames (counts down, minus dmg / 6 per hit)
-    cEm* pTail;           // 0x58C (0x96C)  the tail unit (em2cGetTail)
-    cCtrl* pCtrl12;       // 0x590 (0x970)  GetCtrlCtrl12()
-    TexRenderMng* pTex;   // 0x594 (0x974)  Ctrl12GetTexRenderEm2c
+    P32<cEm> pTail;       // 0x58C (0x96C)  the tail unit (em2cGetTail)
+    P32<cCtrl> pCtrl12;   // 0x590 (0x970)  GetCtrlCtrl12()
+    P32<TexRenderMng> pTex; // 0x594 (0x974)  Ctrl12GetTexRenderEm2c
     u8 texBlend[8];       // 0x598 (0x978)  cModelInfo::setTexBlendTbl table (em2cSetFreeze)
     u8 pad_5A0[0x18];
     f32 blendVal;         // 0x5B8 (0x998)  signed blend weight of the two-motion blend (em2cBlendMotSet: sign picks the motion)
     int blendCnt;         // 0x5BC (0x99C)  counts down; its low byte is the MotionSetCore frame argument
     int blendSeq;         // 0x5C0 (0x9A0)  wraps at cModel::frameMax; its low half is the MotionSetCore last argument
     MotionWorkSub blendMot;  // 0x5C4 (0x9A4)  second motion work (cModel::motBlend)
-    void* blendM0;        // 0x694 (0xA74)  walk blend motions (em2c_R1_Walk / Dash: em2cBlendMotSet arguments)
-    void* blendM1;        // 0x698 (0xA78)
-    void* blendM2;        // 0x69C (0xA7C)
+    P32<void> blendM0;    // 0x694 (0xA74)  walk blend motions (em2c_R1_Walk / Dash: em2cBlendMotSet arguments)
+    P32<void> blendM1;    // 0x698 (0xA78)
+    P32<void> blendM2;    // 0x69C (0xA7C)
     int blendA;           // 0x6A0 (0xA80)
     int blendB;           // 0x6A4 (0xA84)
     int blendC;           // 0x6A8 (0xA88)

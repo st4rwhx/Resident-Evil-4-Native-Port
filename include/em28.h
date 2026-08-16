@@ -17,8 +17,8 @@ struct Em28Work {
     int stuckCnt;         // 0x160 (0x540)  frames the crow moved less than half its speed
     int escapeWait;       // 0x164 (0x544)  frames until the next escape check (em28EscapeCk)
     Vec spd;              // 0x168 (0x548)  take-off speed (R1_Jump / R1_Die_Air)
-    cCtrl* pCtrl12;       // 0x174 (0x554)  GetCtrlCtrl12()
-    cCtrl* pCtrl11;       // 0x178 (0x558)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl12;   // 0x174 (0x554)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x178 (0x558)  GetCtrlCtrl11()
     int x17C;             // 0x17C (0x55C)
 };
 

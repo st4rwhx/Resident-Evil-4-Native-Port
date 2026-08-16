@@ -103,7 +103,7 @@ void CameraMove()
         if ((pG->flags_500C & 0x100) && !(pG->flags_60 & 0x10000000)) {
             pG->Cam = CamCtrl.camera;
             if (CamCtrl.x250 != 0) {
-                pG->Cam = *(Camera*) CamCtrl.x250;
+                pG->Cam = *(Camera*)port_ptr64(CamCtrl.x250);
             }
         }
 #ifdef RE4_PORT

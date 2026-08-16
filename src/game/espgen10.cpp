@@ -23,14 +23,14 @@ int EspgenDataSet(EspSeqData* head, int no, EspInfo* info, u32* seed, cModel* mo
     int ret = 1;
 
     list = no * sizeof(EspGenWork) + 0x30;
-    rec = (EspGenWork*) ((u32) head + list);
+    rec = (EspGenWork*)port_ptr64(((u32)(uintptr_t)(head) + list));
     if (info->x0 & 0x1000) {
         u32 no = rec->x6;
-        list = (u32) EspEvModList;
+        list = (u32)(uintptr_t)(EspEvModList);
         if (no > 0x7F) {
             model = NULL;
         } else {
-            model = *(cModel**) (list + (no << 2));
+            model = *(cModel**)port_ptr64((list + (no << 2)));
         }
     }
 

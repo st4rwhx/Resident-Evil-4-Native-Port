@@ -52,7 +52,7 @@ public:
     u8 step;        // 0x01
     u8 x2;
     u8 x3;
-    cObj* obj;      // 0x04
+    P32<cObj> obj;  // 0x04
     Vec pos0;       // 0x08  closed position
     f32 openH;      // 0x14  height when open
     f32 spd;        // 0x18  fall speed
@@ -76,28 +76,28 @@ public:
 };
 
 struct R212Work {
-    cEm* rack[2];        // 0x000
-    cSat* sat[4];        // 0x008  switch hit shapes
+    P32<cEm> rack[2];    // 0x000
+    P32<cSat> sat[4];    // 0x008  switch hit shapes
     f32 y0[4];           // 0x018  switch rest heights
     u16 hitNow;          // 0x028  switches pressed this frame (bits 0-3 by anything, 8-11 rack 0, 12-15 rack 1)
     u16 hitOld;          // 0x02A
     u16 trg;             // 0x02C
     u16 rel;             // 0x02E
     cEmWrap em[2];       // 0x030  the drill Ganados
-    cDataUnit* evd;      // 0x048
-    cEmHit* hit[4];      // 0x04C  roof trap hit boxes
+    P32<cDataUnit> evd;  // 0x048
+    P32<cEmHit> hit[4];  // 0x04C  roof trap hit boxes
     int mesNo;           // 0x05C
-    cSat* sat2;          // 0x060
-    cSat* eat;           // 0x064
-    cSat* eat2;          // 0x068
-    cSat* eat0;          // 0x06C
+    P32<cSat> sat2;      // 0x060
+    P32<cSat> eat;       // 0x064
+    P32<cSat> eat2;      // 0x068
+    P32<cSat> eat0;      // 0x06C
     cR212Door door[3];   // 0x070
     u32 se;              // 0x10C
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R212WorkPtr {
-    R212Work* p;
+    P32<R212Work> p;
 };
 
 static R212WorkPtr r212_work;
@@ -112,7 +112,7 @@ static void (cR212Door::*r212_doorTbl[3])() = {
 static inline void PSetSat(cSat*& d, cSat* v) { d = v; }
 // Struct-member view of pPL: the load stays below a preceding store.
 struct PlPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlPtr*) &pPL)->p)
 

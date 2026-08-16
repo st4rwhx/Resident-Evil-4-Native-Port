@@ -36,15 +36,15 @@ struct DllModule {
     u8 pad_0[0x20];
     u32 bssSize;      // 0x20
     u8 pad_24[0x10];
-    void (*prolog)(); // 0x34
-    void (*epilog)(); // 0x38
+    FnP32<void(*)()> prolog; // 0x34
+    FnP32<void(*)()> epilog; // 0x38
 };
 
 // One debug menu line (0x10 bytes)
 struct DB_MENU {
-    const char* name;  // 0x00
-    const char* rel;   // 0x04  tool module to load (NULL = built-in tool)
-    void (*func)();    // 0x08  built-in tool entry
+    P32<const char> name; // 0x00
+    P32<const char> rel; // 0x04  tool module to load (NULL = built-in tool)
+    FnP32<void(*)()> func; // 0x08  built-in tool entry
     int id;            // 0x0C  DebugMenuSelected
 };
 

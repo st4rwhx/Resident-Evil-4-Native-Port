@@ -106,7 +106,7 @@ public:
     u16 x140;          // 0x140  index in the cut (0xFFFF = none; trans_lit compares it zero-extended)
     u8 pad_142[2];
     Vec curPos;        // 0x144  position actually applied (db_work draws a sphere of radius x1C here)
-    cModel* pParent;   // 0x150
+    P32<cModel> pParent; // 0x150
 #ifndef LIGHT_H_CLIGHT_154
     // The debug tool objects (tools/db_light.cpp) were built against a light.h revision where cLight
     // ended here (the tool's cLight member is 0x154 bytes); the DOL's is 0x1D4.
@@ -247,7 +247,7 @@ public:
 
 // Light list a model / effect draws with (cModel::lightInfo.pLight, EspLightList).
 struct EspLightList {
-    cLight* p[8];      // 0x00
+    P32<cLight> p[8];  // 0x00
     u8 num;            // 0x20
 };
 

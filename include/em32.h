@@ -49,8 +49,8 @@ struct Em32Work {
     Vec routePos;         // 0x65C (0xA3C)  RouteCkPosToPos result towards the player
     u8 pad_668[0xC];
     Vec targetPos;        // 0x674 (0xA54)
-    cPlayer* pTarget;     // 0x680 (0xA60)
-    Em32Point* pPoint;    // 0x684 (0xA64)  jump point (em32JumpUpCk / em32GetJumpDownNo)
+    P32<cPlayer> pTarget; // 0x680 (0xA60)
+    P32<Em32Point> pPoint; // 0x684 (0xA64)  jump point (em32JumpUpCk / em32GetJumpDownNo)
     u8 breakNo;           // 0x688 (0xA68)  cEm32::getBreakNo (0xFF = none, reset every frame)
     u8 breakNo2;          // 0x689 (0xA69)  cEm32::getBreakNo2
     u8 pad_68A[2];
@@ -68,23 +68,23 @@ struct Em32Work {
     int blendCnt;         // 0x7CC (0xBAC)  counts down; its low byte is the MotionSetCore frame argument
     int blendSeq;         // 0x7D0 (0xBB0)  wraps at cModel::frameMax; its low half is the MotionSetCore last argument
     MotionWorkSub blendMot;  // 0x7D4 (0xBB4)  second motion work (cModel::motBlend)
-    void* blendM0;        // 0x8A4 (0xC84)  walk blend motions (em32_R1_Walk / Dash: em32BlendMotSet arguments)
-    void* blendM1;        // 0x8A8 (0xC88)
-    void* blendM2;        // 0x8AC (0xC8C)
-    void* blendM3;        // 0x8B0 (0xC90)
+    P32<void> blendM0;    // 0x8A4 (0xC84)  walk blend motions (em32_R1_Walk / Dash: em32BlendMotSet arguments)
+    P32<void> blendM1;    // 0x8A8 (0xC88)
+    P32<void> blendM2;    // 0x8AC (0xC8C)
+    P32<void> blendM3;    // 0x8B0 (0xC90)
     int blendA;           // 0x8B4 (0xC94)
     int blendB;           // 0x8B8 (0xC98)
     int blendC;           // 0x8BC (0xC9C)
     PlCloth cloth;        // 0x8C0 (0xCA0)  tail cloth chain (em32ClothSet)
-    MotionWorkSub* pMot;  // 0x920 (0xD00)  mem_alloc'd second motion work (em32_R0_Init)
-    cModelInfo* pTexModel;  // 0x924 (0xD04)  the texture-blended model info (ARC(7))
+    P32<MotionWorkSub> pMot; // 0x920 (0xD00)  mem_alloc'd second motion work (em32_R0_Init)
+    P32<cModelInfo> pTexModel; // 0x924 (0xD04)  the texture-blended model info (ARC(7))
     u8 pad_928[4];
-    cObj* pDivide[2];     // 0x92C (0xD0C)  the two halves of the cut player (em32PlDivideSet)
-    cObj* pCatchObj;      // 0x934 (0xD14)  the player's weapon model while caught (plem32_P_CatchHit)
+    P32<cObj> pDivide[2]; // 0x92C (0xD0C)  the two halves of the cut player (em32PlDivideSet)
+    P32<cObj> pCatchObj;  // 0x934 (0xD14)  the player's weapon model while caught (plem32_P_CatchHit)
     f32 neckAng;          // 0x938 (0xD18)  em32NeckMove: head yaw
     f32 scale;            // 0x93C (0xD1C)  em32ScaleCompress: body scale (the death shrinks it)
-    cCtrl* pCtrl12;       // 0x940 (0xD20)  GetCtrlCtrl12()
-    TexRenderMng* pTex;   // 0x944 (0xD24)  Ctrl12GetTexRenderEm32
+    P32<cCtrl> pCtrl12;   // 0x940 (0xD20)  GetCtrlCtrl12()
+    P32<TexRenderMng> pTex; // 0x944 (0xD24)  Ctrl12GetTexRenderEm32
     u8 texBlend[8];       // 0x948 (0xD28)  cModelInfo::setTexBlendTbl table
     u8 pad_950[0x968 - 0x950];
     int wait;             // 0x968 (0xD48)

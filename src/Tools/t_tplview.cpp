@@ -78,10 +78,10 @@ void getTplname(char* name, int no)
 // `.L` assembler names keep them out of the symbol table (section-relative relocations) while the
 // declarations stay public for the emission order.
 struct TplMenu3 {
-    const char* s[3];
+    P32<const char> s[3];
 };
 struct TplMenu2 {
-    const char* s[2];
+    P32<const char> s[2];
 };
 extern const TplMenu3 tplMainMenu asm(".L_tplMainMenu");
 extern const TplMenu2 tplSizeMenu asm(".L_tplSizeMenu");

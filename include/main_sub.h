@@ -30,12 +30,12 @@ struct OSModuleHeader {
     u32 id;            // 0x00
     u8 pad_4[8];       // 0x04  link
     u32 numSections;   // 0x0C
-    OSSectionInfo* sectionInfo;  // 0x10  (an offset before OSLink)
+    P32<OSSectionInfo> sectionInfo; // 0x10  (an offset before OSLink)
     u8 pad_14[0x20 - 0x14];
     u32 bssSize;       // 0x20  (read.cpp: must fit the 0x80-byte area in front of a ReadModule)
     u8 pad_24[0x34 - 0x24];
-    void (*prolog)();  // 0x34  (read.cpp calls it right after DLL_Link)
-    void (*epilog)();  // 0x38
+    FnP32<void(*)()> prolog; // 0x34  (read.cpp calls it right after DLL_Link)
+    FnP32<void(*)()> epilog; // 0x38
     u8 pad_3C[4];
 };
 

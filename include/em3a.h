@@ -33,7 +33,7 @@ struct Em3aWork {
     u8 pad_240[0x25C - 0x240];
     Vec routePos;         // 0x25C (0x63C)  RouteCkPosToPos / RouteCkToPos result
     u8 pad_268[4];
-    cObj* pMissile;       // 0x26C (0x64C)  missile hung on the helicopter (type 1)
+    P32<cObj> pMissile;   // 0x26C (0x64C)  missile hung on the helicopter (type 1)
     Vec vibAng;           // 0x270 (0x650)  hover vibration phases (em3aVibMove)
     Vec vibSpd;           // 0x27C (0x65C)  their per-frame increments
     Vec spd;              // 0x288 (0x668)  movement speed
@@ -42,7 +42,7 @@ struct Em3aWork {
     int atkWait;          // 0x29C (0x67C)  frames the gun / rocket attack is held off (setAtkWait)
     int lostCnt;          // 0x2A0 (0x680)  frames the player was far away (B_Move)
     int nearCnt;          // 0x2A4 (0x684)  frames the player was near (B_Move)
-    struct EmiEntry* pRoute;  // 0x2A8 (0x688)  current patrol point (EMI type 0x13)
+    P32<struct EmiEntry> pRoute; // 0x2A8 (0x688)  current patrol point (EMI type 0x13)
     u8 pad_2AC;
     u8 espKind;           // 0x2AD (0x68D)  EspPullCoreKind at creation
 };

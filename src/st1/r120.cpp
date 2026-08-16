@@ -27,7 +27,7 @@
 void Obj18CmfOn(cObj* o, u32 n);   // game/obj18.cpp
 
 struct R120Work {
-    TexRenderMng* mgr;    // 0x00  TexRenderInit output
+    P32<TexRenderMng> mgr; // 0x00  TexRenderInit output
     u8 pad_4[0x388 - 4];
 };
 

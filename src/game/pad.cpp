@@ -463,7 +463,7 @@ void VibSetData(VibDataTbl* t, u32 no, u32 type)
 {
     u32* ofs = t->ofs;
     if (no < t->num && ofs[no]) {
-        VibSetDataCore((VibData*) (ofs[no] + (u32) t), type);
+        VibSetDataCore((VibData*)port_ptr64((ofs[no] + (u32)(uintptr_t)(t))), type);
     }
 }
 

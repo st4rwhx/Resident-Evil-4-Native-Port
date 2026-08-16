@@ -24,7 +24,7 @@ struct Em31Eyelid {
     f32 posY;             // 0x0C  eye parts base y
     f32 posY2;            // 0x10  posY - 50: closed position
     int hp;               // 0x14  hits left (0 = broken)
-    cObj* pObj;           // 0x18  the weak point object on the eye (em31WeakInit, obj00)
+    P32<cObj> pObj;       // 0x18  the weak point object on the eye (em31WeakInit, obj00)
 };
 
 // Work of the em31 enemy (em31 module, D:/Bio4/Prog/em31.cpp): the giant. cModel::type 0 is the body,
@@ -52,16 +52,16 @@ struct Em31Work {
     Vec x660;             // 0x660 (0xA40)
     Vec targetPos;        // 0x66C (0xA4C)
     int x678;             // 0x678 (0xA58)
-    cEm31* pBody;         // 0x67C (0xA5C)  tentacle: the body (em31SearchBody)
-    cEm31* pTen;          // 0x680 (0xA60)  body: the tentacle
-    cObj16* pTail[4];     // 0x684 (0xA64)  the four small tentacle objects (em31SetTail)
-    cObjPillar* pPillar;  // 0x694 (0xA74)  pillar being thrown (em31_R1_T_PillarThrow)
-    cObj* pWeak;          // 0x698 (0xA78)  tentacle weak point object (em31WeakInit)
+    P32<cEm31> pBody;     // 0x67C (0xA5C)  tentacle: the body (em31SearchBody)
+    P32<cEm31> pTen;      // 0x680 (0xA60)  body: the tentacle
+    P32<cObj16> pTail[4]; // 0x684 (0xA64)  the four small tentacle objects (em31SetTail)
+    P32<cObjPillar> pPillar; // 0x694 (0xA74)  pillar being thrown (em31_R1_T_PillarThrow)
+    P32<cObj> pWeak;      // 0x698 (0xA78)  tentacle weak point object (em31WeakInit)
     f32 x69C;             // 0x69C (0xA7C)
     u8 pad_6A0[0x700 - 0x6A0];
     PlCloth cloth2;       // 0x700 (0xAE0)  Em31ClothSet2 / Em31ClothMove2 (the hanging chains)
     PlCloth cloth3;       // 0x760 (0xB40)  Em31ClothSet3 / Em31ClothMove3
-    cModelInfo* pInfo;    // 0x7C0 (0xBA0)  extra body model
+    P32<cModelInfo> pInfo; // 0x7C0 (0xBA0)  extra body model
     int x7C4;             // 0x7C4 (0xBA4)
     Camera cam;           // 0x7C8 (0xBA8)  event camera (em31EscapeCamMove / em31StampCamMove)
     Vec bridgePos;        // 0x8C0 (0xCA0)  jump target (em31JumpCk / em31BridgeJumpCk / em31_R1_BridgeVs)

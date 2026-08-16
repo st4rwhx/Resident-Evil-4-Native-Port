@@ -30,8 +30,8 @@ static cObj* SetObj26(cObj* parent, Vec* scale)
     if (obj == 0) {
         return 0;
     }
-    if (obj->modelInit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc),
-                       (void*) (pG->pArc->ofs_24 + (u32) pG->pArc)) == 0) {
+    if (obj->modelInit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)),
+                       (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc))) == 0) {
         pLog->err(0, 0, "SetObj26() failed.");
         ObjMgr.destroy(obj);
         return 0;

@@ -10,7 +10,7 @@ struct EmItemWork {
     u32 flags;            // 0x000 (0x3E0)
     u8 pad_4[8];
     int status;           // 0x00C (0x3EC)  1 = landed (drop), 2 = broken, 3 = damaged (ckStatus)
-    cModel* pParent;      // 0x010 (0x3F0)  model the item follows (setParent)
+    P32<cModel> pParent;  // 0x010 (0x3F0)  model the item follows (setParent)
     int partsNo;          // 0x014 (0x3F4)
     int noNormalize;      // 0x018 (0x3F8)
     u8 pad_1C[0x224 - 0x1C];

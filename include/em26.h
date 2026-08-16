@@ -17,8 +17,8 @@ struct Em26Work {
     int dmgTotal;         // 0x180 (0x560)  damage taken since the last attack (> 500 -> R1_Atk)
     u32 sndId;            // 0x184 (0x564)  SndCall handle of the current voice
     int breathTimer;      // 0x188 (0x568)  frames between the breath SEs (em26BreathSe)
-    cCtrl* pCtrl12;       // 0x18C (0x56C)  GetCtrlCtrl12()
-    cCtrl* pCtrl11;       // 0x190 (0x570)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl12;   // 0x18C (0x56C)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x190 (0x570)  GetCtrlCtrl11()
     int x194;             // 0x194 (0x574)
     u8 atkHit;            // 0x198 (0x578)  the attack already hit the player (em26AtkCk)
 };

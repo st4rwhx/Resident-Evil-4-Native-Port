@@ -31,7 +31,7 @@ f32 GetDistance(Vec& a, Vec& b);               // game/sub2.cpp (second overload
 
 extern void (*Pl_func_tbl[7])(cPlayer*);       // game/player.cpp
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 // Stores through references: scalar MEMs, so pG is reloaded after each of them (the original
 // reloads pG after every store to a GlobalWork field in this unit).
@@ -107,7 +107,7 @@ void PlChangeData()
     pl = pPL;
     pl->setModel();
     pl->setMotion();
-    EspDataLoad((u32) PL_ARC_PTR(pG->pPlArc, 0x1A), 3, 0);
+    EspDataLoad((u32)(uintptr_t)(PL_ARC_PTR(pG->pPlArc, 0x1A)), 3, 0);
     pPL->weaponInit();
     pl->be_flag |= 0x20;
     pl->xFC = 0;
@@ -850,17 +850,17 @@ void PlWaterProc(cPlayer* pl)
         u8 t = hamonTimer % 13;
 
         if (t == 0) {
-            EstSet((int) pl, -1, 0, 0, pl->pRoomEff[0].id, pl->pRoomEff[0].type, 0, 0, (u32) pl, (void*) t);
+            EstSet((int)(uintptr_t)(pl), -1, 0, 0, pl->pRoomEff[0].id, pl->pRoomEff[0].type, 0, 0, (u32)(uintptr_t)(pl), (void*)port_ptr64(t));
         }
     }
     dist = GetDistance(&m_PosOldWater, &pl->pos);
     if (sibukiTimer) {
         sibukiTimer--;
     } else if (dist > spd1) {
-        EstSet((int) pl, -1, 0, 0, pl->pRoomEff[2].id, pl->pRoomEff[2].type, 0, 0, (u32) pl, (void*) sibukiTimer);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, pl->pRoomEff[2].id, pl->pRoomEff[2].type, 0, 0, (u32)(uintptr_t)(pl), (void*)port_ptr64(sibukiTimer));
         sibukiTimer = 10;
     } else if (dist > spd0) {
-        EstSet((int) pl, -1, 0, 0, pl->pRoomEff[1].id, pl->pRoomEff[1].type, 0, 0, (u32) pl, (void*) sibukiTimer);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, pl->pRoomEff[1].id, pl->pRoomEff[1].type, 0, 0, (u32)(uintptr_t)(pl), (void*)port_ptr64(sibukiTimer));
         sibukiTimer = 0x10;
     }
     if (dist > spd0) {

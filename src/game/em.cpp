@@ -106,7 +106,7 @@ int cEmMgr::construct(cEm* p, u32 id)
     case 0xC:
     case 0xD:
     case 0xE:
-        p->x378 = (u32) EmReadSearch(id, 0, 0);
+        p->x378 = (u32)(uintptr_t)(EmReadSearch(id, 0, 0));
 #ifdef RE4_PORT
         printf("[DIAG] cEm id=%d x378=%08x\n", id, p->x378);
 #endif
@@ -173,7 +173,7 @@ int cEmMgr::construct(cEm* p, u32 id)
         p = new (p) cEm;
         break;
     default:
-        p->x378 = (u32) EmReadSearch(id, 0, 0);
+        p->x378 = (u32)(uintptr_t)(EmReadSearch(id, 0, 0));
 #ifdef RE4_PORT
         printf("[DIAG] cEm(def) id=%d x378=%08x\n", id, p->x378);
 #endif
@@ -248,7 +248,7 @@ void cEmMgr::move()
 
 void cEmMgr::destroy(cEm* p)
 {
-    if ((u32) p < PORT_PTR_MIN || (u32) p > PORT_PTR_MAX || (p->be_flag & 0x201) != 1) {
+    if ((u32)(uintptr_t)(p) < PORT_PTR_MIN || (u32)(uintptr_t)(p) > PORT_PTR_MAX || (p->be_flag & 0x201) != 1) {
         pLog->err(0, 0, "cEmMgr::destroy() WORK IS ALREADY DEAD. %08X", p);
         return;
     }

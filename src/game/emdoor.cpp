@@ -443,7 +443,7 @@ void emDoorDmCkWood(cEmDoor* em)
         emDoorSetDmgChain(em, 0);
         emDoorSetDmgChain(em, 1);
         emDoorSetDmgChain(em, 2);
-        EstSet((int) em, -1, 0, 0, w->eff, 6, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 6, 0, 0, (u32)(uintptr_t)(em), 0);
         SndCall(6, 0x37, &em->pos, 0, 0, em);
         em->xFC = 1;
         em->xFD = 4;
@@ -1298,9 +1298,9 @@ void emDoorSetBrkDoor(cEmDoor* em, Vec* pos)
     if (w->eff != 0xFF) {
         ang = Muku(&em->pos, pos, em->rot.y, PI);
         if (fabsf(ang) < PI / 2) {
-            EstSet((int) em, -1, 0, 0, w->eff, 5, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 5, 0, 0, (u32)(uintptr_t)(em), 0);
         } else {
-            EstSet((int) em, -1, 0, 0, w->eff, 4, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 4, 0, 0, (u32)(uintptr_t)(em), 0);
         }
     }
     SndCall(6, 0x37, &em->pos, 0, 0, em);
@@ -1611,10 +1611,10 @@ void emDoor_R1_Down(cEmDoor* em)
         case 2:
         case 3:
             if (water) {
-                EstSet((int) em, -1, 0, 0, w->eff, 0xA, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 0xA, 0, 0, (u32)(uintptr_t)(em), 0);
                 SndCall(6, 3, &em->pos, 0, 0, em);
             } else {
-                EstSet((int) em, -1, 0, 0, w->eff, 7, 0, 0, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 7, 0, 0, (u32)(uintptr_t)(em), 0);
             }
             break;
         }
@@ -1683,17 +1683,17 @@ void emDoor_R1_Down(cEmDoor* em)
         case 3:
             if (water) {
                 if (w->dir) {
-                    EstSet((int) em, -1, 0, 0, w->eff, 0xC, 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 0xC, 0, 0, (u32)(uintptr_t)(em), 0);
                     SndCall(6, 3, &em->pos, 0, 0, em);
                 } else {
-                    EstSet((int) em, -1, 0, 0, w->eff, 0xB, 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 0xB, 0, 0, (u32)(uintptr_t)(em), 0);
                     SndCall(6, 3, &em->pos, 0, 0, em);
                 }
             } else {
                 if (w->dir) {
-                    EstSet((int) em, -1, 0, 0, w->eff, 9, 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 9, 0, 0, (u32)(uintptr_t)(em), 0);
                 } else {
-                    EstSet((int) em, -1, 0, 0, w->eff, 8, 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->eff, 8, 0, 0, (u32)(uintptr_t)(em), 0);
                 }
             }
             break;
@@ -2814,7 +2814,7 @@ void cEmDoor::setBreak(Vec* pos)
         return;
     }
     zero = 0;
-    EstSet((int) this, -1, 0, 0, w->eff, 6, 0, 0, (u32) this, (void*) zero);
+    EstSet((int)(uintptr_t)(this), -1, 0, 0, w->eff, 6, 0, 0, (u32)(uintptr_t)(this), (void*)port_ptr64(zero));
     SndCall(6, 0x37, &this->pos, 0, 0, this);
     hp = zero;
     xFC = 1;
@@ -2892,9 +2892,9 @@ void emDoorActEvtCk(cEmDoor* em)
         return;
     }
     if (w->pDoor && v.x < -250.0f && w->pDoor->ckOpen() == 0) {
-        ActBtn.set(0x10, 5, (int) emDoorAction2, (int) em, 0, 1, 0, 0);
+        ActBtn.set(0x10, 5, (int)(uintptr_t)(emDoorAction2), (int)(uintptr_t)(em), 0, 1, 0, 0);
     } else {
-        ActBtn.set(0x10, 5, (int) emDoorAction, (int) em, 0, 1, 0, 0);
+        ActBtn.set(0x10, 5, (int)(uintptr_t)(emDoorAction), (int)(uintptr_t)(em), 0, 1, 0, 0);
     }
 }
 
@@ -2919,9 +2919,9 @@ void emDoorAction(cEmDoor* em)
         break;
     }
     if (kick) {
-        SetPlDamage((int) em, plemDoorKick);
+        SetPlDamage((int)(uintptr_t)(em), plemDoorKick);
     } else {
-        SetPlDamage((int) em, plemDoorOpen);
+        SetPlDamage((int)(uintptr_t)(em), plemDoorOpen);
     }
 }
 
@@ -2946,10 +2946,10 @@ void emDoorAction2(cEmDoor* em)
         break;
     }
     if (kick) {
-        SetPlDamage((int) em, plemDoorKick);
+        SetPlDamage((int)(uintptr_t)(em), plemDoorKick);
         pPL->xFF = 1;
     } else {
-        SetPlDamage((int) em, plemDoorOpen);
+        SetPlDamage((int)(uintptr_t)(em), plemDoorOpen);
         pPL->xFF = 1;
     }
 }
@@ -2958,14 +2958,14 @@ void emDoorAction2(cEmDoor* em)
 static inline void emDoorBellSet(Vec* pos)
 {
     BitOn(pG->flags_5010, 0x20000000);
-    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), pos, sizeof(Vec));
+    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), pos, sizeof(Vec));
     pG->bell_stat = 0;
 }
 
 void plemDoorKick(cPlayer* pl)
 {
-    cEmDoor* door = (cEmDoor*) pl->dmgType;
-    cEmDoor* door2 = (cEmDoor*) pPL->dmgType;
+    cEmDoor* door = (cEmDoor*)port_ptr64(pl->dmgType);
+    cEmDoor* door2 = (cEmDoor*)port_ptr64(pPL->dmgType);
     EmDoorWork* w = EMDOOR_WK(door2);
     int frame;
     Vec v;
@@ -3038,8 +3038,8 @@ void plemDoorKick(cPlayer* pl)
 
 void plemDoorOpen(cPlayer* pl)
 {
-    cEmDoor* door = (cEmDoor*) pl->dmgType;
-    cEmDoor* door2 = (cEmDoor*) pPL->dmgType;
+    cEmDoor* door = (cEmDoor*)port_ptr64(pl->dmgType);
+    cEmDoor* door2 = (cEmDoor*)port_ptr64(pPL->dmgType);
     EmDoorWork* w = EMDOOR_WK(door2);
     f32 d;
     u8 flag;
@@ -3053,10 +3053,10 @@ void plemDoorOpen(cPlayer* pl)
             v.x = -638.54f;
             v.y = 0.0f;
             v.z = 440.4f;
-            PSMTXMultVec(((cEmDoor*) pl->dmgType)->mat, &v, &v);
+            PSMTXMultVec(((cEmDoor*)port_ptr64(pl->dmgType))->mat, &v, &v);
             PSVECSubtract(&v, &pPL->pos, &pl->evTarget);
             pl->evTarget.y = 0.0f;
-            pl->x400 = ((cEmDoor*) pl->dmgType)->rot.y + PI;
+            pl->x400 = ((cEmDoor*)port_ptr64(pl->dmgType))->rot.y + PI;
             FSet(pl->x400, LIMIT_ANGLE(pl->x400));
             MotionSetCore(pl, &pl->pMotion, PL_ARC_PTR(pG->pPlArc, 0x1E), 0, 5, 1, 0);
             door->setOpen2(0);
@@ -3068,10 +3068,10 @@ void plemDoorOpen(cPlayer* pl)
             v.x = -638.54f;
             v.y = 0.0f;
             v.z = -440.4f;
-            PSMTXMultVec(((cEmDoor*) pl->dmgType)->mat, &v, &v);
+            PSMTXMultVec(((cEmDoor*)port_ptr64(pl->dmgType))->mat, &v, &v);
             PSVECSubtract(&v, &pPL->pos, &pl->evTarget);
             pl->evTarget.y = 0.0f;
-            FSet(pl->x400, ((cEmDoor*) pl->dmgType)->rot.y);
+            FSet(pl->x400, ((cEmDoor*)port_ptr64(pl->dmgType))->rot.y);
             MotionSetCore(pl, &pl->pMotion, PL_ARC_PTR(pG->pPlArc, 0x1E), 0, 5, 1, 0);
             door->setOpen2(1);
             if (pl->xFF && w->pDoor && !(w->pDoor->flags_3C8 & 0x10000000)) {
@@ -3357,13 +3357,13 @@ cEmDoor* DoorOpenCk(cModel* m)
 
 void SubOpenDoorSet(cEmDoor* door)
 {
-    SetSubDamage((int) door, (void*) subDoorKick);
+    SetSubDamage((int)(uintptr_t)(door), (void*) subDoorKick);
 }
 
 void subDoorKick()
 {
     cSubChar* sub = pSUB;
-    cEmDoor* door = (cEmDoor*) sub->dmgType;
+    cEmDoor* door = (cEmDoor*)port_ptr64(sub->dmgType);
 
     if (sub->xFE == 0) {
         if (door->ckKick(&sub->pos)) {

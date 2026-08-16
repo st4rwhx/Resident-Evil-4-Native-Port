@@ -10,7 +10,7 @@ struct Esp06Work {
     u16 pathId;   // 0x02 (gen->xC8)
     u16 seg;      // 0x04 current path segment (PathGetPos reads/writes a halfword)
     u8 pad_6[2];
-    void* path;   // 0x08
+    P32<void> path; // 0x08
     f32 dist;     // 0x0C distance along the path
     Vec ofs;      // 0x10 base position
     Mtx mat;      // 0x1C rotation / scale applied to the path

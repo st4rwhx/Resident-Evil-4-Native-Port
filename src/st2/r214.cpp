@@ -39,8 +39,8 @@ class cCatapult214 {
 public:
     u32 emNo;         // 0x00  crew enemy list entry
     cEmWrap em;       // 0x04
-    cEmRock* rock;    // 0x10
-    cObj* obj;        // 0x14  the catapult model
+    P32<cEmRock> rock; // 0x10
+    P32<cObj> obj;    // 0x14  the catapult model
     int step;         // 0x18
     int timer;        // 0x1C
     u8 thrown;        // 0x20  a rock is in flight
@@ -77,11 +77,11 @@ struct R214Work {
     int bridgeFlag;          // 0x000  1: the bridge rotation started from the entrance
     cCatapult214 cat[3];     // 0x004
     int hitWait;             // 0x0D0  frames before another catapult may fire at the player
-    ScePrim* catTask;        // 0x0D4
-    cEm* barred[2];          // 0x0D8
+    P32<ScePrim> catTask;    // 0x0D4
+    P32<cEm> barred[2];      // 0x0D8
     cEmPatrol patrol[4];     // 0x0E0
-    IdBinocular* bino;       // 0x550
-    FocusAnimation* focus;   // 0x554
+    P32<IdBinocular> bino;   // 0x550
+    P32<FocusAnimation> focus; // 0x554
     u8 pad_558[4];
     IdBinocular binoObj;     // 0x55C
     FocusAnimation focusObj; // 0x59C
@@ -97,7 +97,7 @@ struct R214Work {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R214WorkPtr {
-    R214Work* p;
+    P32<R214Work> p;
 };
 
 static R214WorkPtr r214_work;

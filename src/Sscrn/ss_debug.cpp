@@ -18,7 +18,7 @@
 // Attache case editor (ss_pzzl's SsPzzlMain owns one).
 class ssDbgPzzl {
 public:
-    void* pSave;    // 0x00  ItemMgr save image taken at init (restored by item set 0x17)
+    P32<void> pSave; // 0x00  ItemMgr save image taken at init (restored by item set 0x17)
     u8 caseSize;    // 0x04  wk->x2AE at init
     s8 cursor;      // 0x05  menu row
     s8 itemSet;     // 0x06  cItemMgr::setUp number, 0x17 = the saved inventory

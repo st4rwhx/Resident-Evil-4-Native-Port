@@ -36,9 +36,9 @@ struct R222Work {
     cEmWrap dragon;      // 0x00
     cEmWrap em1;         // 0x0C
     cEmWrap em2;         // 0x18
-    cEmHit* hit[6];      // 0x24
+    P32<cEmHit> hit[6];  // 0x24
     int hp[6];           // 0x3C
-    cSat* sat;           // 0x54
+    P32<cSat> sat;       // 0x54
     Vec satPos;          // 0x58
     Vec satRot;          // 0x64
     int seTimer;         // 0x70
@@ -52,7 +52,7 @@ struct R222Work {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R222WorkPtr {
-    R222Work* p;
+    P32<R222Work> p;
 };
 
 static R222WorkPtr r222_work;

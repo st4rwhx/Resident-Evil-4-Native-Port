@@ -82,10 +82,10 @@ class CapSelect;
 class SsCapMain : public Widget<SUB_SCREEN> {
 public:
     int state;                 // 0x10
-    CapSelect* sel;            // 0x14
-    SsItemExamine* exam;       // 0x18
-    Widget<SUB_SCREEN>* cur;   // 0x1C
-    Widget<SUB_SCREEN>* next;  // 0x20
+    P32<CapSelect> sel;        // 0x14
+    P32<SsItemExamine> exam;   // 0x18
+    P32<Widget<SUB_SCREEN>> cur; // 0x1C
+    P32<Widget<SUB_SCREEN>> next; // 0x20
 
     SsCapMain() : Widget<SUB_SCREEN>(2) {}
     virtual void init(SUB_SCREEN* wk);
@@ -119,10 +119,10 @@ public:
     int state;                 // 0x10
     int sndWait;               // 0x14
     int sndCnt;                // 0x18
-    FileSelect* sel;           // 0x1C
-    MessageDisplay* disp;      // 0x20
-    Widget<SUB_SCREEN>* cur;   // 0x24
-    Widget<SUB_SCREEN>* next;  // 0x28
+    P32<FileSelect> sel;       // 0x1C
+    P32<MessageDisplay> disp;  // 0x20
+    P32<Widget<SUB_SCREEN>> cur; // 0x24
+    P32<Widget<SUB_SCREEN>> next; // 0x28
 
     SsFileMain() : Widget<SUB_SCREEN>(5) {}
     virtual void init(SUB_SCREEN* wk);
@@ -169,12 +169,12 @@ class ItemCombine;
 class SsItemMain : public Widget<SUB_SCREEN> {
 public:
     int state;                 // 0x10  0 item screen, 1 main menu
-    ItemSelect* sel;           // 0x14
-    ItemCommand* cmd;          // 0x18
-    ItemCombine* comb;         // 0x1C
-    SsItemExamine* exam;       // 0x20
-    Widget<SUB_SCREEN>* cur;   // 0x24
-    Widget<SUB_SCREEN>* next;  // 0x28
+    P32<ItemSelect> sel;       // 0x14
+    P32<ItemCommand> cmd;      // 0x18
+    P32<ItemCombine> comb;     // 0x1C
+    P32<SsItemExamine> exam;   // 0x20
+    P32<Widget<SUB_SCREEN>> cur; // 0x24
+    P32<Widget<SUB_SCREEN>> next; // 0x28
 
     SsItemMain() : Widget<SUB_SCREEN>(6) {}
     virtual void init(SUB_SCREEN* wk);
@@ -203,13 +203,13 @@ public:
     int state;                 // 0x10  0 map, 1 main menu, 2 loading
     int step;                  // 0x14  0 request the area data, 1 wait, 2 running
     int readReq;               // 0x18
-    MapFocus* focus;           // 0x1C
-    MapEntire* entire;         // 0x20
-    MapZoomIn* zoomIn;         // 0x24
-    MapZoomOut* zoomOut;       // 0x28
-    MapRead* read;             // 0x2C
-    MapModeSelect* modeSel;    // 0x30
-    Widget<SUB_SCREEN>* cur;   // 0x34
+    P32<MapFocus> focus;       // 0x1C
+    P32<MapEntire> entire;     // 0x20
+    P32<MapZoomIn> zoomIn;     // 0x24
+    P32<MapZoomOut> zoomOut;   // 0x28
+    P32<MapRead> read;         // 0x2C
+    P32<MapModeSelect> modeSel; // 0x30
+    P32<Widget<SUB_SCREEN>> cur; // 0x34
 
     SsMapMain() : Widget<SUB_SCREEN>(5) {}
     virtual void init(SUB_SCREEN* wk);
@@ -239,16 +239,16 @@ class SsPzzlMain : public Widget<SUB_SCREEN> {
 public:
     int state;                 // 0x10  0 puzzle, 1 main menu
     int caseMove;              // 0x14  1 on the first frame (case model at the opening position)
-    PzzlThinking* thinking;    // 0x18
-    PiecePopUp* popUp;         // 0x1C
-    PiecePopDown* popDown;     // 0x20
-    PieceSelect* select;       // 0x24
-    PieceCommand* command;     // 0x28
-    PieceCombine* combine;     // 0x2C
-    SsItemExamine* exam;       // 0x30
-    CaseChange* caseChange;    // 0x34
-    Widget<SUB_SCREEN>* cur;   // 0x38
-    Widget<SUB_SCREEN>* next;  // 0x3C
+    P32<PzzlThinking> thinking; // 0x18
+    P32<PiecePopUp> popUp;     // 0x1C
+    P32<PiecePopDown> popDown; // 0x20
+    P32<PieceSelect> select;   // 0x24
+    P32<PieceCommand> command; // 0x28
+    P32<PieceCombine> combine; // 0x2C
+    P32<SsItemExamine> exam;   // 0x30
+    P32<CaseChange> caseChange; // 0x34
+    P32<Widget<SUB_SCREEN>> cur; // 0x38
+    P32<Widget<SUB_SCREEN>> next; // 0x3C
 
     SsPzzlMain() : Widget<SUB_SCREEN>(6) {}
     virtual void init(SUB_SCREEN* wk);
@@ -282,24 +282,24 @@ class LvUpConfirm;
 
 class SsShopMain : public Widget<SUB_SCREEN> {
 public:
-    PzzlThinking* thinking;    // 0x10  (ss_pzzl.cpp widgets: case placement of a bought item)
+    P32<PzzlThinking> thinking; // 0x10  (ss_pzzl.cpp widgets: case placement of a bought item)
     int x14;
     int x18;
-    PieceSelect* select;       // 0x1C
-    CaseChange* caseChange;    // 0x20
-    ShopTopMenu* topMenu;      // 0x24
-    SellMenuSelect* sellSel;   // 0x28
-    SellItemNum* sellNum;      // 0x2C
-    SellConfirm* sellConf;     // 0x30
-    BuyMenuSelect* buySel;     // 0x34
-    BuyItemNum* buyNum;        // 0x38
-    BuyConfirm* buyConf;       // 0x3C
-    BuyPuzzleEnd* buyEnd;      // 0x40
-    LvUpMenuSelect* lvSel;     // 0x44
-    LvUpItemSelect* lvItem;    // 0x48
-    LvUpConfirm* lvConf;       // 0x4C
-    Widget<SUB_SCREEN>* cur;   // 0x50
-    Widget<SUB_SCREEN>* next;  // 0x54
+    P32<PieceSelect> select;   // 0x1C
+    P32<CaseChange> caseChange; // 0x20
+    P32<ShopTopMenu> topMenu;  // 0x24
+    P32<SellMenuSelect> sellSel; // 0x28
+    P32<SellItemNum> sellNum;  // 0x2C
+    P32<SellConfirm> sellConf; // 0x30
+    P32<BuyMenuSelect> buySel; // 0x34
+    P32<BuyItemNum> buyNum;    // 0x38
+    P32<BuyConfirm> buyConf;   // 0x3C
+    P32<BuyPuzzleEnd> buyEnd;  // 0x40
+    P32<LvUpMenuSelect> lvSel; // 0x44
+    P32<LvUpItemSelect> lvItem; // 0x48
+    P32<LvUpConfirm> lvConf;   // 0x4C
+    P32<Widget<SUB_SCREEN>> cur; // 0x50
+    P32<Widget<SUB_SCREEN>> next; // 0x54
 
     virtual void init(SUB_SCREEN* wk);
     virtual void quit(SUB_SCREEN* wk);
@@ -329,10 +329,10 @@ struct TermSeq {
 // One op number of ss_term's op table (SsTermMain::OpeMesTblInit, 0x14 bytes, 24 entries in .data).
 struct TermOpe {
     int mdtNo;  // 0x00  0x8C ..
-    void* seq;  // 0x04  TermSeq table
-    void* mes;  // 0x08  message data (MesData type 2)
-    void* xC;
-    void* x10;
+    P32<void> seq; // 0x04  TermSeq table
+    P32<void> mes; // 0x08  message data (MesData type 2)
+    P32<void> xC;
+    P32<void> x10;
 };
 
 class SsTermMain : public Widget<SUB_SCREEN> {
@@ -347,8 +347,8 @@ public:
         int seqCnt;   // 0x30  frame counter
         int wait;     // 0x34  frames before the op starts (0x1E)
         int mdtNo;    // 0x38
-        TermSeq* seq; // 0x3C
-        void* mes;    // 0x40
+        P32<TermSeq> seq; // 0x3C
+        P32<void> mes; // 0x40
         int x44;
         int x48;
     };

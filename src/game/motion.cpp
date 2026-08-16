@@ -135,7 +135,7 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
 {
     MotionWork* w = (MotionWork*) w_;
     MotionData* data = (MotionData*) data_;
-    u16* seq = (u16*) seq_;
+    u16* seq = (u16*)port_ptr64(seq_);
     HermitePrm prm;
     HermitePrm* pp = &prm;
     u16 hist0[3] = { 0, 0, 0 };

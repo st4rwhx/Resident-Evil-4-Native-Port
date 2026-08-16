@@ -10,9 +10,9 @@ struct EmMineWork {
     u32 flags;            // 0x000 (0x3E0)
     int timer;            // 0x004 (0x3E4)  frames until the next beep (R1_Set / R1_Parent), bomb wait
     int count;            // 0x008 (0x3E8)  beep interval, shrinks from 17 to 5
-    cEm* pParent;         // 0x00C (0x3EC)  enemy the mine sticks to (setParent)
+    P32<cEm> pParent;     // 0x00C (0x3EC)  enemy the mine sticks to (setParent)
     int x10;              // 0x010 (0x3F0)
-    cEm* pTarget;         // 0x014 (0x3F4)  homing target (emMineSearchEm)
+    P32<cEm> pTarget;     // 0x014 (0x3F4)  homing target (emMineSearchEm)
     int partsNo;          // 0x018 (0x3F8)  parts of pParent the mine sticks to
     int life;             // 0x01C (0x3FC)  frames until the mine explodes / the arrow is lost
     int searchWait;       // 0x020 (0x400)  frames between homing target searches

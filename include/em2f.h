@@ -30,13 +30,13 @@ struct Em2fWork {
     Vec routePos;         // 0x514 (0x8F4)  RouteCkToPos result towards the player
     Vec subRoutePos;      // 0x520 (0x900)  towards the partner
     Vec targetPos;        // 0x52C (0x90C)  chosen target position
-    cEm* pTarget;         // 0x538 (0x918)  pPL or pSUB
+    P32<cEm> pTarget;     // 0x538 (0x918)  pPL or pSUB
     Vec nextPos;          // 0x53C (0x91C)  next route point (em2fSetNextRoute / em2fChangeRoute)
-    cEm* pBoat;           // 0x548 (0x928)  the boat enemy the death routine releases
+    P32<cEm> pBoat;       // 0x548 (0x928)  the boat enemy the death routine releases
     Vec camPos;           // 0x54C (0x92C)  em2fCriCamMove: camera position / target the cut blends to
     Vec camAt;            // 0x558 (0x938)
-    cCtrl* pCtrl12;       // 0x564 (0x944)  GetCtrlCtrl12()
-    cObj16* pTentacle[6]; // 0x568 (0x948)  tentacle objects (em2fTentacleMove)
+    P32<cCtrl> pCtrl12;   // 0x564 (0x944)  GetCtrlCtrl12()
+    P32<cObj16> pTentacle[6]; // 0x568 (0x948)  tentacle objects (em2fTentacleMove)
     f32 x580;             // 0x580 (0x960)  pos.y at creation
     f32 x584;             // 0x584 (0x964)
     u8 pad_588[4];

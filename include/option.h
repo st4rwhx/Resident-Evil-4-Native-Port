@@ -31,7 +31,7 @@ extern OptionScreen OptScrn;
 // Game result screen (id table type 0x28).
 class GameResult {
 public:
-    void* data;       // 0x00  result id archive
+    P32<void> data;   // 0x00  result id archive
     u8 x4;
     u8 x5;
     u8 x6;
@@ -47,7 +47,7 @@ public:
 // Chapter end screen (new'd by sce_com SceChapterEnd, 0xC bytes).
 class ChapterEnd {
 public:
-    void* data;       // 0x00  chapter id archive
+    P32<void> data;   // 0x00  chapter id archive
     s32 chapter;      // 0x04
     u8 pad_8[4];
 

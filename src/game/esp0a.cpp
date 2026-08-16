@@ -32,7 +32,7 @@ void Esp0a_Trans2(cEsp* esp);
 // The pulled copy is kept in a one-member struct: the original reloads the pointer from its
 // stack slot after every store through it (esp_sub EspSeqSet idiom).
 struct EspPtr {
-    cEsp* p;
+    P32<cEsp> p;
 };
 
 // Reference read of the world parent: an unflagged MEM that stays below the stores through e.p.

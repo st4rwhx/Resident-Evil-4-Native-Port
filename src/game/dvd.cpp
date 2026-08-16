@@ -439,10 +439,10 @@ void MemorySwap(void* mram, u32 aram, u32 size)
         }
         rest -= n;
         memcpy(DVD_BUFF, p, n);
-        Aram.DmaTransReq(1, q, (u32) DVD_BUFF2, n, 1);
+        Aram.DmaTransReq(1, q, (u32)(uintptr_t)(DVD_BUFF2), n, 1);
         memcpy(p, DVD_BUFF2, n);
         p += n;
-        Aram.DmaTransReq(0, (u32) DVD_BUFF, q, n, 1);
+        Aram.DmaTransReq(0, (u32)(uintptr_t)(DVD_BUFF), q, n, 1);
         q += n;
     }
     DCFlushRange(mram, size);
@@ -450,15 +450,15 @@ void MemorySwap(void* mram, u32 aram, u32 size)
 
 void cDvdQueue::trans2mram(void* buf, u32 addr, u32 size)
 {
-    memcpy((void*) addr, buf, size);
+    memcpy((void*)port_ptr64(addr), buf, size);
     mramSize += size;
-    DCFlushRange((void*) addr, size);
+    DCFlushRange((void*)port_ptr64(addr), size);
 }
 
 void trans2aram_cb(u32 req)
 {
-    ARQRequest* r = (ARQRequest*) req;
-    cDvdQueue* q = (cDvdQueue*) r->owner;
+    ARQRequest* r = (ARQRequest*)port_ptr64(req);
+    cDvdQueue* q = (cDvdQueue*)port_ptr64(r->owner);
 
     q->flag &= ~0x01000000;
     q->aramSize += r->length;
@@ -470,7 +470,7 @@ void cDvdQueue::trans2aram(void* buf, u32 addr, u32 size)
 
     DCFlushRange(buf, n);
     flag |= 0x01000000;
-    ARQPostRequest(&arq, (u32) this, ARQ_TYPE_MRAM_TO_ARAM, 1, (u32) buf, addr, n, trans2aram_cb);
+    ARQPostRequest(&arq, (u32)(uintptr_t)(this), ARQ_TYPE_MRAM_TO_ARAM, 1, (u32)(uintptr_t)(buf), addr, n, trans2aram_cb);
 }
 
 void dvdread_callback(s32 result, DVDFileInfo* fi)
@@ -836,7 +836,7 @@ void cDvdQueue::readExit()
         // seul ou l on puisse retourner ses octets avant que le jeu ne les lise.
         // Voir port/endian.cpp et port/ENDIANNESS.md.
         if (addrTbl[0][0] && mramSize)
-            port_endian_fix(name, (void*) addrTbl[0][0], mramSize);
+            port_endian_fix(name, (void*)port_ptr64(addrTbl[0][0]), mramSize);
         {
             int k;
             for (k = 0; k < 32; k++) {
@@ -1089,7 +1089,7 @@ AramReq* cAram::pullAramQueue(int* no)
 
 void aram_cb(u32 req)
 {
-    AramReq* r = (AramReq*) ((ARQRequest*) req)->owner;
+    AramReq* r = (AramReq*)port_ptr64(((ARQRequest*)port_ptr64(req))->owner);
 
     r->flag |= 0x04000000;
     Aram.pCur = 0;
@@ -1098,8 +1098,8 @@ void aram_cb(u32 req)
 void cAram::DmaTrans(AramReq* r, int wait)
 {
     r->len = ALIGN32(r->len);
-    DCFlushRange((void*) (r->type == 0 ? r->src : r->dst), r->len);
-    ARQPostRequest(&arq, (u32) r, r->type, 1, r->src, r->dst, r->len, aram_cb);
+    DCFlushRange((void*)port_ptr64((r->type == 0 ? r->src : r->dst)), r->len);
+    ARQPostRequest(&arq, (u32)(uintptr_t)(r), r->type, 1, r->src, r->dst, r->len, aram_cb);
     if (wait & 1) {
         while (r->chk(0x04000000) == 0) {}
         r->flag = 0;
@@ -1170,7 +1170,7 @@ void cDvd::Init()
     reqNo = 1;
     OSReport("FST Address = 0x%8x\n", DVDGetFSTLocation());
     size = OSGetConsoleSimulatedMemSize();
-    fst = (u32) DVDGetFSTLocation() - 0x80000000;
+    fst = (u32)(uintptr_t)(DVDGetFSTLocation()) - 0x80000000;
     freeSize = size - fst;
 }
 
@@ -1484,7 +1484,7 @@ int cDvd::ReadCheck(int req, int* result, int* size, void** addr)
             *size = info.aramSize;
         }
         if (addr) {
-            *addr = (void*) info.addr[0][0];
+            *addr = (void*)port_ptr64(info.addr[0][0]);
         }
     }
     return ret;
@@ -1643,7 +1643,7 @@ int cDvd::ErrCheck(int disc, int flag)
                     Sofdec.PlayPause(1);
                 }
                 if (pG->x1C == 1) {
-                    pMes[4] = (u8*) (pG->pArc->ofs_6C + (u32) pG->pArc);
+                    pMes[4] = (u8*)port_ptr64((pG->pArc->ofs_6C + (u32) pG->pArc));
                     cMes.setLayout(0xF, 5);
                 }
                 systemVISetBlack(0);

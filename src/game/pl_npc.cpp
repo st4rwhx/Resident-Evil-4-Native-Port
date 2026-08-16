@@ -67,11 +67,11 @@ static inline void AtariOff(cAtariInfo* at, u16 mask) { at->flags &= mask; }
 // stays below it (interrupt(), moveDamage).
 static inline void AtariOnRaw(cAtariInfo* at, u16 b) { *(u16*) ((u8*) at + 0x1a) |= b; }
 // MotionSetCore with the sequence table as the 4th argument (declared int in motion.h).
-#define MOT_SET(m, w, data, seq, a, b, c) MotionSetCore(m, w, data, (int) (seq), a, b, c)
+#define MOT_SET(m, w, data, seq, a, b, c) MotionSetCore(m, w, data, (int)(uintptr_t)((seq)), a, b, c)
 
 // pSUB stored through a struct view: keeps the base destructor's be_flag load below the store.
 struct SubCharPtr {
-    cSubChar* p;
+    P32<cSubChar> p;
 };
 
 const Vec cSubChar::atckPos = { -100.0f, 0.0f, -500.0f };
@@ -1157,7 +1157,7 @@ void pl_fall_ok(cPlayer* pl)
 {
     PlArc* arc;
 
-    arc = ((cEm*) pPL->dmgType)->subArc;
+    arc = ((cEm*)port_ptr64(pPL->dmgType))->subArc;
     pl->subArc = arc;
     switch (pl->xFD) {
     case 0:
@@ -1187,7 +1187,7 @@ void cSubChar::moveFall()
         FSet(pPL->rot.y, pPL->rot.y + 4.712389f);
         FSet(pPL->rot.y, LIMIT_ANGLE(pPL->rot.y));
         pPL->cCoord::matUpdate();
-        SetPlDamage((int) this, (void (*)(cPlayer*)) pl_fall_ok0);
+        SetPlDamage((int)(uintptr_t)(this), (void (*)(cPlayer*)) pl_fall_ok0);
         pPL->dmg.set(0, 0x80);
         if (SUBFLAG2(this)->check(7)) {
             m = SUB_MOT(subSelf, 0x46);
@@ -1216,7 +1216,7 @@ void cSubChar::moveFall()
         FSet(rot.y, LIMIT_ANGLE(rot.y));
         PSMTXMultVec(pPL->mat, &v_ok, &pos);
         setPos(&pos);
-        SetPlDamage((int) this, pl_fall_ok);
+        SetPlDamage((int)(uintptr_t)(this), pl_fall_ok);
         pPL->dmg.set(0, 0x80);
         MOT_SET(subSelf, MOTION(subSelf), SUB_MOT(subSelf, 0x3F), SUB_MOT(subSelf, 0x5F), 7, 5, 0);
         AtariOff(&atari, 0xFEFF);
@@ -1489,7 +1489,7 @@ void cSubChar::moveBack()
 // Routine 0 / 0xF: run the scenario's own handler (SetSubAux).
 void cSubChar::moveAux()
 {
-    ((void (*)(cSubChar*)) subAux0)(this);
+    ((void (*)(cSubChar*))port_ptr64(subAux0))(this);
 }
 
 // Routine 0 / 0x10: run to the hide spot (SubCharCtrlHide) and duck / climb into it.
@@ -1811,7 +1811,7 @@ void cSubChar::moveFallWait()
     if (subX534) {
         if (GetDistance(&v, &pPL->pos) < 9000000.0f && !SatMgr.hitCheck(&v, &pPL->pParts->worldPos, 0, 0, 0, 0) &&
             !SatMgr.hitCheck(&pPL->pParts->worldPos, &v, 0, 0, 0, 0)) {
-            ActBtn.set(0x1C, 6, (int) catchOn, 0, 0, 1, 0, 0);
+            ActBtn.set(0x1C, 6, (int)(uintptr_t)(catchOn), 0, 0, 1, 0, 0);
             sub53C = 1;
         }
     }
@@ -1939,7 +1939,7 @@ f32 cSubChar::getAdjustX(int attr)
 void cSubChar::moveDamage()
 {
     if (subAux1) {
-        ((void (*)()) subAux1)();
+        ((void (*)())port_ptr64(subAux1))();
         return;
     }
     void* m = 0;   // declared after the handler test: `li r30, 0` in the switch block
@@ -2085,7 +2085,7 @@ void cSubChar::moveDie()
             MOT_SET(subSelf, MOTION(subSelf), SUB_MOT(subSelf, 0x30), 0, 3, 1, 0x32);
         } else {
             MOT_SET(subSelf, MOTION(subSelf), SUB_MOT(subSelf, 0x30), 0, 3, 1, 0);
-            EstSet((int) this, -1, 0, 0, 4, ChkWaterEffectEnable(&pos) ? 4 : 3, 0, 0, (u32) this, 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 4, ChkWaterEffectEnable(&pos) ? 4 : 3, 0, 0, (u32)(uintptr_t)(this), 0);
         }
         SndCall(8, 0xD, &pParts->worldPos, id, 0, 0);
         atari.partsNo = 4;
@@ -2105,7 +2105,7 @@ void cSubChar::moveDie()
 // Routine 3: the bulldozer scenario's own handler (SetSubBulldozer).
 void cSubChar::moveBull()
 {
-    ((void (*)(cSubChar*)) subAux0)(this);
+    ((void (*)(cSubChar*))port_ptr64(subAux0))(this);
 }
 
 // Routine 5: scenario event: walk to subHidePos along the route.
@@ -3564,16 +3564,16 @@ void waterProc(cSubChar* pl)
     }
     hamonTimer++;
     if (hamonTimer % 13 == 0) {
-        EstSet((int) pl, -1, 0, 0, 1, 0x21, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x21, 0, 0, (u32)(uintptr_t)(pl), 0);
     }
     d = GetDistance(&m_PosOldWater, &pl->pos);
     if (sibukiTimer) {
         sibukiTimer--;
     } else if (d > spd1) {
-        EstSet((int) pl, -1, 0, 0, 1, 0x23, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x23, 0, 0, (u32)(uintptr_t)(pl), 0);
         sibukiTimer = 10;
     } else if (d > spd0) {
-        EstSet((int) pl, -1, 0, 0, 1, 0x22, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x22, 0, 0, (u32)(uintptr_t)(pl), 0);
         sibukiTimer = 16;
     }
     m_PosOldWater = pl->pos;

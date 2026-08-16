@@ -44,22 +44,22 @@ asm(".section .rodata\n\t.balign 8\n\t.text");
 struct R20bWork {
     cEmWrap em[18];       // 0x000
     int cnt;              // 0x0D8  frames the last wave condition held
-    TexRenderMng* tex0;   // 0x0DC  hall floor render target
-    TexRenderMng* tex1;   // 0x0E0  event render targets
-    TexRenderMng* tex2;   // 0x0E4
+    P32<TexRenderMng> tex0; // 0x0DC  hall floor render target
+    P32<TexRenderMng> tex1; // 0x0E0  event render targets
+    P32<TexRenderMng> tex2; // 0x0E4
     u8 tbl0[0x80];        // 0x0E8
     u8 tbl1[0x80];        // 0x168
     TexRenderCam cam;     // 0x1E8
     u8 pad_4EC[0x7F0 - 0x4EC];
-    void* tpl9300;        // 0x7F0  original texture palette of evm9300
+    P32<void> tpl9300;    // 0x7F0  original texture palette of evm9300
     u32 str;              // 0x7F4  SndStrReq handle of the entry camera
     u8 pad_7F8[4];
-    void* tpl0202;        // 0x7FC  original texture palette of ev0202
+    P32<void> tpl0202;    // 0x7FC  original texture palette of ev0202
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R20bWorkPtr {
-    R20bWork* p;
+    P32<R20bWork> p;
 };
 
 static u8 r20b_texTbl[0x20];

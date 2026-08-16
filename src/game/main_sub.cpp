@@ -32,7 +32,7 @@ struct OSCalendarTime {
 };
 
 struct OSStopwatch {
-    const char* name;  // 0x00
+    P32<const char> name; // 0x00
     u8 pad_4[4];
     OSTime total;      // 0x08
     u32 hits;          // 0x10
@@ -106,7 +106,7 @@ struct OSLowMem {
         *(volatile u32*) 0x11111111 = 0;                          \
     }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 #line 30 "D:/Bio4/Prog/main_sub.cpp"
 
@@ -153,7 +153,7 @@ void Render_init()
     SetTvMode(rm);
     pFrame_buff[0] = (void*) 0x80460000;
     pCurrent_buff = pFrame_buff[1] =
-        (void*) (0x80460000 + VIPadFrameBufferWidth(rm->viWidth) * rm->xfbHeight * 2);
+        (void*)port_ptr64((0x80460000 + VIPadFrameBufferWidth(rm->viWidth) * rm->xfbHeight * 2));
     DefaultFifo = (void*) 0x803F0000;
     VIConfigure(rm);
     DefaultFifoObj = GXInit(DefaultFifo, 0x70000);
@@ -473,7 +473,7 @@ void DrawTpl(TEXPalette* tpl, int x, int y, int w, int h)
     TEXDescriptor* desc;
     TEXHeader* hdr;
     CLUTHeader* clut;
-    u32 addr = (u32) tpl;
+    u32 addr = (u32)(uintptr_t)(tpl);
 
     if (addr < PORT_PTR_MIN || addr > PORT_PTR_MAX) {
         return;
@@ -495,7 +495,7 @@ void DrawTpl(TEXPalette* tpl, int x, int y, int w, int h)
         }
     }
     hdr = desc->textureHeader;
-    if ((u32) hdr > PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(hdr) > PORT_PTR_MAX) {
         return;
     }
     if (hdr->format - 8 <= 1) {

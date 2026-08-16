@@ -23,7 +23,7 @@ struct EmTreeWork {
     int timer2;           // 0x008 (0x3E8)  emTree_R1_Shot: frames before the tree is lost
     u8 pad_C[0x18 - 0xC];
     int fallTimer;        // 0x018 (0x3F8)  emTree_R1_Parent: frames until setFall (30 when the player survived)
-    cModel* pParent;      // 0x01C (0x3FC)  model the tree follows (setParent)
+    P32<cModel> pParent;  // 0x01C (0x3FC)  model the tree follows (setParent)
     int x20;              // 0x020 (0x400)
     int partsNo;          // 0x024 (0x404)
     u32 sndId;            // 0x028 (0x408)  handle of the looping sound (seAlways)
@@ -43,7 +43,7 @@ struct EmTreeWork {
     u8 estNo;             // 0x074 (0x454)  effect number deleted when the tree lands (50)
     u8 caught;            // 0x075 (0x455)  setCatch / ckCatch
     u8 pad_76[2];
-    EmAtkInfo* pAtk;      // 0x078 (0x458)  attack info used against the player (emTreeAtk by default)
+    P32<EmAtkInfo> pAtk;  // 0x078 (0x458)  attack info used against the player (emTreeAtk by default)
 };
 
 #define EMTREE_WK(em) ((EmTreeWork*) &(em)->x3E0)

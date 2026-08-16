@@ -18,8 +18,8 @@
 #include "math_sub.h"
 #include "option.h"
 
-#define OPT_PTR(ofs) ((void*) (*(u32*) ((u8*) pG->pOptionData + (ofs)) + (u32) pG->pOptionData))
-#define DATA_PTR(d, ofs) ((void*) (*(u32*) ((u8*) (d) + (ofs)) + (u32) (d)))
+#define OPT_PTR(ofs) ((void*)port_ptr64((*(u32*) ((u8*) pG->pOptionData + (ofs)) + (u32) pG->pOptionData)))
+#define DATA_PTR(d, ofs) ((void*)port_ptr64((*(u32*) ((u8*) (d) + (ofs)) + (u32) (d))))
 
 #define ID_OPT 0x2A
 #define ID_OPT_BG 0x2B

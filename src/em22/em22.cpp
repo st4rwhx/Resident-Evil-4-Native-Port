@@ -95,7 +95,7 @@ static void em22_R1_Die_Lost(cEm22* em);
 // Struct-member views of the player / partner / pG pointers: a load through them is not hoisted above
 // the preceding stores through the work pointer (cam_ctrl.cpp PlayerPtr).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 struct SubCharPtr {

@@ -228,8 +228,8 @@ u8* RoomDataGetRoomSavePtr(cRoomData* r, int room) asm("getRoomSavePtr__9cRoomDa
 class cEtcTbl {
 public:
     int stat;            // 0x00  1: a model is registered
-    EtcSetData* pData;   // 0x04  its etc list record
-    cModel* pModel;      // 0x08  the model
+    P32<EtcSetData> pData; // 0x04  its etc list record
+    P32<cModel> pModel;  // 0x08  the model
 
     cEtcTbl() { Init(); }
     void Init() {

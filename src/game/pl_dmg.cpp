@@ -89,7 +89,7 @@ void damageNormal(cPlayer* pl)
             pl->x3E0 = 0x3E7;
             break;
         }
-        MotionSetCore(pl, &pl->pMotion, mot, (int) mot2, 5, 1, 0);
+        MotionSetCore(pl, &pl->pMotion, mot, (int)(uintptr_t)(mot2), 5, 1, 0);
         if (pl->x400 != 123.0f) {
             ang = Muku2(pl->rot.y, pl->x400, PI);
             pl->rot.y += ang;
@@ -132,7 +132,7 @@ void damageNormal(cPlayer* pl)
         break;
     case 0xA:
         MotionSetCore(pl, &pl->pMotion, PL_ARC_PTR(pG->pPlArc, 0x4F), pG->pPlArc->ofs[0x50] + (u32) pG->pPlArc, 3, 5, 0);
-        EstSet((int) pl, -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 0x10 : 0xF, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 0x10 : 0xF, 0, 0, (u32)(uintptr_t)(pl), 0);
         pl->xFE = 0xB;
     case 0xB:
         pos = &pl->pos;
@@ -148,12 +148,12 @@ void damageNormal(cPlayer* pl)
         if (GetWaterHeight(pos, &wh) && wh > pl->pos.y) {
             if (MotionCheckCrossFrame(&pl->pMotion, 48.0f) || MotionCheckCrossFrame(&pl->pMotion, 54.0f) ||
                 MotionCheckCrossFrame(&pl->pMotion, 65.0f)) {
-                EstSet((int) pl, -1, 0, 0, 1, 0x23, 0, 0, (u32) pl, 0);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x23, 0, 0, (u32)(uintptr_t)(pl), 0);
             }
         }
         if (GetWaterHeight(pos, &wh) && pl->pParts->worldPos.y < wh) {
             if (MotionCheckCrossFrame(&pl->pMotion, 18.0f)) {
-                EstSet((int) pl, -1, 0, 0, 1, 0x24, 0, 0, (u32) pl, 0);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x24, 0, 0, (u32)(uintptr_t)(pl), 0);
             }
         }
         if (pl->motionMove()) {
@@ -195,12 +195,12 @@ void damageBlow(cPlayer* pl)
             mot = PL_ARC_PTR(pG->pPlArc, 0x51);
             mot2 = PL_ARC_PTR(pG->pPlArc, 0x67);
         }
-        MotionSetCore(pl, &pl->pMotion, mot, (int) mot2, 5, 1, 0);
+        MotionSetCore(pl, &pl->pMotion, mot, (int)(uintptr_t)(mot2), 5, 1, 0);
         n = pl->x3E0;
         if (n) {
-            EstSet((int) pl, -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 0xE : 0xD, 0, 0, (u32) pl, 0);
+            EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 0xE : 0xD, 0, 0, (u32)(uintptr_t)(pl), 0);
         } else {
-            EstSet((int) pl, -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 6 : 5, 0, 0, (u32) pl, (void*) n);
+            EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 6 : 5, 0, 0, (u32)(uintptr_t)(pl), (void*)port_ptr64(n));
         }
         if (pl->x400 != 123.0f) {
             ang = Muku2(pl->rot.y, pl->x400, PI);
@@ -231,7 +231,7 @@ void damageBlow(cPlayer* pl)
             splash = pl->x3E8;
             if (splash == 0 && GetWaterHeight(&pl->pParts->worldPos, &wh) && pl->pParts->worldPos.y < wh + 400.0f) {
                 pl->x3E8 = 1;
-                EstSet((int) pl, -1, 0, 0, 1, 0x24, 0, 0, (u32) pl, (void*) splash);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x24, 0, 0, (u32)(uintptr_t)(pl), (void*)port_ptr64(splash));
             }
         }
         if (pl->motionMove()) {
@@ -247,7 +247,7 @@ void damageBlow(cPlayer* pl)
         break;
     case 0xA:
         MotionSetCore(pl, &pl->pMotion, PL_ARC_PTR(pG->pPlArc, 0x4F), pG->pPlArc->ofs[0x50] + (u32) pG->pPlArc, 3, 5, 0);
-        EstSet((int) pl, -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 0x10 : 0xF, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 0x10 : 0xF, 0, 0, (u32)(uintptr_t)(pl), 0);
         pl->xFE = 0xB;
     case 0xB:
         pos = &pl->pos;
@@ -263,12 +263,12 @@ void damageBlow(cPlayer* pl)
         if (GetWaterHeight(pos, &wh) && wh > pl->pos.y) {
             if (MotionCheckCrossFrame(&pl->pMotion, 48.0f) || MotionCheckCrossFrame(&pl->pMotion, 54.0f) ||
                 MotionCheckCrossFrame(&pl->pMotion, 65.0f)) {
-                EstSet((int) pl, -1, 0, 0, 1, 0x23, 0, 0, (u32) pl, 0);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x23, 0, 0, (u32)(uintptr_t)(pl), 0);
             }
         }
         if (GetWaterHeight(pos, &wh) && pl->pParts->worldPos.y < wh) {
             if (MotionCheckCrossFrame(&pl->pMotion, 18.0f)) {
-                EstSet((int) pl, -1, 0, 0, 1, 0x24, 0, 0, (u32) pl, 0);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x24, 0, 0, (u32)(uintptr_t)(pl), 0);
             }
         }
         if (pl->motionMove()) {
@@ -324,7 +324,7 @@ void Pl_R0_Die(cPlayer* pl)
     case 0:
         pl->beginDamage();
         MotionSetCore(pl, &pl->pMotion, PL_ARC_PTR(pG->pPlArc, 0x4C), pG->pPlArc->ofs[0x4D] + (u32) pG->pPlArc, 5, 1, 0);
-        EstSet((int) pl, -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 4 : 3, 0, 0, (u32) pl, (void*) no);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, ChkWaterEffectEnable(&pl->pos) ? 4 : 3, 0, 0, (u32)(uintptr_t)(pl), (void*)port_ptr64(no));
         pl->st.x325 |= 0x80;
         if (pl->pBody->pHair) {
             SndCall(1, 0xD, &pl->getPartsPtr(4)->worldPos, 0, 0, 0);
@@ -335,10 +335,10 @@ void Pl_R0_Die(cPlayer* pl)
         pl->x3E0 = no;
     case 1:
         if (pl->frame > 39.7f && pl->frame < 40.3f) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 3, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 3, 1);
         }
         if (pl->frame > 69.7f && pl->frame < 70.3f) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 3, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 3, 1);
         }
         if (pl->motionMove()) {
             pl->xFD = 2;

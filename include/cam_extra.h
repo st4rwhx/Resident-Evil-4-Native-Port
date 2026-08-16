@@ -10,7 +10,7 @@ class cModel;
 // Placement new used to construct camera objects inside CameraControl::extra_buf.
 #ifndef PLACEMENT_NEW_DEFINED
 #define PLACEMENT_NEW_DEFINED
-inline void* operator new(unsigned int, void* p) { return p; }
+inline void* operator new(size_t, void* p) { return p; }
 #endif
 
 // Base class of the special-purpose cameras (game/cam_extra.cpp, cam_motion.cpp).
@@ -24,7 +24,7 @@ public:
     #ifdef RE4_PORT
     void operator delete(void*, PORT_SIZE_T) {}
 #else
-    void operator delete(void*, unsigned int) {}
+    void operator delete(void* , size_t) {}
 #endif
 };
 
@@ -38,7 +38,7 @@ public:
     #ifdef RE4_PORT
     void operator delete(void*, PORT_SIZE_T) {}
 #else
-    void operator delete(void*, unsigned int) {}
+    void operator delete(void* , size_t) {}
 #endif
 };
 
@@ -48,7 +48,7 @@ public:
 
 class CameraAttachedToMotion : public cCamera {
 public:
-    cModel* model;  // 0xFC
+    P32<cModel> model; // 0xFC
 
     CameraAttachedToMotion(cModel* model);
     virtual ~CameraAttachedToMotion();
@@ -141,8 +141,8 @@ public:
     Vec pos_local;     // 0x178
     Vec at_local;      // 0x184
     Vec up_local;      // 0x190
-    void* id_a;        // 0x19C
-    void* id_b;        // 0x1A0
+    P32<void> id_a;    // 0x19C
+    P32<void> id_b;    // 0x1A0
 
     CameraBinocular(Vec* pos, Vec* at, void* id_a, void* id_b);
     virtual ~CameraBinocular();
@@ -160,7 +160,7 @@ public:
 class CameraLookAt : public cCamera {
 public:
     u8 pad_FC[4];
-    cModel* parts;  // 0x100  hand parts looked at
+    P32<cModel> parts; // 0x100  hand parts looked at
 
     CameraLookAt(Camera* cam);
     virtual ~CameraLookAt();
@@ -169,7 +169,7 @@ public:
 
 class CameraLookDownEm : public cCamera {
 public:
-    cModel* parts;  // 0xFC
+    P32<cModel> parts; // 0xFC
 
     CameraLookDownEm(void* em, Vec* ofs);
     virtual ~CameraLookDownEm();

@@ -70,7 +70,7 @@ struct RckWork {
     int cur;            // 0x2AC  caught point, -1 = none
     int near;           // 0x2B0  point nearest to the cursor
     int lineStart;      // 0x2B4
-    void* savedRtp;     // 0x2B8  pG->pRoomRtp on entry
+    P32<void> savedRtp; // 0x2B8  pG->pRoomRtp on entry
     RckHeader hdr;      // 0x2BC
     RckPoint pt[RCK_POINT_MAX];                    // 0x2D4
     RckLine line[RCK_POINT_MAX][RCK_POINT_MAX];    // 0xAD4
@@ -86,10 +86,10 @@ struct RckNode {
 
 // every store through the work pointer reloads it: the pointers are struct members
 struct RckWorkPtr {
-    RckWork* p;
+    P32<RckWork> p;
 };
 struct RckSavePtr {
-    u8* p;
+    P32<u8> p;
 };
 static RckWorkPtr rckWork;
 static RckSavePtr rckSave;

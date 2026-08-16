@@ -44,7 +44,7 @@ void eprintf(int x, int y, int color, int a, const char* fmt, ...);
 #define DEG 0.017453292f
 
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 
@@ -314,15 +314,15 @@ CameraDataHeader* CameraControl::calcAddr(CameraDataHeader* d)
         if ((s32) rec->area < 0) {
             return d;
         }
-        rec->area = (CameraAreaInfo*) ((u32) rec->area + (u32) d);
+        rec->area = (CameraAreaInfo*)port_ptr64(((u32) rec->area + (u32)(uintptr_t)(d)));
         if (rec->cut) {
-            rec->cut = (CameraCut*) ((u32) rec->cut + (u32) d);
+            rec->cut = (CameraCut*)port_ptr64(((u32) rec->cut + (u32)(uintptr_t)(d)));
         }
     }
 
     area = (CameraAreaInfo*) rec;
     for (i = 0; i < d->numArea; i++, area++) {
-        area->points = (Vec*) ((u32) area->points + (u32) d);
+        area->points = (Vec*)port_ptr64(((u32) area->points + (u32)(uintptr_t)(d)));
         if (ver2) {
             area->attr = 3;
         }
@@ -339,11 +339,11 @@ CameraDataHeader* CameraControl::calcAddr(CameraDataHeader* d)
 
     cut = (CameraCut*) area;
     for (i = 0; i < d->numCut; i++, cut++) {
-        cut->pos = (Vec*) ((u32) cut->pos + (u32) d);
-        cut->at = (Vec*) ((u32) cut->at + (u32) d);
-        cut->roll = (f32*) ((u32) cut->roll + (u32) d);
-        cut->fovy = (f32*) ((u32) cut->fovy + (u32) d);
-        cut->frames = (u16*) ((u32) cut->frames + (u32) d);
+        cut->pos = (Vec*)port_ptr64(((u32) cut->pos + (u32)(uintptr_t)(d)));
+        cut->at = (Vec*)port_ptr64(((u32) cut->at + (u32)(uintptr_t)(d)));
+        cut->roll = (f32*)port_ptr64(((u32) cut->roll + (u32)(uintptr_t)(d)));
+        cut->fovy = (f32*)port_ptr64(((u32) cut->fovy + (u32)(uintptr_t)(d)));
+        cut->frames = (u16*)port_ptr64(((u32) cut->frames + (u32)(uintptr_t)(d)));
     }
     return d;
 }

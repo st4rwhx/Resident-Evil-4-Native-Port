@@ -40,7 +40,7 @@ static void IdSetColLoop(IDSystem* id, int no, u8 type, int on);
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -60,8 +60,8 @@ public:
 #define END_EVENT(p, mode) ((cUnitEvent*) (p))->endEvent(mode)
 #endif
 
-#define ARC_PTR(ofs) ((void*) (pG->pArc->ofs + (u32) pG->pArc))
-#define DATA_PTR(d, ofs) ((void*) (*(u32*) ((u8*) (d) + (ofs)) + (u32) (d)))
+#define ARC_PTR(ofs) ((void*)port_ptr64((pG->pArc->ofs + (u32) pG->pArc)))
+#define DATA_PTR(d, ofs) ((void*)port_ptr64((*(u32*) ((u8*) (d) + (ofs)) + (u32) (d))))
 #define DVD_READ_N(name, dst, a, b, c, mode) DvdReadN(name, dst, a, b, c, mode, __FILE__, __LINE__)
 
 // Message y: below the bottom line of the message window.
@@ -117,7 +117,7 @@ static inline int fadeIsOn(FadeWork* f)
 
 // Struct-member view of pSys (the pLog trick): its load stays below preceding stores through `wk`.
 struct SystemWorkPtr {
-    SystemWork* p;
+    P32<SystemWork> p;
 };
 #define pSysS (((SystemWorkPtr*) &pSys)->p)
 #define SYS_FLAG_TBL_S ((u32*) &pSysS->x4)
@@ -268,7 +268,7 @@ int MercSysInitRoom(MercInit* pMInit)
     pPL->setAng(&pMInit->rot);
     pPL->matUpdate();
     CamCtrl.Comeback(0);
-    SceExec(0x12, (TaskFunc) MercSysMoveMain, (int) wk, 4, 2, 0);
+    SceExec(0x12, (TaskFunc) MercSysMoveMain, (int)(uintptr_t)(wk), 4, 2, 0);
     {
         int strTbl[5] = {0x3F, 0x40, 0x41, 0x42, 0x3D};
 

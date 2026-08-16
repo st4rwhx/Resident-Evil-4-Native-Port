@@ -16,7 +16,7 @@ int MotionMove(cModel* m, int flag);               // game/motion.cpp
 int MotionCheckCrossFrame(void* work, f32 frame);  // game/motion.cpp
 }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 #ifdef RE4_PORT
 int PortWiiKnife();                                  // game/pl_wep.cpp : commandes Wii (W3), couteau à visée automatique
@@ -150,7 +150,7 @@ void knife_r3_ready00(cPlayer* pl)
         mot0 = PL_ARC_PTR(pG->pPlArc, 0x23);
         mot1 = PL_ARC_PTR(pG->pPlArc, 0x24);
     }
-    mot3.set(pl, mot0, mot0, mot0, (int) mot1, 3, 0, 4, 0);
+    mot3.set(pl, mot0, mot0, mot0, (int)(uintptr_t)(mot1), 3, 0, 4, 0);
     mot3.move(m3r[0]);
     pl->motionMove();
     lockCtr = 0;
@@ -352,7 +352,7 @@ void knife_r3_fire00(cPlayer* pl)
     mot3.move(m3r[0]);
     MotionMove(pl, 0);
     pl->pWaist->set(pl->x400, 0.4f);
-    EstSet((int) pl, -1, 0, 0, 0, 0x2B, 0, 0xA, 0, 0);
+    EstSet((int)(uintptr_t)(pl), -1, 0, 0, 0, 0x2B, 0, 0xA, 0, 0);
     pl->pBody->waistMove();
     pl->partsWorldCalc();
     pl->xFF = 1;
@@ -384,9 +384,9 @@ void knife_r3_fire10(cPlayer* pl)
 
         if (GetWaterHeight(pos, &wh) && pos->y < wh + 100.0f) {
             if ((G_ROOM_ID32 & 0xFFFF0000) == 0x010A0000 || (G_ROOM_ID32 & 0xFFFF0000) == 0x011A0000) {
-                EstSet((int) pl, -1, 0, 0, 1, 0x25, 0, 0, (u32) pl, 0);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 1, 0x25, 0, 0, (u32)(uintptr_t)(pl), 0);
             } else {
-                EstSet((int) pl, -1, 0, 0, 3, 0, 0, 0, (u32) pl, 0);
+                EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, 0, 0, 0, (u32)(uintptr_t)(pl), 0);
             }
             SndCall(1, 0x51, &pl->getPartsPtr(10)->worldPos, 0, 0, 0);
         }
@@ -450,7 +450,7 @@ void knife_r3_down00(cPlayer* pl)
         pl->xFE = 0;
         pl->xFF = 0;
     } else {
-        pl->motionSet(mot0, 5, 0, ((G_WEP_ID & 0xFFFF0000) == 0x0E000000) ? 0x100 : 0, (int) mot1);
+        pl->motionSet(mot0, 5, 0, ((G_WEP_ID & 0xFFFF0000) == 0x0E000000) ? 0x100 : 0, (int)(uintptr_t)(mot1));
         pl->motionMove();
         pl->xFF = 1;
     }

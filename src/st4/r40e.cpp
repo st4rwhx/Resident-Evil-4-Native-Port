@@ -40,7 +40,7 @@
 
 struct R40eWork {
     cSceObj elv;         // 0x000  the elevator mover
-    TexRenderMng* tex;   // 0x0F8  event render target
+    P32<TexRenderMng> tex; // 0x0F8  event render target
     u8 texTbl[0x80];     // 0x0FC  blend table of the render target
     TexRenderCam cam;    // 0x17C  event render camera
     u32 str;             // 0x480  SndStrReq handle of the show-view event

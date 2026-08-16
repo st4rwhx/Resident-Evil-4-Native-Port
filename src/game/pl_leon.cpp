@@ -29,7 +29,7 @@ extern u8 pl_fs_tbl[];   // game/foot_shadow_tbl.cpp (incomplete type: full addr
         *(volatile u32*) 0x11111111 = 0;                          \
     }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 // Store through a reference: a scalar (non-struct) MEM, so pG is reloaded after every store.
 static inline void PSet(void*& d, void* v) { d = v; }
@@ -80,7 +80,7 @@ void cPlLeon::setModel()
     cModelInfo* info;
     cModelInfo* face;
 
-    info = (cModelInfo*) modelInit(PL_ARC_PTR(pG->pPlArc, 4), PL_ARC_PTR(pG->pPlArc, 5));
+    info = (cModelInfo*)port_ptr64(modelInit(PL_ARC_PTR(pG->pPlArc, 4), PL_ARC_PTR(pG->pPlArc, 5)));
     if (!VALID_PTR(info)) {
         pLog->err(0, 0, "cPlLeon::setModel() failed.");
         return;
@@ -181,7 +181,7 @@ void cPlLeon::setRightHand(int no)
         data = pBody->pWepHand;
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     if ((info = ModInfoMgr.create((void*) data, PL_ARC_PTR(pG->pPlArc, 0x11))) != 0) {
@@ -228,7 +228,7 @@ void cPlLeon::setLeftHand(u32 no)
         data = PL_ARC_PTR(pG->pPlArc, 0x19);
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     pBody->leftNoPrev = pBody->leftNo;

@@ -27,11 +27,11 @@ struct Em25Work {
     Vec routePos;         // 0x234 (0x614)  RouteCkToPos result towards the player
     u8 pad_240[0xC];
     Vec targetPos;        // 0x24C (0x62C)
-    cEm* pTarget;         // 0x258 (0x638)  pPL
-    cEm* pParent;         // 0x25C (0x63C)  host enemy (setParent), NULL on the floor
+    P32<cEm> pTarget;     // 0x258 (0x638)  pPL
+    P32<cEm> pParent;     // 0x25C (0x63C)  host enemy (setParent), NULL on the floor
     int parentParts;      // 0x260 (0x640)  host parts the parasite is attached to
     u8 pad_264[0x378 - 0x264];
-    cObj16* pPara[3];     // 0x378 (0x758)  the three tentacle objects (em25SetParasite, type 7)
+    P32<cObj16> pPara[3]; // 0x378 (0x758)  the three tentacle objects (em25SetParasite, type 7)
     u32 hitCnt;           // 0x384 (0x764)  damage counter 0..3
     int lifeTimer;        // 0x388 (0x768)  frames until the parasite dies by itself (900)
     f32 scaleY;           // 0x38C (0x76C)  em25ScaleCompress: y scale of the parts (the die routines shrink it)

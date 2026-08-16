@@ -35,8 +35,8 @@ struct Obj1bNode {
 
 // GetWepTargetList2 entry.
 struct WepTarget {
-    cEm* em;
-    EmHitInfo* part;
+    P32<cEm> em;
+    P32<EmHitInfo> part;
 };
 
 // EspSeqOpt as the spear fills it: flag byte 2, speed vector at 4.
@@ -413,11 +413,11 @@ void obj1b_R1_Fall(cObjSpear* obj)
                     SndCall(w->seBlk, w->seNo, &obj->pos, w->seId, 0, 0);
                 }
                 if (w->estNo != 0xFF && w->estPrm != 0xFF) {
-                    EstSet((int) obj, -1, 0, 0, w->estNo, w->estPrm, 0, 0, (u32) obj, 0);
+                    EstSet((int)(uintptr_t)(obj), -1, 0, 0, w->estNo, w->estPrm, 0, 0, (u32)(uintptr_t)(obj), 0);
                 }
-                EffectEspDelete(0, w->espId, (u32) obj, 0);
-                EffectEspgenDelete(0, w->espId, (int) obj);
-                EffectEfmDelete(0, w->espId, (int) obj);
+                EffectEspDelete(0, w->espId, (u32)(uintptr_t)(obj), 0);
+                EffectEspgenDelete(0, w->espId, (int)(uintptr_t)(obj));
+                EffectEfmDelete(0, w->espId, (int)(uintptr_t)(obj));
             }
             switch (w->type) {
             default:
@@ -608,8 +608,8 @@ int obj1bHitCk(cObjSpear* obj)
             memclr_asm(&opt, sizeof(SpearEstOpt));
             opt.flag = 1;
             opt.spd = d;
-            EstSet((int) obj, -1, 0, 0, 0x27, 0, 0, 0, (u32) obj, &opt);
-            EstSet((int) obj, -1, 0, 0, 0x27, 5, 0, 0, (u32) obj, 0);
+            EstSet((int)(uintptr_t)(obj), -1, 0, 0, 0x27, 0, 0, 0, (u32)(uintptr_t)(obj), &opt);
+            EstSet((int)(uintptr_t)(obj), -1, 0, 0, 0x27, 5, 0, 0, (u32)(uintptr_t)(obj), 0);
             SndCall(8, 4, &obj->oldPos, em->id, 0, 0);
             w->estTimer = 600;
         }

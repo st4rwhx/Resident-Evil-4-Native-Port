@@ -6,7 +6,7 @@
 // One action button prompt (0x18 bytes), linked into cActionButton::ot by slot.
 struct ActBtnWork {
     u32 tag;       // 0x00  OTag link
-    void* func;    // 0x04  void (*)(int arg, int d): the action (NULL = none)
+    P32<void> func; // 0x04  void (*)(int arg, int d): the action (NULL = none)
     int arg;       // 0x08  first argument (type 2: the SceAtWork*)
     u8 kind;       // 0x0C  prompt message: cMes number kind + 0x16 (clamped to 0x41)
     u8 slot;       // 0x0D  ot slot / SceExec priority

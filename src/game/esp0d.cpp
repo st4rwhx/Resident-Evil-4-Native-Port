@@ -6,7 +6,7 @@ struct Esp0dWork {
     u32 type;        // 0x00
     f32 dist;        // 0x04
     f32 power;       // 0x08
-    cCoord* target;  // 0x0C
+    P32<cCoord> target; // 0x0C
 };
 
 // Attractor effect: pulls the sprite toward its parent while inside `dist`.

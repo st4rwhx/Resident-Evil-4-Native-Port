@@ -83,9 +83,9 @@ cRoomJmp::cRoomJmp(void* p)
             if ((u32) info->name >= PORT_PTR_MIN && (u32) info->name <= PORT_PTR_MAX) {
                 return;
             }
-            info->name = (char*) ((u32) tbl + (u32) info->name);
-            info->scr = (char*) ((u32) tbl + (u32) info->scr);
-            info->soft = (char*) ((u32) tbl + (u32) info->soft);
+            info->name = (char*)port_ptr64(((u32) tbl + (u32) info->name));
+            info->scr = (char*)port_ptr64(((u32) tbl + (u32) info->scr));
+            info->soft = (char*)port_ptr64(((u32) tbl + (u32) info->soft));
         }
     }
 }
@@ -135,13 +135,13 @@ CRoomInfo* cRoomJmp::getRoomInfo(u8 stage, u8 idx)
     // allocates ofs before n (ofs r0, n r11) and global-alloc can give base the freed r0.
     do { ofs = (p + 1)[stage]; } while (0);
     n = *(u32*) ((u8*) p + ofs);
-    base = (u32) p + ofs;
+    base = (u32)(uintptr_t)(p) + ofs;
     if (idx >= n) {
         return 0;
     }
     {
         u32 o = idx * sizeof(CRoomInfo) + 4;
-        return (CRoomInfo*) (base + o);
+        return (CRoomInfo*)port_ptr64((base + o));
     }
 }
 

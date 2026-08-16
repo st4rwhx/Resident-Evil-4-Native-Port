@@ -59,7 +59,7 @@ public:
 // pointers, e.g. cTexSys::Init stores nTexObj = 0 before loading pLog). A plain `cLog*` global
 // lets the scheduler hoist the pLog load above such stores.
 struct cLogPtr {
-    cLog* p;
+    P32<cLog> p;
     cLog* operator->() { return p; }
 };
 

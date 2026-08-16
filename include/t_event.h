@@ -72,23 +72,23 @@ public:
     s8 fogCur;            // 0x27  fog menu cursor
     s8 focusCur;          // 0x28  focus menu cursor
     u8 pad_29[3];
-    void* pEvd;           // 0x2C  event file (8,000,000 bytes)
+    P32<void> pEvd;       // 0x2C  event file (8,000,000 bytes)
     u8 camMode;           // 0x30  debug camera on
     u8 camCnt;            // 0x31
     char fileName[0x22];  // 0x32  selected file name
     EvtHdrCopy hdr;       // 0x54
     u8 pad_94[4];
-    cLightTool* pLightTool;  // 0x98
-    JOY* pJoy0;           // 0x9C  &Joy[0] (&Joy[2] while a sub tool runs)
-    JOY* pJoy1;           // 0xA0  &Joy[1] (&Joy[3])
+    P32<cLightTool> pLightTool; // 0x98
+    P32<JOY> pJoy0;       // 0x9C  &Joy[0] (&Joy[2] while a sub tool runs)
+    P32<JOY> pJoy1;       // 0xA0  &Joy[1] (&Joy[3])
     EvtFogData fog;       // 0xA4
     EvtFocusData focus;   // 0x8AC
-    DbSctrlWork* pSctrl;  // 0x10BC  (1,000,000 bytes)
+    P32<DbSctrlWork> pSctrl; // 0x10BC  (1,000,000 bytes)
     u32 x10C0[8];         // 0x10C0
     u8 pad_10E0[0x28];
     u32 x1108;            // 0x1108
     u8 pad_110C[4];
-    EventMessageData* pMess;  // 0x1110  (1,000,000 bytes)
+    P32<EventMessageData> pMess; // 0x1110  (1,000,000 bytes)
     char room[0x10];      // 0x1114  "r10b" of the file name
     char no[0x10];        // 0x1124  "s10"
     u8 pad_1134[4];

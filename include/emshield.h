@@ -14,8 +14,8 @@ struct EmShieldWork {
     int hitCnt;           // 0x01C (0x3FC)  hits left before the next plank breaks off (Rnd() % 3 + 2)
     int breakCnt;         // 0x020 (0x400)  planks broken off so far (4 = the shield is destroyed)
     int fallTimer;        // 0x024 (0x404)  emShield_R1_Parent: frames until setFall
-    cModel* pParent;      // 0x028 (0x408)  model the shield follows (setParent)
-    cModel* pOldParent;   // 0x02C (0x40C)  parent before setFall (landing sound owner)
+    P32<cModel> pParent;  // 0x028 (0x408)  model the shield follows (setParent)
+    P32<cModel> pOldParent; // 0x02C (0x40C)  parent before setFall (landing sound owner)
     int partsNo;          // 0x030 (0x410)
     int x34;              // 0x034 (0x414)
     int x38;              // 0x038 (0x418)  -1

@@ -76,7 +76,7 @@ cObj* SetHeliMissile(void* bin, void* tpl, Vec* pos, Vec* rot, u8 type)
     obj->type = type;
     w->hit = 0;
     if (obj->type == 1) {
-        w->hit = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &obj->pos, &obj->rot, 1);
+        w->hit = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &obj->pos, &obj->rot, 1);
         if (w->hit) {
             w->hit->hp = 0;
             YarareInitCube(w->hit, 0.0f, -300.0f, -300.0f, 300.0f, 600.0f, 600.0f, 1, 5);
@@ -187,7 +187,7 @@ void objMissile_R0_FireWait(cObjMissile* obj)
         switch (obj->type) {
         case 0:
         default:
-            EstSet((int) obj, -1, 0, 0, 0x32, 4, 0, 0, (u32) obj, 0);
+            EstSet((int)(uintptr_t)(obj), -1, 0, 0, 0x32, 4, 0, 0, (u32)(uintptr_t)(obj), 0);
             break;
         case 1:
             break;
@@ -286,7 +286,7 @@ void objMissile_R0_Fire(cObjMissile* obj)
         switch (obj->type) {
         case 0:
         default:
-            EstSet((int) obj, -1, 0, 0, 0x32, 5, 0, 0, (u32) obj, 0);
+            EstSet((int)(uintptr_t)(obj), -1, 0, 0, 0x32, 5, 0, 0, (u32)(uintptr_t)(obj), 0);
             SndCall(6, 2, &obj->pos, 0, 0, obj);
             w->spd.x = 0.0f;
             w->spd.y = 0.0f;

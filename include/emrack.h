@@ -21,7 +21,7 @@ struct EmRackWork {
     EmRackHit hit[4];     // 0x018 (0x3F8)  extra yarare cubes of type 1
     f32 xE8;              // 0x0E8 (0x4C8)  shotgun hits left before the shock (1.0 for type 1)
     u32 xEC;              // 0x0EC (0x4CC)
-    cSat* sat[3];         // 0x0F0 (0x4D0)  runtime collision pieces (emRackSatSet)
+    P32<cSat> sat[3];     // 0x0F0 (0x4D0)  runtime collision pieces (emRackSatSet)
     u8 eff;               // 0x0FC (0x4DC)  setEff: effect owner id, 0xFF = none
     u8 etcNo;             // 0x0FD (0x4DD)  etc flag index (broken flag)
 };

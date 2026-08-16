@@ -8,7 +8,7 @@
 // read.cpp enemy module entry (SearchEmModule); only the archive pointer is used here.
 struct EmModule {
     u8 pad_0[0x84];
-    void* pArc;   // 0x84
+    P32<void> pArc; // 0x84
 };
 
 EmModule* SearchEmModule(int id);              // game/read.cpp (C++ linkage: SearchEmModule__Fi)

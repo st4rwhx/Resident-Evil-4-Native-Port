@@ -28,7 +28,7 @@ struct DvdHeader {
 
 // Read request parameters handed to cDvd::ReadReq by DvdRead/DvdReadN (`DvdReqWork`, 0x6C).
 struct DvdReq {
-    void* dst;       // 0x00
+    P32<void> dst;   // 0x00
     u32 aram;        // 0x04  ARAM destination
     u16 fileNo;      // 0x08  FileTbl index, 0xFFFF = by name
     u16 prio;        // 0x0A  (4)
@@ -69,8 +69,8 @@ public:
     u16 fileNo;          // 0x4C
     u8 prio;             // 0x4E
     u8 no;               // 0x4F  request number returned to the caller
-    cDvdQueue* next;     // 0x50
-    void* pBuff;         // 0x54  destination (allocated when 0)
+    P32<cDvdQueue> next; // 0x50
+    P32<void> pBuff;     // 0x54  destination (allocated when 0)
     u32 aram;            // 0x58
     u32 mramAddr;        // 0x5C  next free MRAM address
     u32 aramAddr;        // 0x60  next free ARAM address
@@ -129,7 +129,7 @@ struct AramReq {
     u32 src;            // 0x08
     u32 dst;            // 0x0C
     u32 len;            // 0x10
-    AramReq* next;      // 0x14
+    P32<AramReq> next;  // 0x14
 
     int chk(u32 bit) { return (flag & bit) ? 1 : 0; }
     void clear() { flag = 0; }
@@ -138,8 +138,8 @@ struct AramReq {
 // ARAM DMA queue (`Aram`, 0x1A8 bytes).
 class cAram {
 public:
-    AramReq* pCur;       // 0x00
-    AramReq* pList;      // 0x04
+    P32<AramReq> pCur;   // 0x00
+    P32<AramReq> pList;  // 0x04
     ARQRequest arq;      // 0x08
     AramReq queue[16];   // 0x28
 
@@ -155,10 +155,10 @@ public:
 class cDvd {
 public:
     u32 freeSize;         // 0x00    memory above the FST
-    cDvdQueue* pRead;     // 0x04    request being read
-    cDvdQueue* pList;     // 0x08    pending requests sorted by prio
+    P32<cDvdQueue> pRead; // 0x04    request being read
+    P32<cDvdQueue> pList; // 0x08    pending requests sorted by prio
     cDvdQueue queue[16];  // 0x0C
-    void* pSizeTbl;       // 0x310C
+    P32<void> pSizeTbl;   // 0x310C
     s32 driveStatus;      // 0x3110
     u8 reqNo;             // 0x3114  next request number (never 0)
     u8 pad_3115[3];
@@ -207,7 +207,7 @@ extern cAram Aram;
 
 // File name table (game/dvd.cpp); entrynum -1 = not on the disc.
 struct FileTblEntry {
-    const char* name;
+    P32<const char> name;
     s32 entrynum;
 };
 extern FileTblEntry FileTbl[];

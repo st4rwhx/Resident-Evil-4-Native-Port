@@ -12,9 +12,9 @@ struct EmSwitchWork {
     int state;            // 0x210 (0x5F0)  1 = open, 2 = closed, 0 = moving (ckSwitch)
     int opened;           // 0x214 (0x5F4)  ckOpen
     u8 pad_218[4];
-    class cEmBarred* pBarred;     // 0x21C (0x5FC)  gates the lever drives
-    class cEmBarred* pBarred2;    // 0x220 (0x600)
-    class cEmSwitch* pConnect;    // 0x224 (0x604)  switch moved together with this one
+    P32<class cEmBarred> pBarred; // 0x21C (0x5FC)  gates the lever drives
+    P32<class cEmBarred> pBarred2; // 0x220 (0x600)
+    P32<class cEmSwitch> pConnect; // 0x224 (0x604)  switch moved together with this one
     u8 mode;              // 0x228 (0x608)  1 = open only (no close prompt), 2 = closes again after opening, 3 = auto open
     u8 dmToggle;          // 0x229 (0x609)  a hit toggles the lever
     u8 barrel;            // 0x22A (0x60A)  closing drops the r227 barrel

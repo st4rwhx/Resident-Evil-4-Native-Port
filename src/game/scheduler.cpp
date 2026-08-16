@@ -102,7 +102,7 @@ void TaskSchedulerMain(TASK* t)
     }
     switch (t->status) {
     case TASK_EXEC:
-        OSCreateThread(&t->thread, t->hook, (void*) t->arg, t->stack, t->stack_size, t->level, 1);
+        OSCreateThread(&t->thread, t->hook, (void*)port_ptr64(t->arg), t->stack, t->stack_size, t->level, 1);
         t->status = TASK_RUN;
         OSResumeThread(&t->thread);
         GXSetCurrentGXThread();
@@ -186,7 +186,7 @@ void* TaskExec_hook(void* arg)
         : "r3");
 #endif
     GXSetCurrentGXThread();
-    CTASK->func((int) arg);
+    CTASK->func((int)(uintptr_t)(arg));
     return NULL;
 }
 

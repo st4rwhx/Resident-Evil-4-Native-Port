@@ -336,8 +336,8 @@ struct TOOL_WINDOW {
 #else
     static void* operator new(unsigned n) asm("__builtin_new");
 #endif
-    DB_PRIM_ARRAY* pa;
-    DB_WINDOW* win;
+    P32<DB_PRIM_ARRAY> pa;
+    P32<DB_WINDOW> win;
 };
 
 // COMPILER-DIFF: candidate (cse1 hash-table flush position): cse.c cse_basic_block empties its table every 1001 insns of

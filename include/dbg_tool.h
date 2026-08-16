@@ -56,9 +56,9 @@ static inline void DbgButtonSetName(cDbgButtonBase* b, const char* s)
 class cDbgFileSelectWindow : public cDbgWindow {
 public:
     int fileNo;            // 0x238
-    const char* pPath1;    // 0x23C  directory
-    const char* pPath2;    // 0x240  file stem
-    const char* pExt;      // 0x244
+    P32<const char> pPath1; // 0x23C  directory
+    P32<const char> pPath2; // 0x240  file stem
+    P32<const char> pExt;  // 0x244
     char fileName[0x100];  // 0x248  path1 + path2 + "%02d" + ext
 
     void Init(int wx, int wy, const char* name, const char* path1, const char* path2, const char* ext);
@@ -340,8 +340,8 @@ inline int cDbgOkCancelWindow::LocalUpdate()
 // A button of the work editor: the callbacks get the work index and the work.
 template <class T> class cDbgButtonTemplate : public cDbgButtonBase {
 public:
-    int (*pFunc)(int no, T* w, cDbgButtonTemplate<T>* b);     // 0x1C  exec callback (returns 0 when done)
-    void (*pUpdate)(int no, T* w, cDbgButtonTemplate<T>* b);  // 0x20  label update, every frame
+    FnP32<int(*)(int no, T* w, cDbgButtonTemplate<T>* b)> pFunc; // 0x1C  exec callback (returns 0 when done)
+    FnP32<void(*)(int no, T* w, cDbgButtonTemplate<T>* b)> pUpdate; // 0x20  label update, every frame
 
     cDbgButtonTemplate(int x_, int y_, const char* name, int cx_, int cy_) { Init(x_, y_, name, cx_, cy_); }
     virtual ~cDbgButtonTemplate() {}
@@ -351,7 +351,7 @@ public:
 // `top`; one button per column and row; copy/cut/paste of whole works through `buf`.
 template <class T> class cDbgEditWindow : public cDbgWindowBase {
 public:
-    T* pWork;                          // 0x28
+    P32<T> pWork;                      // 0x28
     u32 numWork;                       // 0x2C
     u32 rows;                          // 0x30
     int top;                           // 0x34  first displayed work
@@ -361,15 +361,15 @@ public:
     int bufValid;                      // 0x44
     T buf;                             // 0x48
     u32 num;                           // number of buttons
-    cDbgButtonTemplate<T>* pButton[128];
-    cDbgButtonTemplate<T>* pCur;
-    cDbgButtonTemplate<T>* pTop;
-    cDbgButtonTemplate<T>* pBottom;
-    int (*pIsWorkAlive)(T* w);
-    void (*pSetWorkAlive)(T* w, int alive);
-    int (*pGetWorkNo)(T* w);
-    void (*pSetWorkNo)(T* w, int no);
-    void (*pInitWork)(T* w, int no);
+    P32<cDbgButtonTemplate<T>> pButton[128];
+    P32<cDbgButtonTemplate<T>> pCur;
+    P32<cDbgButtonTemplate<T>> pTop;
+    P32<cDbgButtonTemplate<T>> pBottom;
+    FnP32<int(*)(T* w)> pIsWorkAlive;
+    FnP32<void(*)(T* w, int alive)> pSetWorkAlive;
+    FnP32<int(*)(T* w)> pGetWorkNo;
+    FnP32<void(*)(T* w, int no)> pSetWorkNo;
+    FnP32<void(*)(T* w, int no)> pInitWork;
 
     cDbgEditWindow(int wx, int wy, const char* name, T* work, u32 n, u32 nRows)
     {

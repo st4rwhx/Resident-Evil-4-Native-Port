@@ -18,8 +18,8 @@ struct Obj03Work {
     f32 t;        // 0x08 current position on the path
     f32 speed;    // 0x0C
     u32 flags;    // 0x10 bit0: debug draw
-    void* data;   // 0x14
-    void* path;   // 0x18
+    P32<void> data; // 0x14
+    P32<void> path; // 0x18
 };
 
 class cObj;
@@ -31,7 +31,7 @@ struct EfmCore {
     u8 kind;              // 0x02
     u8 x3;                // 0x03
     u32 x4;               // 0x04
-    cModel* pEm;          // 0x08
+    P32<cModel> pEm;      // 0x08
 };
 
 // Effect model work (game/obj04.cpp `Efm04`): a thrown/falling particle-like model.
@@ -71,9 +71,9 @@ struct Efm04Work {
     u16 scaleStart;       // 0x66
     u16 life;             // 0x68  0 = forever
     u16 frame;            // 0x6A
-    cModel* parent;       // 0x6C  (esp_efm: the sequence's parent model)
+    P32<cModel> parent;   // 0x6C  (esp_efm: the sequence's parent model)
     u32 parentSerial;     // 0x70
-    cCoord* parentWorld;  // 0x74  pEffParentWorld when detached
+    P32<cCoord> parentWorld; // 0x74  pEffParentWorld when detached
     u8 rotFrame;          // 0x78  frame to re-orient along the parent (0xFF = never)
     u8 x79;
     u8 stopped;           // 0x7A  bit0: came to rest
@@ -176,13 +176,13 @@ struct ObaModelWork {
     u8 pad_0[0xC];
     Vec ofs;              // 0x0C  position relative to the parent (parts) matrix
     int partsNo;          // 0x18  parts of the parent followed by type 0
-    cObj* parent;         // 0x1C
+    P32<cObj> parent;     // 0x1C
 };
 
 // Fading attachment work (game/obj26.cpp): scales toward `tgtScale`, then shrinks and fades out.
 struct Obj26Work {
     u8 pad_0[8];
-    cObj* parent;         // 0x08  followed parts 2 of this object
+    P32<cObj> parent;     // 0x08  followed parts 2 of this object
     u8 pad_C[0xC];
     Vec tgtScale;         // 0x18
 };
@@ -191,7 +191,7 @@ struct Obj26Work {
 struct BellWork {
     u8 pad_0[0xA];
     u16 ringTimer;        // 0x0A  frames the "rung" state is reported to pG (90 after a hit)
-    class cEmHit* pEmHit; // 0x0C
+    P32<class cEmHit> pEmHit; // 0x0C
     struct PenCloth cloth;  // 0x10 .. 0x70
 };
 
@@ -207,26 +207,26 @@ struct IslandWork {
     Vec home;             // 0x24  position it drifts back to
     u8 espKind;           // 0x30  effect kind (EspPullCoreKind)
     u8 pad_31[3];
-    void* motIdle;        // 0x34  motions: idle / crash, and their big-scale (>= 1.5) variants
-    void* motCrash;       // 0x38
-    void* motIdleBig;     // 0x3C
-    void* motCrashBig;    // 0x40
+    P32<void> motIdle;    // 0x34  motions: idle / crash, and their big-scale (>= 1.5) variants
+    P32<void> motCrash;   // 0x38
+    P32<void> motIdleBig; // 0x3C
+    P32<void> motCrashBig; // 0x40
 };
 
 // Thrown / shot object work (game/obj08.cpp): a projectile with gravity, scenario / enemy /
 // player hit checks and up to four effect sets.
 struct Obj08Work {
     u32 flags;            // 0x00  bit0 start motion, bit1 motion running, bit3 rotate, bit4 enemy hit check, bit5 player hit check
-    void* pMot;           // 0x04
+    P32<void> pMot;       // 0x04
     u8 pad_8[2];
     u16 motPrm;           // 0x0A
     Vec rotSpd;           // 0x0C
     Vec spd;              // 0x18
     f32 grav;             // 0x24
     f32 rad;              // 0x28  hit radius (min 1.0)
-    cModel* parent;       // 0x2C  thrower (its id goes to SndCall)
+    P32<cModel> parent;   // 0x2C  thrower (its id goes to SndCall)
     int life;             // 0x30  frames left (-1 = forever)
-    void* pAtk;           // 0x34  EmAtkHitCk attack data
+    P32<void> pAtk;       // 0x34  EmAtkHitCk attack data
     u32 atkFlags;         // 0x38  low 16 bits: GetWepTargetList flag, low byte: damage kind
     u32 estNo[4];         // 0x3C  effects: 0 ?, 1 scenario hit / timeout, 2 floor hit, 3 enemy / player hit
     u32 estPrm[4];        // 0x4C
@@ -239,10 +239,10 @@ struct Obj08Work {
 // blend, or falls as a three-point rope (obj00FallMove).
 struct Obj00Work {
     u32 flags;            // 0x00  bit2: falling, bit3: blending toward the parent, bit5: fading out
-    void* pMot;           // 0x04
+    P32<void> pMot;       // 0x04
     int motA;             // 0x08  MotionSetCore 4th argument
     u32 motPrm;           // 0x0C  low 16 bits: MotionSetCore 6th argument
-    cModel* oya;          // 0x10  parent
+    P32<cModel> oya;      // 0x10  parent
     int partsNo;          // 0x14  parts of the parent to follow
     f32 rate;             // 0x18  blend rate (1.0 = parent matrix)
     f32 rateSpd;          // 0x1C
@@ -259,10 +259,10 @@ struct Obj00Work {
 // the landing SE moved to 0x68 and a rope `type` selecting the three rope offsets.
 struct Obj12Work {
     u32 flags;            // 0x00  bit2: falling, bit3: blending toward the parent, bit7: keep the parent matrix, bit8: thrown, bit9: fading out after `life`
-    void* pMot;           // 0x04
+    P32<void> pMot;       // 0x04
     int motResult;        // 0x08  MotionMove result of this frame
     u32 motPrm;           // 0x0C
-    cModel* oya;          // 0x10  parent
+    P32<cModel> oya;      // 0x10  parent
     int partsNo;          // 0x14
     f32 rate;             // 0x18  blend rate (1.0 = parent matrix)
     f32 rateSpd;          // 0x1C
@@ -282,7 +282,7 @@ struct Obj12Work {
 struct Obj18Work {
     u32 flags;            // 0x00  bit3: blending toward the parent, bit6: cloth simulation off
     u8 pad_4[0xC];
-    cModel* oya;          // 0x10  parent
+    P32<cModel> oya;      // 0x10  parent
     int partsNo;          // 0x14
     f32 rate;             // 0x18  blend rate (1.0 = parent matrix)
     f32 rateSpd;          // 0x1C
@@ -291,7 +291,7 @@ struct Obj18Work {
     u32 x64;              // 0x64
     u32 type;             // 0x68  SetObj18 type (cloth set)
     u32 cmf;              // 0x6C  Obj18CmfSet/Get flag bits
-    cObj* child;          // 0x70  ribbon / rope object created by SetObj18
+    P32<cObj> child;      // 0x70  ribbon / rope object created by SetObj18
     int x74;              // 0x74  bit26 (0x04000000): event ControlTransFlag skips the child flags
     union {
         u8 pad_78[0xC];
@@ -305,7 +305,7 @@ struct Obj18Work {
 // model (follows its parts) and explodes / lands in water after `life` frames.
 struct Obj01Work {
     u32 flags;            // 0x00  bit0 start motion, bit1 motion running, bit2 water / bounce check, bit3 rotate parts 0
-    void* pMot;           // 0x04
+    P32<void> pMot;       // 0x04
     u8 pad_8[2];
     u16 motPrm;           // 0x0A
     Vec rotSpd;           // 0x0C
@@ -313,7 +313,7 @@ struct Obj01Work {
     f32 grav;             // 0x24
     f32 rad;              // 0x28  bounce radius
     int life;             // 0x2C  frames until the explosion (0 = now)
-    cModel* hold;         // 0x30  model holding it (follows `holdParts`)
+    P32<cModel> hold;     // 0x30  model holding it (follows `holdParts`)
     int holdParts;        // 0x34
     Vec holdOfs;          // 0x38
     Vec holdRot;          // 0x44
@@ -336,7 +336,7 @@ struct Obj01Work {
 // landing SE counters split out.
 struct WepItemWork {
     u32 flags;            // 0x00  bit0 start motion, bit1 motion running, bit2 water / bounce check, bit3 rotate parts 0
-    void* pMot;           // 0x04
+    P32<void> pMot;       // 0x04
     u8 pad_8[2];
     u16 motPrm;           // 0x0A
     Vec rotSpd;           // 0x0C
@@ -344,7 +344,7 @@ struct WepItemWork {
     f32 grav;             // 0x24
     f32 rad;              // 0x28  bounce radius
     int life;             // 0x2C  frames until the explosion (0 = now)
-    cModel* hold;         // 0x30  model holding it (follows `holdParts`)
+    P32<cModel> hold;     // 0x30  model holding it (follows `holdParts`)
     int holdParts;        // 0x34
     Vec holdOfs;          // 0x38
     Vec holdRot;          // 0x44
@@ -381,11 +381,11 @@ struct GatlingWork {
     u8 seOn;              // 0x1C  spin SE playing
     u8 pad_1D[3];
     u32 seHandle;         // 0x20
-    class cSat* eat;      // 0x24
-    class cEmHit* hit[3]; // 0x28
+    P32<class cSat> eat;  // 0x24
+    P32<class cEmHit> hit[3]; // 0x28
     u8 pad_34[8];
-    class cEm* ride;      // 0x3C  enemy riding the gun
-    class cModel* target; // 0x40  aimed-at model (player when NULL)
+    P32<class cEm> ride;  // 0x3C  enemy riding the gun
+    P32<class cModel> target; // 0x40  aimed-at model (player when NULL)
 };
 
 // Helicopter missile work (game/objMissile.cpp `cObjMissile`): hangs from a parts of the
@@ -394,11 +394,11 @@ struct MissileWork {
     u32 x00;              // 0x00
     int timer;            // 0x04  fire wait / flight frames
     int hitWait;          // 0x08  frames before the hit checks start
-    cModel* parent;       // 0x0C
+    P32<cModel> parent;   // 0x0C
     int partsNo;          // 0x10
     int noNormalize;      // 0x14  keep the parent parts matrix as it is
     Vec target;           // 0x18
-    class cEmHit* hit;    // 0x24
+    P32<class cEmHit> hit; // 0x24
     u8 hasTarget;         // 0x28
     u8 pad_29[3];
     Vec spd;              // 0x2C
@@ -414,12 +414,12 @@ struct GondolaWork {
     int rideSUB;          // 0x0C  partner is on board
     int cnt;              // 0x10  counts down every frame
     Vec x14;              // 0x14
-    class cEm* rideEm[5]; // 0x20
-    class cSat* sat[5];   // 0x34
-    class cSat* sat2[5];  // 0x48
-    struct MotionWork* subWork;  // 0x5C  sub (vibration / break) motion work (setSubMotion)
-    void* subMot;         // 0x60  vibration motion (setVib)
-    void* breakMot;       // 0x64  break motion (R0_Break)
+    P32<class cEm> rideEm[5]; // 0x20
+    P32<class cSat> sat[5]; // 0x34
+    P32<class cSat> sat2[5]; // 0x48
+    P32<struct MotionWork> subWork; // 0x5C  sub (vibration / break) motion work (setSubMotion)
+    P32<void> subMot;     // 0x60  vibration motion (setVib)
+    P32<void> breakMot;   // 0x64  break motion (R0_Break)
 };
 
 // Mine trolley work (game/objTrolley.cpp `cObjTrolley`): three cars (parts 0 / 4 / 8) with a
@@ -427,9 +427,9 @@ struct GondolaWork {
 struct TrolleyWork {
     u32 flags;            // 0x00  bit0: start (setStart), bit1: 2nd start, bit2: stopped (ckStop)
     int timer;            // 0x04
-    void* mot[9];         // 0x08  setMotion table: 0 run, 1 2nd run, 2/3 break (xFF), 4..8 player escape / die
-    class cSat* sat[3];   // 0x2C  scenario pieces per car (the SetTrolley / SatClear loops run over 5)
-    class cSat* sat2[5];  // 0x38  effect pieces per car
+    P32<void> mot[9];     // 0x08  setMotion table: 0 run, 1 2nd run, 2/3 break (xFF), 4..8 player escape / die
+    P32<class cSat> sat[3]; // 0x2C  scenario pieces per car (the SetTrolley / SatClear loops run over 5)
+    P32<class cSat> sat2[5]; // 0x38  effect pieces per car
     u8 ride;              // 0x4C  the player rides the trolley
 };
 
@@ -438,19 +438,19 @@ struct PillarWork {
     u32 flags;            // 0x00  bit0: set (ckSet), cleared by setBreak / setThrow / setFall
     int timer;            // 0x04  frames before the fade out
     int rnd;              // 0x08  Rnd() & 1: action button type 3 / 4
-    void* motBreak;       // 0x0C  setMotion
-    void* motThrow0;      // 0x10  setThrow: lift, throw
-    void* motThrow1;      // 0x14
-    void* motEscape;      // 0x18  R0_Escape
-    void* motFall0;       // 0x1C  setFall: fall, land
-    void* motFall1;       // 0x20
-    void* plMot;          // 0x24  player escape motion (plemEscape MotionSetCore)
+    P32<void> motBreak;   // 0x0C  setMotion
+    P32<void> motThrow0;  // 0x10  setThrow: lift, throw
+    P32<void> motThrow1;  // 0x14
+    P32<void> motEscape;  // 0x18  R0_Escape
+    P32<void> motFall0;   // 0x1C  setFall: fall, land
+    P32<void> motFall1;   // 0x20
+    P32<void> plMot;      // 0x24  player escape motion (plemEscape MotionSetCore)
     int plMotA;           // 0x28  its 4th argument
     Vec basePos;          // 0x2C  position at R0_Set (attack line end, plemEscape2 heading)
     Vec target;           // 0x38  setBreak position (plemEscape heading)
     Vec spd;              // 0x44  throw / fall speed
     u32 seHandle;         // 0x50  SndCall handle of the rolling SE
-    class cSat* sat;      // 0x54  effect collision piece (objPillarEatSet)
+    P32<class cSat> sat;  // 0x54  effect collision piece (objPillarEatSet)
     u8 escaped;           // 0x58  1: the player escaped / was hit (no more action button)
 };
 
@@ -460,24 +460,24 @@ struct ChainWork {
     u32 flags;            // 0x00  bit1: keep the parent parts matrices as they are (no axis normalize)
     int timer;            // 0x04  frames before the fade-out (LostWait)
     u8 pad_8[4];
-    cModel* parent;       // 0x0C
+    P32<cModel> parent;   // 0x0C
     int parts1;           // 0x10
     int parts2;           // 0x14
     Vec ofs1;             // 0x18  offset in parts1
     Vec ofs2;             // 0x24  offset in parts2
-    struct PenCloth* cloth;  // 0x30
+    P32<struct PenCloth> cloth; // 0x30
 };
 
 // Ladder / tower work (game/objYagura.cpp).
 struct YaguraWork {
     u8 pad_0[0x20];
-    void* pMotionVib;     // 0x20  vibration motion set by setVib()
+    P32<void> pMotionVib; // 0x20  vibration motion set by setVib()
 };
 
 // Player weapon object work (game/objWep.cpp `cObjWep`, a cObj subclass; see pl_wep.h).
 struct ObjWepWork {
-    void* pMotNormal;     // 0x00 (0x328)  idle motion (pWepArc)
-    void* pMotEmpty;      // 0x04 (0x32C)  idle motion with an empty magazine
+    P32<void> pMotNormal; // 0x00 (0x328)  idle motion (pWepArc)
+    P32<void> pMotEmpty;  // 0x04 (0x32C)  idle motion with an empty magazine
     f32 lockRandPitch;    // 0x08 (0x330)  lock random: pitch range (pl_wep PlWepLockRand), degrees -> radians in setAbility
     f32 lockRandYaw;      // 0x0C (0x334)
     f32 lockRandPitchStep;  // 0x10 (0x338)
@@ -487,7 +487,7 @@ struct ObjWepWork {
     u8 x1A;               // 0x1A (0x342)
     u8 x1B;               // 0x1B (0x343)  (wep04 objXd9: 4th table byte)
     u8 pad_1C[4];
-    cModel* parent;       // 0x20 (0x348)  model the weapon hangs on (parentSet)
+    P32<cModel> parent;   // 0x20 (0x348)  model the weapon hangs on (parentSet)
     u16 x24;              // 0x24 (0x34C)  (cObjLauncher::init: 0x35)
     u8 mode;              // 0x26 (0x34E)  0 stay, 1 ready, 2 fire, 3 down, 4 reload, 5 drop (move dispatch)
     u8 step;              // 0x27 (0x34F)  step inside the mode
@@ -495,7 +495,7 @@ struct ObjWepWork {
     u8 pad_29[3];
     u32 seHandle;         // 0x2C (0x354)  SndCall handle stopped by resetMotion
     Vec marker;           // 0x30 (0x358)  laser sight end / hit marker position (pl_wep getMarkerPos, PlWepHitCheck2)
-    class cEm* target;    // 0x3C (0x364)  enemy the laser points at (GetWepTargetPos)
+    P32<class cEm> target; // 0x3C (0x364)  enemy the laser points at (GetWepTargetPos)
 };
 
 // Rocket launcher work (game/objRocket.cpp `cObjLauncher` : cObjWep).
@@ -504,13 +504,13 @@ struct LauncherWork {
     u32 flags;            // 0x40 (0x368)  bit0: a rocket is in flight
     Vec from;             // 0x44 (0x36C)  launch line (getMarkerPos)
     Vec to;               // 0x50 (0x378)
-    class cObjRocket* rocket;  // 0x5C (0x384)  loaded rocket (loadRocket)
+    P32<class cObjRocket> rocket; // 0x5C (0x384)  loaded rocket (loadRocket)
 };
 
 // Bow work (wep28 module `cObjBow` : cObjWep).
 struct BowWork {
     ObjWepWork wep;       // 0x00 .. 0x40
-    class cObjWep* allow; // 0x40 (0x368)  the arrow object shown on the bow (cObjAllow, ObjMgr id 0x10)
+    P32<class cObjWep> allow; // 0x40 (0x368)  the arrow object shown on the bow (cObjAllow, ObjMgr id 0x10)
 };
 
 // Rocket work (game/objRocket.cpp `cObjRocket`).
@@ -526,7 +526,7 @@ struct SpearWork {
     int timer;            // 0x04  LostWait: frames before the fade (120); Throw: frames between the flight SEs
     int timer2;           // 0x08  Throw: flight frames left (60)
     u8 pad_C[0xC];
-    cModel* parent;       // 0x18
+    P32<cModel> parent;   // 0x18
     int partsNo;          // 0x1C
     Vec spd[3];           // 0x20  rope point speeds (R1_Fall)
     Vec throwSpd;         // 0x44
@@ -563,11 +563,11 @@ struct RoboWork {
     s8 step;              // 0x01
     u8 pad_2[6];
     int pillar;           // 0x08  r226: index of the bridge pillar being pushed over (playerPillarDownCk)
-    class cSat* sat[2];   // 0x0C  scenario pieces (front / back)
-    class cSat* eat[2];   // 0x14  effect pieces
-    class cEmHit* hit[14];  // 0x1C
-    class cSat* eat2;     // 0x54  effect piece at the model position
-    cObj* smd[2];         // 0x58  scroll objects following the feet (SetObjSmd)
+    P32<class cSat> sat[2]; // 0x0C  scenario pieces (front / back)
+    P32<class cSat> eat[2]; // 0x14  effect pieces
+    P32<class cEmHit> hit[14]; // 0x1C
+    P32<class cSat> eat2; // 0x54  effect piece at the model position
+    P32<cObj> smd[2];     // 0x58  scroll objects following the feet (SetObjSmd)
     f32 fallSpdY;         // 0x60
     int cnt;              // 0x64
     int hitCnt[6];        // 0x68  frames each bridge piece has been hit
@@ -600,10 +600,10 @@ struct BullWork {
     u32 flags;            // 0x00  bit0 goal, bit1..4 break 1st..4th done, bit5 lift, bit6 truck go, bit7, bit8 lift wait
     int frame;            // 0x04  Collision: motion frames - 30
     u8 pad_8[4];
-    void* mot[12];        // 0x0C  setMotion table: 0 break1st/set, 1 to2nd, 2 break2nd, 3 to lift, 4 lift, 5 to3rd, 6 break3rd, 7 to4th, 8 break4th, 9..11 collision
-    class cSat* sat;      // 0x3C  scenario piece (type 1)
-    class cSat* sat2;     // 0x40  scenario piece (type 8) while moving
-    class cSat* eat;      // 0x44  effect piece (type 7)
+    P32<void> mot[12];    // 0x0C  setMotion table: 0 break1st/set, 1 to2nd, 2 break2nd, 3 to lift, 4 lift, 5 to3rd, 6 break3rd, 7 to4th, 8 break4th, 9..11 collision
+    P32<class cSat> sat;  // 0x3C  scenario piece (type 1)
+    P32<class cSat> sat2; // 0x40  scenario piece (type 8) while moving
+    P32<class cSat> eat;  // 0x44  effect piece (type 7)
     int cnt;              // 0x48  MotionMove calls of the current routine
     int timer;            // 0x4C  frames in the current routine (getMoveFrame*)
     u32 x50;              // 0x50  SetBull 5th argument
@@ -612,7 +612,7 @@ struct BullWork {
     u8 break2nd;          // 0x59
     u8 break3rd;          // 0x5A
     u8 break4th;          // 0x5B
-    void (*adjustFunc)(cObj*);  // 0x5C  setAdjustMode: called before the player is carried along
+    FnP32<void(*)(cObj*)> adjustFunc; // 0x5C  setAdjustMode: called before the player is carried along
     u8 adjustMode;        // 0x60  0: the riders are not carried along
     u8 ride;              // 0x61  the player rides the bulldozer (setRide)
     u8 x62;               // 0x62
@@ -632,9 +632,9 @@ struct LadderWork {
     int climbTimer;       // 0x24  frames the action button stays off after a climb (setClimb: 90)
     int resetReserve;     // 0x28  setResetReserve: 60
     int downTimer;        // 0x2C  setDown: 17 frames until status 3
-    cObj* pair;           // 0x30  second ladder object sharing the collision flags
+    P32<cObj> pair;       // 0x30  second ladder object sharing the collision flags
     int camera;           // 0x34  setCamera: camera cut of the climb (-1: the ladder cameras)
-    void* mot[20];        // 0x38  setMotion table (player / partner climb, down, reset motions)
+    P32<void> mot[20];    // 0x38  setMotion table (player / partner climb, down, reset motions)
     u8 etcNo;             // 0x88  etc model number (GetEtcFlgPtr)
 };
 
@@ -646,8 +646,8 @@ struct Obj16Work {
     int timer;            // 0x04  routine step timer
     int atkTimer;         // 0x08  R1_Atk: attack frames left
     u8 pad_C[4];
-    cModel* target;       // 0x10  enemy whose position / id the SEs use (SetObj16 3rd argument)
-    cModel* body;         // 0x14  enemy the head is attached to (SetObj16 4th argument)
+    P32<cModel> target;   // 0x10  enemy whose position / id the SEs use (SetObj16 3rd argument)
+    P32<cModel> body;     // 0x14  enemy the head is attached to (SetObj16 4th argument)
     int partsNo;          // 0x18  parts of `body` the head follows
     int seTimer;          // 0x1C  frames between the type 2 / 3 loop SEs
     u32 seHandle;         // 0x20  SndCall handle of the loop SE (SndStop)
@@ -656,8 +656,8 @@ struct Obj16Work {
     int dieEffTimer;      // 0x2C  frames before the die effect (setDieEff: 3)
     int estTimer;         // 0x30  frames between the idle effects
     f32 neckAng;          // 0x34  neck yaw toward the player (smoothed)
-    void* mot[11];        // 0x38  setMotData: 0-2 idle, 3-6 bite, 7-9 (unused), 10 ...
-    void* plMot;          // 0x64  setPlDmgMot: player damage motion (plemDmMStar)
+    P32<void> mot[11];    // 0x38  setMotData: 0-2 idle, 3-6 bite, 7-9 (unused), 10 ...
+    P32<void> plMot;      // 0x64  setPlDmgMot: player damage motion (plemDmMStar)
     int plMotA;           // 0x68  its MotionSetCore 4th argument
     int x6C;              // 0x6C
     s16 atkWait;          // 0x70  frames the kind 2 attack is disabled after a hit (90)
@@ -672,7 +672,7 @@ struct Obj16Work {
     u8 atkEnable;         // 0x7A  ckAtkEnable: R1_CoreMove ran this frame
     u8 atkHit;            // 0x7B  ckAtkHit: obj16AtkCk hit the player this frame
     Vec scale;            // 0x7C  target scale (setScale), blended into cModel::scale by move
-    class cCtrl* ctrl12;  // 0x88  GetCtrlCtrl12() (Ctrl12Set on a hit)
+    P32<class cCtrl> ctrl12; // 0x88  GetCtrlCtrl12() (Ctrl12Set on a hit)
 };
 
 // Map object work (game/obj.cpp), sizeof 0x3D8: the cModel (0x320; motion work `mot` / `pMotion`
@@ -690,7 +690,7 @@ public:
             u8 pad_work[0x3D0 - 0x328];
             u8 x3D0;              // 0x3D0
             u8 pad_3D1[3];
-            void (*callBack)(cObj*);  // 0x3D4
+            FnP32<void(*)(cObj*)> callBack; // 0x3D4
         };
         Obj03Work obj03;
         Efm04Work efm04;

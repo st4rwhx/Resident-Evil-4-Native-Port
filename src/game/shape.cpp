@@ -10,7 +10,7 @@ struct HermiteParam {
     f32 frames;      // 0x04  total frames
     s32 x8;          // 0x08  = 2
     u8 type;         // 0x0C  interpolation type
-    void* table;     // 0x10  key table
+    P32<void> table; // 0x10  key table
 };
 extern "C" void HermiteInterpolation(HermiteParam* p, void* result, void* work);
 
@@ -174,16 +174,16 @@ void ResetShape(cModelInfo* info, void* dst)
 
 // Shape evaluation work (0xD0 bytes, cleared).
 struct ShapeWork {
-    ShapeData* data;   // 0x00
-    s32* table;        // 0x04  per channel key tables (relocated)
+    P32<ShapeData> data; // 0x00
+    P32<s32> table;    // 0x04  per channel key tables (relocated)
     u8 pad_8[0x18];
     f32 frames;        // 0x20  frame count + 1
     f32 rate;          // 0x24
     u8 pad_28[8];
     u8 num;            // 0x30
     u8 pad_31[3];
-    u8* idx;           // 0x34  shape table index per channel
-    u16* flags;        // 0x38  per channel flags
+    P32<u8> idx;       // 0x34  shape table index per channel
+    P32<u16> flags;    // 0x38  per channel flags
     u8 pad_3C[4];
     u16 x40;           // 0x40
     u8 pad_42[2];
@@ -244,7 +244,7 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
     w->flags = (u16*) ((u8*) w->data + 3);
     w->idx = (u8*) w->data + (w->num * 2 + 3);
     p = (s32*) (w->idx + w->num);
-    p = (s32*) (((u32) p + 3) & ~3);
+    p = (s32*)port_ptr64((((u32)(uintptr_t)(p) + 3) & ~3));
     if (*++p >= 0) {
         for (i = 0; i < w->num; i++) {
             p[i] += (u32) w->data;
@@ -257,7 +257,7 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
     w->rate = rate;
 
     if (dst != NULL) {
-        ShapeEntry* tbl = (ShapeEntry*) (info->pData->shapeOfs + (u32) info->pData + 4);
+        ShapeEntry* tbl = (ShapeEntry*)port_ptr64((info->pData->shapeOfs + (u32) info->pData + 4));
 
         pp->t = rate;
         pp->frames = w->frames;
@@ -276,7 +276,7 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
             if (w->flags[i] & 4) {
                 f32 v;
                 pp->type = w->flags[i] >> 12;
-                pp->table = (void*) w->table[i];
+                pp->table = (void*)port_ptr64(w->table[i]);
                 memclr_asm(out, 6);
                 HermiteInterpolation(pp, result, out);
                 v = result[1] / 100.0f;
@@ -290,9 +290,9 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
                     ++s_shpNonZero;
                     if ((v < 0 ? -v : v) > s_shpMaxV)
                         s_shpMaxV = v < 0 ? -v : v;
-                    const ShapeEntry* pe = (const ShapeEntry*) (w->idx[i] * 8 + (u32) tbl);
+                    const ShapeEntry* pe = (const ShapeEntry*)port_ptr64((w->idx[i] * 8 + (u32)(uintptr_t)(tbl)));
                     s_shpVtx += (u32) pe->num;
-                    const s16* ps = (const s16*) (pe->ofs + (u32) tbl);
+                    const s16* ps = (const s16*)port_ptr64((pe->ofs + (u32)(uintptr_t)(tbl)));
                     for (s32 k = 0; k < pe->num; ++k) {
                         for (int c = 1; c < 4; ++c) {
                             const f32 d = (f32) ps[k * 4 + c] * v;
@@ -303,8 +303,8 @@ void CalculateShape_new(cModelInfo* info, ShapeData* data, f32 rate, u8* dst)
                 }
 #endif
                 if (v != 0.0f) {
-                    ShapeEntry* e = (ShapeEntry*) (w->idx[i] * 8 + (u32) tbl);
-                    s16* src = (s16*) (e->ofs + (u32) tbl);
+                    ShapeEntry* e = (ShapeEntry*)port_ptr64((w->idx[i] * 8 + (u32)(uintptr_t)(tbl)));
+                    s16* src = (s16*)port_ptr64((e->ofs + (u32)(uintptr_t)(tbl)));
                     s32 num = e->num;
                     s32 n;
 

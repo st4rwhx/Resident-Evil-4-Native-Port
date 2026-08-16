@@ -23,13 +23,13 @@ public:
     f32 rectZ2;      // 0x20
     u16 cnt;         // 0x24  frames left of the interpolation
     u16 x26;         // 0x26  (init0 sets 1) bit0: no character collision this frame (at_mod EmAtCheck)
-    cModel* pLink;   // 0x28  model pushed along with this one (at_mod At_em_sphere_sphere_ck)
+    P32<cModel> pLink; // 0x28  model pushed along with this one (at_mod At_em_sphere_sphere_ck)
     f32 x2C;         // 0x2C
     Vec worldPos;    // 0x30  getPos result of this frame (at_mod EmAtCheck)
     Vec oldWorldPos; // 0x3C  worldPos of the previous frame
     union {
         u32 x48;             // 0x48
-        cAtariInfo* next;    // 0x48  next info of the chain (at_mod DrawOba)
+        P32<cAtariInfo> next; // 0x48  next info of the chain (at_mod DrawOba)
     };
 
 #ifdef RE4_PORT

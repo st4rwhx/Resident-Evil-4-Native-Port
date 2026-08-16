@@ -77,7 +77,7 @@ void EfmDelete(int a, int b, int c)
 
     g_Core_flg = a;
     g_Core_kind = b;
-    g_Core_pEm = (cModel*) c;
+    g_Core_pEm = (cModel*)port_ptr64(c);
     for (i = 0; i < m->nArray; i++) {
         func((cObj*) ((u8*) m->pArray + m->size * i));
     }
@@ -463,7 +463,7 @@ cObj* EfmSetObj04(cObj* obj, EspGenWork* gen, EfmCore* info, u32* seed, cModel* 
                 // combine folds the address back into `stw 0x6C(w)`. A plain member store never
                 // conflicts (same base, disjoint offsets) and the arm reuses the switch register.
                 u32* link = (u32*) &w->parent;
-                link[0] = (u32) parent;
+                link[0] = (u32)(uintptr_t)(parent);
                 link[1] = parent->serial;
                 w->parentWorld = parent->getPartsPtr(w->x79);
                 if (ofs) {
@@ -478,7 +478,7 @@ cObj* EfmSetObj04(cObj* obj, EspGenWork* gen, EfmCore* info, u32* seed, cModel* 
         break;
     }
     if (w->flags & 4) {
-        EstSet((int) obj, -1, 0, 0, gen->xFC, gen->xFD, 0, 0, (u32) obj, 0);
+        EstSet((int)(uintptr_t)(obj), -1, 0, 0, gen->xFC, gen->xFD, 0, 0, (u32)(uintptr_t)(obj), 0);
     }
     if (w->flags & 8) {
         w->x7B = gen->xFE;
@@ -646,7 +646,7 @@ cObj* EfmSetObj05(cObj* obj, EspGenWork* gen, EfmCore* info, u32* seed, cModel* 
     }
     obj->matUpdate();
     if (w->flags & 4) {
-        EstSet((int) obj, -1, 0, 0, gen->xFC, gen->xFD, 0, 0, (u32) obj, 0);
+        EstSet((int)(uintptr_t)(obj), -1, 0, 0, gen->xFC, gen->xFD, 0, 0, (u32)(uintptr_t)(obj), 0);
     }
     if (gen->xFE != 0) {
         setModTexRender(obj, gen->xFE - 1);

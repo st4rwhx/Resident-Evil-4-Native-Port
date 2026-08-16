@@ -12,19 +12,19 @@ struct PlClothAt;
 // model parts; the u8 tables give the parts index per link and its neighbours (0xFF = none).
 struct PenCloth {
     int num;             // 0x00  number of chain links
-    const u8* pParts;    // 0x04  parts index per link
-    const u8* x08;       // 0x08  left neighbour per link
-    const u8* x0C;       // 0x0C  right neighbour per link
-    const u8* x10;       // 0x10  third neighbour per link (Ada dress)
-    const u8* x14;       // 0x14  fourth neighbour per link
-    const u8* pUp;       // 0x18  upper neighbour per link (0xFF = none)
-    const u8* pDown;     // 0x1C  lower neighbour per link (0xFF = none)
-    const f32* x20;      // 0x20  gravity per link (NULL: x3C)
-    const f32* x24;      // 0x24  damping rate per link (NULL: x40)
-    const f32* pMax;     // 0x28  max swing angle per link
-    const f32* x2C;      // 0x2C  wind phase per link
-    const f32* x30;      // 0x30  wind rate per link
-    PlClothAt* x34;      // 0x34  collision volumes
+    P32<const u8> pParts; // 0x04  parts index per link
+    P32<const u8> x08;   // 0x08  left neighbour per link
+    P32<const u8> x0C;   // 0x0C  right neighbour per link
+    P32<const u8> x10;   // 0x10  third neighbour per link (Ada dress)
+    P32<const u8> x14;   // 0x14  fourth neighbour per link
+    P32<const u8> pUp;   // 0x18  upper neighbour per link (0xFF = none)
+    P32<const u8> pDown; // 0x1C  lower neighbour per link (0xFF = none)
+    P32<const f32> x20;  // 0x20  gravity per link (NULL: x3C)
+    P32<const f32> x24;  // 0x24  damping rate per link (NULL: x40)
+    P32<const f32> pMax; // 0x28  max swing angle per link
+    P32<const f32> x2C;  // 0x2C  wind phase per link
+    P32<const f32> x30;  // 0x30  wind rate per link
+    P32<PlClothAt> x34;  // 0x34  collision volumes
     int x38;             // 0x38  number of collision volumes
     f32 x3C;             // 0x3C  gravity (15.0 for the bell)
     f32 x40;             // 0x40  damping rate (1.0)
@@ -32,8 +32,8 @@ struct PenCloth {
     f32 x48;             // 0x48  wind phase
     f32 x4C;             // 0x4C  constraint stiffness (Move2 / Move3)
     f32 x50;             // 0x50  parent speed rate
-    cModel** x54;        // 0x54  parts pointer table (NULL: cModel::getPartsPtr)
-    cModel* x58;         // 0x58  model the collision volumes hang on (NULL: the chain model)
+    P32<P32<cModel>> x54; // 0x54  parts pointer table (NULL: cModel::getPartsPtr)
+    P32<cModel> x58;     // 0x58  model the collision volumes hang on (NULL: the chain model)
     u32 flags;           // 0x5C  (0x100)
 };
 
@@ -71,7 +71,7 @@ struct PenAt {
 // Collision volume list built per frame in the locked cache (0xE0000000).
 struct PenAtWork {
     int num;             // 0x00
-    PenAt* pAt;          // 0x04
+    P32<PenAt> pAt;      // 0x04
     PenAt at[1];         // 0x08
 };
 

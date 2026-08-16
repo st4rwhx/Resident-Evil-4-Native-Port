@@ -30,14 +30,14 @@
 // the two water render targets.
 
 struct R405Work {
-    TexRenderMng* tex[2];   // 0x00
+    P32<TexRenderMng> tex[2]; // 0x00
     u32 cnt;                // 0x08  enemy waves set by R405Main
     int timer;              // 0x0C  frames until the next wave check
 };
 
 // One-member struct: every store through the work reloads the pointer.
 struct R405WorkPtr {
-    R405Work* p;
+    P32<R405Work> p;
 };
 
 static u8 r405_texTbl0[0x20];

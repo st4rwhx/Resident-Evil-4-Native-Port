@@ -19,8 +19,8 @@ public:
 
 // GetWepTargetList entry.
 struct WepTarget {
-    cEm* em;
-    EmHitInfo* part;
+    P32<cEm> em;
+    P32<EmHitInfo> part;
 };
 
 extern cModel* pSUB;
@@ -58,8 +58,8 @@ cObj* SetObj08(cModel* parent, void* bin, void* tpl, Vec* pos, Vec* rot, int fla
     w = &obj->o8;
     obj->id = 8;
     if (bin == 0) {
-        if (obj->modelInit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc),
-                           (void*) (pG->pArc->ofs_24 + (u32) pG->pArc)) == 0) {
+        if (obj->modelInit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)),
+                           (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc))) == 0) {
             ObjMgr.destroy(obj);
             return 0;
         }
@@ -346,7 +346,7 @@ int obj08ToPlHitCk(cObj08* obj)
                     }
                     SndCall(w->seBlk, w->seNo, &obj->pos, id, 0, 0);
                 }
-                VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+                VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             }
             w->flags &= ~0x20;
             return 1;
@@ -373,7 +373,7 @@ void obj08DmEstSet(cObj08* obj, cModel* em, Vec* oldPos, EmHitInfo* part)
         SndCall(w->seBlk, w->seNo, &obj->pos, id, 0, 0);
     }
     if (w->estFlag) {
-        EstSet((int) em, -1, 0, 0, w->estNo[3], (u8) w->estPrm[3], 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, w->estNo[3], (u8) w->estPrm[3], 0, 0, (u32)(uintptr_t)(em), 0);
         return;
     }
     if (part->partsNo != 0) {

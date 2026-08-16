@@ -8,10 +8,10 @@
 // one host directory (d:\bio4\room\filelist.txt through the SN file server) as a scrolling list.
 class cFileList {
 public:
-    char* filter;   // 0x00  prefix stripped from every name
-    char* pattern;  // 0x04  search pattern
-    char* text;     // 0x08  file list text
-    char** list;    // 0x0C  one pointer per line
+    P32<char> filter; // 0x00  prefix stripped from every name
+    P32<char> pattern; // 0x04  search pattern
+    P32<char> text; // 0x08  file list text
+    P32<P32<char>> list; // 0x0C  one pointer per line
     int num;        // 0x10
     s16 cursor;     // 0x14
     s16 top;        // 0x16

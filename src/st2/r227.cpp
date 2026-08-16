@@ -38,26 +38,26 @@
 // falling crates, the gondola and the shelf items.
 
 struct R227Work {
-    cDataUnit* evd[3];    // 0x000  r227s00 / s01 / s02 event data
+    P32<cDataUnit> evd[3]; // 0x000  r227s00 / s01 / s02 event data
     u8 pad_0C[0x40];
-    cEm* sw;              // 0x04C  lever (cEmSwitch)
-    cObj* elv;            // 0x050  the lift
-    cObj* elv2;           // 0x054  its cage
+    P32<cEm> sw;          // 0x04C  lever (cEmSwitch)
+    P32<cObj> elv;        // 0x050  the lift
+    P32<cObj> elv2;       // 0x054  its cage
     f32 elvY0;            // 0x058  start heights
     f32 elv2Y0;           // 0x05C
-    cSat* sat;            // 0x060
-    cSat* eat;            // 0x064
-    cEm* rack[2];         // 0x068  the two crate racks
-    cEm* box[3];          // 0x070  crates riding the lift
+    P32<cSat> sat;        // 0x060
+    P32<cSat> eat;        // 0x064
+    P32<cEm> rack[2];     // 0x068  the two crate racks
+    P32<cEm> box[3];      // 0x070  crates riding the lift
     f32 boxY0[3];         // 0x07C
     u32 emOnElvCnt;       // 0x088  enemies dropped onto the lift so far
-    cEm* emFall[16];      // 0x08C  enemies that die when they fall off the lift
+    P32<cEm> emFall[16];  // 0x08C  enemies that die when they fall off the lift
     cSceObj gondola;      // 0x0CC
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R227WorkPtr {
-    R227Work* p;
+    P32<R227Work> p;
 };
 
 static R227WorkPtr r227_work;

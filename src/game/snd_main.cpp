@@ -53,7 +53,7 @@ void zero_buff_clear(void)
     memclr_asm(zero_tbl, sizeof(zero_tbl));
     DCFlushRange(zero_tbl, sizeof(zero_tbl));
     ctrl->dma_busy = 1;
-    ARQPostRequest(&ctrl->arq, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32) zero_tbl, ctrl->aram_base,
+    ARQPostRequest(&ctrl->arq, 0, ARQ_TYPE_MRAM_TO_ARAM, ARQ_PRIORITY_HIGH, (u32)(uintptr_t)(zero_tbl), ctrl->aram_base,
                    sizeof(zero_tbl), cb_dma_end);
     while (1) {
         if (ctrl->dma_busy == 0) {

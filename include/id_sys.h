@@ -17,7 +17,7 @@ struct IdUnit {
     u8 x7;           // 0x07
     Mtx mat;         // 0x08  world matrix
     Mtx localMat;    // 0x38
-    IdUnit* parent;  // 0x68
+    P32<IdUnit> parent; // 0x68
     u8 texId;        // 0x6C
     u8 maskId;       // 0x6D
     u8 no;           // 0x6E  texture frame (stage: digit)
@@ -53,9 +53,9 @@ struct IdUnit {
     f32 u1;          // 0x114
     f32 v0;          // 0x118
     f32 v1;          // 0x11C
-    void* path0;     // 0x120  FuncPath data
-    void* path1;     // 0x124
-    Hermite1* curve[4];  // 0x128
+    P32<void> path0; // 0x120  FuncPath data
+    P32<void> path1; // 0x124
+    P32<Hermite1> curve[4]; // 0x128
 };
 
 // One entry of an id data table (IDSystem::set), version 1 = 0x88 bytes, version 2 = 0x8C bytes.
@@ -139,7 +139,7 @@ public:
     s32 maxLevel;     // 0x08
     u32 ck[8];        // 0x0C  table types set
     u32 disp[8];      // 0x2C  table types hidden
-    IdUnit* pUnit;    // 0x4C
+    P32<IdUnit> pUnit; // 0x4C
 
     static Mtx m_scrn_mat;
 

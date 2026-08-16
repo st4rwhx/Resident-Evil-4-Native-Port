@@ -32,11 +32,11 @@
 // roofs the giant breaks, the trees, the thunder lights and the giant / dog / parasite events.
 
 struct R119Work {
-    cEm* golem;         // 0x00  the giant
-    cEm* dog;           // 0x04  the dog set by the dog event
+    P32<cEm> golem;     // 0x00  the giant
+    P32<cEm> dog;       // 0x04  the dog set by the dog event
     u8 pad_8[0x48 - 0x8];
-    cSat* sat[3];       // 0x48  hut A / B / C collision
-    cSat* eat[3];       // 0x54  ... attribute collision
+    P32<cSat> sat[3];   // 0x48  hut A / B / C collision
+    P32<cSat> eat[3];   // 0x54  ... attribute collision
 };
 
 static R119Work* r119_work;

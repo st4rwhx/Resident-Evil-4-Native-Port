@@ -11,7 +11,7 @@
 class cUnitEventView {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEventView();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);

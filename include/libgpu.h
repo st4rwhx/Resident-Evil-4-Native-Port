@@ -14,9 +14,9 @@
 // pas toutes au-dessus de 0x80000000 (x86 32 bits : le programme est charge vers 0x56000000 ; sur ARM c'etait vrai par
 // chance) ; l'etiquette passe sur le bit 0, toujours libre (cases et primitives alignees sur 4 octets).
 #ifdef RE4_PORT
-#define OT_IS_PRIM(v) ((((u32) (v)) & 1u) == 0)
+#define OT_IS_PRIM(v) ((((u32)(uintptr_t)((v))) & 1u) == 0)
 #define OT_ADDR(v) (((u32) (v)) & ~1u)
-#define OT_LINK(a) (((u32) (a)) | 1u)
+#define OT_LINK(a) (((u32)(uintptr_t)((a))) | 1u)
 #else
 #define OT_IS_PRIM(v) ((s32) (v) < 0)
 #define OT_ADDR(v) ((u32) (v) | 0x80000000)

@@ -11,13 +11,13 @@ struct RoomTblEntry {
     u8 stat;         // 0x00  1 = the room has a save record
     u8 pad_1;
     u16 rel_no;      // 0x02  FileTbl index of the room DLL (0 = none)
-    void (*init)();  // 0x04
-    void (*main)();  // 0x08
+    FnP32<void(*)()> init; // 0x04
+    FnP32<void(*)()> main; // 0x08
 };
 
 // Room_data_tbl[10]: one row per stage.
 struct StageTbl {
-    RoomTblEntry* tbl;  // 0x00
+    P32<RoomTblEntry> tbl; // 0x00
     u16 num;            // 0x04
     u16 pad_6;
 };
@@ -48,11 +48,11 @@ public:
     u16 num;                  // 0x02  rooms with a save record
     u16 flag;                 // 0x04  bit 0: room DLL unlinked (stopRelData)
     u8 pad_6[2];
-    OSModuleHeader* pModule;  // 0x08  linked room DLL (exception.cpp loads its symbols)
-    void* pBss;               // 0x0C  DLL bss
-    void* pBssBak;            // 0x10  bss copy kept while the DLL is unlinked
-    RoomSaveHdr* pSaveBuf;    // 0x14
-    u8* pSave;                // 0x18  room save records, 0xD8 bytes each
+    P32<OSModuleHeader> pModule; // 0x08  linked room DLL (exception.cpp loads its symbols)
+    P32<void> pBss;           // 0x0C  DLL bss
+    P32<void> pBssBak;        // 0x10  bss copy kept while the DLL is unlinked
+    P32<RoomSaveHdr> pSaveBuf; // 0x14
+    P32<u8> pSave;            // 0x18  room save records, 0xD8 bytes each
     u16 x1C;                  // 0x1C  cleared before linkRelData (stage.cpp); FileTbl index of the room dll
     u16 x1E;
 

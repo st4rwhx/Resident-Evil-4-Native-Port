@@ -9,7 +9,7 @@
 // motion's root speed from a base pose and eases it back onto the model over `cnt` frames.
 class cMotBase {
 public:
-    cMotModel* pModel;  // 0x00
+    P32<cMotModel> pModel; // 0x00
     Vec pos;            // 0x04  followed position
     Vec rot;            // 0x10  followed rotation
     Vec basePos;        // 0x1C  model position at the last move

@@ -87,7 +87,7 @@ struct IdRandomWork {
     s8 cur;     // 0x08
     u8 cnt;     // 0x09
     u8 pad_A[2];
-    s16* pVal;  // 0x0C  amp / cont / intr
+    P32<s16> pVal; // 0x0C  amp / cont / intr
 };
 
 // Tool work (0x284 bytes; idToolWork, reached through pIdTool).
@@ -120,9 +120,9 @@ struct IdTool {
     u8 drawSafe;        // 0x5F
     u8 dispTop;         // 0x60  edit list drawn at the top rows
     u8 pad_61[3];
-    DbPathWork* pPath;  // 0x64
-    DbSctrlWork* pSctrl;  // 0x68
-    IdRandomWork* pRandom;  // 0x6C
+    P32<DbPathWork> pPath; // 0x64
+    P32<DbSctrlWork> pSctrl; // 0x68
+    P32<IdRandomWork> pRandom; // 0x6C
     Camera camSave;     // 0x70 .. 0x168
     s8 colCur;          // 0x168
     s8 rotCur;          // 0x169

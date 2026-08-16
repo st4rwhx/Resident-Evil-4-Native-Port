@@ -11,7 +11,7 @@ struct EmBarWork {
     int timer;            // 0x004 (0x3E4)
     u8 pad_8[0x110 - 0x8];
     Vec size;             // 0x110 (0x4F0)  yarare box size
-    void* motion;         // 0x11C (0x4FC)  player escape motion (setMotion)
+    P32<void> motion;     // 0x11C (0x4FC)  player escape motion (setMotion)
     u8 eff;               // 0x120 (0x500)  break effect no, 0xFF = none (setEff)
     u8 escaping;          // 0x121 (0x501)  the player is climbing through
     u8 flagNo;            // 0x122 (0x502)  etc flag that remembers the broken bar

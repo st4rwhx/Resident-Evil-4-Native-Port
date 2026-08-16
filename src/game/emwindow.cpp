@@ -41,7 +41,7 @@ struct WindowDataRow {
 // Field info returned by SceAtCheckFieldInfo.
 struct SceAtFieldInfo {
     int id;
-    cEmWindow* pWindow;
+    P32<cEmWindow> pWindow;
 };
 
 extern "C" {
@@ -62,7 +62,7 @@ void MotionSetCore(cModel* m, void* w, void* data, int seq, int hokan, int flags
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -361,7 +361,7 @@ void cEmWindow::move()
         xFC = 1;
         if (WindowAlive(this)) {
             if (WindowData[type].breakEff == 1) {
-                EstSet(0, -1, &pos, &rot, eff, 8, 0x801, 0x31, (u32) this, 0);
+                EstSet(0, -1, &pos, &rot, eff, 8, 0x801, 0x31, (u32)(uintptr_t)(this), 0);
             }
         }
         break;
@@ -562,7 +562,7 @@ int cEmWindow::ExeWindowEvent()
                 EstSet(0, -1, 0, 0, 1, 6, 1, 0, 0, 0);
             }
             if (i == 0) {
-                EstSet((int) pPL, -1, 0, 0, w->eff, 8, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(pPL), -1, 0, 0, w->eff, 8, 1, 0, 0, 0);
             }
             if (i == 3) {
                 SndCall(1, 0x29, &pPL->pos, 0, 0, pPL);
@@ -588,7 +588,7 @@ int cEmWindow::ExeWindowEvent()
                 SetBreakAll(&plPos, 1, 1);
             }
             if (i == 0) {
-                EstSet((int) pPL, -1, 0, 0, w->eff, 2, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(pPL), -1, 0, 0, w->eff, 2, 1, 0, 0, 0);
             }
             if (i == 3) {
                 SndCall(1, 0x29, &pPL->pos, 0, 0, pPL);
@@ -614,7 +614,7 @@ int cEmWindow::ExeWindowEvent()
                 SetBreakAll(&plPos, 1, 1);
             }
             if (i == 0) {
-                EstSet((int) pPL, -1, 0, 0, w->eff, 4, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(pPL), -1, 0, 0, w->eff, 4, 1, 0, 0, 0);
             }
             if (i == 3) {
                 SndCall(1, 0x29, &pPL->pos, 0, 0, pPL);

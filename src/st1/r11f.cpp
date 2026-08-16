@@ -54,8 +54,8 @@ public:
 struct R11fWork {
     cEmWrap em0;      // 0x00  the boss (list 0xF8, then 0xF9)
     cEmWrap em1;      // 0x0C  list 0xFA
-    cEm* dram;        // 0x18  etc dram 9
-    cEm* win;         // 0x1C  etc window 0xB
+    P32<cEm> dram;    // 0x18  etc dram 9
+    P32<cEm> win;     // 0x1C  etc window 0xB
     u32 strId;        // 0x20  SndStrReq handle of the fight stream
 };
 

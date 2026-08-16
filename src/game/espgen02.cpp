@@ -20,8 +20,8 @@ static f32 Calc_D256(Espgen02Work* p, u8 d, f32 rate);
 // Effect controller 02: like controller 00 but places every emitted esp on a path (path.cpp),
 // optionally oriented along it.
 struct Espgen02Work {
-    EspGenWork* rec;   // 0x14
-    cModel* model;     // 0x18
+    P32<EspGenWork> rec; // 0x14
+    P32<cModel> model; // 0x18
     u32 serial;        // 0x1C model serial the controller was set up with
     u16 cnt;           // 0x20 frame counter
     u16 life;          // 0x24 life time (0 = infinite)
@@ -42,7 +42,7 @@ struct Espgen02Work {
     u8 colD;           // 0x7A
     u8 waitD;          // 0x7B
     EspSeqOpt opt;     // 0x7C
-    EspSeqOpt* pOpt;   // 0x98
+    P32<EspSeqOpt> pOpt; // 0x98
     u8 pathId;         // 0x9C
     u8 pathNo;         // 0x9D
     u8 pathOfs;        // 0x9E position along the path in 1/100
@@ -414,7 +414,7 @@ int Espgen02_SetFreeWork(EspgenWork* w, EspGenWork* rec, EspSeqData* head, cMode
     if (model != NULL) {
         p->serial = model->serial;
     } else {
-        p->serial = (u32) model;
+        p->serial = (u32)(uintptr_t)(model);
     }
     p->waitCnt = p->cnt = 0;
     p->life = rec->x110;

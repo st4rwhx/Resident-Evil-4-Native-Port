@@ -52,13 +52,13 @@ struct ArcFile {
 struct PlArc {
     u32 ofs[0x100];   // pl_knife indexes up to 0x87
 };
-#define PL_ARC_PTR(arc, no) ((void*) ((arc)->ofs[no] + (u32) (arc)))
+#define PL_ARC_PTR(arc, no) ((void*)port_ptr64(((arc)->ofs[no] + (u32)(uintptr_t)((arc)))))
 
 // Room archive at pG->pRoomArc: offsets to its sub-files (GetDataExt finds them by tag; ctrl14 indexes it).
 struct RoomArc {
     u32 ofs[0x10];
 };
-#define ROOM_ARC_PTR(arc, no) ((void*) (((RoomArc*) (arc))->ofs[no] + (u32) (arc)))
+#define ROOM_ARC_PTR(arc, no) ((void*)port_ptr64((((RoomArc*) (arc))->ofs[no] + (u32) (arc))))
 
 // TEV stage / texture map / texture coord counters the model renderer allocates from (pG+0x184).
 struct GxStageWork {
@@ -89,7 +89,7 @@ struct GlobalWork {
     u32 x8;                // 0x08  card flags (card: 4 loaded, 8/0x10/0x20/0x40/0x80 CardSave modes, bit 31 first check done; main: bit 31 saved into pRK->x3C)
     u8 pad_C[4];
     u64 card_serial;       // 0x10  serial of the card the save file came from (card)
-    void* pFont;           // 0x18  ROM font header (dvd: RomFontSetting)
+    P32<void> pFont;       // 0x18  ROM font header (dvd: RomFontSetting)
     s32 x1C;               // 0x1C  1 = the message system is usable (dvd error screen)
     union {
         u32 mode32;        // 0x20  x20..x23 as one word (game: gameOption saves/restores it in Game.mode_bak)
@@ -122,12 +122,12 @@ struct GlobalWork {
     u8 pad_2B;
     Vec next_pos;          // 0x2C  player position in the next room (room_jmp)
     f32 next_angle;        // 0x38
-    void* pStageFont;      // 0x3C  stage/event font buffer (mes: MessageControl::stageInit)
-    void* pRoomArc;        // 0x40  current room archive (GetDataExt(pG->pRoomArc, "STB", 0))
-    void* pWepArc;         // 0x44  weapon data (read: ReadWepData)
-    struct ArcFile* pArc;       // 0x48  current archive: offsets to its sub-files (room_tex, tv_mode)
-    void* pOptionData;     // 0x4C  SS/<lang>/option.dat (read: OptionDataRead)
-    struct PlArc* pPlArc;       // 0x50  player archive (pl_leon/pl_push: model, motion, face data offsets)
+    P32<void> pStageFont;  // 0x3C  stage/event font buffer (mes: MessageControl::stageInit)
+    P32<void> pRoomArc;    // 0x40  current room archive (GetDataExt(pG->pRoomArc, "STB", 0))
+    P32<void> pWepArc;     // 0x44  weapon data (read: ReadWepData)
+    P32<struct ArcFile> pArc;   // 0x48  current archive: offsets to its sub-files (room_tex, tv_mode)
+    P32<void> pOptionData; // 0x4C  SS/<lang>/option.dat (read: OptionDataRead)
+    P32<struct PlArc> pPlArc;   // 0x50  player archive (pl_leon/pl_push: model, motion, face data offsets)
     u32 flags_54;          // 0x54
     u32 flags_58;          // 0x58
     u32 time_base;         // 0x5C  OSTicksToSeconds at the last InitGameTime/SetGameTime
@@ -150,12 +150,12 @@ struct GlobalWork {
     f32 prim_rate;         // 0x4F14  worst free ratio of the primitive buffer seen so far
     s32 prim_cnt;          // 0x4F18  entries used so far this frame
     s32 prim_max;          // 0x4F1C  entries per frame (game: ConsGetRoomValue(8), 0x8000 while stopped)
-    void* pRoomMes;        // 0x4F20  room message table (mes: MesData.ptr[1])
-    void* pCoreCamData;    // 0x4F24  core camera data ("B40x")
-    void* pRoomCamData;    // 0x4F28  room camera data ("B40x")
-    void* pRoomRtp;        // 0x4F2C  room "RTP" data (read: ReadAreaData)
-    void* pRoomEmi;        // 0x4F30  room "EMI" data
-    void* pRoomOsd;        // 0x4F34  room "OSD" data
+    P32<void> pRoomMes;    // 0x4F20  room message table (mes: MesData.ptr[1])
+    P32<void> pCoreCamData; // 0x4F24  core camera data ("B40x")
+    P32<void> pRoomCamData; // 0x4F28  room camera data ("B40x")
+    P32<void> pRoomRtp;    // 0x4F2C  room "RTP" data (read: ReadAreaData)
+    P32<void> pRoomEmi;    // 0x4F30  room "EMI" data
+    P32<void> pRoomOsd;    // 0x4F34  room "OSD" data
     s8 area_no;            // 0x4F38  block trigger area the player stands in (block.cpp), -1 = none
     u8 pad_4F39[3];
     Vec bell_pos;          // 0x4F3C  floor point under the rung bell (obj14; flags_5010 bit29)
@@ -335,7 +335,7 @@ static inline void BitSet(u32& f, u32 v) { f = v; }
 // preceding struct-member store (esp15 SetFreeWork: `w->floorY = ...; if (pGS->flags ...)`), where
 // FSet would fold the address into `this` and a plain `pG` load moves above the store.
 struct GlobalWorkPtr {
-    GlobalWork* p;
+    P32<GlobalWork> p;
 };
 #define pGS (((GlobalWorkPtr*) &pG)->p)
 

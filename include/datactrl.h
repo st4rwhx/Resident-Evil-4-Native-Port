@@ -14,9 +14,9 @@ public:
     u8 wait;         // 0x0D  setCommand argument (1 = synchronous)
     u8 waitFlag;     // 0x0E  set while waitUseOk/waitLoadOk spin
     u8 heap;         // 0x0F  heap the allocation came from
-    void* addr;      // 0x10  current address of the data
+    P32<void> addr;  // 0x10  current address of the data
     u32 arg;         // 0x14  setCommand argument: destination (0 = allocate)
-    void* mallocAddr;// 0x18
+    P32<void> mallocAddr; // 0x18
     u32 dest;        // 0x1C  destination of the running transfer
     u32 fixAddr;     // 0x20  fixed MRAM destination (fixMramAddr)
     u32 size;        // 0x24
@@ -74,12 +74,12 @@ public:
     s32 aramSort;        // 0xA04  1 = repack the ARAM units (checkAramSort)
     s32 xA08;            // 0xA08  0 while the sub screen owns the ARAM area (sscrn), 1 otherwise
     s32 xA0C;            // 0xA0C  1 = commands are not executed immediately
-    void* dispBuf;       // 0xA10  dispDebug tiles
+    P32<void> dispBuf;   // 0xA10  dispDebug tiles
     u32 dispBase;        // 0xA14
     u32 dispEnd;         // 0xA18
     s32 dbgHeap;         // 0xA1C  1 = allocate from the debug heap
     s32 dummyId[32];     // 0xA20  dummy.dat read requests (dev mode)
-    void* dummyBuf;      // 0xAA0
+    P32<void> dummyBuf;  // 0xAA0
 
     u32 getAramFree(u32 size);
     void init();

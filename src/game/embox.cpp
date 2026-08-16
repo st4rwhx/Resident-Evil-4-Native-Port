@@ -21,7 +21,7 @@
 extern cEm* pPL;   // game/em.cpp
 // Struct-member view of pPL (the pGS trick): the load stays below the preceding stack stores.
 struct EmPtr {
-    cEm* p;
+    P32<cEm> p;
 };
 
 extern "C" {
@@ -387,9 +387,9 @@ void emBoxDmCk(cEmBox* em)
 // Each break kind carries its own EstSet + fallback pair (a macro in the original: the arms are
 // full copies whose tails the compiler cross-jumps).
 #define EMBOX_BREAK_EFF(no, fallback)                                                       \
-    EstSet(0, -1, &em->pos, &em->rot, w->eff, no, 1, 0, (u32) em, 0);                     \
+    EstSet(0, -1, &em->pos, &em->rot, w->eff, no, 1, 0, (u32)(uintptr_t)(em), 0);                     \
     if (w->breakBin == 0 && w->breakTpl == 0) {                                            \
-        EstSet(0, -1, &em->pos, &em->rot, w->eff, fallback, 1, 0, (u32) em, 0);           \
+        EstSet(0, -1, &em->pos, &em->rot, w->eff, fallback, 1, 0, (u32)(uintptr_t)(em), 0);           \
     }
 
 void emBoxSetBreak(cEmBox* em, u32 kind)
@@ -429,7 +429,7 @@ void emBoxSetBreak(cEmBox* em, u32 kind)
             }
             break;
         case 4:
-            EstSet(0, -1, &em->pos, &em->rot, w->eff, 0, 1, 0, (u32) em, 0);
+            EstSet(0, -1, &em->pos, &em->rot, w->eff, 0, 1, 0, (u32)(uintptr_t)(em), 0);
             break;
         }
     }
@@ -581,9 +581,9 @@ void cEmBox::setEff(u8 eff)
     }
     if (w->breakBin == 0 && w->breakTpl == 0 && w->eff != 0xFF && type != 4) {
         if (type != 5) {
-            EstSet(0, -1, &pos, &rot, w->eff, 4, 1, 0, (u32) this, 0);
+            EstSet(0, -1, &pos, &rot, w->eff, 4, 1, 0, (u32)(uintptr_t)(this), 0);
         } else {
-            EstSet(0, -1, &pos, &rot, w->eff, 8, 1, 0, (u32) this, 0);
+            EstSet(0, -1, &pos, &rot, w->eff, 8, 1, 0, (u32)(uintptr_t)(this), 0);
         }
     }
     if (w->breakBin && w->breakTpl) {
@@ -643,7 +643,7 @@ void emBoxActEvtCk(cEmBox* em)
         return;
     }
     if (pG->room_id == 0x100 || pG->room_id == 0x101 || pG->room_id == 0x103 || pG->room_id == 0x106) {
-        ActBtn.set(1, 5, (int) emBoxAction, (int) em, 0, 1, 0, 0);
+        ActBtn.set(1, 5, (int)(uintptr_t)(emBoxAction), (int)(uintptr_t)(em), 0, 1, 0, 0);
     }
 }
 

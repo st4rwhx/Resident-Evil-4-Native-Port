@@ -29,10 +29,10 @@ struct EmBarrelWork {
     u32 flags;            // 0x000 (0x3E0)
     int timer;            // 0x004 (0x3E4)  frames until the broken barrel is destroyed
     u8 pad_8[0x40 - 8];
-    cSat* sat;            // 0x040 (0x420)  runtime collision piece (emBarrelEatSet)
+    P32<cSat> sat;        // 0x040 (0x420)  runtime collision piece (emBarrelEatSet)
     u8 pad_44[0x50 - 0x44];
     int routeIdx;         // 0x050 (0x430)  current EMI route point (type 6) of the rolling barrel
-    EmiEntry* pRoute;     // 0x054 (0x434)
+    P32<EmiEntry> pRoute; // 0x054 (0x434)
     Vec spd;              // 0x058 (0x438)  rolling speed
     f32 floorOfs;         // 0x064 (0x444)  barrel radius above the floor (700)
     u8 pad_68[4];

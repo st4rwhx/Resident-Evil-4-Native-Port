@@ -10,8 +10,8 @@
 // pushing it while checking the scenario. Partial layout (0x10 bytes known).
 class cPlPush {
 public:
-    cPlayer* pPl;       // 0x00
-    cEm* pTarget;       // 0x04  object being pushed (NULL = none)
+    P32<cPlayer> pPl;   // 0x00
+    P32<cEm> pTarget;   // 0x04  object being pushed (NULL = none)
     u8 x8;              // 0x08  cleared when a target is caught
     u8 x9;              // 0x09  pushTargetInit flag (bit0: getWHY uses `dir`, else `dirSub`)
     u8 pad_A[2];

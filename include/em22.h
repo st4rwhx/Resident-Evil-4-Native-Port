@@ -29,17 +29,17 @@ struct Em22Work {
     Vec plRoutePos;       // 0x034 (0x414)  RouteCkToPos result towards the player
     u8 pad_40[0xC];
     Vec routePos;         // 0x04C (0x42C)  route point the routines run to
-    cEm* pTarget;         // 0x058 (0x438)
+    P32<cEm> pTarget;     // 0x058 (0x438)
     Vec blowSpd;          // 0x05C (0x43C)  em22_R1_Dm_Blow: speed of the blown-away fall
 
     int gotoOn;           // 0x068 (0x448)  cEm22::setGoto: run to gotoPos (em22_R1_Goto)
     Vec gotoPos;          // 0x06C (0x44C)
     Camera cam;           // 0x078 (0x458)  event camera of the catch scenes (em22CamMove)
     EmHitInfo hit[5];     // 0x170 (0x550)  extra hit boxes (em22YarareInit)
-    class cObj16* pPara[5];     // 0x274 (0x654)  parasites on the back (em22SetParasite)
-    class cObj16* pParaAtk[3];  // 0x288 (0x668)  parasites of the attack (em22SetParasiteAtk)
-    cCtrl* pCtrl12;       // 0x294 (0x674)  GetCtrlCtrl12()
-    cCtrl* pCtrl11;       // 0x298 (0x678)  GetCtrlCtrl11()
+    P32<class cObj16> pPara[5]; // 0x274 (0x654)  parasites on the back (em22SetParasite)
+    P32<class cObj16> pParaAtk[3]; // 0x288 (0x668)  parasites of the attack (em22SetParasiteAtk)
+    P32<cCtrl> pCtrl12;   // 0x294 (0x674)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x298 (0x678)  GetCtrlCtrl11()
     f32 neckX;            // 0x29C (0x67C)  em22NeckMove: head pitch
     f32 neckY;            // 0x2A0 (0x680)  head yaw
     int plDeadWait;       // 0x2A4 (0x684)  frames since the player died (no attack)

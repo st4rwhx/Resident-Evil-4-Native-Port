@@ -6,7 +6,7 @@
 #include "cloth.h"
 
 struct Esp4eWork {
-    Cloth* cloth;      // 0x00
+    P32<Cloth> cloth;  // 0x00
     GXTexObj tex;      // 0x04
     GXTlutObj tlut;    // 0x24
     f32 angX;          // 0x30 wave phase along x

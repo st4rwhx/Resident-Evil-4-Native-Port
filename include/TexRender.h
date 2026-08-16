@@ -13,7 +13,7 @@ class TexRenderMng {
 public:
     int used;        // 0x00
     GXTexObj texObj; // 0x04
-    void* buf;       // 0x24  sx * sy * 4 bytes
+    P32<void> buf;   // 0x24  sx * sy * 4 bytes
     u8 texId;        // 0x28  0xF8 + slot
     u8 x29;
     u16 mask;        // 0x2A  8 << slot
@@ -42,10 +42,10 @@ struct TexRenderEvt {
 struct TexRenderCam {
     CameraMotion cam;    // 0x000
     u8 pad_1D4[0x200 - 0x1D4];
-    cCamera* pCam;       // 0x200  &cam
+    P32<cCamera> pCam;   // 0x200  &cam
     Camera save;         // 0x204  pG->Cam while the render camera is active
-    TexRenderEvt* pEvt;  // 0x2FC
-    void* data;          // 0x300  motion data for CameraMotion
+    P32<TexRenderEvt> pEvt; // 0x2FC
+    P32<void> data;      // 0x300  motion data for CameraMotion
 };
 
 extern TexRenderMng g_RndMgr[8];

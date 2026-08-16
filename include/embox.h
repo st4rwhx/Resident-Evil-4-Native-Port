@@ -19,10 +19,10 @@ struct EmBoxWork {
     int itemNum;          // 0x228 (0x608)
     u16 item22C;          // 0x22C (0x60C)
     u16 item22E;          // 0x22E (0x60E)
-    cSat* sat0;           // 0x230 (0x610)  collision pieces disabled when broken
-    cSat* sat1;           // 0x234 (0x614)
-    void* breakBin;       // 0x238 (0x618)  break model (setBreakModel, SetEffModel)
-    void* breakTpl;       // 0x23C (0x61C)
+    P32<cSat> sat0;       // 0x230 (0x610)  collision pieces disabled when broken
+    P32<cSat> sat1;       // 0x234 (0x614)
+    P32<void> breakBin;   // 0x238 (0x618)  break model (setBreakModel, SetEffModel)
+    P32<void> breakTpl;   // 0x23C (0x61C)
     int timer;            // 0x240 (0x620)  150 when broken
     u8 eff;               // 0x244 (0x624)  setEff: effect owner id, 0xFF = none
     u8 etcNo;             // 0x245 (0x625)  etc flag index (broken flag)

@@ -31,8 +31,8 @@ struct Em27Work {
     u8 pad_B4;
     u8 dieVariant;        // 0x0B5 (0x495)  Rnd() & 1 at death: which die / float motion
     u8 pad_B6[2];
-    cCtrl* pCtrl12;       // 0x0B8 (0x498)  GetCtrlCtrl12()
-    cCtrl* pCtrl11;       // 0x0BC (0x49C)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl12;   // 0x0B8 (0x498)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x0BC (0x49C)  GetCtrlCtrl11()
 };
 
 #define EM27_WK(em) ((Em27Work*) &(em)->x3E0)

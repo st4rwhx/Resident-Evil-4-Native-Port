@@ -12,8 +12,8 @@
 
 // GetWepTargetList* entry: the enemy and the hit box that was hit.
 struct WepTarget {
-    cEm* em;
-    EmHitInfo* part;
+    P32<cEm> em;
+    P32<EmHitInfo> part;
 };
 
 extern u32 No_drop_cnt;

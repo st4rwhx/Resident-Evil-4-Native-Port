@@ -9,7 +9,7 @@ struct Esp3fWork {
     u8 pad_0[2];
     u8 nBuf;                     // 0x02 number of child buffers
     u8 nPerBuf;                  // 0x03 vectors per child buffer
-    cEsp* pBuf[ESP3F_BUF_MAX];   // 0x04
+    P32<cEsp> pBuf[ESP3F_BUF_MAX]; // 0x04
 };
 
 class cEsp3f : public cEsp {
@@ -107,7 +107,7 @@ Vec* Esp3f_GetVecPtr(cEsp3f* p, u32 no)
         cEsp3fBuf* b = (cEsp3fBuf*)w->pBuf[buf];
         Vec* vp = b->vec;
         ret = &vp[no % per];
-        if ((int)ret < 0) {
+        if ((int)(uintptr_t)(ret) < 0) {
             return ret;
         }
     }

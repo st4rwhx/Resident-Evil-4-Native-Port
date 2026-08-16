@@ -12,7 +12,7 @@
 // to the Ganado's virtuals (cEmGanado below = the cEm10 slots this file needs).
 class cEmWrap {
 public:
-    cEm* pEm;    // 0x0  the enemy, NULL until set
+    P32<cEm> pEm; // 0x0  the enemy, NULL until set
     s16 no;      // 0x4  enemy list entry (-1 for a bare pointer)
     s8 list;     // 0x6  enemy list number the entry belongs to (-1: any)
     u8 alive;    // 0x7  1 once pEm was set
@@ -168,7 +168,7 @@ public:
     int alerted;                // 0x128
     int pad_12C;
     int x130;
-    int (*check)(cEmWrap* em);  // 0x134  alert condition
+    FnP32<int(*)(cEmWrap* em)> check; // 0x134  alert condition
 
     int SetGuard(s16 no, Vec* tbl, int n, int (*check)(cEmWrap*), f32 ang, u8 prio, int errOn);
     static void TaskMove(cEmGuard* g);

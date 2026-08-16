@@ -35,11 +35,11 @@ struct EmDoorWork {
     u32 keyNo;            // 0x3FC (0x7DC)  pG->door_unlock bit (setKey), 0x36 = none
     int x400;             // 0x400 (0x7E0)  0x96 while opening
     Vec target;           // 0x404 (0x7E4)  position of the one that opened the door (setOpen: the open direction)
-    cSat* sat[6];         // 0x410 (0x7F0)  effect collision pieces: [1] door, [2] panel above, [3..5] the panels of type 4 / 5 ([0] unused)
-    cObj12* pLockL;       // 0x428 (0x808)  left lock object (setLock side 1)
-    cObj12* pLockR;       // 0x42C (0x80C)  right lock object (setLock side 0)
-    cObj12* pChain;       // 0x430 (0x810)  chain object (setChain)
-    cEmDoor* pDoor;       // 0x434 (0x814)  the other door of a double door (setDoor)
+    P32<cSat> sat[6];     // 0x410 (0x7F0)  effect collision pieces: [1] door, [2] panel above, [3..5] the panels of type 4 / 5 ([0] unused)
+    P32<cObj12> pLockL;   // 0x428 (0x808)  left lock object (setLock side 1)
+    P32<cObj12> pLockR;   // 0x42C (0x80C)  right lock object (setLock side 0)
+    P32<cObj12> pChain;   // 0x430 (0x810)  chain object (setChain)
+    P32<cEmDoor> pDoor;   // 0x434 (0x814)  the other door of a double door (setDoor)
     u32 sndId;            // 0x438 (0x818)  SndCall id of the opening sound
     u8 eff;               // 0x43C (0x81C)  setEff: effect owner id, 0xFF = none
     u8 dir;               // 0x43D (0x81D)  open direction: 1 = rot.y - PI/2

@@ -17,7 +17,7 @@ class cSat;
 // Item area payload (SceAtWork + 0x5C, type 3).
 struct SceAtItem {
     Vec pos;          // 0x00 (0x5C)
-    cModel* pModel;   // 0x0C (0x68)  item model: a cObj (setItemObj) or a cEmItem (shoot-down item)
+    P32<cModel> pModel; // 0x0C (0x68)  item model: a cObj (setItemObj) or a cEmItem (shoot-down item)
     Vec ofs;          // 0x10 (0x6C)  effect offset
     u16 id;           // 0x1C (0x78)  item id
     u16 flagNo;       // 0x1E (0x7A)  ITEM_SET flag (pG->item_flags), 0 = use the room save flag
@@ -78,8 +78,8 @@ struct SceAtLadder {
 
 // Runtime scenario collision payload (type 0xB).
 struct SceAtScrAt {
-    cSat* pSat;       // 0x00 (0x5C)
-    cSat* pEat;       // 0x04 (0x60)
+    P32<cSat> pSat;   // 0x00 (0x5C)
+    P32<cSat> pEat;   // 0x04 (0x60)
     u8 created;       // 0x08 (0x64)
     u8 pad_9[3];
     int attr;         // 0x0C (0x68)
@@ -91,7 +91,7 @@ struct SceAtScrAt {
 // Field info payload (type 0xD, SceAtCreateFieldAt; emwindow reads it through SceAtCheckFieldInfo).
 struct SceAtField {
     int value;        // 0x00 (0x5C)  0 = the model inside gets litArea.x0 bit0
-    cModel* pModel;   // 0x04 (0x60)  creator
+    P32<cModel> pModel; // 0x04 (0x60)  creator
 };
 
 // Damage area payload (type 0xA).
@@ -111,7 +111,7 @@ struct SceAtHide {
     u8 step;          // 0x03 (0x5F)
     u8 pad_4[0x24 - 0x4];
     Vec pos;          // 0x24 (0x80)
-    void (*func)(int);  // 0x30 (0x8C)  SceAtDataSet_hide
+    FnP32<void(*)(int)> func; // 0x30 (0x8C)  SceAtDataSet_hide
     u8 cut;           // 0x34 (0x90)
 };
 
@@ -131,8 +131,8 @@ struct SceAtShdDisp {
 
 // Special key area payload (type 0xF, SceAtDataSet_exec fills it).
 struct SceAtSkey {
-    void* obj;        // 0x00 (0x5C)
-    TaskFunc func;    // 0x04 (0x60)
+    P32<void> obj;    // 0x00 (0x5C)
+    FnP32<TaskFunc> func; // 0x04 (0x60)
     u8 prio;          // 0x08 (0x64)
     u8 flag;          // 0x09 (0x65)
 };
@@ -161,7 +161,7 @@ struct SceAtWork {
     u8 prio;          // 0x3A  SceExec priority (0 = call func directly)
     u8 prioBak;       // 0x3B  x38 saved by SceAtDataSet_exec
     int arg;          // 0x3C
-    TaskFunc func;    // 0x40
+    FnP32<TaskFunc> func; // 0x40
     u8 x44;           // 0x44  ordering table index (0..15)
     u8 x45;           // 0x45  SceExec flag
     u8 linkType;      // 0x46  1 enemy list entry, 2 etc model
@@ -170,13 +170,13 @@ struct SceAtWork {
     s8 angleRange;    // 0x49  * 2 degrees
     u8 x4A;           // 0x4A  action button kind
     u8 pad_4B;
-    cModel* pParent;  // 0x4C
+    P32<cModel> pParent; // 0x4C
     s16 parentParts;  // 0x50  -1 = the model itself
     u8 x52;           // 0x52  bit0 / bit1: disabled at room start depending on pG->x4F93
     u8 x53;           // 0x53  action button colour
     u8 pad_54[8];
     union {
-        cModel* hitModel[16];  // 0x5C  type 0: models inside this frame
+        P32<cModel> hitModel[16]; // 0x5C  type 0: models inside this frame
         SceAtItem item;
         struct {
             Vec dstPos;       // 0x5C  door: destination position
@@ -185,7 +185,7 @@ struct SceAtWork {
             u8 dstRoom;       // 0x6D
             u8 lockType;      // 0x6E
             u8 lockFlag;      // 0x6F
-            void (*doorFunc)();  // 0x70
+            FnP32<void(*)()> doorFunc; // 0x70
             u8 dstX4F9E;      // 0x74
             s8 doorSe;        // 0x75
             u8 doorNo;        // 0x76

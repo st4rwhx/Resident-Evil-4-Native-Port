@@ -144,10 +144,10 @@ typedef void (*DB_PRIM_CALLBACK)(DB_PRIMITIVE*);
 class DB_PRIMITIVE {
 public:
     int type;                   // 0x00
-    DB_PRIMITIVE* parent;       // 0x04
-    DB_PRIMITIVE* child;        // 0x08
-    DB_PRIMITIVE* prev;         // 0x0C
-    DB_PRIMITIVE* next;         // 0x10
+    P32<DB_PRIMITIVE> parent;   // 0x04
+    P32<DB_PRIMITIVE> child;    // 0x08
+    P32<DB_PRIMITIVE> prev;     // 0x0C
+    P32<DB_PRIMITIVE> next;     // 0x10
     DB_POINT pos;               // 0x14  relative to the parent
     DB_POINT drawPos;           // 0x1C  screen position (DrawRequest)
     DB_RECT rect;               // 0x24  hit rectangle (relative)
@@ -159,9 +159,9 @@ public:
     int active;                 // 0x58
     int mouseOn;                // 0x5C
     int select;                 // 0x60
-    DB_PRIM_CALLBACK onHitCb;   // 0x64
-    DB_PRIM_CALLBACK updateCb;  // 0x68
-    DB_PRIM_CALLBACK drawCb;    // 0x6C
+    FnP32<DB_PRIM_CALLBACK> onHitCb; // 0x64
+    FnP32<DB_PRIM_CALLBACK> updateCb; // 0x68
+    FnP32<DB_PRIM_CALLBACK> drawCb; // 0x6C
     // 0x70 vptr
 
     DB_PRIMITIVE();
@@ -198,8 +198,8 @@ class DB_ACTIVE_SELECT {
 public:
     u32 w;                  // 0x00
     u32 h;                  // 0x04
-    DB_PRIMITIVE** tbl;     // 0x08  [h][w]
-    DB_PRIMITIVE* active;   // 0x0C
+    P32<P32<DB_PRIMITIVE>> tbl; // 0x08  [h][w]
+    P32<DB_PRIMITIVE> active; // 0x0C
     int num;                // 0x10
     u32 selX;               // 0x14
     u32 selY;               // 0x18
@@ -234,8 +234,8 @@ public:
     DB_COLOR color;                         // 0x74
     u32 keyFlag;                            // 0x84
     int bring;                              // 0x88  bring to front request
-    DB_WINDOW_CALLBACK closeCb;             // 0x8C
-    DB_WINDOW_CALLBACK activeChangeCb;      // 0x90
+    FnP32<DB_WINDOW_CALLBACK> closeCb;      // 0x8C
+    FnP32<DB_WINDOW_CALLBACK> activeChangeCb; // 0x90
     DB_ACTIVE_SELECT sel;                   // 0x94
     // 0xB8
 
@@ -276,7 +276,7 @@ public:
 
 class DB_STRING : public DB_PRIMITIVE {
 public:
-    char* str;          // 0x74
+    P32<char> str;      // 0x74
     u32 len;            // 0x78
     u32 max;            // 0x7C
     f32 cr;             // 0x80
@@ -294,7 +294,7 @@ public:
 
 class DB_BUTTON : public DB_STRING {
 public:
-    DB_PRIM_CALLBACK cb;    // 0x90
+    FnP32<DB_PRIM_CALLBACK> cb; // 0x90
     // 0x94
 
     DB_BUTTON();
@@ -305,7 +305,7 @@ public:
 
 class DB_NUMERIC : public DB_STRING {
 public:
-    void* pNum;         // 0x90
+    P32<void> pNum;     // 0x90
     int numType;        // 0x94
     f32 def;            // 0x98
     f32 step;           // 0x9C
@@ -317,7 +317,7 @@ public:
     int minus;          // 0xB4
     f32 unit;           // 0xB8
     u32 numFlg;         // 0xBC
-    const char** nameTbl;   // 0xC0
+    P32<P32<const char>> nameTbl; // 0xC0
     u32 nameNum;        // 0xC4
     // 0xC8
 
@@ -347,7 +347,7 @@ public:
 
 class DB_NUMERIC2 : public DB_NUMERIC {
 public:
-    void* pNum2;        // 0xC8
+    P32<void> pNum2;    // 0xC8
     int lastMsg;        // 0xCC
     // 0xD0
 
@@ -371,7 +371,7 @@ public:
     f32 max;        // 0x7C
     f32 rate;       // 0x80
     int numType;    // 0x84
-    void* pNum;     // 0x88
+    P32<void> pNum; // 0x88
     // 0x8C
 
     DB_SLIDEBAR();
@@ -425,12 +425,12 @@ public:
 class DB_PRIM_ARRAY {
 public:
     u32 numPrim;                    // 0x0000
-    DB_PRIMITIVE* prim[0x400];      // 0x0004
-    DB_PRIMITIVE* active;           // 0x1004
+    P32<DB_PRIMITIVE> prim[0x400];  // 0x0004
+    P32<DB_PRIMITIVE> active;       // 0x1004
     u32 numWin;                     // 0x1008
-    DB_WINDOW* win[0x100];          // 0x100C
-    DB_WINDOW* activeWin;           // 0x140C
-    DB_WINDOW* oldActiveWin;        // 0x1410
+    P32<DB_WINDOW> win[0x100];      // 0x100C
+    P32<DB_WINDOW> activeWin;       // 0x140C
+    P32<DB_WINDOW> oldActiveWin;    // 0x1410
     // 0x1414
 
     DB_PRIM_ARRAY();

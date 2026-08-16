@@ -10,7 +10,7 @@ struct EmTorchWork {
     u32 flags;            // 0x000 (0x3E0)  bit0: setParent flag (no matrix normalisation)
     int timer;            // 0x004 (0x3E4)  30 after the first frame
     u8 pad_8[4];
-    cModel* pParent;      // 0x00C (0x3EC)  model the torch follows (setParent)
+    P32<cModel> pParent;  // 0x00C (0x3EC)  model the torch follows (setParent)
     int partsNo;          // 0x010 (0x3F0)
     u8 pad_14[0x48 - 0x14];
     Vec size;             // 0x048 (0x428)  yarare box size

@@ -15,8 +15,8 @@
 // hut's scroll-object flags.
 
 struct R109Work {
-    cSat* sat[3];   // 0x00
-    cSat* eat[3];   // 0x0C
+    P32<cSat> sat[3]; // 0x00
+    P32<cSat> eat[3]; // 0x0C
 };
 
 static R109Work* r109_work;

@@ -20,16 +20,16 @@ struct EmWepWork {
     u8 pad_14[0x20 - 0x14];
     int timer4;           // 0x020 (0x400)  Parent / Shot: frames until setFall
     PenCloth cloth;       // 0x024 (0x404)  setCloth chain (10 links)
-    cEm* pParent;         // 0x084 (0x464)  model the weapon hangs on (setParent)
-    cEm* pOwner;          // 0x088 (0x468)  enemy that threw / shot it (setFall / setThrow keep the parent here)
+    P32<cEm> pParent;     // 0x084 (0x464)  model the weapon hangs on (setParent)
+    P32<cEm> pOwner;      // 0x088 (0x468)  enemy that threw / shot it (setFall / setThrow keep the parent here)
     int partsNo;          // 0x08C (0x46C)  parts of pParent
     u32 sndId;            // 0x090 (0x470)  SndCall handle of the throw sound
     int sceAtNo;          // 0x094 (0x474)  scenario attribute destroyed with the weapon (setAtNo), -1 = none
     int fuse;             // 0x098 (0x478)  Bomb / Flash / Grenade fuse; ShotArrow: frames to the explosion
-    void* motEscape;      // 0x09C (0x47C)  player motions of the grenade escape (setGrenadeThrow)
-    void* motBackjump;    // 0x0A0 (0x480)
-    void* motFront;       // 0x0A4 (0x484)
-    void* motEscape2;     // 0x0A8 (0x488)
+    P32<void> motEscape;  // 0x09C (0x47C)  player motions of the grenade escape (setGrenadeThrow)
+    P32<void> motBackjump; // 0x0A0 (0x480)
+    P32<void> motFront;   // 0x0A4 (0x484)
+    P32<void> motEscape2; // 0x0A8 (0x488)
     Camera cam;           // 0x0AC (0x48C)  escape event camera (emWepEscapeCamMove)
     Vec effAlwaysOfs;     // 0x1A4 (0x584)  setEffAlways2 offset in effAlwaysParts' matrix
     u8 effAlwaysParts;    // 0x1B0 (0x590)
@@ -59,7 +59,7 @@ struct EmWepWork {
     u8 espKind;           // 0x215 (0x5F5)  effect kind deleted with the weapon (50)
     u8 inWater;           // 0x216 (0x5F6)
     u8 escaped;           // 0x217 (0x5F7)  Grenade: the player took the escape action
-    EmAtkInfo* pAtk;      // 0x218 (0x5F8)  attack info used against the player (emWepAtk by default)
+    P32<EmAtkInfo> pAtk;  // 0x218 (0x5F8)  attack info used against the player (emWepAtk by default)
 };
 
 #define EMWEP_WK(em) ((EmWepWork*) &(em)->x3E0)

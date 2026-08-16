@@ -22,7 +22,7 @@ void ss_Draw_tile3d_local(Vec* a, Vec* b, Vec* c, Vec* d, Mtx mtx, u32 color, u3
 
 // Ordering-table primitives of the sub screen (drawn from the OT callbacks).
 struct SsTplPrim {
-    void* tpl;  // 0x00
+    P32<void> tpl; // 0x00
     u32 id;     // 0x04
     int x;      // 0x08
     int y;      // 0x0C

@@ -457,7 +457,7 @@ void GXGetTexObjAll(const GXTexObj* obj, void** image_ptr, u16* width, u16* heig
     const __GXTexObjInt* t = (const __GXTexObjInt *)obj;
 
     ASSERTMSGLINE(1095, obj, "Texture Object Pointer is null");
-    *image_ptr = (void *)(GET_REG_FIELD(t->image3, 21, 0) << 5);
+    *image_ptr = (void *)port_ptr64((GET_REG_FIELD(t->image3, 21, 0) << 5));
     *width = (u32)GET_REG_FIELD(t->image0, 10, 0) + 1;
     *height = (u32)GET_REG_FIELD(t->image0, 10, 10) + 1;
     *format = t->fmt;
@@ -470,7 +470,7 @@ void* GXGetTexObjData(const GXTexObj* to) {
     const __GXTexObjInt* t = (const __GXTexObjInt *)to;
 
     ASSERTMSGLINE(1108, to, "Texture Object Pointer is null");
-    return (void*)(GET_REG_FIELD(t->image3, 21, 0) << 5);
+    return (void*)port_ptr64((GET_REG_FIELD(t->image3, 21, 0) << 5));
 }
 
 u16 GXGetTexObjWidth(const GXTexObj* to) {
@@ -677,7 +677,7 @@ void GXGetTlutObjAll(const GXTlutObj* tlut_obj, void **data, GXTlutFmt* format, 
     const __GXTlutObjInt* t = (const __GXTlutObjInt *)tlut_obj;
 
     ASSERTMSGLINE(1382, tlut_obj, "TLut Object Pointer is null");
-    *data = (void *)(GET_REG_FIELD(t->loadTlut0, 21, 0) << 5);
+    *data = (void *)port_ptr64((GET_REG_FIELD(t->loadTlut0, 21, 0) << 5));
     *format = GET_REG_FIELD(t->tlut, 2, 10);
     *numEntries = t->numEntries;
 }
@@ -686,7 +686,7 @@ void* GXGetTlutObjData(const GXTlutObj* tlut_obj) {
     const __GXTlutObjInt* t = (const __GXTlutObjInt *)tlut_obj;
 
     ASSERTMSGLINE(1391, tlut_obj, "TLut Object Pointer is null");
-    return (void *)(GET_REG_FIELD(t->loadTlut0, 21, 0) << 5);
+    return (void *)port_ptr64((GET_REG_FIELD(t->loadTlut0, 21, 0) << 5));
 }
 
 GXTlutFmt GXGetTlutObjFmt(const GXTlutObj* tlut_obj) {

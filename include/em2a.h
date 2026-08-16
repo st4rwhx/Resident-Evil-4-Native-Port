@@ -16,8 +16,8 @@ struct Em2aWork {
     u8 pad_C[0x50 - 0xC];
     EmHitInfo hit[6];     // 0x050 (0x430)  extra hit boxes of the tripwire types (em2aYarareInit)
     u8 pad_188[0x258 - 0x188];
-    cCtrl* pCtrl11;       // 0x258 (0x638)  GetCtrlCtrl11()
-    cCtrl* pCtrl12;       // 0x25C (0x63C)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x258 (0x638)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl12;   // 0x25C (0x63C)  GetCtrlCtrl12()
     u8 pad_260[4];
     u32 espKind;          // 0x264 (0x644)  EspPullCoreKind at init (the low byte is the effect owner)
     Camera cam;           // 0x268 (0x648)  bear trap bite camera (em2aTrap1CamMove)

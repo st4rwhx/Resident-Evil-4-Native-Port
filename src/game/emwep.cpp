@@ -63,7 +63,7 @@ void setYarareCubeF(cEmWep* em, f32 x, f32 y, f32 z, Vec* size) asm("setYarareCu
 
 
 // The weapon the player damage callbacks belong to.
-#define PL_WEP(pl) ((cEmWep*) (pl)->dmgType)
+#define PL_WEP(pl) ((cEmWep*)port_ptr64((pl)->dmgType))
 
 // One rope node of the falling weapon (emWep_R1_Fall): three point masses joined by distance
 // constraints; the model matrix is rebuilt from them every frame.
@@ -311,7 +311,7 @@ void emWepDmCk(cEmWep* em)
         p.y += 800.0f;
         PlWepHitCheck2(0, &p, &p, 0x13, 3, 5000.0f);
         BitOn(pG->flags_5010, 0x20000000);
-        memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &em->pos, sizeof(Vec));
+        memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &em->pos, sizeof(Vec));
         pG->bell_stat = stat;
         em->setLost();
         break;
@@ -327,7 +327,7 @@ void emWepDmCk(cEmWep* em)
         p.y += 800.0f;
         PlWepHitCheck2(0, &p, &p, 0x13, 3, 5000.0f);
         BitOn(pG->flags_5010, 0x20000000);
-        memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &em->pos, sizeof(Vec));
+        memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &em->pos, sizeof(Vec));
         pG->bell_stat = one;
         em->setLost();
         break;
@@ -501,9 +501,9 @@ void emWep_R1_Lost(cEmWep* em)
         em->be_flag &= ~2;
         em->be_flag &= ~0x20;
         em->setStatus(1);
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         em->xFE++;
         EmMgr.destroy(em);
         break;
@@ -617,12 +617,12 @@ void emWep_R1_Fall(cEmWep* em)
                     SndCall(w->seFall[0], w->seFall[1], &em->pos, w->seFall[2], 0, em);
                 }
                 if (w->effFall[0] != 0xFF && w->effFall[1] != 0xFF) {
-                    EstSet((int) em, -1, 0, 0, w->effFall[0], w->effFall[1], 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->effFall[0], w->effFall[1], 0, 0, (u32)(uintptr_t)(em), 0);
                 }
             }
-            EffectEspDelete(0, w->espKind, (u32) em, 0);
-            EffectEspgenDelete(0, w->espKind, (int) em);
-            EffectEfmDelete(0, w->espKind, (int) em);
+            EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+            EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+            EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
             switch (w->fallType) {
             default:
                 n->spd.x *= fRand0_1() * 0.2f + 0.5f;
@@ -734,7 +734,7 @@ void emWep_R1_Throw(cEmWep* em)
         SndStop(w->sndId, 0);
     } else if (w->pAtk) {
         if (EmAtkHitCk(w->pAtk, &em->pos, &em->oldPos, 0)) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->seHit[0] != 0xFF && w->seHit[1] != 0xFF) {
                 SndCall(w->seHit[0], w->seHit[1], &em->pos, w->seHit[2], 0, em);
             }
@@ -813,7 +813,7 @@ void emWep_R1_ThrowScythe(cEmWep* em)
         SndStop(w->sndId, 0);
     } else if (w->pAtk) {
         if (EmAtkHitCk(w->pAtk, &em->pos, &em->oldPos, 0)) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->seHit[0] != 0xFF && w->seHit[1] != 0xFF) {
                 SndCall(w->seHit[0], w->seHit[1], &em->pos, w->seHit[2], 0, em);
             }
@@ -911,16 +911,16 @@ void emWep_R1_Shot(cEmWep* em)
         em->pos = hit;
         TransMatrix(em->mat, &em->pos);
         em->partsWorldCalc();
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         em->xFE = 2;
         return;
     }
     if (w->pAtk) {
         part = (EmHitInfo*) EmAtkLineHitCk(&em->oldPos, &em->pos, &hitPos, &nrm, 0);
         if (part) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->seHit[0] != 0xFF && w->seHit[1] != 0xFF) {
                 SndCall(w->seHit[0], w->seHit[1], &em->pos, w->seHit[2], 0, em);
             }
@@ -954,9 +954,9 @@ void emWep_R1_Shot(cEmWep* em)
             em->setParent(pPL, no, 0);
             em->hp = 0;
             emWep_R1_Parent(em);
-            EffectEspDelete(0, w->espKind, (u32) em, 0);
-            EffectEspgenDelete(0, w->espKind, (int) em);
-            EffectEfmDelete(0, w->espKind, (int) em);
+            EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+            EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+            EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
             c = GetCtrlCtrl12();
             Ctrl12Set(c, 6, 0x1E);
             Ctrl12Set(c, 8, 0x78);
@@ -964,7 +964,7 @@ void emWep_R1_Shot(cEmWep* em)
         }
         part = EmAtkLineHitCkSub(&em->oldPos, &em->pos, &hitPos, &nrm);
         if (part) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->seHit[0] != 0xFF && w->seHit[1] != 0xFF) {
                 SndCall(w->seHit[0], w->seHit[1], &em->pos, w->seHit[2], 0, em);
             }
@@ -998,9 +998,9 @@ void emWep_R1_Shot(cEmWep* em)
             em->setParent(pSUB, no, 0);
             em->hp = 0;
             emWep_R1_Parent(em);
-            EffectEspDelete(0, w->espKind, (u32) em, 0);
-            EffectEspgenDelete(0, w->espKind, (int) em);
-            EffectEfmDelete(0, w->espKind, (int) em);
+            EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+            EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+            EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
             return;
         }
     }
@@ -1024,7 +1024,7 @@ void emWep_R1_ShotArrow(cEmWep* em)
 
     switch (em->xFE) {
     case 0:
-        EstSet((int) em, -1, 0, 0, 0x2F, 7, 0x800, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x2F, 7, 0x800, w->espKind, (u32)(uintptr_t)(em), 0);
         w->timer = 0;
         w->timer2 = 90;
         w->timer3 = 3;
@@ -1054,7 +1054,7 @@ void emWep_R1_ShotArrow(cEmWep* em)
         w->fuse = 63;
         w->timer2 = 15;
         w->timer = 0;
-        EstSet((int) em, -1, 0, 0, 0x2F, 8, 0x800, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x2F, 8, 0x800, w->espKind, (u32)(uintptr_t)(em), 0);
         em->xFE++;
     case 3:
         em->partsWorldCalc();
@@ -1087,15 +1087,15 @@ void emWep_R1_ShotArrow(cEmWep* em)
         TransMatrix(em->mat, &em->pos);
         em->partsWorldCalc();
         em->xFE = 2;
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         return;
     }
     if (w->pAtk) {
         part = (EmHitInfo*) EmAtkLineHitCk(&em->oldPos, &em->pos, &hit, &nrm, 0);
         if (part) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->seHit[0] != 0xFF && w->seHit[1] != 0xFF) {
                 SndCall(w->seHit[0], w->seHit[1], &em->pos, w->seHit[2], 0, em);
             }
@@ -1119,7 +1119,7 @@ void emWep_R1_ShotArrow(cEmWep* em)
             if (part == 0) {
                 goto fly;
             }
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->seHit[0] != 0xFF && w->seHit[1] != 0xFF) {
                 SndCall(w->seHit[0], w->seHit[1], &em->pos, w->seHit[2], 0, em);
             }
@@ -1139,9 +1139,9 @@ void emWep_R1_ShotArrow(cEmWep* em)
             #endif
         }
         emWepArrowBomb(em);
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         return;
     }
 fly:
@@ -1234,9 +1234,9 @@ void emWepRocketBobm(cEmWep* em)
     f32 len;
 
     SndStop(w->sndId, 0);
-    EffectEspDelete(0, w->espKind, (u32) em, 0);
-    EffectEspgenDelete(0, w->espKind, (int) em);
-    EffectEfmDelete(0, w->espKind, (int) em);
+    EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+    EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+    EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
     p = em->getPartsPtr(0);
     len = (cam->param.pos.x - p->worldPos.x) * (cam->param.pos.x - p->worldPos.x)
         + (cam->param.pos.y - p->worldPos.y) * (cam->param.pos.y - p->worldPos.y)
@@ -1258,7 +1258,7 @@ void emWepRocketBobm(cEmWep* em)
     pos.y += 1200.0f;
     PlWepHitCheck2(0, &pos, &pos, 0x13, 3, 5000.0f);
     BitOn(pG->flags_5010, 0x20000000);
-    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &em->oldPos, sizeof(Vec));
+    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &em->oldPos, sizeof(Vec));
     pG->bell_stat = 1;
     em->setLost();
 }
@@ -1269,9 +1269,9 @@ void emWepArrowBomb(cEmWep* em)
     Vec pos;
 
     SndStop(w->sndId, 0);
-    EffectEspDelete(0, w->espKind, (u32) em, 0);
-    EffectEspgenDelete(0, w->espKind, (int) em);
-    EffectEfmDelete(0, w->espKind, (int) em);
+    EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+    EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+    EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
     EstSet(0, -1, &em->pos, 0, 0, 0xD, 0, 0, 0, 0);
     EstSet(0, -1, &em->pos, 0, 0, 0x1A, 0, 0, 0, 0);
     em->hp = 0;
@@ -1281,7 +1281,7 @@ void emWepArrowBomb(cEmWep* em)
     pos.y += 1200.0f;
     PlWepHitCheck2(0, &pos, &pos, 0x13, 3, 5000.0f);
     BitOn(pG->flags_5010, 0x20000000);
-    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &em->pos, sizeof(Vec));
+    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &em->pos, sizeof(Vec));
     pG->bell_stat = 1;
     em->setLost();
 }
@@ -1341,7 +1341,7 @@ void emWep_R1_BombThrow(cEmWep* em)
         pos.y += 1200.0f;
         PlWepHitCheck2(0, &pos, &pos, 0x13, 3, 5000.0f);
         BitOn(pG->flags_5010, 0x20000000);
-        memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &em->pos, sizeof(Vec));
+        memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &em->pos, sizeof(Vec));
         pG->bell_stat = 1;
         em->setLost();
         return;
@@ -1536,13 +1536,13 @@ void emWep_R1_GrenadeThrow(cEmWep* em)
         pos.y += 1200.0f;
         PlWepHitCheck2(0, &pos, &pos, 0x13, 3, 5000.0f);
         BitOn(pG->flags_5010, 0x20000000);
-        memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &em->pos, sizeof(Vec));
+        memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &em->pos, sizeof(Vec));
         pG->bell_stat = 1;
         em->setLost();
         return;
     }
     if (w->fuse <= 0x18 && em->plDist2 < 36000000.0f && w->escaped == 0) {
-        ActBtn.set(0x25, 0xB, (int) emWepEscapeAction, (int) em, 1, 3, 0, 0);
+        ActBtn.set(0x25, 0xB, (int)(uintptr_t)(emWepEscapeAction), (int)(uintptr_t)(em), 1, 3, 0, 0);
     }
     w->spd.y -= 15.0f;
     PSVECAdd(&em->pos, &w->spd, &em->pos);
@@ -1608,13 +1608,13 @@ void emWepEscapeAction(cEmWep* em)
     ang = Muku(&pPL->pos, &em->pos, pPL->rot.y, 3.1415927f);
     a = fabsf(ang);
     if (a < 0.7853982f) {
-        SetPlDamage((int) em, plemBackjump);
+        SetPlDamage((int)(uintptr_t)(em), plemBackjump);
     } else if (a < 2.3561945f) {
-        SetPlDamage((int) em, plemFrontEscape);
+        SetPlDamage((int)(uintptr_t)(em), plemFrontEscape);
     } else if (ang > 0.0f) {
-        SetPlDamage((int) em, plemEscape);
+        SetPlDamage((int)(uintptr_t)(em), plemEscape);
     } else {
-        SetPlDamage((int) em, plemEscape);
+        SetPlDamage((int)(uintptr_t)(em), plemEscape);
         pPL->xFF = 1;
         GameAddPoint(9);
     }
@@ -1670,7 +1670,7 @@ void plemBackjump(cPlayer* pl)
     switch (pl->xFE) {
     case 0:
         MotionSetCore(pl, &pl->pMotion, w->motBackjump, 0, 3, 1, 5);
-        EstSet((int) pl, -1, 0, 0, 3, 0x14, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, 0x14, 0, 0, (u32)(uintptr_t)(pl), 0);
         SndCall(1, 0x43, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
         SndCall(1, 0x44, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
         GameAddPoint(0xB);
@@ -1713,7 +1713,7 @@ void plemFrontEscape(cPlayer* pl)
     switch (pl->xFE) {
     case 0:
         MotionSetCore(pl, &pl->pMotion, w->motFront, 0, 3, 1, 5);
-        EstSet((int) pl, -1, 0, 0, 3, 0x14, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, 0x14, 0, 0, (u32)(uintptr_t)(pl), 0);
         SndCall(1, 0x43, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
         SndCall(1, 0x44, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
         GameAddPoint(0xB);
@@ -1780,7 +1780,7 @@ void emWepEscapeCamMove(cEmWep* em)
     w->cam.up.z = 0.0f;
     w->cam.dist = SQRTF(len);
     CameraSetOrientationUp(&w->cam);
-    CamCtrl.x250 = (s32) &w->cam;
+    CamCtrl.x250 = (s32)(uintptr_t)(&w->cam);
 }
 
 void cEmWep::setParent(cEm* parent, int partsNo_, int flag)
@@ -2369,7 +2369,7 @@ void cEmWep::setEffWater(u8 id, u8 type_)
 
 void cEmWep::setEffAlways(int id, int type_)
 {
-    EstSet((int) this, -1, 0, 0, id, type_, 0x800, EMWEP_WK(this)->espKind, (u32) this, 0);
+    EstSet((int)(uintptr_t)(this), -1, 0, 0, id, type_, 0x800, EMWEP_WK(this)->espKind, (u32)(uintptr_t)(this), 0);
 }
 
 void cEmWep::setEffAlways2(u8 id, u8 type_, u8 parts, Vec* ofs, u16 wait)
@@ -2448,7 +2448,7 @@ void emWepPlHeadLost()
 
     if (pSys->region == 0) {
         PlSetDamageSe(0xD);
-        EstSet((int) pPL, -1, 0, 0, 0x10, 0x57, 0, 0, (u32) pPL, 0);
+        EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0x10, 0x57, 0, 0, (u32)(uintptr_t)(pPL), 0);
         return;
     }
     pPL->setHead(0);
@@ -2466,8 +2466,8 @@ void emWepPlHeadLost()
         obj->lightInfo.x50 = 1;
         Obj01SetEst(obj, 0, -1, 4, 0, -1, 0, -1, 0, -1);
     }
-    EstSet((int) obj, -1, 0, 0, 0x10, 0x46, 0, 0, (u32) obj, 0);
-    EstSet((int) pPL, -1, 0, 0, 0x10, 0x45, 0, 0, (u32) pPL, 0);
+    EstSet((int)(uintptr_t)(obj), -1, 0, 0, 0x10, 0x46, 0, 0, (u32)(uintptr_t)(obj), 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0x10, 0x45, 0, 0, (u32)(uintptr_t)(pPL), 0);
     SndCall(1, 0x3E, &pPL->pos, 0, 0, pPL);
 }
 

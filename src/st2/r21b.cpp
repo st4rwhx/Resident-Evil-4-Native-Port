@@ -35,16 +35,16 @@ struct R21bEm {
 };
 
 struct R21bWork {
-    cObjTrolley* trolley;   // 0x000
+    P32<cObjTrolley> trolley; // 0x000
     R21bEm em[32];          // 0x004
-    cEmHit* hit[2];         // 0x204  the two switches
+    P32<cEmHit> hit[2];     // 0x204  the two switches
     u32 se;                 // 0x20C  RoomSeCall handle of the half-way switch
-    cSat* sat;              // 0x210
+    P32<cSat> sat;          // 0x210
 };
 
 // One-member struct: every store through the work reloads the pointer.
 struct R21bWorkPtr {
-    R21bWork* p;
+    P32<R21bWork> p;
 };
 
 static R21bWorkPtr r21b_work;

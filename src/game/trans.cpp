@@ -107,11 +107,11 @@ struct Weight {
     u8 weight[4]; // 0x04  percent
 };
 
-#define PTR_INVALID(p) ((u32) (p) < PORT_PTR_MIN || (u32) (p) > PORT_PTR_MAX)
+#define PTR_INVALID(p) ((u32)(uintptr_t)((p)) < PORT_PTR_MIN || (u32)(uintptr_t)((p)) > PORT_PTR_MAX)
 // Written as shifts, not `& ~0x1F`: combine folds (x >> 5) << 5 into an AND whose mask is narrowed by
 // nonzero_bits (u16 * 6 -> rlwinm 0,12,26), which a literal `& ~0x1F` never gets.
 #define ALIGN32(x) ((((x) + 0x1F) >> 5) << 5)
-#define PTR_INVALID2(p) ((u32) (p) - PORT_PTR_MIN > PORT_PTR_SPAN)
+#define PTR_INVALID2(p) ((u32)(uintptr_t)((p)) - PORT_PTR_MIN > PORT_PTR_SPAN)
 #define HALT()                                                    \
     {                                                             \
         OSReport("HALT %s(%d)\n", __FILE__, __LINE__);            \
@@ -412,7 +412,7 @@ void org_LoadTexObj(u32 id, int map)
 
 void Trans()
 {
-    u8* primStart = (u8*) pG->prim_base;
+    u8* primStart = (u8*)port_ptr64(pG->prim_base);
     void (*func)(cModel*);
     cUnit* u;
 
@@ -454,7 +454,7 @@ void Trans()
         func((cModel*) cur);
     }
     ProcessTickGet(5, "objTrans");
-    DCStoreRangeNoSync(primStart, (u8*) pG->prim_base - primStart);
+    DCStoreRangeNoSync(primStart, (u8*)port_ptr64(pG->prim_base) - primStart);
 }
 
 void lightSetEm(cModel* m)
@@ -891,8 +891,8 @@ static int MakeWeightPaletteExt(WeightExt* w0, int n)
     GxWork* gx = GXWORK();
     int cnt = 0;
     int i;
-    u32 wa = (u32) w0;
-#define w ((WeightExt*) wa)
+    u32 wa = (u32)(uintptr_t)(w0);
+#define w ((WeightExt*)port_ptr64(wa))
 
     for (i = 0; i < n; i++, wa += sizeof(WeightExt)) {
         Mtx m;
@@ -941,8 +941,8 @@ static int MakeWeightPalette(Weight* w0, int n)
     GxWork* gx = GXWORK();
     int cnt;
     int i;
-    u32 wa = (u32) w0;
-#define w ((Weight*) wa)
+    u32 wa = (u32)(uintptr_t)(w0);
+#define w ((Weight*)port_ptr64(wa))
 
     if (PTR_INVALID(w0)) {
         pLog->err(0, 0, "MakeWeightPalette() PTR ERR");
@@ -1338,12 +1338,12 @@ void commonModelTrans(cModel* m, cModelInfo* info, Mtx viewMat, int flag)
                 }
             }
             p = (u8*) part + 0x20;
-            if ((u32) p & 0x1F) {
+            if ((u32)(uintptr_t)(p) & 0x1F) {
 #line 2044 "D:/Bio4/Prog/trans.cpp"
                 HALT();
             }
 #ifdef RE4_PORT
-            port_model_part = (int) (u32) m;   // identite du modele : chaque instance suivie a part
+            port_model_part = (int) (u32)(uintptr_t)(m);   // identite du modele : chaque instance suivie a part
 #endif
             GXCallDisplayList(p, part->size);
 #ifdef RE4_PORT
@@ -2486,13 +2486,13 @@ void SetPrimBuffPtr()
         return;
     }
     U32Set(pG->vtx_buf_no, pG->vtx_buf_no ^ 1);
-    gx->prim = (u8*) pG->prim_cnt + pG->prim_max * pG->vtx_buf_no;
+    gx->prim = (u8*)port_ptr64(pG->prim_cnt) + pG->prim_max * pG->vtx_buf_no;
 }
 
 void* GetPrimBuff(int size)
 {
     GxWork* gx = GXWORK();
-    u8* base = (u8*) pG->prim_cnt;
+    u8* base = (u8*)port_ptr64(pG->prim_cnt);
     u8* limit;
     u8* p;
     u8* next;
@@ -2715,14 +2715,14 @@ void CalcTplAddrC8(TEXPalette* tpl)
     if ((s32) tpl->descriptorArray < 0) {
         return;
     }
-    tpl->descriptorArray = (TEXDescriptor*) ((u32) tpl->descriptorArray + (u32) tpl);
+    tpl->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) tpl->descriptorArray + (u32)(uintptr_t)(tpl)));
     for (i = 0; i < tpl->numDescriptors; i++) {
         TEXDescriptor* td = &tpl->descriptorArray[i];
-        td->textureHeader = (TEXHeader*) ((u32) tpl + (u32) td->textureHeader);
-        td->textureHeader->data = (void*) ((u32) tpl + (u32) td->textureHeader->data);
+        td->textureHeader = (TEXHeader*)port_ptr64(((u32)(uintptr_t)(tpl) + (u32) td->textureHeader));
+        td->textureHeader->data = (void*)port_ptr64(((u32)(uintptr_t)(tpl) + (u32) td->textureHeader->data));
         if (td->CLUTHeader != 0) {
-            td->CLUTHeader = (CLUTHeader*) ((u32) tpl + (u32) td->CLUTHeader);
-            td->CLUTHeader->data = (void*) ((u32) tpl + (u32) td->CLUTHeader->data);
+            td->CLUTHeader = (CLUTHeader*)port_ptr64(((u32)(uintptr_t)(tpl) + (u32) td->CLUTHeader));
+            td->CLUTHeader->data = (void*)port_ptr64(((u32)(uintptr_t)(tpl) + (u32) td->CLUTHeader->data));
         }
     }
 }

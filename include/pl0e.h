@@ -38,10 +38,10 @@ struct Pl0eWork {
     u8 x72;               // 0x072
     u8 pad_73[5];
     int x78;              // 0x078
-    cObj* pWave;          // 0x07C  wave object (SetObj00) moved under the ski (pl0eWaveMove)
+    P32<cObj> pWave;      // 0x07C  wave object (SetObj00) moved under the ski (pl0eWaveMove)
     u8 pad_80[4];
-    cObj* pRailObj;       // 0x084  rail object (SetObj00) the path is attached to
-    void* pPath;          // 0x088  rail path data (setRail argument)
+    P32<cObj> pRailObj;   // 0x084  rail object (SetObj00) the path is attached to
+    P32<void> pPath;      // 0x088  rail path data (setRail argument)
     f32 spd;              // 0x08C  speed along the path per frame (pl0e_spd_max / boost / slow)
     f32 dist;             // 0x090  distance along the path
     f32 length;           // 0x094  PathGetLength

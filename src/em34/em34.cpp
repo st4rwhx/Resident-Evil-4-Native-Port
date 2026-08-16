@@ -51,10 +51,10 @@ static void em34_R1_Die_Normal(cEm34* em);
 // Struct-member views of the character pointers: a load through them is not hoisted above the
 // preceding stores through the work pointer (cam_ctrl.cpp PlayerPtr).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 struct SubCharPtr {
-    cSubChar* p;
+    P32<cSubChar> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 #define pSUBS (((SubCharPtr*) &pSUB)->p)

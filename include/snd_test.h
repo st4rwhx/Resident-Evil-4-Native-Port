@@ -47,26 +47,26 @@ struct SndTestWork {
     u32 rep;      // 0x44
     SND_SIT sit;  // 0x48  SIT being edited
     SND_RIT rit;  // 0x60  RIT being edited
-    SND_SIT* pSit;    // 0x70
-    SND_RIT* pRit;    // 0x74
+    P32<SND_SIT> pSit; // 0x70
+    P32<SND_RIT> pRit; // 0x74
     DVDDir dir;   // 0x78
     DVDDirEntry ent;  // 0x84
     int dirNum;   // 0x90
     int dirTop;   // 0x94
     int dirCur;   // 0x98
     char path[2][0x100];  // 0x9C
-    char* dirName[0x80];  // 0x29C
+    P32<char> dirName[0x80]; // 0x29C
     u8 dirIsDir[0x80];    // 0x49C
     u32 sitData[14];  // 0x51C
     u32 ritData[2];   // 0x554
     u8 pad_55C[0x69C - 0x55C];
-    u8* wt;       // 0x69C
-    WTINST* inst; // 0x6A0
-    WTREGION* rgn;    // 0x6A4
-    WTART* art;   // 0x6A8
-    WTSAMPLE* sample; // 0x6AC
-    WTADPCM* adpcm;   // 0x6B0
-    SND_AXV_WORK* axv;    // 0x6B4
+    P32<u8> wt;   // 0x69C
+    P32<WTINST> inst; // 0x6A0
+    P32<WTREGION> rgn; // 0x6A4
+    P32<WTART> art; // 0x6A8
+    P32<WTSAMPLE> sample; // 0x6AC
+    P32<WTADPCM> adpcm; // 0x6B0
+    P32<SND_AXV_WORK> axv; // 0x6B4
     u32 aramAdrs; // 0x6B8
     u8 pad_6BC[4];
     u8 dump[0x100];   // 0x6C0  ARAM dump buffer

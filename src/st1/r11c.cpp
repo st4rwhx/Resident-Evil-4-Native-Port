@@ -60,21 +60,21 @@ extern StockEntry stock_r11c_after_event[];
 extern LevelEntry level_null[];
 
 struct R11cWork {
-    ReadModule* mod3;        // 0x00  enemy module 3 (Luis; the s00 event data is swapped into its archive)
-    ReadModule* mod4;        // 0x04  enemy module 4 (Ashley; the s10 event data)
+    P32<ReadModule> mod3;    // 0x00  enemy module 3 (Luis; the s00 event data is swapped into its archive)
+    P32<ReadModule> mod4;    // 0x04  enemy module 4 (Ashley; the s10 event data)
     u8 pad_8[0x30 - 0x08];
-    cDataUnit* evd0;         // 0x30  evd/r11cs00.evd
-    cDataUnit* evd1;         // 0x34  evd/r11cs10.evd
-    cEm* ashley;             // 0x38  EmMgr.create(4) for the s10 event
-    cEm* em;                 // 0x3C  enemy list entry 0xC8 (Luis outside)
-    cObj* fire[3];           // 0x40  the bonfires (setFire)
-    TexRenderMng* tex;       // 0x4C  TexRenderInit output (the s20 event's water surface)
+    P32<cDataUnit> evd0;     // 0x30  evd/r11cs00.evd
+    P32<cDataUnit> evd1;     // 0x34  evd/r11cs10.evd
+    P32<cEm> ashley;         // 0x38  EmMgr.create(4) for the s10 event
+    P32<cEm> em;             // 0x3C  enemy list entry 0xC8 (Luis outside)
+    P32<cObj> fire[3];       // 0x40  the bonfires (setFire)
+    P32<TexRenderMng> tex;   // 0x4C  TexRenderInit output (the s20 event's water surface)
     u8 texTbl[0x80];         // 0x50  TexRenderModSet parts table
-    cObjLadder* ladder[4];   // 0xD0  etc ladders 6..9
+    P32<cObjLadder> ladder[4]; // 0xD0  etc ladders 6..9
     f32 gateY[2];            // 0xE0  rest pos.y of the two gates (smd 0x33 / 0x34)
-    ScePrim* closeGate;      // 0xE8  r11c_closeGate task
-    ScePrim* gear;           // 0xEC  r11c_moveGear task
-    ScePrim* chain;          // 0xF0  r11c_moveChain task
+    P32<ScePrim> closeGate;  // 0xE8  r11c_closeGate task
+    P32<ScePrim> gear;       // 0xEC  r11c_moveGear task
+    P32<ScePrim> chain;      // 0xF0  r11c_moveChain task
     int eff;                 // 0xF4  EspPullCoreKind of the room ambience
     int effGear;             // 0xF8  EspPullCoreKind of the gear effect
     int effGate;             // 0xFC  EspPullCoreKind of the gate effect
@@ -84,7 +84,7 @@ struct R11cWork {
 
 // One-member struct: every store into the work reloads the pointer afterwards.
 struct R11cWorkPtr {
-    R11cWork* p;
+    P32<R11cWork> p;
 };
 static R11cWorkPtr r11c_work;
 #define W r11c_work.p

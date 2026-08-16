@@ -22,7 +22,7 @@
 // Room 2-18 (D:/Bio4/Prog/r218.cpp): the two bells and the chainsaw sisters dropping from the ceiling.
 
 struct R218Work {
-    cObjBell* bell[2];   // 0x00
+    P32<cObjBell> bell[2]; // 0x00
     f32 y0;              // 0x08  rest height of the first cage
     f32 y1;              // 0x0C  rest height of the second cage
     u32 snd;             // 0x10  SndCall id of the cage sound
@@ -30,7 +30,7 @@ struct R218Work {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R218WorkPtr {
-    R218Work* p;
+    P32<R218Work> p;
 };
 
 static R218WorkPtr r218_work;

@@ -8,9 +8,9 @@
 // edge normal tables the polygons index into.
 struct AtPolyData {
     u8 pad_0[0xC];
-    Vec* vtx;        // 0x0C
-    Vec* nrm;        // 0x10  face normals
-    Vec* edge;       // 0x14  edge normals
+    P32<Vec> vtx;    // 0x0C
+    P32<Vec> nrm;    // 0x10  face normals
+    P32<Vec> edge;   // 0x14  edge normals
 };
 
 // One collision triangle (0x14 bytes): three vertex, one normal and three edge indices, attribute.

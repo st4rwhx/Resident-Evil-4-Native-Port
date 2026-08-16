@@ -113,10 +113,10 @@ void DbgDrawBoxFill(f32 x, f32 y, f32 w, f32 h, f32 r, f32 g, f32 b, f32 a)
 class cDbgWindow : public cDbgWindowBase {
 public:
     u32 num;               // 0x28
-    cDbgButton* btn[128];  // 0x2C
-    cDbgButton* cur;       // 0x22C
-    cDbgButton* top;       // 0x230
-    cDbgButton* bottom;    // 0x234
+    P32<cDbgButton> btn[128]; // 0x2C
+    P32<cDbgButton> cur;   // 0x22C
+    P32<cDbgButton> top;   // 0x230
+    P32<cDbgButton> bottom; // 0x234
 
     virtual ~cDbgWindow() {
         u32 i;
@@ -271,7 +271,7 @@ static inline void IntSet(int& d, int v) { d = v; }
 
 // Struct-member view of the cModel manager pointers (game/sscrn.cpp MGR_PTR).
 struct MgrPtr {
-    void* p;
+    P32<void> p;
 };
 #define MGR_PTR(g) (((MgrPtr*) &(g))->p)
 
@@ -279,10 +279,10 @@ struct MgrPtr {
 // names under one directory.
 class cFileList {
 public:
-    char* filter;  // 0x00  prefix stripped from every name
-    char* pattern; // 0x04  search pattern
-    char* text;    // 0x08  file list text
-    char** list;   // 0x0C  one pointer per line
+    P32<char> filter; // 0x00  prefix stripped from every name
+    P32<char> pattern; // 0x04  search pattern
+    P32<char> text; // 0x08  file list text
+    P32<P32<char>> list; // 0x0C  one pointer per line
     int num;       // 0x10
     s16 cursor;    // 0x14
     s16 top;       // 0x16

@@ -24,7 +24,7 @@ struct ItemWork {
 
 // cItemMgr::ordering() output (cItemMgr::pOrder[], 8 bytes): the in-use slots holding one item id.
 struct ItemOrder {
-    ItemWork* item;  // 0x00
+    P32<ItemWork> item; // 0x00
     u16 num;         // 0x04  copy of item->num
     u8 pad_6[2];
 };
@@ -59,18 +59,18 @@ struct ItemSaveData {
 // Inventory manager (game/item.cpp, 0x30 bytes).
 class cItemMgr {
 public:
-    u32* pFlags;                // 0x00  one bit per item id (available()/use(): items usable this frame)
+    P32<u32> pFlags;            // 0x00  one bit per item id (available()/use(): items usable this frame)
     s32 nFlags;                 // 0x04  words in pFlags (8)
     u16 checkId;                // 0x08  item id use() handed to check(), 0xFFFF = none
     u8 pad_A[2];
-    ItemWork* pArm;             // 0x0C  equipped weapon slot (NULL = bare hands)
+    P32<ItemWork> pArm;         // 0x0C  equipped weapon slot (NULL = bare hands)
     u16 armId;                  // 0x10  equipped weapon item id
     s8 x12;                     // 0x12  0 player, 1 sub character heals (sce_at clears it before use())
     u8 type;                    // 0x13  inventory type (num(id) / search count only this type)
-    ItemWork* pItems;           // 0x14
-    ItemWork* pLast;            // 0x18  slot the last get() filled (puzzle PutInCase copies the piece position into it)
+    P32<ItemWork> pItems;       // 0x14
+    P32<ItemWork> pLast;        // 0x18  slot the last get() filled (puzzle PutInCase copies the piece position into it)
     s32 nItems;                 // 0x1C
-    ItemOrder* pOrder;          // 0x20  ordering() result (merchant: sorted slots of one item id)
+    P32<ItemOrder> pOrder;      // 0x20  ordering() result (merchant: sorted slots of one item id)
     s32 nOrder;                 // 0x24  entries in pOrder
     u32 x28;                    // 0x28  (sce_at: number shown with item 0x73; get(0x73, n): mercenaries add time)
     u32 x2C;                    // 0x2C  (sce_at: number shown with item 0x75; get(0x75, n): mercenaries bonus time)

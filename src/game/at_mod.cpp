@@ -545,7 +545,7 @@ int At_em_sphere_sphere_ck(cEm* a, cEm* b)
             PSVECSubtract(&m->pos, &d, &m->pos);
             ((cEm*) m)->atari.getPos(m, &((cEm*) m)->atari.worldPos);
         }
-        if ((b->atari.flags & 0x18) == 0 && (u32) b > (u32) a) {
+        if ((b->atari.flags & 0x18) == 0 && (u32)(uintptr_t)(b) > (u32)(uintptr_t)(a)) {
             PSVECScale(&d, &d, rate);
             PSVECAdd(&b->pos, &d, &b->pos);
             b->atari.getPos(b, &b->atari.worldPos);

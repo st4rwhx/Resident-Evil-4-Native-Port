@@ -56,7 +56,7 @@ void cEmDoorSetCloseLock(cEm* door) asm("setCloseLock__7cEmDoori");
 class cUnitEvent {
 public:
     u32 be_flag;
-    cUnit* next;
+    P32<cUnit> next;
     virtual ~cUnitEvent();
     virtual void beginEvent(int mode);
     virtual void endEvent(int mode);
@@ -88,20 +88,20 @@ struct R117Work {
     s8 cur[3];            // 0x03  current quarter turn of each light
     s8 tgt[3];            // 0x06  quarter turn of each light object
     u8 pad_9[3];
-    cEsp* esp[3];         // 0x0C  the light beams
-    cObj* light[3];       // 0x18  the light objects (smd 0x32, 0x30, 0x31)
-    cObj* smd;            // 0x24  the chandelier / rope object
+    P32<cEsp> esp[3];     // 0x0C  the light beams
+    P32<cObj> light[3];   // 0x18  the light objects (smd 0x32, 0x30, 0x31)
+    P32<cObj> smd;        // 0x24  the chandelier / rope object
     u32 se;               // 0x28  RoomSeCall handle of the mechanism sound
-    void* evBin;          // 0x2C  ev0101's model data saved by the s10 event
-    void* evTpl;          // 0x30  ev0101's texture palette saved by the s10 event
-    cDataUnit* evd0;      // 0x34  evd/r117s00.evd
-    cDataUnit* evd1;      // 0x38  evd/r117s10.evd
-    ReadModule* mod;      // 0x3C  enemy module 3 (the event data is swapped into its archive)
+    P32<void> evBin;      // 0x2C  ev0101's model data saved by the s10 event
+    P32<void> evTpl;      // 0x30  ev0101's texture palette saved by the s10 event
+    P32<cDataUnit> evd0;  // 0x34  evd/r117s00.evd
+    P32<cDataUnit> evd1;  // 0x38  evd/r117s10.evd
+    P32<ReadModule> mod;  // 0x3C  enemy module 3 (the event data is swapped into its archive)
 };
 
 // One-member struct: every store into the work reloads the pointer afterwards.
 struct R117WorkPtr {
-    R117Work* p;
+    P32<R117Work> p;
 };
 static R117WorkPtr r117_work;
 #define W r117_work.p

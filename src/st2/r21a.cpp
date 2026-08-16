@@ -47,7 +47,7 @@ struct R21aRoof {
 struct R21aWork {
     cEmPatrol patrol;   // 0x000
     cEmWrap em[23];     // 0x11C
-    cEmHit* hit[4];     // 0x230
+    P32<cEmHit> hit[4]; // 0x230
     u32 se;             // 0x240  SndCall handle of the burning roof
     u32 str;            // 0x244  SndStrReq handle
     int x248;           // 0x248
@@ -56,7 +56,7 @@ struct R21aWork {
 
 // One-member struct: every store through the work reloads the pointer.
 struct R21aWorkPtr {
-    R21aWork* p;
+    P32<R21aWork> p;
 };
 
 static R21aWorkPtr r21a_work;

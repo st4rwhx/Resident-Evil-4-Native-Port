@@ -41,7 +41,7 @@ public:
     u8 x1;
     u8 x2;
     u8 x3;
-    cObj* obj;       // 0x04
+    P32<cObj> obj;   // 0x04
     f32 baseY;       // 0x08
     f32 spd;         // 0x0C  fall speed
     int timer;       // 0x10
@@ -71,8 +71,8 @@ struct R21dWork {
     u8 pad_309[3];
     TRAP trap[5];         // 0x30C
     u32 str;              // 0x3FC  SndStrReq handle
-    TexRenderMng* tex;    // 0x400
-    cSceObj* pSwitch;     // 0x404  the switch being operated
+    P32<TexRenderMng> tex; // 0x400
+    P32<cSceObj> pSwitch; // 0x404  the switch being operated
     u8 pad_408[0xC];
     cSceObj deathSw;      // 0x414
     cSceObj sw[2];        // 0x50C
@@ -87,7 +87,7 @@ struct R21dTrapData {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R21dWorkPtr {
-    R21dWork* p;
+    P32<R21dWork> p;
 };
 
 static u8 r21d_texTbl[0x20];
@@ -134,7 +134,7 @@ static void setTexRender();
 
 // Struct-member view of pPL: the load stays below a preceding store (r10c).
 struct PlPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlPtr*) &pPL)->p)
 

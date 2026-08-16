@@ -22,7 +22,7 @@
 #define TASK_SUSPEND 0x80
 
 struct TASK {
-    u8* stack;                // 0x00  stack top
+    P32<u8> stack;            // 0x00  stack top
     u8 status;                // 0x04
     u8 level;                 // 0x05  > 0xF: waits on the scheduler semaphore
     u8 no;                    // 0x06
@@ -35,9 +35,9 @@ struct TASK {
     u8 pad_14[4];
     OSThread thread;          // 0x18
     OSThreadQueue queue;      // 0x330
-    void* (*hook)(void*);     // 0x338
-    void (*func)(int);        // 0x33C
-    void* model;              // 0x340
+    FnP32<void*(*)(void*)> hook; // 0x338
+    FnP32<void(*)(int)> func; // 0x33C
+    P32<void> model;          // 0x340
     u8 pad_344[4];
 };                            // 0x348
 
@@ -51,11 +51,11 @@ extern OSThread* pParentThread;  // thread to return to from the scheduler
 // (`stw rX, pCTask@sda21`), which a struct-member store would not give, hence the second
 // declarations with asm labels.
 struct TaskPtr {
-    TASK* p;
+    P32<TASK> p;
     TASK* operator->() { return p; }
 };
 struct ThreadPtr {
-    OSThread* p;
+    P32<OSThread> p;
     OSThread* operator()() { return p; }  // a direct `.p` gets its address CSE'd across blocks
 };
 extern TaskPtr CTASK __asm__("pCTask");

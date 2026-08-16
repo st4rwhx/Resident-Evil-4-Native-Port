@@ -19,7 +19,7 @@ struct Em3bWork {
     u8 pad_261[3];
     u32 sndId2;           // 0x264 (0x644)  SndCall handle of the cart SE
     u32 sndId;            // 0x268 (0x648)  SndCall handle of the truck SE
-    cEm* pDriver;         // 0x26C (0x64C)  the driver enemy (set by the room)
+    P32<cEm> pDriver;     // 0x26C (0x64C)  the driver enemy (set by the room)
 };
 
 #define EM3B_WK(em) ((Em3bWork*) &(em)->x3E0)

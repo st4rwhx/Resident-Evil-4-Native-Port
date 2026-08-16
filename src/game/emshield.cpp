@@ -643,7 +643,7 @@ void emShield_R1_Fall(cEmShield* em)
                     SndCall(8, 0xAF, &parts0->worldPos, w->pOldParent->id, 0, em);
                 }
                 if (w->effFall[0] != 0xFF && w->effFall[1] != 0xFF) {
-                    EstSet((int) em, -1, 0, 0, w->effFall[0], w->effFall[1], 0, 0, (u32) em, 0);
+                    EstSet((int)(uintptr_t)(em), -1, 0, 0, w->effFall[0], w->effFall[1], 0, 0, (u32)(uintptr_t)(em), 0);
                 }
             }
             EffectEspDelete(0, w->estNo, em, 0);

@@ -46,7 +46,7 @@ struct GondolaMotWork {
 // Struct-member view of pSUB (the pLog trick): the load stays below the preceding work store
 // (setRidePL: `w->rideSUB = 0; if (pSUB)`).
 struct SubCharPtr {
-    cSubChar* p;
+    P32<cSubChar> p;
 };
 #define pSUBS (((SubCharPtr*) &pSUB)->p)
 
@@ -192,7 +192,7 @@ void objGondola_R0_Down(cObjGondola* obj)
     PSVECSubtract(&b, &a, &d);
     PSVECAdd(&pPL->pos, &d, &b);
     pPL->setPos(&b);
-    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->quake_ofs), &d, sizeof(Vec));
+    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->quake_ofs)), &d, sizeof(Vec));
     if (pSUB && w->rideSUB) {
         PSVECAdd(&pSUB->pos, &d, &b);
         pSUB->setPos(&b);
@@ -224,7 +224,7 @@ void objGondola_R0_Up(cObjGondola* obj)
     PSVECSubtract(&b, &a, &d);
     PSVECAdd(&pPL->pos, &d, &b);
     pPL->setPos(&b);
-    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->quake_ofs), &d, sizeof(Vec));
+    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->quake_ofs)), &d, sizeof(Vec));
     if (pSUB && w->rideSUB) {
         PSVECAdd(&pSUB->pos, &d, &b);
         pSUB->setPos(&b);
@@ -297,7 +297,7 @@ void objGondola_R0_Break(cObjGondola* obj)
         len = (cp->x - ca->x) * (cp->x - ca->x) + (cp->y - ca->y) * (cp->y - ca->y) + (cp->z - ca->z) * (cp->z - ca->z);
         ObjGondolaCam.dist = SQRTF(len);
         CameraSetOrientationUp(&ObjGondolaCam);
-        CamCtrl.x250 = (s32) &ObjGondolaCam;
+        CamCtrl.x250 = (s32)(uintptr_t)(&ObjGondolaCam);
         if (w->timer) {
             w->timer--;
             if (w->timer == 0) {
@@ -329,7 +329,7 @@ void objGondola_R0_Break(cObjGondola* obj)
     if (w->ridePL) {
         PSVECAdd(&pPL->pos, &v, &b);
         pPL->setPos(&b);
-        memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->quake_ofs), &v, sizeof(Vec));
+        memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->quake_ofs)), &v, sizeof(Vec));
         if (pSUB && w->rideSUB) {
             PSVECAdd(&pSUB->pos, &v, &b);
             pSUB->setPos(&b);
@@ -551,13 +551,13 @@ void cObjGondola::setGetOffEm(cEm* em)
 void cObjGondola::setDamage()
 {
     QuakeExec(0, 0, 5, 22.0f, 2);
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
 }
 
 void cObjGondola::setBreak()
 {
     QuakeExec(0, 0, 10, 30.0f, 2);
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
     xFC = 4;
     xFD = 0;
     xFE = 0;
@@ -648,6 +648,6 @@ void cObjGondola::setVib()
         ((GondolaMotWork*) motBlend)->blendRate = 1.0f;
         ((GondolaMotWork*) motBlend)->flags2 |= 0x80000000;
         QuakeExec(0, 0, 10, 30.0f, 2);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
     }
 }

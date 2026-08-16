@@ -5,8 +5,8 @@
 
 // One registered item model: model (.bin) and texture (.tpl) addresses.
 struct ItmSysWork {
-    void* bin;  // 0x00
-    void* tpl;  // 0x04
+    P32<void> bin; // 0x00
+    P32<void> tpl; // 0x04
 };
 
 // Item model registry (game/item_model.cpp), 0x800 bytes allocated by ItemModelRoomInit.

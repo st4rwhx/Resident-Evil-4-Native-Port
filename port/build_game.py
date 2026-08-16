@@ -151,6 +151,10 @@ def main():
               'arm64': 'aarch64-linux-android28'}.get(abi, 'armv7a-linux-androideabi28')
     if abi in ('x86_64', 'arm64'):
         COMMON.append('-ferror-limit=0')
+        # entier 32 bits -> pointeur : compile en silence et perd la base de la fenetre ; erreur pour les trouver tous.
+        # -w les cacherait aussi : en 64 bits, tout avertissement coupe SAUF ces deux-la, changes en erreurs.
+        COMMON[COMMON.index('-w')] = '-Wno-everything'
+        COMMON.extend(['-Werror=int-to-pointer-cast', '-Werror=int-to-void-pointer-cast'])
     cxx = os.path.join(bindir, triple + '-clang++.cmd')
     cc = os.path.join(bindir, triple + '-clang.cmd')
     for t in (cxx, cc):

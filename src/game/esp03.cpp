@@ -10,7 +10,7 @@ struct Esp03Work {
     u8 pad_2[7];
     u8 idx;       // 0x09 ring buffer index of the next point
     u16 width;    // 0x0A line width
-    Vec* cur;     // 0x0C current point
+    P32<Vec> cur; // 0x0C current point
     Vec pts[6];   // 0x10 position history (only 4 are used)
 };
 

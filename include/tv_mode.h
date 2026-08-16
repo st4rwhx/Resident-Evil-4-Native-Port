@@ -10,7 +10,7 @@ struct TvModeWork {
     u8 sub;                  // 0x01
     u8 active;               // 0x02
     u8 pad_3;
-    GXRenderModeObj* rmode;  // 0x04
+    P32<GXRenderModeObj> rmode; // 0x04
 };
 
 extern TvModeWork* pTv;

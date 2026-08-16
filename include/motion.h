@@ -39,7 +39,7 @@ struct HermitePrm {
     u32 flags;     // 0x08  bit0: search backwards, bit1: reverse, bit2: loop, bit3: ignore the key history
     u8 type;       // 0x0C  Fcc type
     u8 pad_D[3];
-    u8* key;       // 0x10
+    P32<u8> key;   // 0x10
 };
 
 extern "C" {

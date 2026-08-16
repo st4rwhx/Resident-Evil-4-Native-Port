@@ -11,7 +11,7 @@
 // Language table (MesData.lang): 0 JP, 1 EN, 2 DE, 3 FR, 4 ES, 5 IT.
 struct MessageData {
     u32 lang;      // 0x00
-    u8* ptr[5];    // 0x04  message tables (type 0..4), each: u32 x0, u32 ofs[lang]
+    P32<u8> ptr[5]; // 0x04  message tables (type 0..4), each: u32 x0, u32 ofs[lang]
 
     u16* getAddr(int no, int type);
     int getMesNum(int type);
@@ -28,7 +28,7 @@ struct MesQue {
     u8 w;               // 0x06
     u8 h;               // 0x07
     u32 color;          // 0x08
-    MessageFont* font;  // 0x0C
+    P32<MessageFont> font; // 0x0C
 };
 
 // One texture sheet of a font (0x64 bytes).
@@ -36,17 +36,17 @@ struct MesFontTex {
     GXTexObj tex;       // 0x00
     GXTlutObj tlut;     // 0x20
     Mtx mtx;            // 0x2C
-    TEXHeader* pTex;    // 0x5C
-    TEXPalette* pTpl;   // 0x60
+    P32<TEXHeader> pTex; // 0x5C
+    P32<TEXPalette> pTpl; // 0x60
 };
 
 // Font (MesFont[4], 0xDC bytes each): a TPL with up to two sheets and a glyph width table.
 class MessageFont {
 public:
     u32 flags;          // 0x00  bit 0 = loaded
-    TEXPalette* pTpl;   // 0x04
+    P32<TEXPalette> pTpl; // 0x04
     MesFontTex tex[2];  // 0x08
-    u8* pWidth;         // 0xD0  per glyph: left, right (s8 pairs)
+    P32<u8> pWidth;     // 0xD0  per glyph: left, right (s8 pairs)
     u16 texW;           // 0xD4  sheet 0 width
     u16 texH;           // 0xD6  sheet 0 height
     u8 cellW;           // 0xD8
@@ -76,7 +76,7 @@ public:
     u16 x1A;            // 0x1A  message number for code10 (type 3 table)
     u16 ot;             // 0x1C  ordering table
     u16 otNo;           // 0x1E
-    MessageFont* font;  // 0x20
+    P32<MessageFont> font; // 0x20
     u16 x;              // 0x24  cursor
     u16 y;              // 0x26
     u16 lineX[16];      // 0x28
@@ -110,18 +110,18 @@ public:
     u16 jumpTbl[3];     // 0x90
     s8 jumpIdx;         // 0x96
     s8 jumpCnt;         // 0x97
-    u16* pMsg;          // 0x98
-    u16* savePtr;       // 0x9C
-    MessageFont* saveFont;  // 0xA0
+    P32<u16> pMsg;      // 0x98
+    P32<u16> savePtr;   // 0x9C
+    P32<MessageFont> saveFont; // 0xA0
     u32 number;         // 0xA4
     u16 digit;          // 0xA8
     u8 pad_AA[2];
     u32 numberSave;     // 0xAC
     u16 digitSave;      // 0xB0
     u8 pad_B2[6];
-    MesQue* qbase;      // 0xB8
-    MesQue* qp;         // 0xBC
-    MesQue* selCur[8];  // 0xC0  glyphs of the selection cursors
+    P32<MesQue> qbase;  // 0xB8
+    P32<MesQue> qp;     // 0xBC
+    P32<MesQue> selCur[8]; // 0xC0  glyphs of the selection cursors
     s8 selNum;          // 0xE0
     s8 result;          // 0xE1  menu selection (0 = none yet)
     s8 cursor;          // 0xE2
@@ -173,7 +173,7 @@ class MessageControl {
 public:
     u32 x0;
     Message mes[16];        // 0x04
-    void* fontBuf[4];       // 0xEC4
+    P32<void> fontBuf[4];   // 0xEC4
     u32 state;              // 0xED4
     u8 pad_ED8[0x11F8 - 0xED8];
     u32 x11F8;              // 0x11F8
@@ -216,7 +216,7 @@ public:
 // system is up.
 class RomFont {
 public:
-    void* pFont;  // 0x00  OSFontHeader
+    P32<void> pFont; // 0x00  OSFontHeader
 
     RomFont(void* font);
     void setup(void* image);

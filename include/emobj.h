@@ -11,8 +11,8 @@
 struct EmObjWork {
     u32 flags;            // 0x000 (0x3E0)  bit0: motion plays, bit1: sat registered, bit2: eat registered
     u8 pad_4[0x214 - 0x4];
-    cSat* pSat;           // 0x214 (0x5F4)  scenario collision piece
-    cSat* pEat;           // 0x218 (0x5F8)  effect collision piece
+    P32<cSat> pSat;       // 0x214 (0x5F4)  scenario collision piece
+    P32<cSat> pEat;       // 0x218 (0x5F8)  effect collision piece
     Vec satPos;           // 0x21C (0x5FC)  quad centre (model space)
     Vec eatPos;           // 0x228 (0x608)
     Vec satSize;          // 0x234 (0x614)  x/z half size, y height

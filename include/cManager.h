@@ -18,7 +18,7 @@
 // en-tete est parfois inclus depuis un bloc extern "C", ou `std::` n'existe pas.
 inline void* operator new(decltype(sizeof(0)), void* p) { return p; }
 #else
-inline void* operator new(unsigned int, void* p) { return p; }
+inline void* operator new(size_t, void* p) { return p; }
 #endif
 #endif
 
@@ -27,7 +27,7 @@ inline void* operator new(unsigned int, void* p) { return p; }
 class cUnit {
 public:
     u32 be_flag;  // 0x0  bit0: alive, bit9/10: reserved-alive bits (0x601 = in use)
-    cUnit* next;  // 0x4  active list link
+    P32<cUnit> next; // 0x4  active list link
     // 0x8 vptr
 
     cUnit() {}
@@ -47,7 +47,7 @@ public:
     #ifdef RE4_PORT
     void operator delete(void*, PORT_SIZE_T) {}
 #else
-    void operator delete(void*, unsigned int) {}
+    void operator delete(void* , size_t) {}
 #endif
 #endif
     // addListBack's `p->next = 0` goes through this: the argument copy gives the zero register a
@@ -63,16 +63,16 @@ public:
 template <class T>
 class cManager {
 public:
-    T* pArray;         // 0x00 work array
+    P32<T> pArray;     // 0x00 work array
     u32 nArray;        // 0x04 number of works
     u32 size;          // 0x08 sizeof one work
     u8 flag;           // 0x0C
-    T* pAlive;         // 0x10 head of active list (cUnit::next)
+    P32<T> pAlive;     // 0x10 head of active list (cUnit::next)
     u32 x14;           // 0x14
     u32 x18;           // 0x18
     u32 x1C;           // 0x1C
     u32 maxAlive;      // 0x20 peak active count
-    const char* name;  // 0x24
+    P32<const char> name; // 0x24
     u32 warnDiv;       // 0x28 countActiveWork() warns when free works < nArray / warnDiv
     void (**funcTbl)(T*);  // 0x2C per-type move handlers, set by init() (cLight::move calls funcTbl[type])
     // 0x30 vptr
@@ -369,7 +369,7 @@ void cManager<T>::destroyAll()
 template <class T>
 inline void cManager<T>::destroy(T* p)
 {
-    if ((u32)p < PORT_PTR_MIN || (u32)p > PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(p) < PORT_PTR_MIN || (u32)(uintptr_t)(p) > PORT_PTR_MAX) {
         if (p != 0) {
             log("%s::destroy() ERROR, INVALID  PTR %08X", name, p);
         }
@@ -402,7 +402,7 @@ template <class T>
 T* cManager<T>::getPrevWork(T* p)
 {
     p = (T*)((u8*)p - size);
-    if ((u32)p < (u32)pArray || (u32)p >= (u32)pArray + size * (nArray - 1)) {
+    if ((u32)(uintptr_t)(p) < (u32)pArray || (u32)(uintptr_t)(p) >= (u32)pArray + size * (nArray - 1)) {
         return 0;
     }
     return p;

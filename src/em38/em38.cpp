@@ -100,12 +100,12 @@ static void plemSit(cPlayer* pl);
 // Struct-member view of the player pointer: a load through it is not hoisted above the preceding
 // stores through the work pointer (cam_ctrl.cpp PlayerPtr).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 // Struct-member view of pG (global.h pGS is the same idea): its load stays below a preceding store through the work.
 struct SubCharPtr {
-    cSubChar* p;
+    P32<cSubChar> p;
 };
 #define pSUBS (((SubCharPtr*) &pSUB)->p)
 

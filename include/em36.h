@@ -11,7 +11,7 @@ class cModelInfo;
 
 // One regenerating limb entry of the em36 work (0xC bytes): the parts the limb is made of.
 struct Em36Limb {
-    cObj* pObj;           // 0x00  the cObj00 weak point (em36WeakInit)
+    P32<cObj> pObj;       // 0x00  the cObj00 weak point (em36WeakInit)
     s16 hp;               // 0x04
     int hit;              // 0x08  index into Em36Work::hit
 };
@@ -20,7 +20,7 @@ class cObj16;
 
 // The three tentacle objects growing out of a lost limb (em36RegeneTenMove), 0xC bytes.
 struct Em36Ten {
-    cObj16* obj[3];
+    P32<cObj16> obj[3];
 };
 
 // Work of the em36 enemy (em36 module, D:/Bio4/Prog/em36.cpp), overlaid on cEm from 0x3E0.
@@ -49,10 +49,10 @@ struct Em36Work {
     Vec routePos;         // 0x668 (0xA48)
     Vec subRoutePos;      // 0x674 (0xA54)
     Vec targetPos;        // 0x680 (0xA60)
-    cEm* pTarget;         // 0x68C (0xA6C)
+    P32<cEm> pTarget;     // 0x68C (0xA6C)
     Em36Limb limb[5];     // 0x690 (0xA70)
     Em36Ten ten[7];       // 0x6CC (0xAAC)
-    cModelInfo* pParts[7];  // 0x720 (0xB00)  the limb models (em36PartsSet)
+    P32<cModelInfo> pParts[7]; // 0x720 (0xB00)  the limb models (em36PartsSet)
     u32 flags2;           // 0x73C (0xB1C)
     int atkTimer[7];      // 0x740 (0xB20)
     Vec slopeRot;         // 0x75C (0xB3C)  em36SlopeMove: the body tilt (x) the matrix is rotated by

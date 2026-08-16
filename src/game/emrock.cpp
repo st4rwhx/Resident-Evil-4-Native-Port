@@ -62,7 +62,7 @@ void setYarareCubeF(cEmRock* em, f32 x, f32 y, f32 z, Vec* size) asm("setYarareC
 #endif
 
 // The rock the player damage callbacks belong to: the original re-reads pl->dmgType at every use.
-#define PL_ROCK(pl) ((cEmRock*) (pl)->dmgType)
+#define PL_ROCK(pl) ((cEmRock*)port_ptr64((pl)->dmgType))
 
 // Head of a key-frame motion data block (motion.h MotionData; motion.h's one-argument MotionMove
 // prototype keeps it out of the em units).
@@ -79,7 +79,7 @@ static inline void LockPartsSet(cEm* em, int no)
 
 // Struct-member view of pPL (the pGS trick): the load stays below the preceding atari flag store.
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define PLS (((PlayerPtr*) &pPL)->p)
 
@@ -183,9 +183,9 @@ cEmRock* SetRock(void* bin, void* tpl, Vec* pos, Vec* rot, u8 type)
     w->sndId = zero;
     w->flags = zero;
     w->x24 = zero;
-    w->pParent = (cEm*) zero;
+    w->pParent = (cEm*)port_ptr64(zero);
     w->x30 = zero;
-    w->pAtk = (EmAtkInfo*) zero;
+    w->pAtk = (EmAtkInfo*)port_ptr64(zero);
     w->xA1 = zero;
     w->se8C = zero;
     w->seFall[0] = 0xFF;
@@ -767,7 +767,7 @@ void emRock_R1_Roll(cEmRock* em)
         emRockPushCk(em, 0);
         em->atari.flags &= ~0x200;
         PLS->rot.y = em->rot.y;
-        SetPlDamage((int) em, (void (*)(cPlayer*)) plemRockEscape);
+        SetPlDamage((int)(uintptr_t)(em), (void (*)(cPlayer*)) plemRockEscape);
         w->timer3 = 75;
         w->spd.x = 0.0f;
         w->spd.y = 0.0f;
@@ -885,7 +885,7 @@ void emRock_R1_Drop(cEmRock* em)
         em->xFE++;
     case 2:
         MotionSetCore(em, &em->pMotion, w->mot1, 0, 0, 1, 0);
-        EstSet((int) em, -1, 0, 0, 1, 4, 0, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 4, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         SndCall(6, 8, &em->pos, 0, 0, em);
         w->timer = 37;
         em->xFE++;
@@ -950,7 +950,7 @@ void emRock_R1_Drop2(cEmRock* em)
         FSet(pPL->pos.z, -14770.0f);
         pPL->setPos(&pPL->pos);
         pPL->st.x325 = 2;
-        SetPlDamage((int) em, (void (*)(cPlayer*)) plemDropFind);
+        SetPlDamage((int)(uintptr_t)(em), (void (*)(cPlayer*)) plemDropFind);
         em->xFE++;
     case 3:
         MotionSetCore(em, &em->pMotion, w->mot1, 0, 0, 1, 0);
@@ -987,7 +987,7 @@ void emRock_R1_Drop2(cEmRock* em)
                 }
                 if ((s16) pG->pl_life > 0) {
                     w->xAE = 1;
-                    SetPlDamage((int) em, (void (*)(cPlayer*)) plemDropDie);
+                    SetPlDamage((int)(uintptr_t)(em), (void (*)(cPlayer*)) plemDropDie);
                     pPL->xFF = 1;
                     break;
                 }
@@ -996,10 +996,10 @@ void emRock_R1_Drop2(cEmRock* em)
                 switch (w->rnd) {
                 case 0:
                 default:
-                    ActBtn.set(0x25, 5, (int) plemDropEscAction, (int) em, 0x42, 3, 0, 0);
+                    ActBtn.set(0x25, 5, (int)(uintptr_t)(plemDropEscAction), (int)(uintptr_t)(em), 0x42, 3, 0, 0);
                     break;
                 case 1:
-                    ActBtn.set(0x25, 5, (int) plemDropEscAction, (int) em, 0x42, 4, 0, 0);
+                    ActBtn.set(0x25, 5, (int)(uintptr_t)(plemDropEscAction), (int)(uintptr_t)(em), 0x42, 4, 0, 0);
                     break;
                 }
             }
@@ -1013,7 +1013,7 @@ void plemDropEscAction(cEmRock* em)
 {
     EMROCK_WK(em)->xAE = 1;
     pPL->st.x325 = 2;
-    SetPlDamage((int) em, (void (*)(cPlayer*)) plemDropEscape);
+    SetPlDamage((int)(uintptr_t)(em), (void (*)(cPlayer*)) plemDropEscape);
 }
 
 // Player damage routine of the drop: notices the rock, then the escape / death routine takes over.
@@ -1053,7 +1053,7 @@ void plemDropEscape(cPlayer* pl)
     switch (pl->xFE) {
     case 0:
         MotionSetCore(pl, &pl->pMotion, w->mot4, 0, 3, 1, 0);
-        EstSet((int) pl, -1, 0, 0, 3, 0x14, 0, 0, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, 0x14, 0, 0, (u32)(uintptr_t)(pl), 0);
         SndCall(1, 0x43, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
         SndCall(1, 0x44, &pl->getPartsPtr(4)->worldPos, 0, 0, pl);
         pPL->st.x325 = 0x1E;
@@ -1094,7 +1094,7 @@ int emRockRollHitCk(cEmRock* em)
         w->radius * w->radius) {
         return 0;
     }
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xB, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0xB, 1);
     QuakeExec(0, 0, 5, 22.0f, 2);
     pG->pl_life = 0;
     PlSetDamage(8, 0, 0);
@@ -1287,7 +1287,7 @@ void cEmRock::setEffFall(u8 id, u8 type)
 
 void cEmRock::setEffAlways(int id, int type)
 {
-    EstSet((int) this, -1, 0, 0, id, type, 0, EMROCK_WK(this)->espKind, (u32) this, 0);
+    EstSet((int)(uintptr_t)(this), -1, 0, 0, id, type, 0, EMROCK_WK(this)->espKind, (u32)(uintptr_t)(this), 0);
 }
 
 void cEmRock::setYarareCube(Vec* size, f32 x, f32 y, f32 z)
@@ -1565,7 +1565,7 @@ void plemRockEscape(cPlayer* pl)
         }
         break;
     case 2:
-        MotionSetCore(pl, &pl->pMotion, mot, (int) mot2, 10, 5, 0);
+        MotionSetCore(pl, &pl->pMotion, mot, (int)(uintptr_t)(mot2), 10, 5, 0);
         pl->x3E0 = 0;
         pl->x3E4 = 0;
         pl->x3E8 = 0;
@@ -1643,7 +1643,7 @@ void plemRockEscape(cPlayer* pl)
             if (fr >= cnt) {
                 fr = 0;
             }
-            MotionSetCore(pl, &pl->pMotion, mot, (int) mot2, pl->x29D, 5, (u16) fr);
+            MotionSetCore(pl, &pl->pMotion, mot, (int)(uintptr_t)(mot2), pl->x29D, 5, (u16) fr);
         }
         if (Key.trg & 0x80000) {
             pl->x3E0 += pl->x3F0;
@@ -1668,9 +1668,9 @@ void plemRockEscape(cPlayer* pl)
         }
         if (pl->x3F8 && w->xAE == 0) {
             if (pl->x3FC) {
-                ActBtn.set(0x25, 5, (int) plemRockEscAction, (int) pl, 0x42, 3, 0, 0);
+                ActBtn.set(0x25, 5, (int)(uintptr_t)(plemRockEscAction), (int)(uintptr_t)(pl), 0x42, 3, 0, 0);
             } else {
-                ActBtn.set(0x25, 5, (int) plemRockEscAction, (int) pl, 0x42, 4, 0, 0);
+                ActBtn.set(0x25, 5, (int)(uintptr_t)(plemRockEscAction), (int)(uintptr_t)(pl), 0x42, 4, 0, 0);
             }
         } else {
             ActBtn.set(0x18, 5, 0, 0, 2, 2, 0, 0);
@@ -1845,7 +1845,7 @@ void plemRockEscapeCamMove(cPlayer* pl, f32 rate)
         cam->up.z = 0.0f;
         cam->dist = SQRTF(len);
         CameraSetOrientationUp(cam);
-        CamCtrl.x250 = (s32) cam;
+        CamCtrl.x250 = (s32)(uintptr_t)(cam);
     }
 }
 
@@ -1893,7 +1893,7 @@ void plemRockEscapeCamMove2(cPlayer* pl, int side)
         cam->up.z = 0.0f;
         cam->dist = SQRTF(len);
         CameraSetOrientationUp(cam);
-        CamCtrl.x250 = (s32) cam;
+        CamCtrl.x250 = (s32)(uintptr_t)(cam);
     }
 }
 
@@ -1930,7 +1930,7 @@ void plemRockDropDieCamMove(cEmRock* em)
         cam->up.z = 0.0f;
         cam->dist = SQRTF(len);
         CameraSetOrientationUp(cam);
-        CamCtrl.x250 = (s32) cam;
+        CamCtrl.x250 = (s32)(uintptr_t)(cam);
     }
 }
 
@@ -1980,7 +1980,7 @@ void emRockPushCamMove(cEmRock* em)
         cam->up.z = 0.0f;
         cam->dist = SQRTF(len);
         CameraSetOrientationUp(cam);
-        CamCtrl.x250 = (s32) cam;
+        CamCtrl.x250 = (s32)(uintptr_t)(cam);
     }
 }
 
@@ -2032,7 +2032,7 @@ void emRockPushCamMove2(cEmRock* em)
         cam->up.z = 0.0f;
         cam->dist = SQRTF(len);
         CameraSetOrientationUp(cam);
-        CamCtrl.x250 = (s32) cam;
+        CamCtrl.x250 = (s32)(uintptr_t)(cam);
     }
 }
 
@@ -2064,7 +2064,7 @@ void emRockDropCamMove(cEmRock* em)
     len = (cp->x - ca->x) * (cp->x - ca->x) + (cp->y - ca->y) * (cp->y - ca->y) + (cp->z - ca->z) * (cp->z - ca->z);
     cam->dist = SQRTF(len);
     CameraSetOrientationUp(cam);
-    CamCtrl.x250 = (s32) cam;
+    CamCtrl.x250 = (s32)(uintptr_t)(cam);
 }
 
 // Enemies (ids 0x10..0x20) within 1.5 radii of the rock are knocked down (routine 3/4).
@@ -2120,7 +2120,7 @@ int emRockAtkCk(cEmRock* em, EmAtkInfo* atk, int type, f32 r)
         a = *atk;
         a.range = w->radius;
         if (EmAtkHitCk(&a, &em->pos, &em->oldPos, 1)) {
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             if (w->se8D[0] != 0xFF && w->se8D[1] != 0xFF) {
                 SndCall(w->se8D[0], w->se8D[1], &em->pos, w->se8D[2], 0, em);
             }
@@ -2243,7 +2243,7 @@ int emRockDropHitCk(cEmRock* em)
     if (len > r * r) {
         return 0;
     }
-    SetPlDamage((int) em, plemDropDie);
+    SetPlDamage((int)(uintptr_t)(em), plemDropDie);
     return 1;
 }
 
@@ -2279,7 +2279,7 @@ int emRockDropHitCkSub(cEmRock* em)
     if (len > r * r) {
         return 0;
     }
-    SetSubDamage((int) em, (void*) subemDropDie);
+    SetSubDamage((int)(uintptr_t)(em), (void*) subemDropDie);
     return 1;
 }
 
@@ -2427,6 +2427,6 @@ void emRockSatSet(cEmRock* em)
         w->pSat->flags |= 4;
         w->pSat->setCoord(&pos, &rot);
     } else {
-        w->pSat = EatMgr.create((void*) (((u32*) pG->pRoomArc)[5] + (u32) pG->pRoomArc), 0, &pos, &rot, 1);
+        w->pSat = EatMgr.create((void*)port_ptr64((((u32*) pG->pRoomArc)[5] + (u32) pG->pRoomArc)), 0, &pos, &rot, 1);
     }
 }

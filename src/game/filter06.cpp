@@ -33,7 +33,7 @@ public:
 };
 
 struct Filter06Work {
-    cParticle06* p;  // 0x00
+    P32<cParticle06> p; // 0x00
     u32 num;         // 0x04
     Vec spd;         // 0x08
     u8 col[4];       // 0x14  target colour

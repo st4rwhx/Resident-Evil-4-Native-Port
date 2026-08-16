@@ -32,7 +32,7 @@
 
 struct R217Work {
     cEmWrap em[10];      // 0x000
-    cEmHit* hit[5];      // 0x078  the beam hit boxes
+    P32<cEmHit> hit[5];  // 0x078  the beam hit boxes
     int cnt0;            // 0x08C
     int cnt1;            // 0x090
     int cnt2;            // 0x094
@@ -45,7 +45,7 @@ struct R217Work {
 
 // One-member struct: every store through the work reloads the pointer.
 struct R217WorkPtr {
-    R217Work* p;
+    P32<R217Work> p;
 };
 
 static Vec r217_savePos[76];

@@ -84,9 +84,9 @@ typedef struct {
 
 typedef struct {
     u32 num;        // 0x00  number of SITs
-    SND_SIT* sit;   // 0x04
-    u8* dls;        // 0x08  wavetable (SND_WT_HDR + SYN WT tables)
-    u8* seq;        // 0x0C  sequence table (SND_SEQ_TBL)
+    P32<SND_SIT> sit; // 0x04
+    P32<u8> dls;    // 0x08  wavetable (SND_WT_HDR + SYN WT tables)
+    P32<u8> seq;    // 0x0C  sequence table (SND_SEQ_TBL)
     u32 aram;       // 0x10  ARAM address of the block's samples
     u8 pad_14[0xC];
 } SND_ISS_BLK;
@@ -95,8 +95,8 @@ typedef struct {
 
 typedef struct {
     u32 num;        // 0x00
-    SND_RIT* rit;   // 0x04
-    u8* shd;        // 0x08  table of offsets to the stream headers
+    P32<SND_RIT> rit; // 0x04
+    P32<u8> shd;    // 0x08  table of offsets to the stream headers
     u8 pad_C[4];
 } SND_STR_BLK;
 
@@ -183,7 +183,7 @@ typedef struct {
     u16 blk_no;     // 0x08
     u16 req_no;     // 0x0A
     u32 snd_id;     // 0x0C
-    SND_SIT* sit;   // 0x10
+    P32<SND_SIT> sit; // 0x10
     u16 flag;       // 0x14  override flags (from ctrl->flag_58)
     u16 para;       // 0x16  command parameter
     u8 pad_18[2];
@@ -215,7 +215,7 @@ typedef struct {
     u8 pad_B[1];
     u32 count;      // 0x0C
     s32 rel_time;   // 0x10  release time for the note off
-    struct SND_AXV_WORK_* axv;  // 0x14
+    P32<struct SND_AXV_WORK_> axv; // 0x14
     u16 blk_no;     // 0x18
     u16 req_no;     // 0x1A
     s8 prio;        // 0x1C
@@ -236,17 +236,17 @@ typedef struct SND_AXV_WORK_ {
                     //       0x40 pitch, 0x100 stop, 0x200 start
     u16 flag;       // 0x0C  request parameter (SND_REQ_WORK::x26): 0x2 = no volume down
     u8 pad_E[2];
-    AXVPB* voice;   // 0x10
-    SND_VOICE_WORK* vw;     // 0x14
+    P32<AXVPB> voice; // 0x10
+    P32<SND_VOICE_WORK> vw; // 0x14
     u32 aram;       // 0x18
-    u8* wt;         // 0x1C  wavetable
-    SND_SIT* sit;   // 0x20
-    SND_WT_HDR* hdr;        // 0x24
-    WTINST* inst;   // 0x28
-    WTREGION* rgn;  // 0x2C
-    WTART* art;     // 0x30
-    WTSAMPLE* sample;       // 0x34
-    WTADPCM* adpcm; // 0x38
+    P32<u8> wt;     // 0x1C  wavetable
+    P32<SND_SIT> sit; // 0x20
+    P32<SND_WT_HDR> hdr;    // 0x24
+    P32<WTINST> inst; // 0x28
+    P32<WTREGION> rgn; // 0x2C
+    P32<WTART> art; // 0x30
+    P32<WTSAMPLE> sample;   // 0x34
+    P32<WTADPCM> adpcm; // 0x38
     f32 rate;       // 0x3C
     s32 ax_vol;     // 0x40
     s32 ax_auxA;    // 0x44
@@ -299,11 +299,11 @@ typedef struct {
     s16 fade_target;        // 0x22  target volume << 8
     SYNSYNTH synth;         // 0x24 .. 0x3164
     u32 aram;               // 0x3164  ARAM base of the samples (SYNInitSynth)
-    u8* wt;                 // 0x3168  wavetable
-    SND_SIT* sit;           // 0x316C
-    u8* seq_top;            // 0x3170  sequence data
-    u8* seq_pos;            // 0x3174  read position
-    u8* seq_loop;           // 0x3178
+    P32<u8> wt;             // 0x3168  wavetable
+    P32<SND_SIT> sit;       // 0x316C
+    P32<u8> seq_top;        // 0x3170  sequence data
+    P32<u8> seq_pos;        // 0x3174  read position
+    P32<u8> seq_loop;       // 0x3178
     s32 tempo;              // 0x317C  1000
     s32 x3180;              // 0x3180  480
     s32 delta;              // 0x3184  ticks to the next event
@@ -341,9 +341,9 @@ typedef struct {
     s8 state;       // 0x09  str_player_tbl index
     s8 prev_state;  // 0x0A
     u8 upd;         // 0x0B  0x1 volume, 0x2 pan, 0x4 keep ax_vol
-    SND_SHD* shd;   // 0x0C
-    SND_RIT* rit;   // 0x10
-    u8* buff;       // 0x14  DVD read buffer (Snd_str_buff[no])
+    P32<SND_SHD> shd; // 0x0C
+    P32<SND_RIT> rit; // 0x10
+    P32<u8> buff;   // 0x14  DVD read buffer (Snd_str_buff[no])
     u32 dvd_status; // 0x18  DVDGetCommandBlockStatus (unsigned: -1 sorts last in the switch)
     u32 flag;       // 0x1C  shd->flag
     u32 req;        // 0x20  0x1 ready, 0x2 play, 0x4 fade, 0x8 stop, 0x10 volume
@@ -411,10 +411,10 @@ typedef struct {
     u32 end_R;      // 0xB8
     u16 pred_L;     // 0xBC  first byte (pred_scale) of the stream
     u16 pred_R;     // 0xBE
-    SND_VOICE_WORK* vwL;    // 0xC0
-    SND_VOICE_WORK* vwR;    // 0xC4
-    AXVPB* voiceL;  // 0xC8
-    AXVPB* voiceR;  // 0xCC
+    P32<SND_VOICE_WORK> vwL; // 0xC0
+    P32<SND_VOICE_WORK> vwR; // 0xC4
+    P32<AXVPB> voiceL; // 0xC8
+    P32<AXVPB> voiceR; // 0xCC
     DVDFileInfo dvd;        // 0xD0
     ARQRequest arqL;        // 0x10C
     ARQRequest arqR;        // 0x12C
@@ -469,7 +469,7 @@ typedef union {
 typedef struct {
     u16 a0;
     u16 b0;
-    const char* name;
+    P32<const char> name;
 } SND_LPF;
 
 // snd_ram.c

@@ -20,7 +20,7 @@
 struct R10aWork {
     int x0;
     cEmWrap em[20];    // 0x04  0..9 normal, 10..14 zouen A, 15..19 zouen B
-    cEmRock* rock;     // 0xF4
+    P32<cEmRock> rock; // 0xF4
 };
 
 static R10aWork* r10a_work;

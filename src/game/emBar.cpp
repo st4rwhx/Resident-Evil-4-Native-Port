@@ -279,7 +279,7 @@ void emBar_R1_Set(cEmBar* em)
 
         if (esc == 0) {
             if (fabsf(Muku(&em->pos, &pPL->pos, em->rot.y, 3.1415927f)) < 1.5707964f) {
-                ActBtn.set(0x25, 5, (int) emBarActEscape, (int) em, 1, 3, 0, esc);
+                ActBtn.set(0x25, 5, (int)(uintptr_t)(emBarActEscape), (int)(uintptr_t)(em), 1, 3, 0, esc);
             }
         }
     }
@@ -289,16 +289,16 @@ void emBar_R1_Set(cEmBar* em)
 void emBarActEscape(cEmBar* em)
 {
     EMBAR_WK(em)->escaping = 1;
-    SetPlDamage((int) em, plemEscape);
+    SetPlDamage((int)(uintptr_t)(em), plemEscape);
 }
 
 void plemEscape(cPlayer* pl)
 {
     cEm* em = (cEm*) pl;
-    cEmBar* bar = (cEmBar*) em->dmgType;
+    cEmBar* bar = (cEmBar*)port_ptr64(em->dmgType);
     EmBarWork* w = EMBAR_WK(bar);
 
-    em->x378 = ((cEm*) pPL->dmgType)->x378;
+    em->x378 = ((cEm*)port_ptr64(pPL->dmgType))->x378;
     em->dmg.set(0, 0xF);
     switch (em->xFE) {
     case 0:

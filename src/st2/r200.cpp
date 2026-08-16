@@ -39,7 +39,7 @@ struct R200Work {
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R200WorkPtr {
-    R200Work* p;
+    P32<R200Work> p;
 };
 
 static R200WorkPtr r200_work;

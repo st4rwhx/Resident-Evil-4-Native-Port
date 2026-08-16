@@ -411,7 +411,7 @@ void cObjLadder::setDown2()
     if (w->pair) {
         w->pair->sub2B4.atari.clrFlag200();
     }
-    MotionSetCore(this, &pMotion, mot, (int) a, 0, 1, frame);
+    MotionSetCore(this, &pMotion, mot, (int)(uintptr_t)(a), 0, 1, frame);
     xFC = 1;
     xFD = 1;
     xFE = 0;
@@ -540,25 +540,25 @@ void objLadderClimbActEvtCk(cObjLadder* obj)
     if (fabsf(v.y) > 500.0f) {
         return;
     }
-    ActBtn.set(8, 5, (int) objLadderActClimb, (int) obj, 0, 1, 0, 0);
+    ActBtn.set(8, 5, (int)(uintptr_t)(objLadderActClimb), (int)(uintptr_t)(obj), 0, 1, 0, 0);
 }
 
 void objLadderActClimb(cObjLadder* obj)
 {
     obj->setClimb();
-    SetPlDamage((int) obj, plobjLadderClimb);
+    SetPlDamage((int)(uintptr_t)(obj), plobjLadderClimb);
 }
 
 void plobjLadderClimb(cPlayer* pl)
 {
     cEm* em = (cEm*) pl;
-    cObjLadder* obj = (cObjLadder*) em->dmgType;
+    cObjLadder* obj = (cObjLadder*)port_ptr64(em->dmgType);
     LadderWork* w = &obj->ladder;
     Mtx m;
     Vec v;
     f32 fl;
 
-    em->x378 = ((cEm*) pPL->dmgType)->x378;
+    em->x378 = ((cEm*)port_ptr64(pPL->dmgType))->x378;
     pGS->flags_5010 |= 0x00040000;
     em->dmg.set(0, 0xF);
     switch (em->xFE) {
@@ -701,7 +701,7 @@ int SubLadderClimbCk(cEm* em)
             }
             if (em->plDist2 > 100000000.0f || em->pos.y + 1000.0f < pPL->pos.y) {
                 obj->ladder.flags |= 4;
-                SetSubDamage((int) obj, (void*) subobjLadderClimb);
+                SetSubDamage((int)(uintptr_t)(obj), (void*) subobjLadderClimb);
                 obj->setClimb();
                 return 1;
             }
@@ -737,7 +737,7 @@ int SubLadderClimbCk2(cEm* em)
 void subobjLadderClimb(cEm* pl)
 {
     cEm* em = pSUB;
-    cObjLadder* obj = (cObjLadder*) em->dmgType;
+    cObjLadder* obj = (cObjLadder*)port_ptr64(em->dmgType);
     LadderWork* w = &obj->ladder;
     Mtx m;
     Vec p;
@@ -894,7 +894,7 @@ void objLadderClimbCamMove(cEm* em)
     objLadderClimbCam.dist = LadderCamDist(&objLadderClimbCam.param.pos, &objLadderClimbCam.param.at);
     objLadderClimbCam.param.fovy = 55.0f;
     CameraSetOrientationUp(&objLadderClimbCam);
-    CamCtrl.x250 = (s32) &objLadderClimbCam;
+    CamCtrl.x250 = (s32)(uintptr_t)(&objLadderClimbCam);
 }
 
 void objLadderDownActEvtCk(cObjLadder* obj)
@@ -945,9 +945,9 @@ void objLadderDownActEvtCk(cObjLadder* obj)
         return;
     }
     if (w->flags & 4) {
-        ActBtn.set(0xA, 5, (int) objLadderActDown, (int) obj, 0x20, 1, 0, 0);
+        ActBtn.set(0xA, 5, (int)(uintptr_t)(objLadderActDown), (int)(uintptr_t)(obj), 0x20, 1, 0, 0);
     } else {
-        ActBtn.set(0xA, 5, (int) objLadderActDown, (int) obj, 0, 1, 0, 0);
+        ActBtn.set(0xA, 5, (int)(uintptr_t)(objLadderActDown), (int)(uintptr_t)(obj), 0, 1, 0, 0);
     }
 }
 
@@ -956,7 +956,7 @@ void objLadderActDown(cObjLadder* obj)
     LadderWork* w = &obj->ladder;
 
     if (!(w->flags & 4)) {
-        SetPlDamage((int) obj, plobjLadderDown);
+        SetPlDamage((int)(uintptr_t)(obj), plobjLadderDown);
         w->climbTimer = 90;
     }
 }
@@ -964,12 +964,12 @@ void objLadderActDown(cObjLadder* obj)
 void plobjLadderDown(cPlayer* pl)
 {
     cEm* em = (cEm*) pl;
-    cObjLadder* obj = (cObjLadder*) em->dmgType;
+    cObjLadder* obj = (cObjLadder*)port_ptr64(em->dmgType);
     LadderWork* w = &obj->ladder;
     Mtx m;
     Vec v;
 
-    em->x378 = ((cEm*) pPL->dmgType)->x378;
+    em->x378 = ((cEm*)port_ptr64(pPL->dmgType))->x378;
     em->dmg.set(0, 0xF);
     switch (em->xFE) {
     case 0:
@@ -1040,7 +1040,7 @@ void objLadderDownCamMove(cEm* em)
     objLadderDownCam.dist = LadderCamDist(&objLadderDownCam.param.pos, &objLadderDownCam.param.at);
     objLadderDownCam.param.fovy = 55.0f;
     CameraSetOrientationUp(&objLadderDownCam);
-    CamCtrl.x250 = (s32) &objLadderDownCam;
+    CamCtrl.x250 = (s32)(uintptr_t)(&objLadderDownCam);
 }
 
 void objLadderResetActEvtCk(cObjLadder* obj)
@@ -1062,25 +1062,25 @@ void objLadderResetActEvtCk(cObjLadder* obj)
     if (fabsf(obj->pos.y - pPL->pos.y) > 500.0f) {
         return;
     }
-    ActBtn.set(0xB, 5, (int) objLadderActReset, (int) obj, 0, 1, 0, 0);
+    ActBtn.set(0xB, 5, (int)(uintptr_t)(objLadderActReset), (int)(uintptr_t)(obj), 0, 1, 0, 0);
 }
 
 void objLadderActReset(cObjLadder* obj)
 {
-    SetPlDamage((int) obj, plobjLadderReset);
+    SetPlDamage((int)(uintptr_t)(obj), plobjLadderReset);
     obj->setResetReserve();
 }
 
 void plobjLadderReset(cPlayer* pl)
 {
     cEm* em = (cEm*) pl;
-    cObjLadder* obj = (cObjLadder*) em->dmgType;
+    cObjLadder* obj = (cObjLadder*)port_ptr64(em->dmgType);
     LadderWork* w = &obj->ladder;
     Mtx m;
     Vec v;
     int motA;
 
-    em->x378 = ((cEm*) pPL->dmgType)->x378;
+    em->x378 = ((cEm*)port_ptr64(pPL->dmgType))->x378;
     em->dmg.set(0, 0xF);
     switch (em->xFE) {
     case 0:
@@ -1141,7 +1141,7 @@ void objLadderResetCamMove(cEm* em)
     objLadderResetCam.dist = LadderCamDist(&objLadderResetCam.param.pos, &objLadderResetCam.param.at);
     objLadderResetCam.param.fovy = 55.0f;
     CameraSetOrientationUp(&objLadderResetCam);
-    CamCtrl.x250 = (s32) &objLadderResetCam;
+    CamCtrl.x250 = (s32)(uintptr_t)(&objLadderResetCam);
 }
 
 void cObjLadder::setMotion(void** tbl)

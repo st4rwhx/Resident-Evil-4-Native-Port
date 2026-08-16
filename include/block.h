@@ -71,7 +71,7 @@ class cBlockUnit {
 public:
     int state;          // 0x00  BLOCK_*
     int command;        // 0x04  BLOCK_CMD_*
-    cDataUnit* pData;   // 0x08  data unit of the block file
+    P32<cDataUnit> pData; // 0x08  data unit of the block file
     u8 flags;           // 0x0C  bit0: in use
     u8 arg;             // 0x0D  setBlockCommand argument, passed on to cDataUnit::setCommand
     u8 no;              // 0x0E  block number
@@ -94,20 +94,20 @@ public:
 class cBlock {
 public:
     u32 ot[8];              // 0x00  ordering table of the trigger areas (slot = BlockArea::pri)
-    u32* pOt;               // 0x20  getOtAddr cursor
+    P32<u32> pOt;           // 0x20  getOtAddr cursor
     u8 nBlock;              // 0x24
     s8 prevArea;            // 0x25
     u8 pad_26[2];
     int stopFlagSet;        // 0x28  1 = a block is loading: pG->flags_170 is saved and forced to -1
     u32 stopFlag;           // 0x2C  saved pG->flags_170
-    void* memTop;           // 0x30  block model memory
-    void* memEnd;           // 0x34
-    void* memCur;           // 0x38  next free address (getBlockMemFree)
-    BlockHeader* pData;     // 0x3C  BLK file
-    BlockLink* pLink;       // 0x40
-    BlockArea* pArea;       // 0x44
-    BlockConnect* pConnect; // 0x48
-    cBlockUnit* pUnit;      // 0x4C
+    P32<void> memTop;       // 0x30  block model memory
+    P32<void> memEnd;       // 0x34
+    P32<void> memCur;       // 0x38  next free address (getBlockMemFree)
+    P32<BlockHeader> pData; // 0x3C  BLK file
+    P32<BlockLink> pLink;   // 0x40
+    P32<BlockArea> pArea;   // 0x44
+    P32<BlockConnect> pConnect; // 0x48
+    P32<cBlockUnit> pUnit;  // 0x4C
     u8 pad_50[0x60 - 0x50];
     u32 mramSet;            // 0x60  bit set (bit 31 - n) of the blocks wanted in MRAM
     u32 aramSet;            // 0x64
@@ -115,8 +115,8 @@ public:
     int debugData;          // 0x6C  1 = pData / pUnit come from the debug heap
     int debugMem;           // 0x70  1 = memTop is a debug heap allocation (dispAllBlock)
     int allDisp;            // 0x74  1 = every block displayed (t_option "BLOCK ALL DISP")
-    void* saveMemTop;       // 0x78  memTop / memEnd while debugMem is set
-    void* saveMemEnd;       // 0x7C
+    P32<void> saveMemTop;   // 0x78  memTop / memEnd while debugMem is set
+    P32<void> saveMemEnd;   // 0x7C
 
     cBlock() {}   // `Block` has (empty) static constructor and destructor functions
     ~cBlock() {}

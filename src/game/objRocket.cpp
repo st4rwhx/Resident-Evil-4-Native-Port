@@ -33,7 +33,7 @@ void cObjRocket::init()
 {
     cModelInfo* info;
 
-    info = (cModelInfo*) modelInit(PL_ARC_PTR(pG->pPlArc, 0x70), PL_ARC_PTR(pG->pPlArc, 0x71));
+    info = (cModelInfo*)port_ptr64(modelInit(PL_ARC_PTR(pG->pPlArc, 0x70), PL_ARC_PTR(pG->pPlArc, 0x71)));
     if (info == 0) {
         pLog->err(0, 0, "cObjRocket::init() failed.");
         return;
@@ -111,7 +111,7 @@ void cObjRocket::move()
             res = PlWepHitCheck2(0, &rocket.oldPos, &pos, 0xD, 1, 3000.0f);
             if (res) {
                 BitOn(pG->flags_5010, 0x20000000);
-                memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &pos, sizeof(Vec));
+                memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &pos, sizeof(Vec));
                 pG->bell_stat = 1;
                 PlWepHitCheck2(0, &rocket.oldPos, &pos, 0x12, 0, blastDmWidth);
                 EstSet(0, -1, &pos, 0, 0, 0x27, 0, 10, 0, 0);
@@ -152,7 +152,7 @@ void cObjRocket::move()
                         EstSet(0, -1, &hit, 0, 0, 0x1A, 0, 0, 0, 0);
                     }
                     BitOn(pG->flags_5010, 0x20000000);
-                    memcpy((u8*) pG + ((u32) &((GlobalWork*) 0)->bell_pos), &pos, sizeof(Vec));
+                    memcpy((u8*) pG + ((u32)(uintptr_t)(&((GlobalWork*) 0)->bell_pos)), &pos, sizeof(Vec));
                     pG->bell_stat = 1;
                     SndCall(1, 0x14, &pos, 0, 0, 0);
                     PlWepHitCheck2(0, &rocket.oldPos, &pos, 0x12, 0, blastDmWidth);
@@ -180,7 +180,7 @@ void cObjRocket::fire()
 {
     MotionSetCore(this, &pMotion, PL_ARC_PTR(pG->pPlArc, 0x74), 0, 0, 1, 0);
     MotionMove(this, 0);
-    EstSet((int) this, -1, 0, 0, 0, 0x29, 0, 10, 0, 0);
+    EstSet((int)(uintptr_t)(this), -1, 0, 0, 0, 0x29, 0, 10, 0, 0);
     rocket.timer = 300;
     type = 1;
     xFC = 1;
@@ -211,7 +211,7 @@ void cObjLauncher::init(cModel* parent)
     cModelInfo* info;
 
     wep.x24 = 0x35;
-    info = (cModelInfo*) modelInit(PL_ARC_PTR(pG->pPlArc, 0x76), PL_ARC_PTR(pG->pPlArc, 0x75));
+    info = (cModelInfo*)port_ptr64(modelInit(PL_ARC_PTR(pG->pPlArc, 0x76), PL_ARC_PTR(pG->pPlArc, 0x75)));
     if (info == 0) {
         pLog->err(0, 0, "cObjLauncher::init() modelInit() failed.");
         return;
@@ -322,7 +322,7 @@ void cObjLauncher::launch()
     launcher.rocket->fire();
     launcher.flags |= 1;
     launcher.rocket = 0;
-    EstSet((int) this, -1, 0, 0, 0x47, 0, 0, 10, 0, 0);
+    EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x47, 0, 0, 10, 0, 0);
     SndCall(2, 0, &pos, 0, 0, 0);
     pG->flags_500C |= 0x00800000;
 }
@@ -445,13 +445,13 @@ void cObjLauncher::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x5B], WEP_ARC_PTR(0x1B));
     PSet(pl->pMotTbl[0x57], WEP_ARC_PTR(0x1C));
     if (!(pl->flags_420 & 0x400)) {
-        pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x7));
+        pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x7)));
         pl->setRightHand(1);
         pl->setLeftHand(4);
         setDisp(0, 1);
         loadRocket();
     } else {
-        pl->pBody->initWepHand((u32) PL_ARC_PTR(pG->pPlArc, 0x12));
+        pl->pBody->initWepHand((u32)(uintptr_t)(PL_ARC_PTR(pG->pPlArc, 0x12)));
         pl->setRightHand(1);
         pl->setLeftHand(0);
         setDisp(0, 0);

@@ -13,21 +13,21 @@ extern "C" {
 typedef struct MWPLY_OBJ* MWPLY;
 
 typedef struct {
-    void* (*QueryInterface)(MWPLY hn, void* iid);  // 0x00
-    u32 (*AddRef)(MWPLY hn);                       // 0x04
-    u32 (*Release)(MWPLY hn);                      // 0x08
-    void (*x0C)(MWPLY hn);                         // 0x0C
-    void (*x10)(MWPLY hn);                         // 0x10
-    void (*Destroy)(MWPLY hn);                     // 0x14
-    void (*StartFname)(MWPLY hn, const char* fname); // 0x18
-    void (*Stop)(MWPLY hn);                        // 0x1C
-    int (*GetStat)(MWPLY hn);                      // 0x20
-    void (*GetTime)(MWPLY hn, int* ncount, int* tscale); // 0x24
-    void (*Pause)(MWPLY hn, int sw);               // 0x28
+    FnP32<void*(*)(MWPLY hn, void* iid)> QueryInterface; // 0x00
+    FnP32<u32(*)(MWPLY hn)> AddRef;                // 0x04
+    FnP32<u32(*)(MWPLY hn)> Release;               // 0x08
+    FnP32<void(*)(MWPLY hn)> x0C;                  // 0x0C
+    FnP32<void(*)(MWPLY hn)> x10;                  // 0x10
+    FnP32<void(*)(MWPLY hn)> Destroy;              // 0x14
+    FnP32<void(*)(MWPLY hn, const char* fname)> StartFname; // 0x18
+    FnP32<void(*)(MWPLY hn)> Stop;                 // 0x1C
+    FnP32<int(*)(MWPLY hn)> GetStat;               // 0x20
+    FnP32<void(*)(MWPLY hn, int* ncount, int* tscale)> GetTime; // 0x24
+    FnP32<void(*)(MWPLY hn, int sw)> Pause;        // 0x28
 } MWPLY_IF;
 
 struct MWPLY_OBJ {
-    MWPLY_IF* vtbl;
+    P32<MWPLY_IF> vtbl;
 };
 
 #define mwPlyDestroy(hn) (*(hn)->vtbl->Destroy)(hn)
@@ -56,7 +56,7 @@ typedef struct {
     int max_height;   // 0x0C
     int nfrm_pool_wk; // 0x10
     int max_stm;      // 0x14
-    void* work;       // 0x18
+    P32<void> work;   // 0x18
     int wksize;       // 0x1C
     int compo_mode;   // 0x20
 } MWS_PLY_CPRM_SFD;
@@ -72,7 +72,7 @@ typedef struct {
 
 // mwPlyGetCurFrm output
 typedef struct {
-    void* bufadr;   // 0x00
+    P32<void> bufadr; // 0x00
     int x04;        // 0x04
     int width;      // 0x08
     int height;     // 0x0C

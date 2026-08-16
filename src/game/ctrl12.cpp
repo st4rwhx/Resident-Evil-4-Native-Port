@@ -131,7 +131,7 @@ TexRenderMng* Ctrl12GetTexRenderEm2b(cCtrl* c)
     if (t == 0) {
         GetTexRenderMgr(&w->tex2b);
         if (w->tex2b != 0) {
-            EstSet(0, -1, 0, 0, 1, 0x42, w->tex2b->mask | 1, 0, (u32) t, t);
+            EstSet(0, -1, 0, 0, 1, 0x42, w->tex2b->mask | 1, 0, (u32)(uintptr_t)(t), t);
         }
     }
     return w->tex2b;

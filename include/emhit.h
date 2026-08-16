@@ -11,15 +11,15 @@ struct EmHitWork {
     int timer;            // 0x004 (0x3E4)  beetle: frames before it fades out
     u8 pad_8[4];
     int status;           // 0x00C (0x3EC)  1 = damaged this frame (ckStatus / ckDmgWeapon)
-    cModel* pParent;      // 0x010 (0x3F0)  model the hit follows (setParent)
+    P32<cModel> pParent;  // 0x010 (0x3F0)  model the hit follows (setParent)
     int partsNo;          // 0x014 (0x3F4)
     int noNormalize;      // 0x018 (0x3F8)  setParent 3rd argument: keep the parent's scale
     u8 pad_1C[0x224 - 0x1C];
     Vec spd;              // 0x224 (0x604)  beetle fly-away speed
     Vec size;             // 0x230 (0x610)  yarare box size
-    void* mot0;           // 0x23C (0x61C)  beetle motions (setBeetle)
-    void* mot1;           // 0x240 (0x620)
-    void* mot2;           // 0x244 (0x624)
+    P32<void> mot0;       // 0x23C (0x61C)  beetle motions (setBeetle)
+    P32<void> mot1;       // 0x240 (0x620)
+    P32<void> mot2;       // 0x244 (0x624)
     u8 x248;              // 0x248 (0x628)  0xFF
 };
 

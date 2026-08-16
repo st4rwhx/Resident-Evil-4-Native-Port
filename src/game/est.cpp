@@ -22,7 +22,7 @@ void EstSet(int a, int b, Vec* pos, Vec* rot, int c, int d, int e, int f, u32 g,
 {
     EspSeqData* head = EspGetEstAddr(c, d, 0);
 
-    EstSet((cModel*) a, b, pos, rot, head, e, f, g, c, h);
+    EstSet((cModel*)port_ptr64(a), b, pos, rot, head, e, f, g, c, h);
 }
 
 void EstSet(cModel* model, int no, Vec* pos, Vec* rot, EspSeqData* head, int e, int f, u32 g, u32 owner, void* h)
@@ -57,7 +57,7 @@ void EstSet(cModel* model, int no, Vec* pos, Vec* rot, EspSeqData* head, int e, 
     if (model != NULL) {
         p->serial = model->serial;
     } else {
-        p->serial = (u32) model;
+        p->serial = (u32)(uintptr_t)(model);
     }
     p->no = p->cnt = 0;
     if (no == -1) {
@@ -346,12 +346,12 @@ void EspSetEatEffect(Vec* pos, Vec* nrm, int type, int wep)
     switch (type) {
     case 0:
         if (EspChkInPuddle(pos, nrm) == 1) {
-            EstSet(0, -1, pos, NULL, 0, 0x11, 0, 0, type, (void*) type);
+            EstSet(0, -1, pos, NULL, 0, 0x11, 0, 0, type, (void*)port_ptr64(type));
             SndCall(2, 0xC, pos, 0, 0, NULL);
         } else {
-            EstSet(0, -1, pos, &rot, 0, 0x1F, 0, 0, type, (void*) type);
+            EstSet(0, -1, pos, &rot, 0, 0x1F, 0, 0, type, (void*)port_ptr64(type));
             if (pG->flags_6C & 0x4000) {
-                EstSet(0, -1, pos, &rot, 0, 0x87, 0, 0, type, (void*) type);
+                EstSet(0, -1, pos, &rot, 0, 0x87, 0, 0, type, (void*)port_ptr64(type));
             }
         }
         break;
@@ -431,9 +431,9 @@ void EstSetEm10WaterFall(Vec* pos)
     EspSeqData* head = EspGetEstAddr(1, 0x32, 1);
 
     if (head != NULL) {
-        EstSet((int) pos, -1, NULL, NULL, 1, 0x32, 0, 0, (u32) pos, NULL);
+        EstSet((int)(uintptr_t)(pos), -1, NULL, NULL, 1, 0x32, 0, 0, (u32)(uintptr_t)(pos), NULL);
     } else {
-        EstSet((int) pos, -1, NULL, NULL, 0x10, 0x8D, 0, 0, (u32) pos, NULL);
+        EstSet((int)(uintptr_t)(pos), -1, NULL, NULL, 0x10, 0x8D, 0, 0, (u32)(uintptr_t)(pos), NULL);
     }
 }
 

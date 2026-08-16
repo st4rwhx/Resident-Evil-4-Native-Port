@@ -20,9 +20,9 @@ struct Em21Work {
     Vec routePos;         // 0x02C (0x40C)  RouteCkToPos result towards the player
     u8 pad_38[0xC];
     Vec targetPos;        // 0x044 (0x424)  route point the routines run to
-    cEm* pTarget;         // 0x050 (0x430)  pPL, or 0 while heading for a wander / bark point
-    cEm* pTrap;           // 0x054 (0x434)  the bear trap the dog is caught in (em21TrapSearch)
-    cEm* pGigante;        // 0x058 (0x438)  El Gigante the dog fights (em21SearchElgigante)
+    P32<cEm> pTarget;     // 0x050 (0x430)  pPL, or 0 while heading for a wander / bark point
+    P32<cEm> pTrap;       // 0x054 (0x434)  the bear trap the dog is caught in (em21TrapSearch)
+    P32<cEm> pGigante;    // 0x058 (0x438)  El Gigante the dog fights (em21SearchElgigante)
     EmHitInfo hit[5];     // 0x05C (0x43C)  extra hit boxes (em21YarareInit)
     f32 neckX;            // 0x160 (0x540)  em21NeckMove: head pitch
     f32 neckY;            // 0x164 (0x544)  head yaw

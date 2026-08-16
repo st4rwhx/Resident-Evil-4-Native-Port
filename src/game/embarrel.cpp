@@ -584,7 +584,7 @@ void emBarrel_R1_R227Roll(cEmBarrel* em)
         w->rollSe = 0;
         if ((Rnd() & 3) == 0) {
             w->rollSe = 1;
-            EstSet((int) em, -1, 0, 0, 1, 4, 0, w->espKind, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 4, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         }
         w->seTimer = 0;
         w->floorOfs = 700.0f;
@@ -915,7 +915,7 @@ int emBarrelRollHitCk(cEmBarrel* em)
     }
     LifeDownSet(pPL, 600, 0);
     PlSetDamage(8, 0, 0);
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
     QuakeExec(0, 0, 5, 22.0f, 2);
     return 1;
 }

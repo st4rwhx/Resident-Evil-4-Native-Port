@@ -241,9 +241,9 @@ public:
     u16 x14;           // 0x14
     u16 x16;           // 0x16
     u32 flags;         // 0x18 effect option bits
-    cModel* pModel;    // 0x1C model the effect is attached to
+    P32<cModel> pModel; // 0x1C model the effect is attached to
     u32 x20;           // 0x20
-    cCoord* parent;    // 0x24 parent coordinate (pEffParentWorld = world)
+    P32<cCoord> parent; // 0x24 parent coordinate (pEffParentWorld = world)
     u8 partsNo;        // 0x28 parts of pModel the effect follows
     u8 parentCnt;      // 0x29 frames to stay attached to parent (0xFF = forever)
     u16 dispFlag;      // 0x2A bit1: sizeY is a world-space length (beam sprites)
@@ -299,7 +299,7 @@ public:
     };
     // 0xF4 vptr
 
-    void* operator new(unsigned int size);
+    void* operator new(size_t size);
     cEsp();
     virtual ~cEsp();
     virtual void move();
@@ -381,7 +381,7 @@ extern char* owner_name_tbl[0xD1];   // effect owner names 0..0xD0 (debug displa
 // pEffParentWorld`). Only use where the target shows the load after such stores; wrapping the
 // global itself changes load order in units that already match (esp0b, esp1a, esp40).
 struct EffParentWorldPtr {
-    cCoord* p;
+    P32<cCoord> p;
 };
 #define pEffParentWorldS (((EffParentWorldPtr*) &pEffParentWorld)->p)
 // game/esp_app.cpp

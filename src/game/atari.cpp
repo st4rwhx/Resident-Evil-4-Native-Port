@@ -40,7 +40,7 @@ extern u32 g_at2_cyc[];
 extern u32 g_at2_total_cyc;
 
 // pointer to game memory (0x80000000 .. PORT_PTR_MAX)
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 // polygons already tested during one check (one bit per polygon index)
 u8 polyBit[0x400];
@@ -829,7 +829,7 @@ int cSatMgr::hitCheck(Vec* a, Vec* b, Vec* hit, Vec* nrm, int flag, int mask)
 
     ret = hitCheck2(a, b, hit, &pn, flag, mask);
     if (nrm && ret) {
-        PSMTXMultVecSR(pBypassAt->mat, (Vec*) pn, nrm);
+        PSMTXMultVecSR(pBypassAt->mat, (Vec*)port_ptr64(pn), nrm);
     }
     return ret;
 }
@@ -979,7 +979,7 @@ int blkPolyLineCkCore(cSat* sat, cSatBlock* blk, Vec* a, Vec* b, int flag, int m
                 *hit = h;
                 ret = attr;
                 if (pn) {
-                    *pn = (u32) &sat->nrm[sat->poly[*idx].n];
+                    *pn = (u32)(uintptr_t)(&sat->nrm[sat->poly[*idx].n]);
                 }
             }
         }
@@ -1048,7 +1048,7 @@ void cSatMgr::disp(int flag)
             break;
         }
         for (j = s; j < e; j++) {
-            AtPoly* poly = (AtPoly*) (j * sizeof(AtPoly) + (u32) sat->poly);
+            AtPoly* poly = (AtPoly*) (j * sizeof(AtPoly) + (u32)(uintptr_t)(sat->poly));
             u32 attr = (poly->attrHi & 0xFF) << 16;
             attr |= poly->attrLo;
             u32 color;
@@ -1140,7 +1140,7 @@ void cSat::blockInit(cSatBlock* blk)
             blockInit((cSatBlock*) blk->idx);
         }
         {
-            u32 ofs = (u32) blk->next;
+            u32 ofs = (u32)(uintptr_t)(blk->next);
             if (ofs != 0) {
                 cSatBlock* p = (cSatBlock*) ((u8*) blk + ofs);
                 if (p != 0 && !VALID_PTR(p)) {
@@ -1168,15 +1168,15 @@ void cSat::disp(int no, u32 color, int zupd)
 
     PSMTXConcat(pG->Cam.viewMat, mat, m);
     for (i = 0; i < 3; i++) {
-        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32) pt);
-        Vec* v = (Vec*) (*(u16*) (i * 2 + (u32) pl) * sizeof(Vec) + (u32) vt);
+        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32)(uintptr_t)(pt));
+        Vec* v = (Vec*) (*(u16*)port_ptr64((i * 2 + (u32)(uintptr_t)(pl))) * sizeof(Vec) + (u32)(uintptr_t)(vt));
         p[i].x = v->x;
         p[i].y = v->y;
         p[i].z = v->z;
     }
     switch (zupd & 3) {
     case 0: {
-        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32) pt);
+        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32)(uintptr_t)(pt));
         Draw_line3d_local(&p[0], &p[1], m, (pl->e[0] & 0x2000) ? 0x80808080 : color, 0);
         Draw_line3d_local(&p[1], &p[2], m, (pl->e[0] & 0x4000) ? 0x80808080 : color, 0);
         Draw_line3d_local(&p[0], &p[2], m, (pl->e[0] & 0x8000) ? 0x80808080 : color, 0);
@@ -1191,7 +1191,7 @@ void cSat::disp(int no, u32 color, int zupd)
     PSVECAdd(&p[0], &p[2], &p[0]);
     PSVECScale(&p[0], &p[0], 1.0f / 3.0f);
     {
-        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32) poly);
+        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32)(uintptr_t)(poly));
         n.x = nrm[pl->n].x;
         n.y = nrm[pl->n].y;
         n.z = nrm[pl->n].z;
@@ -1221,7 +1221,7 @@ cSatFile* cSatHeader::getSat(int no)
 {
     u32* tbl = ofs;
 
-    return (cSatFile*) ((u8*) this + *(u32*) (no * 4 + (u32) tbl));
+    return (cSatFile*) ((u8*) this + *(u32*)port_ptr64((no * 4 + (u32)(uintptr_t)(tbl))));
 }
 
 // The three builders below with precomputed normals were dead-stripped by the linker; their
@@ -1409,9 +1409,9 @@ cSatFile* createSat(Vec* v, u32 attr, f32 h)
     }
     e = &nrm[4];
     for (i = 0; i < 8; i++) {
-        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32) vtx);
-        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32) vtx);
-        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32) vtx);
+        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
         e->x = v1->x - v0->x;
         e->y = v1->y - v0->y;
         e->z = v1->z - v0->z;
@@ -1529,9 +1529,9 @@ cSatFile* createBoxSat(Vec* v, u32 attr, f32 h)
     }
     e = &nrm[6];
     for (i = 0; i < 12; i++) {
-        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32) vtx);
-        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32) vtx);
-        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32) vtx);
+        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
         e->x = v1->x - v0->x;
         e->y = v1->y - v0->y;
         e->z = v1->z - v0->z;
@@ -1631,9 +1631,9 @@ static cSatFile* createFloorSat(Vec* v, u32 attr, f32 h)
     }
     e = &nrm[1];
     for (i = 0; i < 2; i++) {
-        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32) vtx);
-        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32) vtx);
-        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32) vtx);
+        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
         e->x = v1->x - v0->x;
         e->y = v1->y - v0->y;
         e->z = v1->z - v0->z;

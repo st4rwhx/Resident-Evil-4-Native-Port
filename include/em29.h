@@ -22,7 +22,7 @@ struct Em29Work {
     Vec routePos;         // 0x02C (0x40C)  RouteCkToPos result towards the player
     u8 pad_38[0xC];
     Vec targetPos;        // 0x044 (0x424)  chosen target position
-    cEm* pTarget;         // 0x050 (0x430)  pPL
+    P32<cEm> pTarget;     // 0x050 (0x430)  pPL
     Vec spd;              // 0x054 (0x434)  current speed (local, rotated by rot.y in em29SetSPeed)
     Vec tgtSpd;           // 0x060 (0x440)  speed the current one is blended towards
     Vec initPos;          // 0x06C (0x44C)  position / rotation at creation (Die_Reset restores them)
@@ -31,8 +31,8 @@ struct Em29Work {
     int atkTimer;         // 0x088 (0x468)  frames the bat keeps away after an attack / take-off
     int escTimer;         // 0x08C (0x46C)  frames RouteCkEscEm drives the target
     int x90;              // 0x090 (0x470)
-    cCtrl* pCtrl11;       // 0x094 (0x474)  GetCtrlCtrl11()
-    cCtrl* pCtrl12;       // 0x098 (0x478)  GetCtrlCtrl12()
+    P32<cCtrl> pCtrl11;   // 0x094 (0x474)  GetCtrlCtrl11()
+    P32<cCtrl> pCtrl12;   // 0x098 (0x478)  GetCtrlCtrl12()
     u8 pad_9C[4];
     u8 atkHit;            // 0x0A0 (0x480)  the attack already hit (em29AtkCk)
 };

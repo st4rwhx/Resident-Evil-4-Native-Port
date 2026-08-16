@@ -32,13 +32,13 @@ struct R20fWork {
     cEmGuard guard[3];      // 0x358
     cEmWrap em[14];         // 0x700
     int pad_7A8[9];         // 0x7A8
-    cSat* sat[3];           // 0x7CC
-    cSat* eat[3];           // 0x7D8
+    P32<cSat> sat[3];       // 0x7CC
+    P32<cSat> eat[3];       // 0x7D8
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R20fWorkPtr {
-    R20fWork* p;
+    P32<R20fWork> p;
 };
 
 static R20fWorkPtr r20f_work;

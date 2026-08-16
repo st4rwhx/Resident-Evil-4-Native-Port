@@ -60,7 +60,7 @@ struct SymHeader {
 
 // A loaded symbol file and the load address of the module it describes.
 struct SymbolInfo {
-    SymHeader* sym;  // 0x00
+    P32<SymHeader> sym; // 0x00
     u32 base;        // 0x04
 };
 
@@ -224,7 +224,7 @@ int excepLoadSymbolSub(char* name, OSModuleHeader* module)
         if (module) {
             p->base = module->sectionInfo[1].offset - 1;
         } else {
-            p->base = (u32) module;
+            p->base = (u32)(uintptr_t)(module);
         }
     }
     return ret;
@@ -289,13 +289,13 @@ void excepLoadSymbol()
     }
     if (SubScreenWk.pModule) {
         OSModuleHeader* mod = SubScreenWk.pModule;
-        if ((s32) mod < 0 && (u32) mod <= PORT_PTR_MAX && (s32) mod->sectionInfo < 0) {
+        if ((s32)(uintptr_t)(mod) < 0 && (u32)(uintptr_t)(mod) <= PORT_PTR_MAX && (s32) mod->sectionInfo < 0) {
             symbol_err = excepLoadSymbolSub("Bio4.Sscrn.sym", mod);
         }
     }
     if (RoomData.pModule) {
         OSModuleHeader* mod = RoomData.pModule;
-        if ((s32) mod < 0 && (u32) mod <= PORT_PTR_MAX && (s32) mod->sectionInfo < 0) {
+        if ((s32)(uintptr_t)(mod) < 0 && (u32)(uintptr_t)(mod) <= PORT_PTR_MAX && (s32) mod->sectionInfo < 0) {
             strcpy(buf, FileTbl[RoomData.x1C].name + 4);
             *strchr(buf, '.') = 0;
             sprintf(tmp_str, "Bio4.%s.sym", buf);
@@ -415,10 +415,10 @@ void excepMemoryDump(MemDump* w, int y)
 
     eprintf(x + 0xF0, y + 0x10, 0, 0, "MEM DUMP");
     excepMemoryDumpMove(w, y);
-    p = (u8*) w->addr;
+    p = (u8*)port_ptr64(w->addr);
     switch (w->width) {
     case 0:
-        for (i = 0; i < 16 && (u32) p <= 0x817FFFFF; i++) {
+        for (i = 0; i < 16 && (u32)(uintptr_t)(p) <= 0x817FFFFF; i++) {
             eprintf(x + 0xF0, y + 0x20 + i * 0x10, 0, 0,
                     "%08X: %02X %02X %02X %02X %02X %02X %02X %02X  %02X %02X %02X %02X %02X %02X %02X %02X", p,
                     p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14],
@@ -427,7 +427,7 @@ void excepMemoryDump(MemDump* w, int y)
         }
         break;
     case 1:
-        for (i = 0; i < 16 && (u32) p <= 0x817FFFFF; i++) {
+        for (i = 0; i < 16 && (u32)(uintptr_t)(p) <= 0x817FFFFF; i++) {
             u16* h = (u16*) p;
             eprintf(x + 0xF0, y + 0x20 + i * 0x10, 0, 0, "%08X: %04X %04X %04X %04X %04X %04X %04X %04X", p, h[0],
                     h[1], h[2], h[3], h[4], h[5], h[6], h[7]);
@@ -435,7 +435,7 @@ void excepMemoryDump(MemDump* w, int y)
         }
         break;
     case 2:
-        for (i = 0; i < 16 && (u32) p <= 0x817FFFFF; i++) {
+        for (i = 0; i < 16 && (u32)(uintptr_t)(p) <= 0x817FFFFF; i++) {
             u32* l = (u32*) p;
             eprintf(x + 0xF0, y + 0x20 + i * 0x10, 0, 0, "%08X: %08X %08X %08X %08X", p, l[0], l[1], l[2], l[3]);
             p += 0x10;
@@ -531,13 +531,13 @@ void ErrorHandler(OSError error, OSContext* context, ...)
     n = 0;
     memclr_asm(w, sizeof(MemDump));
     ISet(call_stack_num, n); // the reference store keeps `lwz pContext` below it
-    sp = (u32*) pContext->gpr[1];
+    sp = (u32*)port_ptr64(pContext->gpr[1]);
     if (sp != 0 && sp != (u32*) -1) {
         i = 0;
         do {
             call_stack[i + 1] = sp[1];
             call_stack_num++;
-            sp = (u32*) sp[0];
+            sp = (u32*)port_ptr64(sp[0]);
             i++;
         } while (sp != 0 && sp != (u32*) -1 && i < 16);
     }

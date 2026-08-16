@@ -493,7 +493,7 @@ void cObj12::throwMove()
         w->flags &= ~0x100;
         setFall(0, 0);
     } else if (EmAtkHitCk(&obj12Atk, &pos, &oldPos, 1)) {
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
         w->flags &= ~0x100;
         setFall(0, 0);
     }

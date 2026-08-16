@@ -38,18 +38,18 @@ extern "C" void* memset(void* dst, int c, unsigned int n);
 // gatling gunners after enough kills, the slide down the banister and the three treasure cases.
 
 struct R403Work {
-    cObj* slide;         // 0x00  the banister slide object (SetObjSmd)
+    P32<cObj> slide;     // 0x00  the banister slide object (SetObjSmd)
     u32 cnt;             // 0x04  enemies alive (SceCountEmAlive)
     u32 x8;
     u32 base;            // 0x0C  enemies alive when the count started (+1 per reset)
     u32 timer;           // 0x10  frames since the last em_destroy pass (1..300)
     u8 pad_14[0x2C - 0x14];
-    TexRenderMng* tex;   // 0x2C
+    P32<TexRenderMng> tex; // 0x2C
 };
 
 // One-member struct: every store through the work reloads the pointer.
 struct R403WorkPtr {
-    R403Work* p;
+    P32<R403Work> p;
 };
 
 // Typed view of pG->emlist (r400): pG is loaded before the index shift.
@@ -73,7 +73,7 @@ struct R403MercInit {
 
 // Struct view of pPL: the in-struct load is invalidated by the collision flag stores (pPL reloaded per statement).
 struct PlayerPtr {
-    cPlayer* p;
+    P32<cPlayer> p;
 };
 #define pPLS (((PlayerPtr*) &pPL)->p)
 

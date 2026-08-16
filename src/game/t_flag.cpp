@@ -20,11 +20,11 @@ struct FE_WORK {
 };
 
 struct FE_DATA {
-    const char* name;    // 0x00
-    u32* flags;          // 0x04
+    P32<const char> name; // 0x00
+    P32<u32> flags;      // 0x04
     s16 bits;            // 0x08  flag word bits on this page
     s16 base;            // 0x0A  added to the bit number for display
-    const char** names;  // 0x0C
+    P32<P32<const char>> names; // 0x0C
     u32 num_names;       // 0x10
 };
 

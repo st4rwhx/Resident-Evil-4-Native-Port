@@ -164,7 +164,7 @@ struct OptionArc {
 struct GameWork {
     u32 mode_bak;   // 0x00  pG->mode32 saved while the option screen runs
     u8 pad_4[0x14];
-    void* pBuf;     // 0x18  0xE8-byte buffer of the extra game modes (gameInit)
+    P32<void> pBuf; // 0x18  0xE8-byte buffer of the extra game modes (gameInit)
 };
 
 #line 40 "D:/Bio4/Prog/game.cpp"
@@ -283,7 +283,7 @@ void gameInit()
     Cckpt.gameInit();
     ObjMgr.warnDiv = 100;
     LightMgr.init(LightFuncTbl);
-    LightMgr.initPath((LightPathHeader*) (pG->pArc->ofs_3C + (u32) pG->pArc));
+    LightMgr.initPath((LightPathHeader*)port_ptr64((pG->pArc->ofs_3C + (u32) pG->pArc)));
     ScenarioInit();
     PlayerInit();
     U16Set(pG->sub_life, 600);
@@ -428,10 +428,10 @@ void gameRoomInit()
     EspgenArrayAlloc(ConsGetRoomValue(3));
     CtrlMgr.roomInit();
     CtrlMgr.arrayAlloc(ConsGetRoomValue(4));
-    LightMgr.roomInit((cLit*) (pG->pArc->ofs_2C + (u32) pG->pArc), (cLit*) GetDataExt(pG->pRoomArc, "LIT", 0),
+    LightMgr.roomInit((cLit*)port_ptr64((pG->pArc->ofs_2C + (u32) pG->pArc)), (cLit*) GetDataExt(pG->pRoomArc, "LIT", 0),
                       (cLit*) GetDataExt(pG->pRoomArc, "LIT", 1));
     LightMgr.arrayAlloc(ConsGetRoomValue(5));
-    LightMgr.initPath((LightPathHeader*) (pG->pArc->ofs_3C + (u32) pG->pArc));
+    LightMgr.initPath((LightPathHeader*)port_ptr64((pG->pArc->ofs_3C + (u32) pG->pArc)));
     ShadowRoomInit();
     DmgMgr.roomInit();
     DmgMgr.arrayAlloc(20);
@@ -486,7 +486,7 @@ void gameRoomInit()
     SmdSetup(-1);
     ShdInit((ShdHeader*) GetDataExt(pG->pRoomArc, "SHD", 0));
     if ((p = GetDataExt(pG->pRoomArc, "EFF", 0)) != 0) {
-        EspDataLoad((u32) p, 1, 0);
+        EspDataLoad((u32)(uintptr_t)(p), 1, 0);
     }
     if ((p = GetDataExt(pG->pRoomArc, "EAR", 0)) != 0) {
         EffAreaDataLoad((SstArea*) p);
@@ -517,7 +517,7 @@ void gameRoomInit()
     } else {
         pG->pRoomCamData = p;
     }
-    CamCtrl.CoreDataRead((CameraDataHeader*) (pG->pArc->ofs_30 + (u32) pG->pArc));
+    CamCtrl.CoreDataRead((CameraDataHeader*)port_ptr64((pG->pArc->ofs_30 + (u32) pG->pArc)));
     CamCtrl.roomInit();
     View.roomInit();
     p = GetDataExt(pG->pRoomArc, "BLK", 0);
@@ -896,15 +896,15 @@ void cGameSave::calcOffset(GameSaveData* data, void* base)
     // One shared temporary: its anti-dependences keep each load below the previous add/sub.
     data->base = 0;
     p = (u32) data->pGlobal;
-    data->pGlobal = (GameSaveBlock*) (p - (u32) base);
+    data->pGlobal = (GameSaveBlock*)port_ptr64((p - (u32)(uintptr_t)(base)));
     p = (u32) data->pRoom;
-    data->pRoom = (void*) (p - (u32) base);
+    data->pRoom = (void*)port_ptr64((p - (u32)(uintptr_t)(base)));
     p = (u32) data->pSscrn;
-    data->pSscrn = (u32*) (p - (u32) base);
+    data->pSscrn = (u32*)port_ptr64((p - (u32)(uintptr_t)(base)));
     p = (u32) data->pMerchant;
-    data->pMerchant = (void*) (p - (u32) base);
+    data->pMerchant = (void*)port_ptr64((p - (u32)(uintptr_t)(base)));
     p = (u32) data->pItem;
-    data->pItem = (void*) (p - (u32) base);
+    data->pItem = (void*)port_ptr64((p - (u32)(uintptr_t)(base)));
 }
 
 void cGameSave::calcAddr(GameSaveData* data)
@@ -916,15 +916,15 @@ void cGameSave::calcAddr(GameSaveData* data)
     }
     data->base = data;
     p = (u32) data->pGlobal;
-    data->pGlobal = (GameSaveBlock*) ((u32) data + p);
+    data->pGlobal = (GameSaveBlock*)port_ptr64(((u32)(uintptr_t)(data) + p));
     p = (u32) data->pRoom;
-    data->pRoom = (void*) ((u32) data + p);
+    data->pRoom = (void*)port_ptr64(((u32)(uintptr_t)(data) + p));
     p = (u32) data->pSscrn;
-    data->pSscrn = (u32*) ((u32) data + p);
+    data->pSscrn = (u32*)port_ptr64(((u32)(uintptr_t)(data) + p));
     p = (u32) data->pMerchant;
-    data->pMerchant = (void*) ((u32) data + p);
+    data->pMerchant = (void*)port_ptr64(((u32)(uintptr_t)(data) + p));
     p = (u32) data->pItem;
-    data->pItem = (void*) ((u32) data + p);
+    data->pItem = (void*)port_ptr64(((u32)(uintptr_t)(data) + p));
 }
 
 #define ALIGN32(n) (((n) + 0x1F) & ~0x1F)
@@ -953,11 +953,11 @@ GameSaveData* cGameSave::alloc()
     size = itemOfs + itemSize;
 #line 1385 "D:/Bio4/Prog/game.cpp"
     d = (GameSaveData*) MEM_CALLOC(size, 1, 13);
-    d->pGlobal = (GameSaveBlock*) globalOfs;
-    d->pRoom = (void*) roomOfs;
-    d->pSscrn = (u32*) sscrnOfs;
-    d->pMerchant = (void*) merchantOfs;
-    d->pItem = (void*) itemOfs;
+    d->pGlobal = (GameSaveBlock*)port_ptr64(globalOfs);
+    d->pRoom = (void*)port_ptr64(roomOfs);
+    d->pSscrn = (u32*)port_ptr64(sscrnOfs);
+    d->pMerchant = (void*)port_ptr64(merchantOfs);
+    d->pItem = (void*)port_ptr64(itemOfs);
     d->size = size;
     d->base = 0;
     calcAddr(d);
@@ -1038,7 +1038,7 @@ void DiedemoExec(int time, int type)
     Cckpt.getCountDown()->flags &= ~1;
     Cckpt.getCountDown()->frameOut();
     PlEndCamera();
-    TaskExec(1, (TaskFunc) gameDiedemo, (int) &diedemo_work);
+    TaskExec(1, (TaskFunc) gameDiedemo, (int)(uintptr_t)(&diedemo_work));
 }
 
 void gameDiedemoCheck()
@@ -1078,7 +1078,7 @@ void gameDiedemo(DiedemoWork* w)
             }
             break;
         case 1:
-            IdTexDataLoad((void*) (((OptionArc*) pG->pOptionData)->ofs_10 + (u32) pG->pOptionData), 10);
+            IdTexDataLoad((void*)port_ptr64((((OptionArc*) pG->pOptionData)->ofs_10 + (u32) pG->pOptionData)), 10);
             IdSys.kill(0xFF, 0x21);
             kind = w->type;
             if (kind == 0) {
@@ -1089,10 +1089,10 @@ void gameDiedemo(DiedemoWork* w)
             }
             switch (kind) {
             case 1:
-                IdSys.set((void*) (((OptionArc*) pG->pOptionData)->ofs_14 + (u32) pG->pOptionData), 0xFF, 0x2D, 0x13, 6, 0);
+                IdSys.set((void*)port_ptr64((((OptionArc*) pG->pOptionData)->ofs_14 + (u32) pG->pOptionData)), 0xFF, 0x2D, 0x13, 6, 0);
                 break;
             case 2:
-                IdSys.set((void*) (((OptionArc*) pG->pOptionData)->ofs_1C + (u32) pG->pOptionData), 0xFF, 0x2D, 0x13, 6, 0);
+                IdSys.set((void*)port_ptr64((((OptionArc*) pG->pOptionData)->ofs_1C + (u32) pG->pOptionData)), 0xFF, 0x2D, 0x13, 6, 0);
                 break;
             }
             if (pG->flags_5018 & 0x1000000) {
@@ -1107,7 +1107,7 @@ void gameDiedemo(DiedemoWork* w)
             /* fallthrough */
         case 2:
             if (cnt >= w->time + 0x10E || KeyTrg(0x80000000)) {
-                IdSys.set((void*) (((OptionArc*) pG->pOptionData)->ofs_18 + (u32) pG->pOptionData), 0xFF, 0x2E, 0x13, 5, 0);
+                IdSys.set((void*)port_ptr64((((OptionArc*) pG->pOptionData)->ofs_18 + (u32) pG->pOptionData)), 0xFF, 0x2E, 0x13, 5, 0);
                 cnt2 = 0;
                 step++;
                 IdSys.beMove(IdSys.unitPtr(0x30, 0x2E), 0);
@@ -1222,11 +1222,11 @@ void gameDoordemo()
     if (!Flag54(0x80000) && !Flag54(0x100)) {
         cSceSys* s = &SceSys;
         if (s->x10 != 0) {
-            ((void (*)(int)) s->x10)(s->x14);
+            ((void (*)(int))port_ptr64(s->x10))(s->x14);
             s->x10 = 0;
         }
         if (s->x8 != 0) {
-            ((void (*)(int)) s->x8)(s->xC);
+            ((void (*)(int))port_ptr64(s->x8))(s->xC);
             s->x8 = 0;
         }
     }
@@ -1498,18 +1498,18 @@ void primInit()
     do {
         S32Set(pG->prim_max, pG->prim_max / 2);
 #line 2215 "D:/Bio4/Prog/game.cpp"
-        S32Set(pG->prim_cnt, (s32) MEM_ALLOC(pG->prim_max * 2, 1, 13));
+        S32Set(pG->prim_cnt, (s32)(uintptr_t)(MEM_ALLOC(pG->prim_max * 2, 1, 13)));
         if ((u32) pG->prim_cnt < PORT_PTR_MIN || (u32) pG->prim_cnt > PORT_PTR_MAX) {
             pLog->err(0, 0, "workInit() PRIM BUFFER SIZE WAS REDUCE %08X", pG->prim_max);
         }
     } while (pG->prim_cnt == 0);
-    memclr_asm((void*) pG->prim_cnt, pG->prim_max * 2);
+    memclr_asm((void*)port_ptr64(pG->prim_cnt), pG->prim_max * 2);
     SetPrimBuffPtr();
 }
 
 void primFree()
 {
-    Mem_free((void*) pG->prim_cnt);
+    Mem_free((void*)port_ptr64(pG->prim_cnt));
     pG->prim_cnt = 0;
 }
 
@@ -1720,7 +1720,7 @@ void gameDebugDisp()
         DrawRoomWireframe();
     }
     if (pG->flags_68 & 0x4000) {
-        DrawTpl((TEXPalette*) (pG->pArc->ofs_90 + (u32) pG->pArc), 0x118, 0x186, 0xDC, 0x1E);
+        DrawTpl((TEXPalette*)port_ptr64((pG->pArc->ofs_90 + (u32) pG->pArc)), 0x118, 0x186, 0xDC, 0x1E);
     }
 }
 

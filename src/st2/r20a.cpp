@@ -28,14 +28,14 @@
 // treasure boxes and a texture-rendered object.
 
 struct R20aWork {
-    cEm* door;           // 0x00
+    P32<cEm> door;       // 0x00
     u8 pad_4[4];
-    TexRenderMng* tex;   // 0x08
+    P32<TexRenderMng> tex; // 0x08
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
 struct R20aWorkPtr {
-    R20aWork* p;
+    P32<R20aWork> p;
 };
 
 static u8 r20a_texTbl[0x20];
