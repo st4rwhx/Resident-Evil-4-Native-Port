@@ -27,6 +27,9 @@
 #include "foot_shadow.h"
 #include "db_cam.h"
 #ifdef RE4_PORT
+extern "C" void port_studio_rendu(void* m, int ot, int saute);   // port/studio.cpp, commande « rendus »
+#endif
+#ifdef RE4_PORT
 #include <dolphin/os/OSCache.h>   // LCGetBase : le tampon qui remplace le cache verrouille
 #include "ppc_quantize.h"
 extern "C" u32 port_gqr6(void);
@@ -1058,6 +1061,9 @@ void ModelRender(cModel* m)
 {
     static int modeltransalphaupdate = 1;
 
+#ifdef RE4_PORT
+    port_studio_rendu(m, g_NowExecOtType, m->alpha * m->x158 == 0.0f);   // Studio « rendus » (port/studio.cpp)
+#endif
     if (m->alpha * m->x158 == 0.0f) {
         return;
     }

@@ -31,6 +31,14 @@ extern "C" int port_guard_page(unsigned long a);
 extern "C" unsigned long port_guard_hit(void);
 // Enregistreur FIFO du moteur + journal [FL] de l'image (port/njgfx/njgfx.cpp ; <atomic> ici heurte math_sub.h).
 extern "C" void njgfx_studio_fifo(int frames);
+// Modeles rendus (commande « rendus », 16/11) : trans.cpp ModelRender appelle port_studio_rendu(m, couche OT, saute)
+// a chaque modele ; on garde la liste de l'image precedente (complete) et celle en cours.
+namespace {
+struct Rendu { unsigned m; short ot; short saute; };
+Rendu g_rendus[2][1024];
+int g_nrendus[2] = {0, 0};
+int g_rcur = 0;
+}
 
 namespace {
 struct ConvSite { void* pc; unsigned n; };
@@ -412,6 +420,16 @@ void handle(char* l)
         send_line(out);
         return;
     }
+    if (!std::strncmp(l, "rendus", 6)) {   // rendus : modeles passes par ModelRender dans l'image precedente (adresse:couche:saute)
+        static char out[1024 * 20 + 64];
+        const int b = g_rcur ^ 1;
+        int k = std::snprintf(out, sizeof out, "{\"n\":%d,\"rendus\":\"", g_nrendus[b]);
+        for (int i = 0; i < g_nrendus[b] && k < (int) sizeof out - 32; ++i)
+            k += std::snprintf(out + k, sizeof out - k, "%x:%d:%d ", g_rendus[b][i].m, g_rendus[b][i].ot, g_rendus[b][i].saute);
+        std::snprintf(out + k, sizeof out - k, "\"}");
+        send_line(out);
+        return;
+    }
     if (!std::strncmp(l, "fifo", 4)) {   // fifo [n] : enregistre n images (.dff, 6 par defaut) + journal [FL] de l'image
         int n = l[4] ? std::atoi(l + 5) : 6;
         if (n <= 0 || n > 60) n = 6;
@@ -562,10 +580,18 @@ extern "C" int port_studio_pad(PADStatus* s)
     return 1;
 }
 
+extern "C" void port_studio_rendu(void* m, int ot, int saute)
+{
+    int& n = g_nrendus[g_rcur];
+    if (n < 1024) g_rendus[g_rcur][n++] = Rendu{(unsigned) (unsigned long) m, (short) ot, (short) saute};
+}
+
 // Une fois par image, depuis la boucle principale (main.cpp)
 extern "C" void port_studio_frame(void)
 {
     ++g_frame;
+    g_rcur ^= 1;
+    g_nrendus[g_rcur] = 0;
     open_server();
     if (g_listen < 0)
         return;
