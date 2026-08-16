@@ -18,6 +18,11 @@ int MotionCheckCrossFrame(void* work, f32 frame);  // game/motion.cpp
 
 #define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
 
+#ifdef RE4_PORT
+int PortWiiKnife();                                  // game/pl_wep.cpp : commandes Wii (W3), couteau à visée automatique
+cModel* PortWiiKnifeTarget(cPlWep* w, int keep);
+#endif
+
 void knife_r3_ready00(cPlayer* pl);
 void knife_r3_ready10(cPlayer* pl);
 void knife_r3_set00(cPlayer* pl);
@@ -128,6 +133,11 @@ void knife_r3_ready00(cPlayer* pl)
     m3r[0] = pitch;
     pl->x400 = 0.0f;
     pl->pNeck->init(0, 0, 0);
+#ifdef RE4_PORT
+    if (PortWiiKnife()) {
+        PortWiiKnifeTarget(pl->pWep, 0);   // Wii 80065124 : nouvelle recherche à la sortie du couteau
+    }
+#endif
     if ((G_WEP_ID & 0xFFFF0000) == 0x0D020000) {
         mot0 = pl->pMotTbl[0x59];
         mot1 = pl->pMotTbl[0x5A];
@@ -202,6 +212,11 @@ void knife_r2_set(cPlayer* pl)
         pl->xFE = 2;
         pl->xFF = 0;
     }
+#ifdef RE4_PORT
+    if (PortWiiKnife()) {
+        PortWiiKnifeTarget(pl->pWep, 1);   // Wii 800654B4 : suivi de la cible tant que le couteau est tenu
+    }
+#endif
 }
 
 void knife_r3_set00(cPlayer* pl)

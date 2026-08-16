@@ -754,6 +754,113 @@ cModel* SearchTargetEm(Vec* pos, cModel* skip, f32 range)
     return searchLockEm(pos, skip, range);
 }
 
+#ifdef RE4_PORT
+// ---- Commandes Wii (W3, 17/11) : couteau à visée automatique de la Wii Edition ----------------------------------
+// Repris du DOL Wii RB4P08 (8013A784 KnifeAutoTarget, 8013A584 KnifeTargetOk ; S:/RE4_CODE/out/wii/W1_COUTEAU_AUTO.md),
+// écrit avec les champs GC : pl->pLockEm (Wii pl+0x52C), em->hp (Wii 0x322), em->lockOfs/lockParts (la Wii a un point
+// « couteau » à part, égal au point de verrouillage pour le Ganado em10). Réglage : `wii_couteau` (Studio) ou NJ_WII=1.
+#include <stdlib.h>
+#include <math.h>
+extern "C" int port_knob(const char* name, int def);   // port/studio.cpp
+
+int PortWiiKnife()
+{
+    static const int def = getenv("NJ_WII") ? 1 : 0;
+    return port_knob("wii_couteau", def);
+}
+
+static int knifeTargetOk(cEm* em, cPlayer* pl)
+{
+    Vec head = pl->getPartsPtr(3)->worldPos;
+    Vec pt;
+    f32 range = 2200.0f, height = 1200.0f;
+
+    PSMTXMultVec(em->getPartsPtr(em->lockParts)->mat, &em->lockOfs, &pt);
+    switch (em->id) {
+    case 0x2A:
+        if (em->type != 0 || em->checkStatus(1)) {
+            return 0;
+        }
+        break;
+    case 0x2B:
+        range += 600.0f;
+        height += 800.0f;
+        break;
+    case 0x50: case 0x51: case 0x52:
+    case 0x54: case 0x55: case 0x56: case 0x57:
+    case 0x5B: case 0x5C: case 0x5D:
+        range -= 200.0f;
+        break;
+    case 0x58: case 0x5E: case 0x5F:
+        return 0;
+    default:
+        break;
+    }
+    if (GetDistanceXZ(&head, &pt) > range * range) {
+        return 0;
+    }
+    if (fabsf(pt.y - (pl->pos.y + 0.5f * (head.y - pl->pos.y))) > height) {
+        return 0;
+    }
+    if (fabsf(GetXZAngleLocal(&head, &pt, pl->rot.y)) > 2.0943952f) {   // 120 degrés devant Leon
+        return 0;
+    }
+    return SatMgr.hitCheck(&head, &pt, NULL, NULL, 0x8000, 0) == 0;   // pas de mur entre les deux
+}
+
+static int knifeEmUsable(cEm* em)
+{
+    // La Wii teste le bit 12 : son setStatus(5) pose aussi 0x1000 et clearStatus(5) l'enlève (Wii 80098FC8/80098FF0) ;
+    // le GC n'a pas ce double, le bit 5 lui-même est l'équivalent (c'est aussi celui de lockEmCk).
+    return (em->be_flag & 0x201) == 1 && (em->be_flag & 0x20) && em->pParts != 0 && em->checkStatus(5);
+}
+
+// keep = 0 à la sortie du couteau, 1 à chaque image tant qu'il est tenu (l'ancienne cible est favorisée : x0,7).
+cModel* PortWiiKnifeTarget(cPlWep* w, int keep)
+{
+    cPlayer* pl = pPL;
+    Vec head = pl->getPartsPtr(3)->worldPos;
+    cEm* prev = (cEm*) pl->pLockEm;
+    cEm* best = 0;
+    f32 bestD = 1e12f;
+    u32 i;
+
+    pl->pLockEm = 0;
+    w->x40 = 0;
+    if (keep && prev) {
+        int bad = !knifeEmUsable(prev) || prev->hp == 0;
+        if (!bad && !(prev->id == 0x23 || prev->id == 0x24 || prev->id == 0x27)) {
+            bad = prev->checkStatus(1) != 0;
+        }
+        if (!bad && knifeTargetOk(prev, pl)) {
+            best = prev;
+            bestD = 0.7f * rangeDist(&head, prev, 0.0f);
+        }
+    }
+    for (i = 0; i < EmMgr.nArray; i++) {
+        cEm* em = (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * i);
+        f32 d;
+
+        if (keep && best && em == best) {
+            continue;
+        }
+        if (!knifeEmUsable(em) || !knifeTargetOk(em, pl)) {
+            continue;
+        }
+        d = rangeDist(&head, em, 0.0f);
+        if (d < bestD) {
+            best = em;
+            bestD = d;
+        }
+    }
+    if (best) {
+        pl->pLockEm = best;
+        w->x40 = 10;
+    }
+    return pl->pLockEm;
+}
+#endif
+
 cModel* searchLockEm(Vec* pos, cModel* skip_, f32 range_)
 {
     // COMPILER-DIFF: candidate (global-alloc order): skip r30 / range f30 pins; a plain `skip` copy
