@@ -82,7 +82,7 @@ static inline void AtariFlagsAnd(cAtariInfo* a, u16 mask) { a->flags &= mask; }
 static inline void AtariFlagsOr(cAtariInfo* a, u16 bit) { a->flags |= bit; }
 // Upper half of the damage flags set = the enemy is dead (db_cam idiom); the inline's result is
 // materialised as 0/1 before the test.
-static inline int isDeadEm(cEm* em) { return (em->flags_324 & 0xFFFF0000) != 0; }
+static inline int isDeadEm(cEm* em) { return (em->flags_324 & PORT_DMG_HI16) != 0; }
 static inline void EmRoutineSet(cEm* p, int fc, int fd, int fe, int ff)
 {
     p->xFC = fc;

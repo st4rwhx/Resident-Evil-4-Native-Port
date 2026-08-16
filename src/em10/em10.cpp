@@ -519,7 +519,7 @@ extern "C" int em10GatlingHitCk(cEm10* em);
 // Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
 static inline int em10DeadCk(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 // Reference store (same mechanism as FSet): keeps the following global load after the store.

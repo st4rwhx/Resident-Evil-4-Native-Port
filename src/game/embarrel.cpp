@@ -887,7 +887,7 @@ int emBarrelRollHitCk(cEmBarrel* em)
         return 0;
     }
     dead = 1;
-    if (!(pPL->flags_324 & 0xFFFF0000)) {
+    if (!(pPL->flags_324 & PORT_DMG_HI16)) {
         dead = 0;
     }
     if (dead) {

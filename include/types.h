@@ -28,6 +28,17 @@ typedef unsigned short u16;
 #endif
 typedef unsigned long u32;
 typedef unsigned long long u64;
+
+/* cDmgInfo (cEm+0x324, include/em.h) : le mot `flags_324` recouvre les octets stat, x1, kind, x3. Le code teste
+ * « mort / impact en cours » par `flags_324 & 0xFFFF0000` : sur le PowerPC ce sont les octets 0-1 (stat, x1) ; sur une
+ * machine petit-boutiste ce sont kind et x3. Or kind (type d'arme) n'est jamais efface : apres le premier impact, tout
+ * ennemi passait pour mort (EmIsDead) et les balles l'ignoraient - le Ganado de la maison de r100 ne prenait qu'un tir
+ * (16/11, Studio : juge_maison + appeler). Ce masque designe les memes octets 0-1 sur les deux. */
+#ifdef RE4_PORT
+#define PORT_DMG_HI16 0x0000FFFFu
+#else
+#define PORT_DMG_HI16 0xFFFF0000u
+#endif
 typedef float f32;
 typedef double f64;
 typedef int BOOL;

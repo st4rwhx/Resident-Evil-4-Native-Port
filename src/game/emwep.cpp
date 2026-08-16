@@ -1442,7 +1442,7 @@ void emWep_R1_FlashThrow(cEmWep* em)
         SndCall(1, 0x13, &em->pos, 0, 0, 0);
         if ((s16) pG->pl_life > 0) {
             dead = 1;
-            if (!(pPL->flags_324 & 0xFFFF0000)) {
+            if (!(pPL->flags_324 & PORT_DMG_HI16)) {
                 dead = 0;
             }
             if (dead == 0) {

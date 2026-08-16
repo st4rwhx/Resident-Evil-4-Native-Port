@@ -1084,7 +1084,7 @@ int emRockRollHitCk(cEmRock* em)
         return 0;
     }
     dead = 1;
-    if (!(pPL->flags_324 & 0xFFFF0000)) {
+    if (!(pPL->flags_324 & PORT_DMG_HI16)) {
         dead = 0;
     }
     if (dead) {
@@ -1484,7 +1484,7 @@ int emRockRollStartCk(cEmRock* em)
         return 0;
     }
     dead = 1;
-    if (!(pPL->flags_324 & 0xFFFF0000)) {
+    if (!(pPL->flags_324 & PORT_DMG_HI16)) {
         dead = 0;
     }
     if (dead) {
@@ -2227,7 +2227,7 @@ int emRockDropHitCk(cEmRock* em)
         return 0;
     }
     dead = 1;
-    if (!(pPL->flags_324 & 0xFFFF0000)) {
+    if (!(pPL->flags_324 & PORT_DMG_HI16)) {
         dead = 0;
     }
     if (dead) {
@@ -2263,7 +2263,7 @@ int emRockDropHitCkSub(cEmRock* em)
         return 0;
     }
     dead = 1;
-    if (!(pSUB->flags_324 & 0xFFFF0000)) {
+    if (!(pSUB->flags_324 & PORT_DMG_HI16)) {
         dead = 0;
     }
     if (dead) {

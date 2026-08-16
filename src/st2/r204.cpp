@@ -498,7 +498,7 @@ static void r204_first_cut()
     r204_first_cut_exit();
 }
 
-static inline int r204_isDead(cEm* em) { return (em->flags_324 & 0xFFFF0000) ? 1 : 0; }
+static inline int r204_isDead(cEm* em) { return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0; }
 
 static void r204_nige_check()
 {

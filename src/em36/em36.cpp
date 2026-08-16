@@ -229,7 +229,7 @@ static inline void AtariFlagsAndV(cAtariInfo* at, u16 mask) { *(volatile u16*) &
 
 static inline int em36DeadCk(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 // The appearance effects (type 0/1: two, type 2/3: one).

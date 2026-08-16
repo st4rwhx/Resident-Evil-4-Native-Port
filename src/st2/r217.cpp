@@ -102,7 +102,7 @@ static inline int r217_emDead(cEm* e)
 {
     int dead = 1;
 
-    if ((e->flags_324 & 0xFFFF0000) == 0) {
+    if ((e->flags_324 & PORT_DMG_HI16) == 0) {
         dead = 0;
     }
     return dead;

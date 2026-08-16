@@ -3768,7 +3768,7 @@ void cSubChar::dmgCheck()
 {
     int hit = 1;
 
-    if (!(flags_324 & 0xFFFF0000)) {
+    if (!(flags_324 & PORT_DMG_HI16)) {
         hit = 0;
     }
     if (hit) {

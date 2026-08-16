@@ -82,7 +82,7 @@ struct PlayerPtr {
 // Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
 static inline int em3aDeadCk(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 // Stores through a scalar reference: the following pG load is reloaded (em3a_R1_Atk's timer

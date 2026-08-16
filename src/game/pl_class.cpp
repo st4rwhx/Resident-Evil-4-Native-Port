@@ -685,7 +685,7 @@ void cPlayer::dmgCheck()
 {
     int dead = 1;
 
-    if ((flags_324 & 0xFFFF0000) == 0) {
+    if ((flags_324 & PORT_DMG_HI16) == 0) {
         dead = 0;
     }
     if (dead) {

@@ -199,7 +199,7 @@ void debugCamera::move(Camera* cam, JOY* joy, int flag)
         if (em != NULL) {
             if ((em->be_flag & 1) && em != (cEm*) pPL) {
                 int col = 0;
-                int dead = (em->flags_324 & 0xFFFF0000) != 0;
+                int dead = (em->flags_324 & PORT_DMG_HI16) != 0;
                 if (dead || em->hp <= 0) {
                     col = 2;
                 }

@@ -993,7 +993,7 @@ int cObj16::ckAtkEnable()
 // The player is dead (the upper half of the damage word).
 static inline int PlIsDead()
 {
-    return (pPL->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (pPL->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 int obj16AtkCk(cObj16* obj, u32 kind, int partsNo)

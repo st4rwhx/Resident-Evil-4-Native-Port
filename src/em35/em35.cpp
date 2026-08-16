@@ -147,7 +147,7 @@ static inline void AtariFlagsOr(cAtariInfo* at, u16 mask) { *(volatile u16*) &at
 // Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
 static inline int em35DeadCk(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 extern "C" void _prolog()

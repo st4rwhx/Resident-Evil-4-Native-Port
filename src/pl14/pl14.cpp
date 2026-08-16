@@ -1280,7 +1280,7 @@ int cSubLuis::damageCheck()
         action.set(6);
         return 1;
     }
-    dead = (dmg.flags & 0xFFFF0000) != 0;
+    dead = (dmg.flags & PORT_DMG_HI16) != 0;
     if (!dead && (s16) pG->pl_life > 0 && DmgMgr.hitCheck(&getPartsPtr(0)->worldPos, 0) == 1) {
         routine.x110 = 3;
         dmHit = dead;

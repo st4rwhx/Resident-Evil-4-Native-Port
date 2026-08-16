@@ -87,7 +87,7 @@ static inline void EmRoutineSet(cEm* em, int r0, int r1, int r2, int r3)
 // Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
 static inline int em21DeadCk(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 extern "C" void _prolog()

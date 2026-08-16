@@ -170,7 +170,7 @@ static inline void EmRoutineSet(cEm* em, int r0, int r1, int r2, int r3)
 // Dead flag test (cDmgInfo upper 16 bits): an inline returning 0/1 gives the `li 1; andis.; bne; li 0` chain.
 static inline int em39DeadCk(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 // Struct-member views of the player / partner pointers: a load through them is not hoisted above
@@ -7410,7 +7410,7 @@ void em39WepSet(cEm39* em, int no)
     int dead = 1;                                                                                  \
     int noFlag;                                                                                    \
                                                                                                    \
-    if ((pPL->flags_324 & 0xFFFF0000) == 0) {                                                      \
+    if ((pPL->flags_324 & PORT_DMG_HI16) == 0) {                                                      \
         dead = 0;                                                                                  \
     }                                                                                              \
     if (dead) {                                                                                    \
@@ -7983,7 +7983,7 @@ int em39AtkRtnCk(cEm39* em)
     int x684;
     int noFlag;
 
-    if ((pPL->flags_324 & 0xFFFF0000) == 0) {
+    if ((pPL->flags_324 & PORT_DMG_HI16) == 0) {
         dead = 0;
     }
     if (dead) {

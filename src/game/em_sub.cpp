@@ -72,7 +72,7 @@ u32 No_drop_cnt2 = 0;
 // Dead (upper 16 bits of cDmgInfo::flags set): the `li 1; andis.; bne; li 0; cmpwi` chain.
 static inline int EmIsDead(cEm* em)
 {
-    return (em->flags_324 & 0xFFFF0000) ? 1 : 0;
+    return (em->flags_324 & PORT_DMG_HI16) ? 1 : 0;
 }
 
 // Player life at least `lim`: the compare keeps its `>=` form (`cmpwi 0x1f5; cror un,eq,gt`) because

@@ -665,7 +665,7 @@ int cObjRobo::WalkHitCk(cObjRobo* robo)
 
     if ((s16) pG->pl_life > 0) {
         dead = 1;
-        if ((pPL->flags_324 & 0xFFFF0000) == 0) {
+        if ((pPL->flags_324 & PORT_DMG_HI16) == 0) {
             dead = 0;
         }
         if (dead == 0) {

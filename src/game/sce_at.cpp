@@ -1698,7 +1698,7 @@ static int sceAtFunc_damage(SceAtWork* w, cModel* m)
     if (w->x39 & 1) {
         int dead = 1;
 
-        if ((pPL->flags_324 & 0xFFFF0000) == 0) {
+        if ((pPL->flags_324 & PORT_DMG_HI16) == 0) {
             dead = 0;
         }
         if (dead == 0 && (s16) pG->pl_life > 0) {
@@ -1723,7 +1723,7 @@ static int sceAtFunc_damage(SceAtWork* w, cModel* m)
         if (pSUB != 0) {
             int dead = 1;
 
-            if ((pSUB->flags_324 & 0xFFFF0000) == 0) {
+            if ((pSUB->flags_324 & PORT_DMG_HI16) == 0) {
                 dead = 0;
             }
             if (dead == 0 && (s16) pG->sub_life > 0) {
