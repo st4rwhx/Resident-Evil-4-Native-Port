@@ -10,8 +10,10 @@
 //     tampons consommes ; l'interruption AI est livree dans le fil du jeu, aux points d'interruption (OSDisableInterrupts,
 //     comme le GX : port_gx_deliver), parce que les fils du jeu se passent un jeton et qu'aucun code du jeu ne doit
 //     tourner sur le fil audio.
+#ifndef __APPLE__
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
+#endif
 
 #include <atomic>
 #include <cstdio>
@@ -50,6 +52,19 @@ std::atomic<unsigned> g_ring_w{0}, g_ring_r{0};
 std::atomic<unsigned> g_ai_ticks{0};     // tampons consommes par la sortie, pas encore livres au jeu
 short g_silence[kFrames * 2];
 
+#ifdef __APPLE__
+// iOS (18/11, I4) : pas d'OpenSL ES. Le moteur Nightjar, dans le meme processus, tire les tampons de l'anneau depuis son
+// rappel audio (nj_core_audio_pull, plus bas) : meme logique que sl_callback (silence si le jeu est en retard, un tic
+// AI par tampon de 5 ms consomme).
+bool g_sl_ok;
+bool sl_start()
+{
+    if (!g_sl_ok)
+        std::printf("[AUDIO] sortie par le moteur (meme processus) : 32 kHz stereo, tampons de 5 ms\n");
+    g_sl_ok = true;
+    return true;
+}
+#else
 SLObjectItf g_engine_obj, g_mix_obj, g_player_obj;
 SLEngineItf g_engine;
 SLPlayItf g_play;
@@ -100,6 +115,7 @@ bool sl_start()
     std::printf("[AUDIO] sortie OpenSL ES : 32 kHz stereo, tampons de 5 ms\n");
     return true;
 }
+#endif
 
 // ------------------------------------------------------------------ AI
 AIDCallback g_ai_cb;
@@ -273,3 +289,28 @@ static u32 g_sound_mode = 1;   // OS_SOUND_MODE_STEREO
 u32 OSGetSoundMode(void) { return g_sound_mode; }
 void OSSetSoundMode(u32 mode) { g_sound_mode = mode ? 1u : 0u; }
 }
+
+#ifdef __APPLE__
+// Rappel audio du moteur (iOS) : `frames` images stereo s16 a 32 kHz dans `out` (L, R entrelaces).
+extern "C" int nj_core_audio_pull(short* out, int frames)
+{
+    static int pos = 0;   // position dans le tampon de l'anneau en cours de lecture
+    int done = 0;
+    while (done < frames) {
+        const unsigned r = g_ring_r.load(std::memory_order_relaxed);
+        const bool have = r != g_ring_w.load(std::memory_order_acquire);
+        const short* src = have ? g_ring[r % kRing] : g_silence;
+        const int n = (frames - done) < (kFrames - pos) ? (frames - done) : (kFrames - pos);
+        std::memcpy(out + 2 * done, src + 2 * pos, (size_t) n * 2 * sizeof(short));
+        done += n;
+        pos += n;
+        if (pos >= kFrames) {
+            pos = 0;
+            if (have)
+                g_ring_r.store(r + 1, std::memory_order_release);
+            g_ai_ticks.fetch_add(1, std::memory_order_release);
+        }
+    }
+    return frames;
+}
+#endif

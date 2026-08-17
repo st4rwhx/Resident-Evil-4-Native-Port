@@ -21,7 +21,13 @@
 
 #include <dlfcn.h>
 #include <unwind.h>
+#ifdef __APPLE__
+#include <sys/ucontext.h>   // iOS : ucontext_t sans les routines obsoletes (_XOPEN_SOURCE)
+#include <pthread.h>
+static inline int gettid() { uint64_t t = 0; pthread_threadid_np(nullptr, &t); return (int) t; }
+#else
 #include <ucontext.h>
+#endif
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/syscall.h>
@@ -118,6 +124,10 @@ _Unwind_Reason_Code on_frame(struct _Unwind_Context *ctx, void *)
 #define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.gregs[REG_RIP])
 #define CTX_LR(uc) (*(const unsigned long *) (uc)->uc_mcontext.gregs[REG_RSP])
 #define CTX_FAULT(uc, info) ((unsigned long) (info)->si_addr)
+#elif defined(__APPLE__) && defined(__aarch64__)   // iOS (18/11) : mcontext d'Apple (pointeur, __ss)
+#define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext->__ss.__pc)
+#define CTX_LR(uc) ((unsigned long) (uc)->uc_mcontext->__ss.__lr)
+#define CTX_FAULT(uc, info) ((unsigned long) (info)->si_addr)
 #elif defined(__aarch64__)  // N7 : arm64 (Android 64 bits, base d'iOS) ; x30 = registre de lien
 #define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.pc)
 #define CTX_LR(uc) ((unsigned long) (uc)->uc_mcontext.regs[30])
@@ -196,6 +206,13 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
                     (unsigned long) g[REG_RBX], (unsigned long) g[REG_RCX], (unsigned long) g[REG_RDX], (unsigned long) g[REG_RSI],
                     (unsigned long) g[REG_RDI], (unsigned long) g[REG_RBP], (unsigned long) g[REG_RSP]);
     }
+#elif defined(__APPLE__) && defined(__aarch64__)
+    {
+        const auto &m = uc->uc_mcontext->__ss;
+        std::printf("[PORT] x0-x7 : %lx %lx %lx %lx %lx %lx %lx %lx  sp=%lx\n", (unsigned long) m.__x[0],
+                    (unsigned long) m.__x[1], (unsigned long) m.__x[2], (unsigned long) m.__x[3], (unsigned long) m.__x[4],
+                    (unsigned long) m.__x[5], (unsigned long) m.__x[6], (unsigned long) m.__x[7], (unsigned long) m.__sp);
+    }
 #elif defined(__aarch64__)
     {
         const auto &m = uc->uc_mcontext;
@@ -273,7 +290,11 @@ void *watchdog(void *)
             const int tid = std::atoi(e->d_name);
             if (tid <= 0 || tid == self)
                 continue;
+#ifndef __APPLE__   // iOS : pas de tgkill (fil designe par son pthread_t) ; releve des fils bloques non disponible
             syscall(SYS_tgkill, getpid(), tid, SIGUSR2);
+#else
+            (void) tid;
+#endif
             usleep(150000);
         }
         closedir(d);

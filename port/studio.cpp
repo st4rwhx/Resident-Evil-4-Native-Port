@@ -101,12 +101,20 @@ int g_memfd = -1;
 bool mem_read(unsigned long a, void* out, unsigned n)
 {
     if (g_memfd < 0) g_memfd = open("/proc/self/mem", O_RDWR);
+#ifdef __APPLE__
+    return g_memfd >= 0 && pread(g_memfd, out, n, (off_t) a) == (ssize_t) n;
+#else
     return g_memfd >= 0 && pread64(g_memfd, out, n, (off64_t) a) == (ssize_t) n;
+#endif
 }
 bool mem_write(unsigned long a, const void* in, unsigned n)
 {
     if (g_memfd < 0) g_memfd = open("/proc/self/mem", O_RDWR);
+#ifdef __APPLE__
+    return g_memfd >= 0 && pwrite(g_memfd, in, n, (off_t) a) == (ssize_t) n;
+#else
     return g_memfd >= 0 && pwrite64(g_memfd, in, n, (off64_t) a) == (ssize_t) n;
+#endif
 }
 void hexs(char* out, const unsigned char* b, unsigned n)
 {

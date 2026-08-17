@@ -147,18 +147,11 @@ def main():
     triple = {'x86': 'i686-linux-android28', 'x86_64': 'x86_64-linux-android28',
               'arm64': 'aarch64-linux-android28'}.get(abi, 'armv7a-linux-androideabi28')
     cxx = os.path.join(bindir, triple + '-clang++.cmd')
-    if abi == 'ios':   # premiere compilation iOS (18/11) : memes options que build_game.py (cible Apple, en-tetes Android)
-        sysr = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'sysroot', 'usr', 'include')
-        shim = os.path.join(ROOT, '_port_build_ios', 'shim')
-        os.makedirs(shim, exist_ok=True)
-        cs = open(os.path.join(sysr, 'c++', 'v1', '__config_site')).read().replace('__ndk1', '__1')
-        open(os.path.join(shim, '__config_site'), 'w').write(cs)
-        bg.COMMON[:0] = ['--target=arm64-apple-ios16.0', '-U__APPLE__', '-D__BIONIC__', '-D__ANDROID__', '-D__ANDROID_API__=24',
-                         '-DNJ_APPLE_CROSS=1', '-D_LIBCPP_HAS_THREAD_API_PTHREAD', '-fPIC', '-nostdlibinc',
-                         '-I' + shim, '-isystem', os.path.join(sysr, 'c++', 'v1'), '-isystem', sysr,
-                         '-isystem', os.path.join(sysr, 'aarch64-linux-android')]
-        bg.CXXONLY.append('-nostdinc++')
-        cxx = os.path.join(bindir, 'clang++.exe')
+    if abi == 'ios':   # I2 (18/11) : vrai SDK iPhoneOS + clang 23 de notre build de LLVM, comme build_game.py
+        sdk = os.environ.get('PORT_IOS_SDK', 'C:/re4n/ios_sdk/iPhoneOS.sdk')
+        iosbin = os.environ.get('PORT_IOS_CLANG', 'C:/re4n/llvm/build-win64/bin')
+        bg.COMMON[:0] = ['--target=arm64-apple-ios16.0', '-isysroot', sdk, '-miphoneos-version-min=16.0', '-fPIC']
+        cxx = os.path.join(iosbin, 'clang++.exe')
     if abi in ('x86_64', 'arm64', 'ios') and '-w' in bg.COMMON:
         bg.COMMON[bg.COMMON.index('-w')] = '-Wno-everything'
         bg.COMMON.extend(['-ferror-limit=0', '-Werror=int-to-pointer-cast', '-Werror=int-to-void-pointer-cast'])

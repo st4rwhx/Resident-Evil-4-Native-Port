@@ -13,16 +13,25 @@
 // traverse les processus. Sans NJ_LINK_FD (lancement par adb), ce module ne fait rien.
 #include "njlink.h"
 
-#include <android/hardware_buffer.h>
+// iOS (18/11, I3 du port natif complet) : pas de processus separe (ni fork/exec, ni AHardwareBuffer). Le coeur vit dans le
+// processus du moteur : MEME contrat njlink (memes messages, meme switch), autre transport : deux files de messages en
+// memoire (nj_core_post / nj_core_take), l'etat du jeu depose en memoire (nj_core_state), les images dans des textures GL
+// ordinaires partagees avec le contexte du moteur (ids dans NJ_MSG_BUFFERS.data), glFinish au lieu des barrieres EGL.
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#ifdef __APPLE__
+#include <OpenGLES/ES3/gl.h>
+#include <mutex>
+#include <deque>
+#else
+#include <android/hardware_buffer.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl3.h>
 #include <GLES2/gl2ext.h>
+#endif
 
 #include <cstdio>
 #include <cstdlib>
@@ -34,7 +43,9 @@ namespace {
 
 int g_fd = -1;
 const int kSlots = 4;   // 4 (15/11) : une affichee, deux en attente dans l appli (cadence fixe), une en dessin
+#ifndef __APPLE__
 AHardwareBuffer* g_ahb[kSlots];
+#endif
 GLuint g_tex[kSlots], g_fbo[kSlots];
 bool g_busy[kSlots];   // emplacement envoye, pas encore rendu par l'appli
 int g_w, g_h;
@@ -43,12 +54,20 @@ bool g_ready;
 NjPad g_pad;
 bool g_quit;
 
+#ifndef __APPLE__
 PFNEGLGETNATIVECLIENTBUFFERANDROIDPROC p_getClientBuffer;
 PFNEGLCREATEIMAGEKHRPROC p_createImage;
 PFNGLEGLIMAGETARGETTEXTURE2DOESPROC p_imageTarget;
 PFNEGLCREATESYNCKHRPROC p_createSync;
 PFNEGLDESTROYSYNCKHRPROC p_destroySync;
 PFNEGLDUPNATIVEFENCEFDANDROIDPROC p_dupFence;
+#else
+// transport en memoire (iOS) : files des deux sens + dernier etat du jeu
+std::mutex g_q_mu;
+std::deque<NjMsg> g_to_core, g_to_host;
+NjState g_host_state;
+bool g_host_state_ok;
+#endif
 
 extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
 extern "C" void njstate_case(int op, int board, const void* data);
@@ -77,11 +96,23 @@ void send_state()
         p.s = g_state_snap;
     else
         njstate_fill(&p.s);
+#ifdef __APPLE__
+    std::lock_guard<std::mutex> lk(g_q_mu);
+    g_host_state = p.s;
+    g_host_state_ok = true;
+#else
     send(g_fd, &p, sizeof p, MSG_NOSIGNAL | MSG_DONTWAIT);
+#endif
 }
 
 bool send_msg(const NjMsg& m, int fence)
 {
+#ifdef __APPLE__
+    (void) fence;
+    std::lock_guard<std::mutex> lk(g_q_mu);
+    g_to_host.push_back(m);
+    return true;
+#endif
     struct iovec iov = {(void*) &m, sizeof m};
     struct msghdr mh = {};
     mh.msg_iov = &iov;
@@ -118,7 +149,19 @@ void poll_host()
         return;
     NjMsg m;
     for (;;) {
+#ifdef __APPLE__
+        ssize_t n = 0;
+        {
+            std::lock_guard<std::mutex> lk(g_q_mu);
+            if (g_to_core.empty())
+                return;
+            m = g_to_core.front();
+            g_to_core.pop_front();
+            n = (ssize_t) sizeof m;
+        }
+#else
         const ssize_t n = recv(g_fd, &m, sizeof m, MSG_DONTWAIT);
+#endif
         if (n == 0) {   // l'appli est partie
             g_quit = true;
             return;
@@ -178,11 +221,18 @@ int njlink_active(void) { return g_fd >= 0; }
 
 void njlink_init(void)
 {
+#ifdef __APPLE__
+    // moteur dans le meme processus : il pose NJ_LINK_INPROC=1 avant de lancer le coeur ; g_fd = 0 = lien actif (pas une prise)
+    if (!std::getenv("NJ_LINK_INPROC"))
+        return;
+    g_fd = 0;
+#else
     const char* e = std::getenv("NJ_LINK_FD");
     if (!e)
         return;
     g_fd = std::atoi(e);
     fcntl(g_fd, F_SETFD, FD_CLOEXEC);
+#endif
     NjMsg m = {};
     m.type = NJ_MSG_HELLO;
     m.a = NJ_LINK_VERSION;
@@ -199,6 +249,32 @@ void njlink_gl_ready(int w, int h)
 {
     if (g_fd < 0 || g_ready)
         return;
+#ifdef __APPLE__
+    // textures GL ordinaires, partagees avec le contexte du moteur (meme groupe de partage) ; ids dans data[]
+    g_w = w;
+    g_h = h;
+    NjMsg mb = {};
+    mb.type = NJ_MSG_BUFFERS;
+    mb.a = kSlots;
+    mb.b = (unsigned) w;
+    mb.c = (unsigned) h;
+    for (int i = 0; i < kSlots; ++i) {
+        glGenTextures(1, &g_tex[i]);
+        glBindTexture(GL_TEXTURE_2D, g_tex[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glGenFramebuffers(1, &g_fbo[i]);
+        glBindFramebuffer(GL_FRAMEBUFFER, g_fbo[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_tex[i], 0);
+        std::memcpy(mb.data + 4 * i, &g_tex[i], 4);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    send_msg(mb, -1);
+    g_ready = true;
+    std::printf("[PORT] lien moteur (meme processus) : %d textures %dx%d\n", kSlots, w, h);
+    return;
+#else
     p_getClientBuffer = (PFNEGLGETNATIVECLIENTBUFFERANDROIDPROC) eglGetProcAddress("eglGetNativeClientBufferANDROID");
     p_createImage = (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress("eglCreateImageKHR");
     p_imageTarget = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC) eglGetProcAddress("glEGLImageTargetTexture2DOES");
@@ -244,6 +320,7 @@ void njlink_gl_ready(int w, int h)
         AHardwareBuffer_sendHandleToUnixSocket(g_ahb[i], g_fd);
     g_ready = true;
     std::printf("[PORT] lien appli : %d images partagees %dx%d\n", kSlots, w, h);
+#endif
 }
 
 // Image du jeu finie (dans le tampon par defaut du coeur) : copiee dans un emplacement libre et
@@ -271,6 +348,9 @@ void njlink_frame(void)
     glBlitFramebuffer(0, 0, g_w, g_h, 0, 0, g_w, g_h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) prev);
     int fence = -1;
+#ifdef __APPLE__
+    glFinish();   // meme processus : l'image est finie avant d'etre annoncee
+#else
     EGLDisplay dpy = eglGetCurrentDisplay();
     if (p_createSync && p_dupFence) {
         const EGLint a[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, EGL_NO_NATIVE_FENCE_FD_ANDROID, EGL_NONE};
@@ -283,6 +363,7 @@ void njlink_frame(void)
     } else {
         glFinish();
     }
+#endif
     NjMsg m = {};
     m.type = NJ_MSG_FRAME;
     m.a = (unsigned) slot;
@@ -539,6 +620,9 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
     }
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) prev);
     int fence = -1;
+#ifdef __APPLE__
+    glFinish();   // meme processus : l'image est finie avant d'etre annoncee
+#else
     EGLDisplay dpy = eglGetCurrentDisplay();
     if (p_createSync && p_dupFence) {
         const EGLint a[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, EGL_NO_NATIVE_FENCE_FD_ANDROID, EGL_NONE};
@@ -551,6 +635,7 @@ void njlink_frame_fbo(unsigned fbo, int x, int y, int w, int h)
     } else {
         glFinish();
     }
+#endif
     NjMsg m = {};
     m.type = NJ_MSG_FRAME;
     m.a = (unsigned) slot;
@@ -578,3 +663,30 @@ int njlink_quit(void)
 }
 
 }
+
+#ifdef __APPLE__
+// Interface du moteur Nightjar, dans le meme processus (iOS) : il envoie ses messages (PAD, RELEASE, PAUSE, TITLE, SETTING,
+// CASE, QUIT), recoit ceux du coeur (HELLO, BUFFERS, FRAME) et lit le dernier etat du jeu.
+extern "C" void nj_core_post(const NjMsg* m)
+{
+    std::lock_guard<std::mutex> lk(g_q_mu);
+    g_to_core.push_back(*m);
+}
+extern "C" int nj_core_take(NjMsg* out)
+{
+    std::lock_guard<std::mutex> lk(g_q_mu);
+    if (g_to_host.empty())
+        return 0;
+    *out = g_to_host.front();
+    g_to_host.pop_front();
+    return 1;
+}
+extern "C" int nj_core_state(NjState* out)
+{
+    std::lock_guard<std::mutex> lk(g_q_mu);
+    if (!g_host_state_ok)
+        return 0;
+    *out = g_host_state;
+    return 1;
+}
+#endif

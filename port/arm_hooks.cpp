@@ -31,14 +31,18 @@ extern "C" int port_debug_text(void)   // eprintf du jeu (src/game/eprintf.cpp)
 }
 
 // Pour le code du jeu, qui ne peut pas inclure <stdio.h> (voir osreport_pc.cpp).
+#ifndef __APPLE__
 #include <android/log.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 extern "C" void port_note(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
+#ifndef __APPLE__
     __android_log_vprint(ANDROID_LOG_INFO, "RE4", fmt, ap);
+#endif
     va_end(ap);
     va_start(ap, fmt);   // aussi dans le journal du coeur (core.log), lu par nos bancs
     vprintf(fmt, ap);

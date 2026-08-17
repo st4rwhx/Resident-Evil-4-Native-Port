@@ -160,21 +160,15 @@ def main():
     cxx = os.path.join(bindir, triple + '-clang++.cmd')
     cc = os.path.join(bindir, triple + '-clang.cmd')
     if abi == 'ios':
-        # PORT_ABI=ios (18/11, premiere compilation iOS du natif) : meme methode que le jeu recompile du 28/10
-        # (mesures/laptop_ios_game.sh) : clang du NDK cible arm64-apple-ios16.0, en-tetes Android (bionic), NJ_APPLE_CROSS,
-        # cale libc++ (__ndk1 -> __1). Meme modele memoire que x86_64/arm64 (P32). Lien : ld64.lld en dylib (script).
-        sysr = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'sysroot', 'usr', 'include')
-        shim = os.path.join(args.out, 'shim')
-        os.makedirs(shim, exist_ok=True)
-        cs = open(os.path.join(sysr, 'c++', 'v1', '__config_site')).read().replace('__ndk1', '__1')
-        open(os.path.join(shim, '__config_site'), 'w').write(cs)
-        COMMON[:0] = ['--target=arm64-apple-ios16.0', '-U__APPLE__', '-D__BIONIC__', '-D__ANDROID__', '-D__ANDROID_API__=24',
-                      '-DNJ_APPLE_CROSS=1', '-D_LIBCPP_HAS_THREAD_API_PTHREAD', '-fPIC', '-nostdlibinc',
-                      '-I' + shim, '-isystem', os.path.join(sysr, 'c++', 'v1'), '-isystem', sysr,
-                      '-isystem', os.path.join(sysr, 'aarch64-linux-android')]
-        CXXONLY.append('-nostdinc++')
-        cxx = os.path.join(bindir, 'clang++.exe')
-        cc = os.path.join(bindir, 'clang.exe')
+        # PORT_ABI=ios (18/11, I2 du port natif complet sur iPhone) : le VRAI SDK iPhoneOS (extrait du Xcode.xip de
+        # l'utilisateur, C:/re4n/ios_sdk) et un clang assez recent pour sa libc++ : clang 23.1.2 de notre build de LLVM
+        # (C:/re4n/llvm/build-win64, lecture seule). Le clang 17 du NDK ne lit pas la libc++ du SDK (essai I1). Une seule
+        # libc++ (celle d'Apple) pour le moteur et le coeur, lies ensemble dans l'appli. Meme modele memoire que x86_64 (P32).
+        sdk = os.environ.get('PORT_IOS_SDK', 'C:/re4n/ios_sdk/iPhoneOS.sdk')
+        iosbin = os.environ.get('PORT_IOS_CLANG', 'C:/re4n/llvm/build-win64/bin')
+        COMMON[:0] = ['--target=arm64-apple-ios16.0', '-isysroot', sdk, '-miphoneos-version-min=16.0', '-fPIC']
+        cxx = os.path.join(iosbin, 'clang++.exe')
+        cc = os.path.join(iosbin, 'clang.exe')
     for t in (cxx, cc):
         if not os.path.exists(t):
             sys.exit('compilateur introuvable : %s' % t)

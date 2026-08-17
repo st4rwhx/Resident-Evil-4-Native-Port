@@ -4,6 +4,9 @@
 #include "eprintf.h"
 #include "main_mem.h"
 #include "db_log.h"
+#ifdef RE4_PORT
+#include <cstdarg>   // va_copy (iOS)
+#endif
 
 extern "C" {
 void OSReport(const char* fmt, ...);
