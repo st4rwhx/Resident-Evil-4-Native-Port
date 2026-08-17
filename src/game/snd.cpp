@@ -2230,6 +2230,13 @@ void SndSoftReset()
     Snd_soft_reset_req();
     while (Snd_soft_reset_ck() != 0) {
         Snd_iss_control();
+#ifdef RE4_PORT
+        // Portage (18/11, gel au GAME RESET / annulation du chargement) : sur la console l'interruption audio tombe pendant
+        // cette boucle et coupe les voix ; ici elle n'est livree que par OSDisableInterrupts (port/os.cpp) : on la laisse passer
+        // a chaque tour. Surtout pas OSYieldThread : les taches du jeu ne doivent pas tourner pendant la remise a zero
+        // (une tache laissee « en cours » faisait planter la remise suivante dans TaskExit).
+        OSRestoreInterrupts(OSDisableInterrupts());
+#endif
     }
     Snd_efx_req(0, 0);
 }
