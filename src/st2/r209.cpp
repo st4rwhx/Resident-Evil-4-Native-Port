@@ -148,15 +148,15 @@ int cEmWrapSetEmI(cEmWrap* w, int no, int list, int errOn, int chkDead, int setA
 // Door flag words at pG+0x51BC, addressed as an integer base plus the word offset (cast-then-deref).
 static inline u32 doorFlagBase()
 {
-    return (u32) &pG->flags_51BC;
+    return (u32)(uintptr_t)(&pG->flags_51BC);
 }
 static inline void FlagOn(u32 base, u32 no)
 {
-    *(u32*) (((no >> 5) << 2) + base) |= 0x80000000 >> (no & 31);
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) |= 0x80000000 >> (no & 31);
 }
 static inline void FlagOff(u32 base, u32 no)
 {
-    *(u32*) (((no >> 5) << 2) + base) &= ~(0x80000000 >> (no & 31));
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) &= ~(0x80000000 >> (no & 31));
 }
 
 // MSB-first bit `no` of the u32 array `a`.
@@ -315,7 +315,7 @@ void R209Init()
         r209_work.p->leader.setEm(0x7D, 3, 1, 0, 0);
         r209_work.p->head = SetObj00(ROOM_ARC_PTR(pG->pRoomArc, 0x20), ROOM_ARC_PTR(pG->pRoomArc, 0x21), &ofs, &rot0);
         OyaSetObj00(r209_work.p->head, r209_work.p->leader.getPtr(), 2);
-        EstSet((int) r209_work.p->head, -1, 0, 0, 0, 0x2D, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r209_work.p->head), -1, 0, 0, 0, 0x2D, 1, 2, 0, 0);
         r209_work.p->em[4].w.setEm(0x7E, 3, 1, 0, 0);
         r209_work.p->em[5].w.setEm(0x7F, 3, 1, 0, 0);
         r209_work.p->em[6].w.setEm(0x8B, 3, 1, 0, 0);
@@ -442,9 +442,9 @@ void R209Main()
                     // half-BASE_REGS, so idx takes r9 and the shift amount r0 like the target
                     // (`lwzx r11,r9,r28`); `fb` must be read before the shift constant's first use
                     // so the hoisted `mr r28,r20` copy keeps its LUID ahead of `lis r24,0x8000`.
-                    u32 fb = (u32) flags;
+                    u32 fb = (u32)(uintptr_t)(flags);
                     u32 ofs = ((u32) bit >> 5) << 2;
-                    *(u32*) (ofs + fb) |= 0x80000000 >> (bit & 31);
+                    *(u32*)port_ptr64((ofs + fb)) |= 0x80000000 >> (bit & 31);
                 }
             }
         }

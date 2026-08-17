@@ -168,7 +168,7 @@ void em27DmCk(cEm27* em)
             EmDmBloodSet2(em, 0x1F, 6, 0, 0, 0);
         } else {
             EmDmBloodSet2(em, 0x1F, 7, 0, 0, 0);
-            EstSet((int) em, -1, 0, 0, 0x1F, 8, 0, 0, (u32) em, (void*) zero);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1F, 8, 0, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(zero));
         }
     }
     em->alpha = 1.0f;
@@ -345,7 +345,7 @@ static void em27_R0_Init(cEm27* em)
     em->atari.flags &= 0xFDFF;
     em->setStatus(0xB);
     YarareInit(em, 0.0f, 0.0f, -100.0f, 100.0f, 250.0f, 5, 5);
-    EspDataLoad((u32) ARC(6), 0x1F, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(6)), 0x1F, 0);
     w->flags = zero;
     w->dashTimer = Rnd() % 150 + 210;
     w->chaseTimer = zero;
@@ -573,7 +573,7 @@ static void em27_R1_Jump(cEm27* em)
         } else {
             flag = 0x40;
         }
-        MotionSetCore(em, MOTION(em), m0, (int) m1, 5, flag, 0);
+        MotionSetCore(em, MOTION(em), m0, (int)(uintptr_t)(m1), 5, flag, 0);
         em->xFE++;
     }
     case 1:
@@ -610,7 +610,7 @@ static void em27_R1_Dm_Normal(cEm27* em)
             em->xFF = 1;
             flag = 0x40;
         }
-        MotionSetCore(em, MOTION(em), ARC(0x11), (int) ARC(0x1F), 3, flag, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x11), (int)(uintptr_t)(ARC(0x1F)), 3, flag, 0);
         em->xFE++;
     }
     case 1:
@@ -984,7 +984,7 @@ void em27WaterEffSet(cEm27* em)
     if (p->worldPos.y > h && p->oldWorldPos.y < h) {
         AddWaterPower(&em->pos, -0.5f);
         EstSet(0, -1, &v, &em->rot, 0x1F, 0, 0, 0, 0, 0);
-        EstSet((int) em, -1, 0, 0, 0x1F, 4, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1F, 4, 0, 0, (u32)(uintptr_t)(em), 0);
         SndCall(8, (Rnd() & 3) | 4, &em->pos, em->id, 0, em);
     }
     if (p->worldPos.y < h && p->oldWorldPos.y > h) {

@@ -18,7 +18,7 @@
 // motion.h declares the one-argument MotionMove; the routines pass a second argument (pl_knife.cpp).
 int MotionMoveI(cModel* m, int flag) asm("MotionMove");
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 #define WEP_ARC_PTR(no) PL_ARC_PTR((PlArc*) pG->pWepArc, no)
 #define LAUNCHER(pl) ((cObjLauncher*) (pl)->pWep->pObj)
 
@@ -344,7 +344,7 @@ static void wep13_r3_fire00(cPlayer* pl)
     obj = pl->pWep->pObj;
     obj->wep.mode = 2;
     obj->wep.step = 0;
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
     pitch = m3r[0];
     PlWepLockRand(pl, 2, &pitch, &pl->x400);
     m3r[1] = pitch;
@@ -424,7 +424,7 @@ static void wep13_r3_down00(cPlayer* pl)
         void* mot0 = pl->pMotTbl[0x55];
         void* mot1 = pl->pMotTbl[0x56];
 
-        mot3.set(pl, mot0, mot0, mot0, (int) mot1, hokan, 0, 4, 0);
+        mot3.set(pl, mot0, mot0, mot0, (int)(uintptr_t)(mot1), hokan, 0, 4, 0);
         mot3.move(m3r[0]);
         // The dead loop's NOTE_INSN_LOOP_END ends cse's extended block, so the QImode store
         // below gets its own `li r0,3` instead of a subreg of `hokan` (which would keep the

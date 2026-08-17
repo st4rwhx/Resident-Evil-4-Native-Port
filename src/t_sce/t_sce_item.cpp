@@ -1712,12 +1712,12 @@ void loadItemIdName(const char* path, char* names, char* names2)
         if (len > 62) len = 63;
         if (sys == 0) {
             no *= 64;
-            e = (char*) (no + (u32) names);
+            e = (char*)port_ptr64((no + (u32)(uintptr_t)(names)));
             memcpy(e, p, len);
             e[len] = 0;
         } else {
             no *= 64;
-            e = (char*) (no + (u32) names2);
+            e = (char*)port_ptr64((no + (u32)(uintptr_t)(names2)));
             memcpy(e - 0x40000, p, len);
             {
                 int zero = 0; // declared before the `e += len` so its `li` precedes the `subis` in LUID order

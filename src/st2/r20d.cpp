@@ -496,15 +496,15 @@ static void r20d_operateCrank(int no)
     // `idx*36 + work + 0x2c` (mult first): the target adds the scaled index to the work pointer and
     // keeps 0x2c as the displacement (`add r11,r28,r11; lfs f31,0x2c(r11)`); the zero-inits of the
     // loop state follow the switch (issued in the block before the beginEvent calls).
-    t = *(f32*) (idx * sizeof(cFence) + (u32) r20d_work.p + 0x2c);
+    t = *(f32*) (idx * sizeof(cFence) + (u32)(uintptr_t)(r20d_work.p) + 0x2c);
     spd = 0;
     lastMot = 0;
     accel = 0;
     seId = 0;
     ((cUnitEventView*) pPL)->beginEvent(0);
     ((cUnitEventView*) crank)->beginEvent(0);
-    pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x34), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x35));
-    crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2B), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x2C));
+    pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x34), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x35)));
+    crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2B), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x2C)));
     {
         Vec v = {427.81f, 0.0f, -563.42f};
         cPlayer* pl;
@@ -583,8 +583,8 @@ static void r20d_operateCrank(int no)
             if (frame >= n) {
                 frame = 0;
             }
-            pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x34), 3, (u16) frame, 5, (int) m0);
-            crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2B), 3, (u16) frame, 5, (int) m1);
+            pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x34), 3, (u16) frame, 5, (int)(uintptr_t)(m0));
+            crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2B), 3, (u16) frame, 5, (int)(uintptr_t)(m1));
         }
         if (MotionCheckCrossFrame(&pPL->mot, 0.0f) == 1) {
             SndCall(6, 0x35, 0, 0, 0, 0);
@@ -1003,7 +1003,7 @@ void cLantern::initLantern(void* arc, void* m1, void* m2, void* m3, void* m4, vo
             num++;
         }
     }
-    SceExec(0x12, (TaskFunc) cLantern::checkLantern, (int) this, 0, 2, 0);
+    SceExec(0x12, (TaskFunc) cLantern::checkLantern, (int)(uintptr_t)(this), 0, 2, 0);
 }
 
 void cLantern::checkLantern(cLantern* p)
@@ -1012,7 +1012,7 @@ void cLantern::checkLantern(cLantern* p)
         u32 i;
 
         for (i = 0; i < p->num; i++) {
-            cLanternUnit* u = (cLanternUnit*) (i * sizeof(cLanternUnit) + (u32) p->units);
+            cLanternUnit* u = (cLanternUnit*) (i * sizeof(cLanternUnit) + (u32)(uintptr_t)(p->units));
 
             if (u->active != 0) {
                 switch (u->state) {
@@ -1063,7 +1063,7 @@ void cLanternUnit::check()
     if (EatMgr.hitCheck(&a, &b, 0, 0, 0, 0) != 0) {
         return;
     }
-    ActBtn.set(0x17, 5, (int) cLanternUnit::throwLantern, (int) this, 0, 1, 1, 0);
+    ActBtn.set(0x17, 5, (int)(uintptr_t)(cLanternUnit::throwLantern), (int)(uintptr_t)(this), 0, 1, 1, 0);
 }
 
 // The enemy the lantern flies at (NULL: 10000 units in front of the player, out = that point).
@@ -1201,6 +1201,6 @@ void cLanternUnit::setThrowLantern(Vec* target)
     EspGetEfmTplAddr(0xF, &tpl);
     CalcParabolaVector(&spd, &from, target, PSVECDistance(&from, target) / 10.0f + 1.0f);
     obj = SetObj01(bin, tpl, &from, &rot, &spd, spd0, 50.0f, 0xD2, 5);
-    Obj01SetEst(obj, 0, 0x10, 3, 1, 1, 0, 0x14, (int) zero, (int) zero);
-    EstSet((int) obj, -1, 0, 0, 1, 0, 0, 0, (u32) obj, zero);
+    Obj01SetEst(obj, 0, 0x10, 3, 1, 1, 0, 0x14, (int)(uintptr_t)(zero), (int)(uintptr_t)(zero));
+    EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 0, 0, 0, (u32)(uintptr_t)(obj), zero);
 }

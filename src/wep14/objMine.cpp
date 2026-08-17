@@ -108,9 +108,9 @@ void cObjMine::moveFire()
         SndCall(2, 0, &pos, 0, 0, 0);
         BitOn(pG->flags_500C, 0x00800000);
         if (pG->wep_type == 0) {
-            EstSet((int) this, -1, 0, 0, 0x48, 0, 0, 0xA, 0, 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x48, 0, 0, 0xA, 0, 0);
         }
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     }
     if (MotionCheckCrossFrame(&mot, 24.0f)) {
@@ -199,7 +199,7 @@ void cObjMine::moveReload()
             break;
         }
         motionSet(m, 0, 0, 1, 0);
-        EstSet((int) this, -1, 0, 0, 0x48, 1, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x48, 1, 0, 0xA, 0, 0);
         switch (pG->x4FBA) {
         default:
             se = 2;

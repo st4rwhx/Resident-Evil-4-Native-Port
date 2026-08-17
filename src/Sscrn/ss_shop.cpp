@@ -339,7 +339,7 @@ void setShopMsgQueue(int on)
         if (on) {
             m->qbase = (MesQue*) *buf;
         } else {
-            m->qbase = (MesQue*) on;
+            m->qbase = (MesQue*)port_ptr64(on);
         }
     }
 }
@@ -415,7 +415,7 @@ void SsShopInit::move(SUB_SCREEN* wk)
     case 2:
         sscrnModelFree(wk);
         sscrnLightClear(wk);
-        wk->pShop = (SsArc*) (wk->aramSize + (u32) wk->pBuf);
+        wk->pShop = (SsArc*)port_ptr64((wk->aramSize + (u32) wk->pBuf));
         sscrnDataFilename(wk, "ss_shop.dat");
 #line 312 "D:/Bio4/Prog/ss_shop.cpp"
         shop_read_req = DVD_READ_N(wk->path, wk->pShop, 0, 0, 0, 0x10);

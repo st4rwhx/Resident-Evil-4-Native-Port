@@ -487,7 +487,7 @@ struct EmListEnt {
 
 #define EMLIST_ENT(no) ((EmListEnt*) &pG->emlist[(no) * 0x20])
 // The insert/paste searches address the entries tool-style (pG first in the add, shift index).
-#define EMLIST_ENT_I(no) ((EmListEnt*) ((u32) pG + ((no) << 5) + 0x52E8))
+#define EMLIST_ENT_I(no) ((EmListEnt*)port_ptr64(((u32)(uintptr_t)(pG) + ((no) << 5) + 0x52E8)))
 // Entry-to-entry copies are byte-pointer memcpys: the stores then alias pG, which is reloaded per iteration.
 #define EMLIST_COPY(dst, src) memcpy((u8*) pG + 0x52E8 + (dst) * 0x20, (u8*) pG + 0x52E8 + (src) * 0x20, 0x20)
 
@@ -1896,7 +1896,7 @@ static void emlist_r0_set_exit()
     for (i = 0; i < 255; i++) {
         int no = pG->emlist_no;
         if (no >= 0) {
-            u32* tbl = (u32*) (no * 0x20 + (u32) pG + 0x501C);  // pG->em_dead[no], tool style
+            u32* tbl = (u32*)port_ptr64((no * 0x20 + (u32)(uintptr_t)(pG) + 0x501C));  // pG->em_dead[no], tool style
             BitOff(tbl[i >> 5], 0x80000000 >> (i & 0x1F));
         }
     }
@@ -2768,7 +2768,7 @@ void emlistCamToPoin()
                   (EmList.wk->cam.param.pos.z - EmList.wk->cam.param.at.z) * (EmList.wk->cam.param.pos.z - EmList.wk->cam.param.at.z));
         EmList.wk->cam.param.fovy = cam->param.fovy;
         CameraSetOrientationUp(&EmList.wk->cam);
-        CamCtrl.x250 = (s32) &EmList.wk->cam;
+        CamCtrl.x250 = (s32)(uintptr_t)(&EmList.wk->cam);
         cam->param.at = EmList.wk->cam.param.at;
         cam->param.pos = EmList.wk->cam.param.pos;
         EmList.wk->cursorX = (Screen.x + Screen.width) * 0.5f;

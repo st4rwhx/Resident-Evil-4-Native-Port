@@ -187,7 +187,7 @@ static void r11f_EventS00()
     } else {
         EvtMgr.EvtReadExec("event/evd/r11fs02.evd", 0, 0);
         if (r11f_work->em0.setEm(0xF8, -1, 1, 1, 1)) {
-            Cckpt.life.flags = (u32) r11f_work->em0.getPtr();
+            Cckpt.life.flags = (u32)(uintptr_t)(r11f_work->em0.getPtr());
         }
         GamePointBossReset();
         {
@@ -334,7 +334,7 @@ extern "C" void Evt_R11FS00_Func(Event* e)
             e->CancelSet();
         } else {
             BitOff(pG->flags_58, 0x800);
-            ActBtn.set(0x25, 5, (int) r11f_EventS00_Act, 0, 0x46, r11f_actNo, 1, 0);
+            ActBtn.set(0x25, 5, (int)(uintptr_t)(r11f_EventS00_Act), 0, 0x46, r11f_actNo, 1, 0);
             pG->flags_170 &= ~0x100;
         }
     }
@@ -529,7 +529,7 @@ static void r11f_EventS10EndProc()
     }
     SceEventEnd(0);
     if (r11f_work->em0.isActive()) {
-        Cckpt.life.flags = (u32) r11f_work->em0.getPtr();
+        Cckpt.life.flags = (u32)(uintptr_t)(r11f_work->em0.getPtr());
     }
     SceExec(0x12, r11f_Eventxxx, 0, 0, 2, 0);
 }

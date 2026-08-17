@@ -261,7 +261,7 @@ static void em30_R0_Init(cEm30* em)
     em->lockOfs.x = 0.0f;
     em->lockOfs.y = 0.0f;
     em->lockOfs.z = 0.0f;
-    EspDataLoad((u32) ARC(0xE), 0x28, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(0xE)), 0x28, 0);
     w->neckAng = 0.0f;
     w->flags = 0;
     if ((int) em->flags_3C8 < 0) {

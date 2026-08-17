@@ -36,7 +36,7 @@ u16 MotionMoveF(cModel* m, int flag) asm("MotionMove");
 
 #line 1 "D:/Bio4/Prog/pl14.cpp"
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 #define SUBARC(no) PL_ARC_PTR(subSelf->subArc, no)
 #define OARC(no) PL_ARC_PTR(owner->subArc, no)
 #define EM ((cEm*) this)
@@ -151,7 +151,7 @@ void cSubLuis::init()
     voiceWait = 0;
     cnt = 0;
     x38D = 0;
-    EspDataLoad((u32) SUBARC(0x34 / 4), 7, 0);
+    EspDataLoad((u32)(uintptr_t)(SUBARC(0x34 / 4)), 7, 0);
     PlClothSetLuis(this, &luisHair);
     YarareInit(EM, 0.0f, -30.0f, 0.0f, 150.0f, 100.0f, 2, 1);
     YarareAdd(EM, &hit[0], 0.0f, 0.0f, 0.0f, 170.0f, 120.0f, 3, 1);
@@ -389,7 +389,7 @@ void cRoutine::moveDie()
 {
     switch (owner->xFD) {
     case 0:
-        MotionSetCore(owner, &owner->mot, OARC(0xCC / 4), (int) OARC(0xD0 / 4), 5, 1, 0);
+        MotionSetCore(owner, &owner->mot, OARC(0xCC / 4), (int)(uintptr_t)(OARC(0xD0 / 4)), 5, 1, 0);
         SndCall(1, 0xD, &owner->getPartsPtr(4)->worldPos, owner->id, 0, 0);
         owner->dmType |= 0x80;
         owner->atari.partsNo = 4;
@@ -1343,7 +1343,7 @@ void cSubLuis::equipWeapon()
 
 void cSubLuis::endDamage()
 {
-    if ((flags & 0x40) && dmgType && ((cEm*) dmgType)->dmType) cnt = 30;
+    if ((flags & 0x40) && dmgType && ((cEm*)port_ptr64(dmgType))->dmType) cnt = 30;
     flags &= ~0x40;
     action.set(0);
     routine.end();
@@ -1503,12 +1503,12 @@ void luisItemInit(cObj* obj)
 
 void cObjLuisItem::init(Vec* p, f32 rotY)
 {
-    modelInit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc));
+    modelInit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)));
     setPos(p);
     rot.y = rotY;
     rot.x = 0.0f;
     rot.z = 0.0f;
-    EstSet((int) this, -1, 0, 0, 0, 0x2D, 0, 0x3C, (u32) this, 0);
+    EstSet((int)(uintptr_t)(this), -1, 0, 0, 0, 0x2D, 0, 0x3C, (u32)(uintptr_t)(this), 0);
     PSVECSubtract(&pPL->pos, &pos, &LITEM->spd);
     PSVECScale(&LITEM->spd, &LITEM->spd, 0.07f);
     LITEM->acc.x = 0.0f;
@@ -1539,9 +1539,9 @@ void cObjLuisItem::move()
         }
         LITEM->timer++;
         if (LITEM->timer > 150) {
-            EffectEspDelete(0, 0x3C, (u32) this, 0);
-            EffectEspgenDelete(0, 0x3C, (int) this);
-            EffectEfmDelete(0, 0x3C, (int) this);
+            EffectEspDelete(0, 0x3C, (u32)(uintptr_t)(this), 0);
+            EffectEspgenDelete(0, 0x3C, (int)(uintptr_t)(this));
+            EffectEfmDelete(0, 0x3C, (int)(uintptr_t)(this));
             ObjMgr.destroy(this);
         }
         break;
@@ -1565,9 +1565,9 @@ void cObjLuisItem::move()
             item = 4;
             break;
         }
-        EffectEspDelete(0, 0x3C, (u32) this, 0);
-        EffectEspgenDelete(0, 0x3C, (int) this);
-        EffectEfmDelete(0, 0x3C, (int) this);
+        EffectEspDelete(0, 0x3C, (u32)(uintptr_t)(this), 0);
+        EffectEspgenDelete(0, 0x3C, (int)(uintptr_t)(this));
+        EffectEfmDelete(0, 0x3C, (int)(uintptr_t)(this));
         SceAtCreateItemAt(&pos, item, 0, -1, -1, 0, -1);
         ObjMgr.destroy(this);
         break;

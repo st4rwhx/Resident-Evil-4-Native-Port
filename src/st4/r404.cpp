@@ -234,12 +234,12 @@ u8 r404_initEmSet()
     // real mulli (gcse PREs only the first occurrence into the block between the template copies),
     // and the re-set chain's output/anti dependences give the target's issue order.
     u32 t = n * 12;
-    t += (u32) &pos;
-    Vec* b = (Vec*) t;
+    t += (u32)(uintptr_t)(&pos);
+    Vec* b = (Vec*)port_ptr64(t);
     t = n * 12;
-    t += (u32) &pos;
+    t += (u32)(uintptr_t)(&pos);
     t += 0x28;
-    Vec* r = (Vec*) t;
+    Vec* r = (Vec*)port_ptr64(t);
     cPlayer* pl = pPLS;
 
     pl->setPos(b);

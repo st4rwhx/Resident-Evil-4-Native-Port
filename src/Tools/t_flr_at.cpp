@@ -1311,7 +1311,7 @@ void ToolFlrAt()
         eprintf(pW->x, pW->y, 5, 0, "FLOOR ATARI EDIT TOOL");
         pW->y += 0x10;
         if (pW->editType >= 0) {
-            eprintf(pW->x, pW->y, 6, 0, "%s", *(const char**) (pW->editType * 4 + (u32) flrAtTitleName));
+            eprintf(pW->x, pW->y, 6, 0, "%s", *(const char**) (pW->editType * 4 + (u32)(uintptr_t)(flrAtTitleName)));
         }
         flrAtAreaEdit_disp();
         pW->y += 0x20;

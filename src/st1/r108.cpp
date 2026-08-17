@@ -56,19 +56,19 @@ static R108Symbol r108_symbol[8] = {
 // store: it is not a struct access, so pG is reloaded after every store and per loop iteration).
 static inline u32 evtFlagBase()
 {
-    return (u32) &pG->flags_174;
+    return (u32)(uintptr_t)(&pG->flags_174);
 }
 static inline u32 EvtFlagChk(u32 base, int no)
 {
-    return *(u32*) (((no >> 5) << 2) + base) & (0x80000000 >> (no & 31));
+    return *(u32*)port_ptr64((((no >> 5) << 2) + base)) & (0x80000000 >> (no & 31));
 }
 static inline void EvtFlagXor(u32 base, int no)
 {
-    *(u32*) (((no >> 5) << 2) + base) ^= 0x80000000 >> (no & 31);
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) ^= 0x80000000 >> (no & 31);
 }
 static inline void EvtFlagOff(u32 base, int no)
 {
-    *(u32*) (((no >> 5) << 2) + base) &= ~(0x80000000 >> (no & 31));
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) &= ~(0x80000000 >> (no & 31));
 }
 // Scroll objects fetched into the room's pointers (references: the address is evaluated before the
 // call and the flag stores go through scalar references, which reload the other pointer after them)
@@ -196,7 +196,7 @@ static void r108_initChurchBell()
     cEmHit* hit;
 
     bell = SmdGetObjPtr(0x1C);
-    hit = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &bell->pos, &bell->rot, 1);
+    hit = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &bell->pos, &bell->rot, 1);
     {
         // `const`: the single-use constants are loaded in declaration order (w, x, h, z), not in
         // argument order (the r103 checkCloseCover lever)

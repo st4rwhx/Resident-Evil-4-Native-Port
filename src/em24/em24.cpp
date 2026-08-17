@@ -177,7 +177,7 @@ void cEm24::move()
                             w->splashTimer--;
                         } else {
                             w->splashTimer = 2;
-                            EstSet((int) this, -1, 0, 0, 0x1C, 4, 0, 0, (u32) this, 0);
+                            EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x1C, 4, 0, 0, (u32)(uintptr_t)(this), 0);
                         }
                     }
                 }
@@ -211,7 +211,7 @@ static void em24_R0_Init(cEm24* em)
     em->scale.z = scale;
     zero = 0;
     two = 2;
-    EspDataLoad((u32) ARC(4), 0x1C, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(4)), 0x1C, 0);
     {
         static const Vec ofs = { 0.0f, 0.0f, 0.0f };
         static const Vec size = { 1000.0f, 1000.0f, 1000.0f };
@@ -285,14 +285,14 @@ static void em24_R1_BoxWait(cEm24* em)
         }
         break;
     case 2:
-        MotionSetCore(em, MOTION(em), ARC(0x11), (int) ARC(0x18), 3, 1, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x11), (int)(uintptr_t)(ARC(0x18)), 3, 1, 0);
         w->spd.x = 0.0f;
         w->spd.y = -100.0f;
         w->spd.z = 200.0f;
         w->motEnd = 0;
         w->atkHit = 0;
         SndCall(8, 4, &em->pos, em->id, 0, em);
-        EstSet((int) em, -1, 0, 0, 0x1C, 5, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1C, 5, 0, 0, (u32)(uintptr_t)(em), 0);
         em->xFE++;
     case 3: {
         int two = 2;
@@ -466,7 +466,7 @@ static void em24_R0_Die(cEm24* em)
         }
         if (em->xFF) {
             MotionSetCore(em, MOTION(em), ARC(0x15), 0, 3, 1, 0);
-            EstSet((int) em, -1, 0, 0, 0x1C, 7, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1C, 7, 0, 0, (u32)(uintptr_t)(em), 0);
         } else {
             MotionSetCore(em, MOTION(em), ARC(0x13), 0, 3, 1, 0);
         }
@@ -486,9 +486,9 @@ static void em24_R0_Die(cEm24* em)
 
         w->timer = 60;
         if (em->xFF) {
-            EstSet((int) em, -1, 0, 0, 0x1C, 3, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1C, 3, 0, 0, (u32)(uintptr_t)(em), 0);
         } else {
-            EstSet((int) em, -1, 0, 0, 0x1C, 1, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1C, 1, 0, 0, (u32)(uintptr_t)(em), 0);
         }
         pos = em->pos;
         switch (Rnd() & 0xF) {
@@ -558,7 +558,7 @@ int em24AtkCk(cEm24* em, Vec* a, Vec* b, int no)
             if (hit & 1) {
                 EmPlBloodSet2(em, a, 1, 0x1C, 6);
                 QuakeExec(0, 0, 5, 22.0f, 2);
-                VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+                VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
                 return 1;
             }
         }

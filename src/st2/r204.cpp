@@ -181,13 +181,13 @@ void R204Init()
                         r204_work.p->head[i]->setNoSuspend(1);
                         OyaSetObj00(r204_work.p->head[i], r204_work.p->em[7].getPtr(), 2);
                         r204_work.p->esp[i] = EspPullCoreKind();
-                        EstSet((int) r204_work.p->head[i], -1, 0, 0, 0, 0x2D, 0x801, r204_work.p->esp[i], 0, 0);
+                        EstSet((int)(uintptr_t)(r204_work.p->head[i]), -1, 0, 0, 0, 0x2D, 0x801, r204_work.p->esp[i], 0, 0);
                     } else {
                         r204_work.p->head[i] = SetObj00(ROOM_ARC_PTR(pG->pArc, 8), ROOM_ARC_PTR(pG->pArc, 9), &ofs, &rot);
                         r204_work.p->head[i]->setNoSuspend(1);
                         OyaSetObj00(r204_work.p->head[i], r204_work.p->em[i].getPtr(), 2);
                         r204_work.p->esp[i] = EspPullCoreKind();
-                        EstSet((int) r204_work.p->head[i], -1, 0, 0, 1, 0x1F, 0x801, r204_work.p->esp[i], 0, 0);
+                        EstSet((int)(uintptr_t)(r204_work.p->head[i]), -1, 0, 0, 1, 0x1F, 0x801, r204_work.p->esp[i], 0, 0);
                     }
                 }
                 if (0x4A + i == 0x51) {
@@ -214,10 +214,10 @@ void R204Init()
         SmdGetObjPtr(0x1C)->be_flag |= 0x20;
         SmdGetObjPtr(0x1C)->rot.y = -2.72f;
         SceAtSetEnable(0xD, 0);
-        EstSet(0, -1, 0, 0, 1, 1, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 1, 1, 0, (u32)(uintptr_t)(zero), zero);
         SmdSetTrans(0x3C, 0);
         SmdSetTrans(0x3D, 1);
-        EstSet(0, -1, 0, 0, 1, 4, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 4, 1, 0, (u32)(uintptr_t)(zero), zero);
     } else {
         SmdSetTrans(0x14, 0);
         SmdSetTrans(0x17, 0);
@@ -232,11 +232,11 @@ void R204Init()
         SceAtSetEnable(0x12, 1);
         SceAtSetEnable(0x13, 1);
         zero = NULL;
-        EstSet(0, -1, 0, 0, 1, 2, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 2, 1, 0, (u32)(uintptr_t)(zero), zero);
         SceAtSetEnable(0xD, 1);
         SmdSetTrans(0x3C, 1);
         SmdSetTrans(0x3D, 0);
-        EstSet(0, -1, 0, 0, 1, 3, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 3, 1, 0, (u32)(uintptr_t)(zero), zero);
     }
     if (pG->emlist_no == 3) {
         cEm* em0;
@@ -267,7 +267,7 @@ void R204Init()
         SmdGetObjPtr(0x39)->pos.y = 5300.0f;
         SceAtSetEnable(0xF, 0);
     }
-    SceSetRoomExitFunc((int) door_rsf_off, 0);
+    SceSetRoomExitFunc((int)(uintptr_t)(door_rsf_off), 0);
     SceExec(0x12, (TaskFunc) r204_nige_check, 0, 0, 2, 0);
 }
 

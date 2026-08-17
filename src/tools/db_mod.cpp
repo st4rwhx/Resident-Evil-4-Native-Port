@@ -735,7 +735,7 @@ void dbmodGetFilenames()
             if (s) {
                 pDbModState.p->digits[i] = strspn(s, "#");
             } else {
-                pDbModState.p->digits[i] = (s8) (int) s;
+                pDbModState.p->digits[i] = (s8) (int)(uintptr_t)(s);
             }
             if (pDbModState.p->digits[i] != 0) {
                 if (pDbModState.p->motNum[i] > 0) {
@@ -2661,7 +2661,7 @@ static int dbmod_p_info()
     static u16 pinfoParts[FILE_NUM];
     static u8 pinfoType[FILE_NUM];
     DB_EM* em = &dbModSlot[pDbModState.p->no];
-    u32 em2 = (u32) em; // COMPILER-DIFF: the p-info zero colour (see the j-loop below)
+    u32 em2 = (u32)(uintptr_t)(em); // COMPILER-DIFF: the p-info zero colour (see the j-loop below)
     cEm* model = em->pEm;
     JOY* joy = &Joy[0];
     MotionWork* mw;
@@ -2770,7 +2770,7 @@ static int dbmod_p_info()
                 // ebb), cprop turns it into `em - em` (not a constant, so PRE hoists the one expression of both
                 // calls into the preheader) and cse2 folds the hoisted pseudo to 0.
                 if (j == 0) {
-                    eprintf2(dbmodPinfoW, dbmodPinfoH, dbmodPinfoX, dbmodPinfoY + (i + 1) * dbmodPinfoH, (int) ((u32) em - em2), 0, "%s %08x",
+                    eprintf2(dbmodPinfoW, dbmodPinfoH, dbmodPinfoX, dbmodPinfoY + (i + 1) * dbmodPinfoH, (int) ((u32)(uintptr_t)(em) - em2), 0, "%s %08x",
                              dbmodPinfoLabel[j], p->motParts.flags);
                 } else {
                     switch (j) {
@@ -2787,7 +2787,7 @@ static int dbmod_p_info()
                         v = &p->worldPos;
                         break;
                     }
-                    eprintf2(dbmodPinfoW, dbmodPinfoH, dbmodPinfoX, dbmodPinfoY + (i + j + 1) * dbmodPinfoH, (int) ((u32) em - em2), 0,
+                    eprintf2(dbmodPinfoW, dbmodPinfoH, dbmodPinfoX, dbmodPinfoY + (i + j + 1) * dbmodPinfoH, (int) ((u32)(uintptr_t)(em) - em2), 0,
                              "%s (%f, %f, %f)", dbmodPinfoLabel[j], v->x, v->y, v->z);
 #line 3101
                 }
@@ -2901,7 +2901,7 @@ void dbModMotionSetSeq(int no, void* seq, int flag, int frame)
     cEm* model = em->pEm;
 
     em->mot[0].flags = flag;
-    MotionSetCore(model, &model->mot, em->motData[0], (int) seq, 0, (u16) (flag | 0x200), (u16) frame);
+    MotionSetCore(model, &model->mot, em->motData[0], (int)(uintptr_t)(seq), 0, (u16) (flag | 0x200), (u16) frame);
     MotionGetPosition(model, &model->pos, &model->rot);
 }
 

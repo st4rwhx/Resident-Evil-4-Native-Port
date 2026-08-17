@@ -126,23 +126,23 @@ static inline u32 flagBit(u32 f, u32 bit)
 // word offset (cast-then-deref: not a struct access).
 static inline u32 evtFlagBase()
 {
-    return (u32) &pG->flags_174;
+    return (u32)(uintptr_t)(&pG->flags_174);
 }
 static inline u32 doorFlagBase()
 {
-    return (u32) &pG->flags_51BC;
+    return (u32)(uintptr_t)(&pG->flags_51BC);
 }
 static inline u32 FlagChk(u32 base, u32 no)
 {
-    return *(u32*) (((no >> 5) << 2) + base) & (0x80000000 >> (no & 31));
+    return *(u32*)port_ptr64((((no >> 5) << 2) + base)) & (0x80000000 >> (no & 31));
 }
 static inline void FlagOn(u32 base, u32 no)
 {
-    *(u32*) (((no >> 5) << 2) + base) |= 0x80000000 >> (no & 31);
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) |= 0x80000000 >> (no & 31);
 }
 static inline void FlagOff(u32 base, u32 no)
 {
-    *(u32*) (((no >> 5) << 2) + base) &= ~(0x80000000 >> (no & 31));
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) &= ~(0x80000000 >> (no & 31));
 }
 
 // The four roof-trap flags (event flags 3..6).
@@ -532,7 +532,7 @@ static void r212_RoofTrapWatcher()
 
     for (i = 0; i < 4; i++) {
         PSVECSubtract(&ofs[i], &o->pos, &d);
-        r212_work.p->hit[i] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &d, 0, 0);
+        r212_work.p->hit[i] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &d, 0, 0);
         r212_work.p->hit[i]->setParent(o, 0, 0);
         YarareInit(r212_work.p->hit[i], 0.0f, 0.0f, 0.0f, 400.0f, 0.0f, 0, 1);
         EstSet(0, -1, 0, 0, 1, (u8) prm[i][0], 0x800, (u8) prm[i][1], 0, 0);
@@ -577,13 +577,13 @@ static void r212_AdhleyToPointWait()
         pG->flags_174 |= 0x01000000;
         IntSet(r212_work.p->mesNo, 5);
         if (R212_TRAP_FLAGS_NONE(pG->flags_174)) {
-            SetSubAux((int) r212_AshleyPointTo, 0);
+            SetSubAux((int)(uintptr_t)(r212_AshleyPointTo), 0);
         }
     }
     SceSleep(300);
     if (!(pG->flags_174 & 0x20000000)) {
         r212_work.p->mesNo = 4;
-        SetSubAux((int) r212_AshleyPointTo, 0);
+        SetSubAux((int)(uintptr_t)(r212_AshleyPointTo), 0);
     }
 }
 
@@ -633,7 +633,7 @@ static void r212_AshleyPointToCheck()
     SceSleep(150);
     IntSet(r212_work.p->mesNo, 3);
     if (R212_TRAP_FLAGS_NONE(pG->flags_174)) {
-        SetSubAux((int) r212_AshleyPointTo, 0);
+        SetSubAux((int)(uintptr_t)(r212_AshleyPointTo), 0);
     }
 }
 
@@ -664,18 +664,18 @@ static void r212_DrillAppearCheck()
         v.z = 0.0f;
         sub->setAng(&v);
     }
-    SetSubAux((int) r212_AshleyDrillAction, 0);
+    SetSubAux((int)(uintptr_t)(r212_AshleyDrillAction), 0);
     CamCtrl.CutCall(9);
     pG->flags_174 &= ~0x40000000;
     SceSetEventCancel(1, (TaskFunc) r212_DrillAppearCheckEndProc, 0, 1, 1);
-    EstSet(0, -1, 0, 0, 1, 0xD, 0, 0, zero, (void*) zero);
+    EstSet(0, -1, 0, 0, 1, 0xD, 0, 0, zero, (void*)port_ptr64(zero));
     r212_work.p->door[2].setClose();
     while ((st = r212_work.p->door[2].getStatus()) != 0) {
         SceSleep(1);
     }
     SceSleep(30);
     r212_work.p->se = RoomSeCall(0, &SmdGetObjPtr(0x2C)->pos, 0, 0x80000000, 0);
-    EstSet(0, -1, 0, 0, 1, 9, 1, 2, st, (void*) st);
+    EstSet(0, -1, 0, 0, 1, 9, 1, 2, st, (void*)port_ptr64(st));
     SmdGetObjPtr(0x32)->be_flag &= ~2;
     CamCtrl.CutCall(4);
     SceSleep(10);

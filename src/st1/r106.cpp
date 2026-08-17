@@ -153,7 +153,7 @@ extern "C" void r106_setRollingStone()
     rot.x = 0.0f;
     rot.y = 1.813549f;
     rot.z = 0.0f;
-    EspDataLoad((u32) ROOM_ARC_PTR(pG->pRoomArc, 0x2E), 0xC8, 0);
+    EspDataLoad((u32)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x2E)), 0xC8, 0);
     if (EspGetEfmTplAddr(0x20, &tpl) == 0) {
         pLog->err(0, 0, "IWA init: EFM[%02x] TPL not regist.", 0x20);
         return;
@@ -471,9 +471,9 @@ static void r106_setCloset()
             Vec sp = {157059.0f, -9245.0f, -43597.0f};
 
             SndCall(6, 4, &sp, 0, 0, 0);
-            SceExec(0x12, (TaskFunc) r106_shakeClosetBody, (int) body, 0, 2, 0);
-            SceExec(0x12, (TaskFunc) r106_shakeClosetDoorR, (int) doorR, 0, 2, 0);
-            SceExec(0x12, (TaskFunc) r106_shakeClosetDoorL, (int) doorL, 0, 2, 0);
+            SceExec(0x12, (TaskFunc) r106_shakeClosetBody, (int)(uintptr_t)(body), 0, 2, 0);
+            SceExec(0x12, (TaskFunc) r106_shakeClosetDoorR, (int)(uintptr_t)(doorR), 0, 2, 0);
+            SceExec(0x12, (TaskFunc) r106_shakeClosetDoorL, (int)(uintptr_t)(doorL), 0, 2, 0);
             cnt = ((Rnd() >> 2) & 0xFF) + 5;
         }
         cnt--;

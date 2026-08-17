@@ -26,7 +26,7 @@ void Wep47_init(cModel* m)
     pl->pWep->pObj = obj;
     obj->init(pl);
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x8), 0x44, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x8)), 0x44, 1);
     PlWepMot[0] = WEP_ARC_PTR(0xE);
     PlWepMot[1] = WEP_ARC_PTR(0xE);
     PlWepMot[2] = WEP_ARC_PTR(0xE);
@@ -65,7 +65,7 @@ void cObjHkSniper::moveFire()
         SndCall(2, 0, &pParts->worldPos, 0, 0, 0);
         SndCall(2, 4, &pParts->worldPos, 0, 0, 0);
         BitOn(pG->flags_500C, 0x00800000);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     }
 }
@@ -132,7 +132,7 @@ void cObjHkSniper::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x3D));
     PSet(pl->pMotTbl[0x3F], WEP_ARC_PTR(0x38));
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x39));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0xD));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0xD)));
     pl->setRightHand(1);
     pl->setLeftHand(2);
 }

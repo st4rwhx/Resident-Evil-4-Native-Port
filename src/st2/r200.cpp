@@ -285,7 +285,7 @@ static void r200_execTruckEvent_end()
         if ((pG->flags_174 & 0x80000000) == 0) {
             cEm* em = r200_work.p->em0.getPtr();
 
-            EstSet((int) em, -1, 0, 0, 1, 0x20, 0, 0, (u32) r200_work.p->em0.getPtr(), 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x20, 0, 0, (u32)(uintptr_t)(r200_work.p->em0.getPtr()), 0);
         }
         r200_work.p->em0.setNoSuspend(0);
         r200_work.p->em1.setNoSuspend(0);
@@ -330,14 +330,14 @@ static void r200_execTruckEvent()
     {
         cEm* em = r200_work.p->em0.getPtr();
 
-        EstSet((int) em, -1, 0, 0, 1, 0x20, 0, 0, (u32) r200_work.p->em0.getPtr(), 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x20, 0, 0, (u32)(uintptr_t)(r200_work.p->em0.getPtr()), 0);
     }
-    EstSet((int) r200_work.p->em0.getPtr(), -1, 0, 0, 1, 1, 1, (u8) r200_work.p->eff0C, 0, 0);
+    EstSet((int)(uintptr_t)(r200_work.p->em0.getPtr()), -1, 0, 0, 1, 1, 1, (u8) r200_work.p->eff0C, 0, 0);
     SceSleep(70);
     {
         cEm* em = r200_work.p->em0.getPtr();
 
-        EstSet((int) em, -1, 0, 0, 1, 0x22, 1, 0, (u32) r200_work.p->em0.getPtr(), 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x22, 1, 0, (u32)(uintptr_t)(r200_work.p->em0.getPtr()), 0);
     }
     while (CamCtrl.IsMotionEnd() == 0) {
         SceSleep(1);

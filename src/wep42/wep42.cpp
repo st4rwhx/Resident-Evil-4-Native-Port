@@ -8,7 +8,7 @@
 #include "esp.h"
 #include "pad.h"
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 void PlGrenadeMove(cPlayer* pl);   // wep/pl_grenade.cpp
 cObjWep* equipWeapon(cPlayer* pl);
@@ -34,7 +34,7 @@ void Wep42_init(cModel* m)
     } else {
         pl->pWep->pObj = obj;
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x4D, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x4D, 1);
         PlWepMot[0] = WEP_ARC_PTR(0x11);
         PlWepMot[1] = WEP_ARC_PTR(0x14);
         PlWepMot[2] = WEP_ARC_PTR(0x17);
@@ -198,7 +198,7 @@ void cObjHandGre::setMotion(cPlayer* pl)
     } else {
         hand = PL_ARC_PTR(pG->pPlArc, 0x12);
     }
-    pl->pBody->initWepHand((u32) hand);
+    pl->pBody->initWepHand((u32)(uintptr_t)(hand));
     pl->setRightHand(1);
     pl->setLeftHand(0);
 }

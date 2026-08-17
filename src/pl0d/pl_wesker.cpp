@@ -18,7 +18,7 @@ extern "C" void OSReport(const char* fmt, ...);
         *(volatile u32*) 0x11111111 = 0;                          \
     }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 // Store through a reference: a scalar (non-struct) MEM, so pG is reloaded after every store.
 static inline void PSet(void*& d, void* v) { d = v; }
@@ -103,7 +103,7 @@ cPlWesker::cPlWesker()
     init1();
     setMotion();
     arc = pG->pPlArc;
-    EspDataLoad((u32) PL_ARC_PTR(arc, 0x1A), 3, 0);
+    EspDataLoad((u32)(uintptr_t)(PL_ARC_PTR(arc, 0x1A)), 3, 0);
     startUp();
     pFootShadowTbl = pl_fs_tbl;
 }
@@ -135,7 +135,7 @@ void cPlWesker::setModel()
 {
     cModelInfo* info;
 
-    info = (cModelInfo*) modelInit(PL_ARC(4), PL_ARC(5));
+    info = (cModelInfo*)port_ptr64(modelInit(PL_ARC(4), PL_ARC(5)));
     if (!VALID_PTR(info)) {
         pLog->err(0, 0, "cPlWesker::setModel() failed.");
         return;
@@ -185,7 +185,7 @@ void cPlWesker::setRightHand(int no)
         data = pBody->pWepHand;
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     if ((info = ModInfoMgr.create(data, PL_ARC(0x11))) != 0) {
@@ -223,7 +223,7 @@ void cPlWesker::setLeftHand(u32 no)
         data = PL_ARC(0x18);
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     pBody->leftNoPrev = pBody->leftNo;

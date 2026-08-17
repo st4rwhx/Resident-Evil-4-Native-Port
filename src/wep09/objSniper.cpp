@@ -134,7 +134,7 @@ void cObjSniper::moveReload()
         wep.step = 1;
     }
     if (MotionCheckCrossFrame(&mot, 10.0f)) {
-        EstSet((int) this, -1, 0, 0, 0x3D, 0, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x3D, 0, 0, 0xA, 0, 0);
         ItemMgr.reload();
     }
 }
@@ -163,7 +163,7 @@ void cObjSniper::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x3D));
     PSet(pl->pMotTbl[0x3F], WEP_ARC_PTR(0x38));
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x39));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0xD));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0xD)));
     pl->setRightHand(1);
     pl->setLeftHand(2);
 }

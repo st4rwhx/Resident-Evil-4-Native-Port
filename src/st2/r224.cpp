@@ -465,7 +465,7 @@ static void futa_move()
     zero = 0;
     CamCtrl.CutCall(5);
     SceEventStart(1);
-    EstSet(0, -1, 0, 0, 1, 0x40, 1, 2, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 0x40, 1, 2, (u32)(uintptr_t)(zero), zero);
     gnd_open();
     SceSleep(60);
     CamCtrl.Comeback(0);
@@ -481,7 +481,7 @@ static void futa_move()
     SceSleep(15);
     pG->flags_174 &= 0x7FFFFFFF;
     SceSleep(135);
-    EstSet(0, -1, 0, 0, 1, 0x3F, 1, 2, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 0x3F, 1, 2, (u32)(uintptr_t)(zero), zero);
     gnd_close();
     if (RsfCheck(G_ROOM_ID, 0)) {
         pG->flags_174 |= 0x10000000;
@@ -608,7 +608,7 @@ static void reva_move()
             PSMTXMultVecSR(mtx, &d, &d);
             PSVECAdd(&d, &cam->param.pos, &cam->param.at);
             CameraSetOrientationUp(&r224_work.p->cam);
-            CamCtrl.x250 = (s32) &r224_work.p->cam;
+            CamCtrl.x250 = (s32)(uintptr_t)(&r224_work.p->cam);
             if (Key.trg & 0x00080000) {
                 pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x28), 5, 0, 1, 0);
                 frames = (u32) MotionGetMaxFrame(&pPL->mot);

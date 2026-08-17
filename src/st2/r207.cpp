@@ -323,7 +323,7 @@ void r207_EmMoveCk()
     } else {
         return;
     }
-    SceExec(0x12, (TaskFunc) r207_GotoPos, (int) e, 0, 2, 0);
+    SceExec(0x12, (TaskFunc) r207_GotoPos, (int)(uintptr_t)(e), 0, 2, 0);
     r207_work.p->timer = 150;
 }
 
@@ -767,7 +767,7 @@ static void r207_WallMove()
     CamCtrl.CutCall(3);
     SceSetEventCancel(1, (TaskFunc) r207_WallMoveEndProc, 0, -1, 1);
     RoomSeCall(0, &obj->pos, 0, 0, obj);
-    EstSet(0, -1, 0, 0, 1, 0, 1, 0, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 0, 1, 0, (u32)(uintptr_t)(zero), zero);
     while (obj->pos.z < -9500.0f) {
         obj->pos.z += 30.0f;
         obj->matUpdate();

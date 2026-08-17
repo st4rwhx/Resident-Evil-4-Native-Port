@@ -344,11 +344,11 @@ int cManager<T>::arrayPop()
     }
     Debug_free(pArray);
     // statement order found by brute force (zero stores last in the schedule, pAlive restored last)
-    pArray = (T*) x18;
+    pArray = (T*)port_ptr64(x18);
     nArray = x1C;
     x18 = 0;
     x1C = 0;
-    pAlive = (T*) x14;
+    pAlive = (T*)port_ptr64(x14);
     return 1;
 }
 

@@ -40,7 +40,7 @@ void Wep38_init(cModel* m)
         pl->pWep->pObj = obj;
         obj->init(pl);
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x35, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x35, 1);
         PlWepMot[0] = WEP_ARC_PTR(0x26);
         PlWepMot[1] = WEP_ARC_PTR(0x27);
         PlWepMot[2] = WEP_ARC_PTR(0x28);
@@ -107,14 +107,14 @@ void cObjRuger::moveFire()
         SndCall(2, se, &pParts->worldPos, 0, 0, 0);
         switch (pG->wep_type) {
         case 0:
-            EstSet((int) this, -1, 0, 0, 0x35, 0, 0, 0xA, 0, 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x35, 0, 0, 0xA, 0, 0);
             break;
         case 1:
-            EstSet((int) this, -1, 0, 0, 0x35, 1, 0, 0xA, 0, 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x35, 1, 0, 0xA, 0, 0);
             break;
         }
         setCartridge();
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     }
     if (MotionGetState(this)) {
@@ -211,7 +211,7 @@ void cObjRuger::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x3F], WEP_ARC_PTR(0x19));
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x1A));
     PSet(pl->pMotTbl[0x3D], PL_ARC_PTR(pG->pPlArc, 0x5E));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0xA));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0xA)));
     pl->setRightHand(1);
     pl->setLeftHand(0);
 }

@@ -312,7 +312,7 @@ void save_main(const char* path, ConsTable* t)
     }
     buf[0] = t->num;
     memcpy(buf + 1, t->enable, ((t->num >> 5) << 2) + 4);
-    memcpy((u32*) (((t->num >> 5) << 2) + (u32) buf + 8), t->val, t->num * 4);
+    memcpy((u32*) (((t->num >> 5) << 2) + (u32)(uintptr_t)(buf) + 8), t->val, t->num * 4);
     HDWrite(path, buf, size);
     Debug_free(buf);
     t->num = 0xC;
@@ -385,7 +385,7 @@ void read_main(const char* path, ConsTable* t)
     {
         u32 ofs = size + 8;
 
-        memcpy(t->val, (u32*) (ofs + (u32) buf), t->num * 4);
+        memcpy(t->val, (u32*) (ofs + (u32)(uintptr_t)(buf)), t->num * 4);
     }
     Mem_free(buf);
     t->num = 0xC;

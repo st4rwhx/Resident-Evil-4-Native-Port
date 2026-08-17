@@ -23,7 +23,7 @@ extern "C" void OSReport(const char* fmt, ...);
         *(volatile u32*) 0x11111111 = 0;                          \
     }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 // Store through a reference: a scalar (non-struct) MEM, so pG is reloaded after every store.
 static inline void PSet(void*& d, void* v) { d = v; }
@@ -62,7 +62,7 @@ extern "C" void setTexRender(cModelInfo* info)
 cPlKlauser::cPlKlauser()
 {
     init0();
-    EspDataLoad((u32) PL_ARC(0x1A), 3, 0);
+    EspDataLoad((u32)(uintptr_t)(PL_ARC(0x1A)), 3, 0);
     setModel();
     weaponRelease();
     weaponLoad(pG->wep_no, pG->wep_type);
@@ -103,14 +103,14 @@ void cPlKlauser::move()
     if (x894 > 0) {
         x894--;
         if (x894 == 0) {
-            EstSet((int) this, -1, 0, 0, 3, 0, 0, 0x3F, (u32) this, 0);
-            EstSet((int) this, -1, 0, 0, 3, 0x15, 0, 0x3F, (u32) this, 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 3, 0, 0, 0x3F, (u32)(uintptr_t)(this), 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 3, 0x15, 0, 0x3F, (u32)(uintptr_t)(this), 0);
         }
     }
     if ((Joy[0].on & 0x640) == 0x640) {
-        EffectEspDelete(0, 0x3F, (u32) this, 0);
-        EffectEspgenDelete(0, 0x3F, (int) this);
-        EffectEfmDelete(0, 0x3F, (int) this);
+        EffectEspDelete(0, 0x3F, (u32)(uintptr_t)(this), 0);
+        EffectEspgenDelete(0, 0x3F, (int)(uintptr_t)(this));
+        EffectEfmDelete(0, 0x3F, (int)(uintptr_t)(this));
         x894 = 1;
     }
 }
@@ -225,7 +225,7 @@ void cPlKlauser::setModel()
     cModelInfo* info;
     cModelInfo* face;
 
-    info = (cModelInfo*) modelInit(PL_ARC(4), PL_ARC(5));
+    info = (cModelInfo*)port_ptr64(modelInit(PL_ARC(4), PL_ARC(5)));
     if (!VALID_PTR(info)) {
         pLog->err(0, 0, "cPlKlauser::setModel() failed.");
         return;
@@ -317,7 +317,7 @@ void cPlKlauser::setRightHand(int no)
         data = pBody->pWepHand;
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     if ((info = ModInfoMgr.create(data, PL_ARC(0x11))) != 0) {
@@ -360,7 +360,7 @@ void cPlKlauser::setLeftHand(u32 no)
         data = PL_ARC(0x15);
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     pBody->leftNoPrev = pBody->leftNo;
@@ -424,10 +424,10 @@ static void pl_R1_KlauserAttack(cPlayer* pl)
         BitOn(pGS->flags_5018, 0x00800000);
         pl->pNeck->motL = 0;
         DmgMgr.set(3, 0x1E, &pl->pos, 1000.0f, 2000.0f);
-        EffectEspDelete(0, 0x3F, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x3F, (int) pl);
-        EffectEfmDelete(0, 0x3F, (int) pl);
-        EstSet((int) pl, -1, 0, 0, 3, 0xA, 0, 0x3F, (u32) pl, 0);
+        EffectEspDelete(0, 0x3F, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x3F, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x3F, (int)(uintptr_t)(pl));
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, 0xA, 0, 0x3F, (u32)(uintptr_t)(pl), 0);
         SndCall(1, 0x51, &pl->pos, 0, 0, 0);
         SndCall(1, 0x52, &pl->pos, 0, 0, 0);
         pl->pWep->pObj->setDisp(1, 0);
@@ -460,7 +460,7 @@ static void pl_R1_KlauserAttack(cPlayer* pl)
         pl->motionSet(PL_ARC(0x8C), 5, 0, 1, 0);
         pl->atari.setPriority(2);
         pl->dmg.set(0, 0x80);
-        EstSet((int) pl, -1, 0, 0, 3, 0xB, 0, 0x3F, (u32) pl, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 3, 0xB, 0, 0x3F, (u32)(uintptr_t)(pl), 0);
         SndCall(1, 0x53, &pl->pos, 0, 0, 0);
         pl->xFE = 0x15;
         // fallthrough
@@ -476,9 +476,9 @@ static void pl_R1_KlauserAttack(cPlayer* pl)
             pl->dmg.clear();
             pl->pWep->pObj->setDisp(1, 1);
             pl->atari.setPriority(0);
-            EffectEspDelete(0, 0x3F, (u32) pl, 0);
-            EffectEspgenDelete(0, 0x3F, (int) pl);
-            EffectEfmDelete(0, 0x3F, (int) pl);
+            EffectEspDelete(0, 0x3F, (u32)(uintptr_t)(pl), 0);
+            EffectEspgenDelete(0, 0x3F, (int)(uintptr_t)(pl));
+            EffectEfmDelete(0, 0x3F, (int)(uintptr_t)(pl));
             pl->x894 = 0x546;
             pl->xFC = 0;
             pl->xFD = 0;
@@ -491,9 +491,9 @@ static void pl_R1_KlauserAttack(cPlayer* pl)
         pl->x890 = 0x14;
         BitOff(pGS->flags_5018, 0x00800000);
         pl->x894 = 1;
-        EffectEspDelete(0, 0x3F, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x3F, (int) pl);
-        EffectEfmDelete(0, 0x3F, (int) pl);
+        EffectEspDelete(0, 0x3F, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x3F, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x3F, (int)(uintptr_t)(pl));
         SndCall(1, 0x52, &pl->pos, 0, 0, 0);
         pl->pWep->pObj->setDisp(1, 1);
         pl->xFE = 0x1F;

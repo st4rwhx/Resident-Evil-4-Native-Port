@@ -487,7 +487,7 @@ void emset_gatling(int no)
     EM_LIST_V(no).flags &= ~2;
     list = pG->emlist_no;
     if (list >= 0) {
-        u32* tbl = (u32*) (list * 0x20 + (u32) pG + 0x501C);
+        u32* tbl = (u32*)port_ptr64((list * 0x20 + (u32)(uintptr_t)(pG) + 0x501C));
 
         tbl[(u32) no >> 5] &= ~(0x80000000 >> (no & 31));
     }

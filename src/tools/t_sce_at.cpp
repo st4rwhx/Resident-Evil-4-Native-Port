@@ -2661,7 +2661,7 @@ int loadMesName(const char* path, char* names)
         if (e == NULL) break;
         len = e - p;
         if (len > 62) len = 63;
-        dst = (char*) (n * 64 + (u32) names);
+        dst = (char*) (n * 64 + (u32)(uintptr_t)(names));
         memcpy(dst, p, len);
         dst[len] = cmp;
         n++;

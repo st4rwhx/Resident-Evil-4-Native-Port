@@ -56,7 +56,7 @@ void cObjCivilian::moveFire()
         SndCall(2, 0, &pos, 0, 0, 0);
         SndCall(2, 2, &pos, 0, 0, 0);
         pG->flags_500C |= 0x00800000;
-        EstSet((int) this, -1, 0, 0, 0x39, 0, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x39, 0, 0, 0xA, 0, 0);
         wep.step = 1;
     }
     if (MotionGetState(this)) {
@@ -131,7 +131,7 @@ void cObjCivilian::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x5E], WEP_ARC_PTR(0x20));
     PSet(pl->pMotTbl[0x57], WEP_ARC_PTR(0x31));
     PSet(pl->pMotTbl[0x5B], WEP_ARC_PTR(0x30));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x8));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x8)));
     pl->setRightHand(1);
-    pl->setLeftHand((u32) WEP_ARC_PTR(0x9));
+    pl->setLeftHand((u32)(uintptr_t)(WEP_ARC_PTR(0x9)));
 }

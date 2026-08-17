@@ -141,7 +141,7 @@ void R20cInit()
     r20c_work.p = (R20cWork*) MEM_CALLOC(sizeof(R20cWork), 1, 0xd);
     obj = SmdGetObjPtr(8);
     if (obj) {
-        r20c_work.p->hit = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &obj->pos, 0, 1);
+        r20c_work.p->hit = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &obj->pos, 0, 1);
         if (r20c_work.p->hit) {
             YarareInitCube(r20c_work.p->hit, 0.0f, -100.0f, 0.0f, 100.0f, 200.0f, 100.0f, 0, 1);
         }
@@ -573,7 +573,7 @@ void R20cExecShootInit()
         R20cDoorOpenCancel(0);
         R20cKaigaMoved(1);
         SmdSetTrans(9, 0);
-        EstSet(0, -1, 0, 0, 1, 2, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 2, 1, 0, (u32)(uintptr_t)(zero), zero);
     } else {
         cEm* barred;
         cObj* obj;
@@ -585,11 +585,11 @@ void R20cExecShootInit()
         SceAtDataSet_exec(9, 0x12, 0, (TaskFunc) R20cExecShootKaigaOpenMain, 0, 1);
         obj = SmdGetObjPtr(7);
         if (obj) {
-            r20c_work.p->kaigaHit[0] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &obj->pos, 0, 1);
+            r20c_work.p->kaigaHit[0] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &obj->pos, 0, 1);
             if (r20c_work.p->kaigaHit[0]) {
                 YarareInitCube(r20c_work.p->kaigaHit[0], 0.0f, 0.0f, -300.0f, 150.0f, 450.0f, 200.0f, 0, 1);
             }
-            r20c_work.p->kaigaHit[1] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &obj->pos, 0, 1);
+            r20c_work.p->kaigaHit[1] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &obj->pos, 0, 1);
             if (r20c_work.p->kaigaHit[1]) {
                 YarareInitCube(r20c_work.p->kaigaHit[1], 0.0f, -850.0f, 0.0f, 50.0f, 1700.0f, 1100.0f, 0, 1);
             }

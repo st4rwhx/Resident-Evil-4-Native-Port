@@ -106,23 +106,23 @@ void R113Init()
     r113_work = (R113Work*) MEM_CALLOC(sizeof(R113Work), 1, 0xd);
 
     SceExec(0x12, (TaskFunc) r113_ThunderMove, 0, 0, 2, 0);
-    EstSet((int) pPL, -1, 0, 0, 3, 2, 0x800, 0, (u32) zero, zero);
-    EstSet((int) pPL, -1, 0, 0, 1, 4, 0x800, 0, (u32) zero, zero);
-    EstSet((int) pPL, -1, 0, 0, 1, 3, 0x800, 0, (u32) zero, zero);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 3, 2, 0x800, 0, (u32)(uintptr_t)(zero), zero);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 4, 0x800, 0, (u32)(uintptr_t)(zero), zero);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 3, 0x800, 0, (u32)(uintptr_t)(zero), zero);
     pG->flags_5010 |= 0x400;
     SceAtDataSet_exec(2, 0x12, 0, (TaskFunc) r113_DoorCheck, 0, 1);
     if (!(pG->door_unlock[0] & 0x08000000) && (pG->flags_5018 & 0x04000000)) {
         SceAtDataSet_exec(3, 0x12, 0, (TaskFunc) r113_checkAshleyPos, 0, 1);
     }
     EatMgr.registEffInfo(4, (AtEffInfo*) &r113_eff_info);
-    SceExec(0x12, (TaskFunc) r103_initCesspit, (int) &r113_cesspit, 0, 2, 0);
+    SceExec(0x12, (TaskFunc) r103_initCesspit, (int)(uintptr_t)(&r113_cesspit), 0, 2, 0);
     r103_setSubMissionTarget(8);
     if (getRoomEtcRack(6, &rack, 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 3000.0f, 0.0f, 3000.0f);
     }
-    SceSetItemEvent(8, 0x8E, 0, 0xA, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int) &r113_shelf0, 0);
-    SceSetItemEvent(9, 0x8F, 1, 0xB, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int) &r113_shelf1, 0);
-    SceSetItemEvent(0xA, 0x8B, 2, 9, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int) &r113_shelf2, 0);
+    SceSetItemEvent(8, 0x8E, 0, 0xA, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r113_shelf0), 0);
+    SceSetItemEvent(9, 0x8F, 1, 0xB, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r113_shelf1), 0);
+    SceSetItemEvent(0xA, 0x8B, 2, 9, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r113_shelf2), 0);
     SceAtDataSet_hide(4, r113_execHide);
     FlrAtSetDefVal(0, 0, 3);
     if (!(pG->item_flags[0] & 0x800)) {
@@ -282,7 +282,7 @@ static void r113_EventRideShoulder()
 static void r113_checkAshleyPos()
 {
     if (CheckAshleyActive() == 1) {
-        ActBtn.set(0x16, 5, (int) r113_EventRideShoulder, 0, 0, 1, 1, 0);
+        ActBtn.set(0x16, 5, (int)(uintptr_t)(r113_EventRideShoulder), 0, 0, 1, 1, 0);
     }
 }
 

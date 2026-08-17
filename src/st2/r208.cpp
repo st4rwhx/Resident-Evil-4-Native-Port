@@ -446,7 +446,7 @@ void R208Main()
                         }
                     }
                     R208_EmSetEvent(EM_LIST(no));
-                    ((EmListData*) ((u32) pG + (no << 5) + 0x52E8))->flags |= 2; // shift form: add operands pG-first, address not tied to no<<5
+                    ((EmListData*)port_ptr64(((u32)(uintptr_t)(pG) + (no << 5) + 0x52E8)))->flags |= 2; // shift form: add operands pG-first, address not tied to no<<5
                     incResetNum();
                 }
             }
@@ -579,7 +579,7 @@ void R208Main()
         sat->setCoord(&pos, (Vec*) &vecZero);
     }
     if ((pG->flags_174 & 0x00200000) && (SubCharGetStatus() & 0x00800000)) {
-        SetSubAux((int) funcAshley2, 0);
+        SetSubAux((int)(uintptr_t)(funcAshley2), 0);
         pG->flags_174 &= ~0x00200000;
     }
     if ((u32) W->crankSeCnt > 0x3B) {
@@ -650,8 +650,8 @@ static void funcAshley(cEm* p)
     W->crank->be_flag |= 0x20;
     switch (p->xFE) {
     case 0:
-        p->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x36), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x37));
-        W->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x2B));
+        p->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x36), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x37)));
+        W->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x2B)));
         W->crank->setNoSuspend(0);
         {
             Vec pos = {427.81f, 0.0f, 563.42f};
@@ -819,7 +819,7 @@ static void asl_yubisasi()
     if (pSUB != NULL) {
         BitOn(pSUB->be_flag, 0x00200000);
     }
-    SetSubAux((int) funcAshley3, 0);
+    SetSubAux((int)(uintptr_t)(funcAshley3), 0);
     CamCtrl.CutCall(0xF);
     SceSleep(0xF);
     SndCall(6, 4, 0, 0, 0, 0);
@@ -1214,8 +1214,8 @@ static void r208_operateCrank()
     ((cUnitEventView*) pPL)->beginEvent(0);
     PlSetHand(1, 0);
     ((cUnitEventView*) W->crank)->beginEvent(0);
-    pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x20));
-    W->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x2B));
+    pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x20)));
+    W->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x2B)));
     CamCtrl.CutCall(9);
     {
         Vec v = {500.0f, 4000.0f, -29300.0f};
@@ -1296,8 +1296,8 @@ static void r208_operateCrank()
             if (frame >= n) {
                 frame = 0;
             }
-            pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 3, (u16) frame, 5, (int) m0);
-            W->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 3, (u16) frame, 5, (int) m1);
+            pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 3, (u16) frame, 5, (int)(uintptr_t)(m0));
+            W->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 3, (u16) frame, 5, (int)(uintptr_t)(m1));
         }
         SmdGetObjPtr(0x21)->be_flag |= 0x20;
         W->crankSeCnt++;
@@ -1451,7 +1451,7 @@ static void r208_snipe()
         PSVECSubtract(&pSUB->pos, &pos, &d);
         if (PSVECMag(&d) < 500.0f) {
             if (SubCharGetStatus() & 1) {
-                SetSubAux((int) funcAshley, 0);
+                SetSubAux((int)(uintptr_t)(funcAshley), 0);
             }
         } else {
             if (SubCharGetStatus() & 1) {
@@ -1746,7 +1746,7 @@ static void SubUnderCrankExec()
             if (dist < 500.0f) {
                 if (SubCharGetStatus() & 1) {
                     set = 1;
-                    SetSubAux((int) funcAshley, 0);
+                    SetSubAux((int)(uintptr_t)(funcAshley), 0);
                 }
             } else if ((SubCharGetStatus() & 0x01000000) == 0) {
                 if (set != 0) {

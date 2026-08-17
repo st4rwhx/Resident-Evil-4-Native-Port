@@ -128,7 +128,7 @@ static void SceBgmCheck();
 static void R213Event();
 extern "C" void Evt_R213S00_Func(Event* e);
 
-#define R213_EM_ARC(no) ((void*) (pG->pArc->ofs_##no + (u32) pG->pArc))
+#define R213_EM_ARC(no) ((void*)port_ptr64((pG->pArc->ofs_##no + (u32) pG->pArc)))
 // COMPILER-DIFF: 3 -- the varargs view of memset gives the `crclr; bl memset` of the `Vec rot = {0,0,0}`
 // libcall for an explicit call (see R213Init).
 extern "C" void* r213_memset(void*, ...) asm("memset");
@@ -395,9 +395,9 @@ static void R213EventSuBreakMain()
         SceEventStart(1);
         hit = r213_work.p->hit[0];
         if (hit) {
-            EffectEspDelete(0, 2, (u32) hit, 0);
-            EffectEspgenDelete(0, 2, (int) hit);
-            EffectEfmDelete(0, 2, (int) hit);
+            EffectEspDelete(0, 2, (u32)(uintptr_t)(hit), 0);
+            EffectEspgenDelete(0, 2, (int)(uintptr_t)(hit));
+            EffectEfmDelete(0, 2, (int)(uintptr_t)(hit));
         }
         EffectEspDelete(1, 2, 0, 0);
         EffectEspgenDelete(1, 2, 0);
@@ -1102,7 +1102,7 @@ extern "C" void Evt_R213S00_Func(Event* e)
                 pG->flags_500C &= ~0x1000;
                 SstSet(1, 0xFFFF, 1, 0, 0x2F, 0);
                 if (r213_work.p->tex) {
-                    EstSet(0, -1, 0, 0, 1, 0, r213_work.p->tex->mask | 1, 2, frame, (void*) frame);
+                    EstSet(0, -1, 0, 0, 1, 0, r213_work.p->tex->mask | 1, 2, frame, (void*)port_ptr64(frame));
                 }
                 BitOn(pG->flags_500C, 0x1000);
                 BitOff(pG->flags_170, 0x20);
@@ -1132,7 +1132,7 @@ extern "C" void Evt_R213S00_Func(Event* e)
         pG->flags_500C &= ~0x1000;
         SstSet(1, 0xFFFF, 1, 0, 0x2F, 0);
         if (r213_work.p->tex) {
-            EstSet(0, -1, 0, 0, 1, 0, r213_work.p->tex->mask | 1, 2, frame, (void*) frame);
+            EstSet(0, -1, 0, 0, 1, 0, r213_work.p->tex->mask | 1, 2, frame, (void*)port_ptr64(frame));
         }
         BitOn(pG->flags_500C, 0x1000);
         BitOff(pG->flags_170, 0x20);

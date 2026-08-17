@@ -198,7 +198,7 @@ void R205Init()
         Vec pos = {0.0f, -425.0f, 0.0f};
 
         for (i = 0; i < 4; i++) {
-            r205_work.p->hit[i] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+            r205_work.p->hit[i] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                          &pos, 0, 1);
             r205_work.p->hit[i]->setParent(r205_work.p->pend[i].obj, 0, 0);
             YarareInitCube(r205_work.p->hit[i], 0.0f, -400.0f, 0.0f, 1700.0f, 1300.0f, 100.0f, 0, 1);
@@ -462,12 +462,12 @@ static void r205_ExecDieDemo(R205Pend* p)
     while (!(MotionGetState(pPL) & 4)) {
         if (!(pG->flags_174 & 0x20000000)) {
             if (i == 2) {
-                EstSet((int) pPL, -1, &pPL->getPartsPtr(2)->worldPos, 0, 1, 0x10, 0, 0, (u32) pPL, 0);
+                EstSet((int)(uintptr_t)(pPL), -1, &pPL->getPartsPtr(2)->worldPos, 0, 1, 0x10, 0, 0, (u32)(uintptr_t)(pPL), 0);
             }
             cam.param.at = parts->worldPos;
             i++;
             CameraSetOrientationUp(&cam);
-            CamCtrl.x250 = (s32) &cam;
+            CamCtrl.x250 = (s32)(uintptr_t)(&cam);
             SceSleep(1);
         } else {
             break;
@@ -475,7 +475,7 @@ static void r205_ExecDieDemo(R205Pend* p)
     }
     RoomSeCall(1, &pPL->getPartsPtr(2)->worldPos, 0, 0, 0);
     pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x21), 3, 0, (u16) mot, 0);
-    EstSet((int) pPL, -1, 0, 0, 1, 0x11, 0, 0, (u32) pPL, 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 0x11, 0, 0, (u32)(uintptr_t)(pPL), 0);
     DiedemoExec(0x19, 0);
     CamCtrl.Disable();
     CamCtrl.camera = cam;
@@ -506,7 +506,7 @@ static void r205_DrainEvent()
         EffectEfmDelete(0, 0xE, 0);
         SetSstDispFlag(0xC, 0);
         SetSstDispFlag(0xD, 1);
-        EstSet(0, -1, 0, 0, 1, 4, 1, 3, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 4, 1, 3, (u32)(uintptr_t)(zero), zero);
         SceSetEventCancel(1, (TaskFunc) r205_DrainEventEnd, 0, -1, 1);
         while (CamCtrl.IsMotionEnd() == 0) {
             SceSleep(1);
@@ -596,7 +596,7 @@ static void r205_EnemyAppear()
     BitOff(pG->flags_170, 0x10000000);
     BitOff(pG->flags_58, 0x40000000);
     pPL->setNoSuspend(1);
-    EstSet(0, -1, 0, 0, 1, 6, 1, 3, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 6, 1, 3, (u32)(uintptr_t)(zero), zero);
     CamCtrl.CutCall(9);
     SceSetEventCancel(1, (TaskFunc) r205_EnemyAppearEndProc, 0, -1, 1);
     while (CamCtrl.IsMotionEnd() == 0) {

@@ -35,7 +35,7 @@ void Wep44_init(cModel* m)
     pl->pWep->pObj = obj;
     obj->init(pl);
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x3A, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x3A, 1);
 }
 
 void ObjGovernment_init(cObj* obj)
@@ -84,9 +84,9 @@ void cObjGovernment::moveFire()
         pG->flags_500C |= 0x00800000;
         MotionSetCore(this, &this->mot, m, 0, 0, 0, 0);
         SndCall(2, 0, &pos, 0, 0, 0);
-        EstSet((int) this, -1, 0, 0, 0x3A, type, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x3A, type, 0, 0xA, 0, 0);
         setCartridge();
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     }
 }
@@ -199,9 +199,9 @@ void cObjGovernment::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x1E));
     PSet(pl->pMotTbl[0x5D], WEP_ARC_PTR(0x1F));
     PSet(pl->pMotTbl[0x5E], WEP_ARC_PTR(0x20));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x8));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x8)));
     pl->setRightHand(1);
-    pl->setLeftHand((u32) WEP_ARC_PTR(0x9));
+    pl->setLeftHand((u32)(uintptr_t)(WEP_ARC_PTR(0x9)));
 }
 
 extern "C" void _prolog()

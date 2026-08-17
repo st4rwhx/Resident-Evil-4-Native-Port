@@ -366,19 +366,19 @@ static const int mark_model_tbl[18][5] = {
 // word address written index first (`(no >> 5) * 4 + table`: `add rIdx, rTbl` / `lwzx rIdx, rTbl`).
 static inline u32 flagBit(u32 tbl, u32 no)
 {
-    return *(u32*) ((no >> 5) * 4 + tbl) & (0x80000000 >> (no & 0x1F));
+    return *(u32*)port_ptr64(((no >> 5) * 4 + tbl)) & (0x80000000 >> (no & 0x1F));
 }
 static inline u32 stageFlag(u32 no)
 {
-    return flagBit((u32) &pG->flags_51BC, no);
+    return flagBit((u32)(uintptr_t)(&pG->flags_51BC), no);
 }
 static inline u32 doorFlag(u32 no)
 {
-    return flagBit((u32) pG->door_unlock, no);
+    return flagBit((u32)(uintptr_t)(pG->door_unlock), no);
 }
 static inline u32 itemFlag(u32 no)
 {
-    return flagBit((u32) pG->item_flags, no);
+    return flagBit((u32)(uintptr_t)(pG->item_flags), no);
 }
 
 int getStageNo()
@@ -1553,7 +1553,7 @@ void* mapBinAddr(MapRoomData* p, int no)
 
 cSatHeader* mapHitAddr(MapRoomData* p, int no)
 {
-    u32* ofs = (u32*) (mapRoomNum(p) * 4 + (u32) p->bin);
+    u32* ofs = (u32*)port_ptr64((mapRoomNum(p) * 4 + (u32)(uintptr_t)(p->bin)));
 
     return (cSatHeader*) ((u8*) p->bin + ofs[no + 4]);
 }

@@ -86,7 +86,7 @@ void R10aInit()
         rot.x = 0.0f;
         rot.y = 0.39f;
         rot.z = 0.0f;
-        EspDataLoad((u32) ROOM_ARC_PTR(pG->pRoomArc, 0x2E), 0xC8, 0);
+        EspDataLoad((u32)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x2E)), 0xC8, 0);
         if (EspGetEfmTplAddr(0x20, &tpl) == 0) {
             pLog->err(0, 0, "IWA init: EFM[%02x] TPL not regist.", 0x20);
             return;

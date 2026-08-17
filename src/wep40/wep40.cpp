@@ -9,7 +9,7 @@
 #include "snd.h"
 #include "pad.h"
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 void PlRifleMove(cPlayer* pl);   // wep/pl_rifle.cpp
 cObjWep* equipWeapon(cPlayer* pl);
@@ -25,7 +25,7 @@ void Wep40_init(cModel* m)
     } else {
         pl->pWep->pObj = obj;
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x8), 0x44, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x8)), 0x44, 1);
         PlWepMot[0] = WEP_ARC_PTR(0xE);
         PlWepMot[1] = PL_ARC_PTR(pG->pPlArc, 0x5E);
         PlWepMot[2] = WEP_ARC_PTR(0xE);
@@ -91,7 +91,7 @@ void cObjHkSniper::moveFire()
         SndCall(2, 0, &pParts->worldPos, 0, 0, 0);
         SndCall(2, 4, &pParts->worldPos, 0, 0, 0);
         BitOn(pG->flags_500C, 0x00800000);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     }
 }
@@ -131,7 +131,7 @@ void cObjHkSniper::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x3A], WEP_ARC_PTR(0x3B));
     PSet(pl->pMotTbl[0x41], WEP_ARC_PTR(0x3C));
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x3D));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0xD));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0xD)));
     pl->setRightHand(1);
     pl->setLeftHand(2);
 }

@@ -101,15 +101,15 @@ void R103Init()
     }
     pG->flags_51BC |= 0x1000;
     SceExec(0x12, (TaskFunc) r103_BgmStartCheck, 0, 0, 2, 0);
-    SceExec(0x12, (TaskFunc) r103_initCesspit, (int) &r103_cesspit, 0, 2, 0);
+    SceExec(0x12, (TaskFunc) r103_initCesspit, (int)(uintptr_t)(&r103_cesspit), 0, 2, 0);
     r103_setSubMissionTarget(8);
     EatMgr.registEffInfo(4, (AtEffInfo*) &r103_eff_info);
     if (getRoomEtcRack(6, &rack, 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 3000.0f, 0.0f, 3000.0f);
     }
-    SceSetItemEvent(7, 0x92, 0, 0xA, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int) &r103_shelf0, 0);
-    SceSetItemEvent(8, 0x81, 1, 0xB, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int) &r103_shelf1, 0);
-    SceSetItemEvent(9, 0x83, 2, 9, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int) &r103_shelf2, 0);
+    SceSetItemEvent(7, 0x92, 0, 0xA, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r103_shelf0), 0);
+    SceSetItemEvent(8, 0x81, 1, 0xB, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r103_shelf1), 0);
+    SceSetItemEvent(9, 0x83, 2, 9, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r103_shelf2), 0);
     if (!(pG->item_flags[0] & 0x800)) {
         U32Set(r103_work->eff, EspPullCoreKind());
         EstSet(0, -1, 0, 0, 1, 6, 1, (u8) r103_work->eff, 0, 0);
@@ -295,7 +295,7 @@ static void r103_checkCloseCover(R103Cesspit* c)
     cover->be_flag |= 0x20;
     lid->be_flag |= 0x20;
     FSet(cover->rot.x, -0.5235988f);
-    hit = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &cover->pos, &cover->rot, 0);
+    hit = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &cover->pos, &cover->rot, 0);
     {
         // `const`: the single-use constants are loaded in declaration order (w, x, h, z), not in
         // argument order
@@ -451,8 +451,8 @@ extern "C" void r103_initCesspit(R103Cesspit* c)
     SceAtSetEnable(c->itemAt2, 1);
     BitOn(SmdGetObjPtr(c->lid)->be_flag, 0x20);
     if (!(pG->flags_51BC & 0x20)) {
-        SceExec(0x12, (TaskFunc) r103_checkCloseCover, (int) c, 0, 2, 0);
-        SceExec(0x12, (TaskFunc) r103_checkCesspit0, (int) c, 0, 2, 0);
+        SceExec(0x12, (TaskFunc) r103_checkCloseCover, (int)(uintptr_t)(c), 0, 2, 0);
+        SceExec(0x12, (TaskFunc) r103_checkCesspit0, (int)(uintptr_t)(c), 0, 2, 0);
         SceAtSetEnable(c->at10, 0);
         SceAtSetEnable(c->itemAt, 1);
     } else {
@@ -471,12 +471,12 @@ extern "C" void r103_initCesspit(R103Cesspit* c)
             } else {
                 SceAtSetEnable(c->at10, 1);
             }
-            SceExec(0x12, (TaskFunc) r103_checkCesspit1, (int) c, 0, 2, 0);
+            SceExec(0x12, (TaskFunc) r103_checkCesspit1, (int)(uintptr_t)(c), 0, 2, 0);
         } else {
             SmdGetObjPtr(c->lid)->pParts->rot.x = -1.83f;
             SceAtSetEnable(c->at10, 0);
             if (SceAtItemFlgCk(c->itemAt) == 0) {
-                SceExec(0x12, (TaskFunc) r103_checkCesspit2, (int) c, 0, 2, 0);
+                SceExec(0x12, (TaskFunc) r103_checkCesspit2, (int)(uintptr_t)(c), 0, 2, 0);
             }
         }
     }

@@ -103,7 +103,7 @@ static R20eWork* r20e_work;
 
 // `&p->piece[i]` as integer arithmetic, index first (`mulli; add idx, p; addi 0x10`): the array
 // subscript folds the 0x10 into the product and puts the pointer first in the add.
-#define PUZZLE_PIECE(p, i) ((R20ePiece*) ((i) * sizeof(R20ePiece) + (u32) (p) + 0x10))
+#define PUZZLE_PIECE(p, i) ((R20ePiece*) ((i) * sizeof(R20ePiece) + (u32)(uintptr_t)((p)) + 0x10))
 // `&p->cell[x][y]` as integer arithmetic, `(x*48 + 0x178) + p + y*16`: fold moves the constant to
 // the other operand (`(V+C)+A -> V+(A+C)`), so the tree is `x*48 + (p + 0x178) + y*16`, which is what
 // the puzzleMove loops need: `PUZZLE_CELL(p, 0, cy)` gives `p + (cy*16 + 0x178)` (`addi r0,r11,0x178;
@@ -112,7 +112,7 @@ static R20eWork* r20e_work;
 // order as `from`, so reload_cse turns the second `add` into `mr r9,r11`) but the column `to` cell
 // `((cx48 + p) + k16) + 0x168` (the other order: a separate `add r9,r9,r6`).  The `y*16` is never
 // grouped with 0x178 (`(k-1)*16` must distribute to `k*16 - 16` under EXPAND_SUM).
-#define PUZZLE_CELL(p, x, y) ((R20eCell*) ((x) * sizeof(R20eCell[3]) + 0x178 + (u32) (p) + (y) * sizeof(R20eCell)))
+#define PUZZLE_CELL(p, x, y) ((R20eCell*) ((x) * sizeof(R20eCell[3]) + 0x178 + (u32)(uintptr_t)((p)) + (y) * sizeof(R20eCell)))
 
 // The address of the caller's Vec goes straight into the argument register (no PRE'd pseudo).
 static inline void SetAngV(cModel* m, Vec* v)
@@ -230,7 +230,7 @@ void R20eInit()
         ((cEmRack*) r20e_work->rack)->setRange(0.0f, 1180.0f, 0.0f, 5000.0f);
     }
     if (pG->x4FB8 == 1) {
-        EstSet((int) pPL, -1, 0, 0, 1, 2, 1, 0, 0, 0);
+        EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 2, 1, 0, 0, 0);
     }
     r20e_work->effKind = EspPullCoreKind();
 }
@@ -999,7 +999,7 @@ static inline int r20e_puzzleMove(R20ePuzzle* p)
         // cy*16 first, then (cx*48 + p), 0x178 last: `mulli cx; add p; add cy16; lwzu 0x178`
         Vec pos;
 
-        r20e_framePos(pos, (R20eCell*) (p->cy * 0x10 + (p->cx * 0x30 + (u32) p) + 0x178));
+        r20e_framePos(pos, (R20eCell*)port_ptr64((p->cy * 0x10 + (p->cx * 0x30 + (u32)(uintptr_t)(p)) + 0x178)));
         pos.y += 10.0f;
         p->frame->pos = pos;
         p->frame->be_flag |= 2;
@@ -1176,7 +1176,7 @@ static inline void r20e_placePiece(R20ePuzzle* p, R20eCell* c, R20eCell* cs, s8 
         x = 0;                                                             \
         R20eCell* cs = c;                                                  \
         for (; x < 3; x++) {                                               \
-            r20e_placePiece(p, c, cs, ((const s8*) (y + (tbl)))[x * 3]);   \
+            r20e_placePiece(p, c, cs, ((const s8*)port_ptr64((y + (tbl))))[x * 3]);   \
             c += 3;                                                        \
             cs += 3;                                                       \
         }                                                                  \
@@ -1226,7 +1226,7 @@ void r20e_initPuzzle()
     p->cy = 2;
     last->piece = -1;
     {
-        u32 tbl = (u32) r20e_initLayout;
+        u32 tbl = (u32)(uintptr_t)(r20e_initLayout);
         do {
             y = 0;
             R20E_SET_LAYOUT(p, tbl);
@@ -1239,7 +1239,7 @@ void r20e_initPuzzle()
     } else {
         {
             R20eWork* w = r20e_work;
-            u32 tbl = (u32) r20e_solvedLayout;
+            u32 tbl = (u32)(uintptr_t)(r20e_solvedLayout);
             int x;
             int y;
             do {

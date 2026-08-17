@@ -291,7 +291,7 @@ static void r21d_setEmReset(int no)
     Vec ang = {0.0f, 0.0f, 0.0f};
 
     r21d_checkEmResetPoint(&pos, &ang.y);
-    r21d_work.p->em[no].setReset((int) &pos, (int) &ang);
+    r21d_work.p->em[no].setReset((int)(uintptr_t)(&pos), (int)(uintptr_t)(&ang));
     r21d_work.p->resetting[no] = 0;
 }
 
@@ -959,7 +959,7 @@ static void r21d_moveDeathTrap()
         TRAP* t;
 
         base += 0x30C;   // reassigned: cse cannot re-base the zero-offset store on the old value
-        t = (TRAP*) base;
+        t = (TRAP*)port_ptr64(base);
         t->obj = obj;
         t->obj->be_flag |= 0x20;
         t->baseY = t->obj->pos.y;

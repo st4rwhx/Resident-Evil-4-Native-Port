@@ -20,7 +20,7 @@ f64 atan2(f64 y, f64 x);
 int MotionMoveI(cModel* m, int flag) asm("MotionMove");
 }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 #define WEP_OBJ(pl) ((pl)->pWep->pObj)
 // The weapon object's own cAtariInfo (the object's collision with enemies while it is held).
 #define WEP_ATARI(pl) (&WEP_OBJ(pl)->sub2B4.atari)
@@ -77,7 +77,7 @@ void Wep14_init(cModel* m)
     } else {
         pl->pWep->pObj = obj;
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x6), 0x48, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x6)), 0x48, 1);
         wep14changeRightHand(pl, WEP_ARC_PTR(0x9));
         pl->setLeftHand(4);
         PlWepMot[0] = WEP_ARC_PTR(0x13);
@@ -580,7 +580,7 @@ cObjWep* equipWeapon(cPlayer* pl)
 void wep14changeRightHand(cPlayer* pl, void* hand)
 {
     pl->setRightHand(0);
-    pl->pBody->initWepHand((u32) hand);
+    pl->pBody->initWepHand((u32)(uintptr_t)(hand));
     pl->setRightHand(1);
 }
 

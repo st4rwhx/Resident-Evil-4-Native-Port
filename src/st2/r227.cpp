@@ -833,7 +833,7 @@ static void r227_execEvent00()
         u32 key0;
 
         EvtMgr.SetEvt(r227_work.p->evd[0]->addr, &key0);
-        ((Event*) key0)->status |= 0x800;
+        ((Event*)port_ptr64(key0))->status |= 0x800;
         r227_waitEvt();
         pG->flags_54 |= 0x400;
         r227_work.p->evd[0]->setCommand(4, 0, 0);
@@ -843,7 +843,7 @@ static void r227_execEvent00()
 
                 r227_work.p->evd[1]->setCommand(1, 0, 1);
                 if (EvtMgr.SetEvt(r227_work.p->evd[1]->addr, &key1)) {
-                    ((Event*) key1)->status |= 0x800;
+                    ((Event*)port_ptr64(key1))->status |= 0x800;
                 }
                 r227_waitEvt();
             }
@@ -853,8 +853,8 @@ static void r227_execEvent00()
 
                 r227_work.p->evd[2]->setCommand(1, 0, 1);
                 if (EvtMgr.SetEvt(r227_work.p->evd[2]->addr, &key2)) {
-                    ((Event*) key2)->status |= 0x100000;
-                    ((Event*) key2)->status |= 0x200;
+                    ((Event*)port_ptr64(key2))->status |= 0x100000;
+                    ((Event*)port_ptr64(key2))->status |= 0x200;
                 }
                 r227_waitEvt();
                 SceExit();
@@ -911,9 +911,9 @@ static void Evt_R227S00_Func(Event* e)
                 if (e->frame > 15) {
                     BitOff(pG->flags_58, 0x800);
                     if (!(pG->flags_174 & 0x40000000)) {
-                        ActBtn.set(0x25, 5, (int) r227_succeedAction, 0, 0x42, 4, 0, 0);
+                        ActBtn.set(0x25, 5, (int)(uintptr_t)(r227_succeedAction), 0, 0x42, 4, 0, 0);
                     } else {
-                        ActBtn.set(0x25, 5, (int) r227_succeedAction, 0, 0x42, 3, 0, 0);
+                        ActBtn.set(0x25, 5, (int)(uintptr_t)(r227_succeedAction), 0, 0x42, 3, 0, 0);
                     }
                 }
             } else {

@@ -81,9 +81,9 @@ void cObjVp70::moveFire()
         MotionSetCore(this, &mot, m, 0, 0, 0, 0);
         SndCall(2, 0, &pos, 0, 0, 0);
         pG->flags_500C |= 0x00800000;
-        EstSet((int) this, -1, 0, 0, 0x4B, 0, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x4B, 0, 0, 0xA, 0, 0);
         setCartridge();
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     }
 }
@@ -198,7 +198,7 @@ void cObjVp70::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x48));
     PSet(pl->pMotTbl[0x3F], WEP_ARC_PTR(0x43));
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x44));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x9));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x9)));
     pl->setRightHand(1);
     pl->setLeftHand(4);
 }

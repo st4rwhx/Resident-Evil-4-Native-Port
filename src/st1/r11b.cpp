@@ -108,8 +108,8 @@ void R11bInit()
     EatMgr.registEffInfo(2, (AtEffInfo*) &r11b_eff_info);
     SceExec(0x12, (TaskFunc) r11b_ThunderMove, 0, 0, 2, 0);
     EvtMgr.SetFunc("evt_r11bs00_func", (void*) Evt_R11BS00_Func);
-    EstSet((int) pPL, -1, 0, 0, 3, 2, 0x800, 0, 0, obj);
-    EstSet((int) pPL, -1, 0, 0, 1, 2, 0x800, 0, 0, obj);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 3, 2, 0x800, 0, 0, obj);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 2, 0x800, 0, 0, obj);
     BitOn(pG->flags_5010, 0x400);
     if (RsfCheck(G_ROOM_ID, 0)) {
         SceExec(0x12, (TaskFunc) R11b_bgm_ck, 0, 0, 2, 0);
@@ -350,13 +350,13 @@ static void r11b_EmEvent()
         pPL->setNoSuspend(1);
         r11b_setPosXYZ(pPL, -60735.0f, 2008.0f, -8455.0f);
         r11b_setAngXYZ(pPL, 0.0f, 2.64f, 0.0f);
-        EstSet((int) r11b_work.p->em[0], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
-        EstSet((int) r11b_work.p->em[1], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
-        EstSet((int) r11b_work.p->em[2], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
-        EstSet((int) r11b_work.p->em[3], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
-        EstSet((int) r11b_work.p->em[4], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
-        EstSet((int) r11b_work.p->em[5], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
-        EstSet((int) r11b_work.p->em[6], -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[0]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[1]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[2]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[3]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[4]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[5]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(r11b_work.p->em[6]), -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
         SceSetEventCancel(1, (TaskFunc) r11b_EmEvent_exit, 0, -1, 1);
         CamCtrl.CutCall(3);
         while (CamCtrl.IsMotionEnd() == 0) {

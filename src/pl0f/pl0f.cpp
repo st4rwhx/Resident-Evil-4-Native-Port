@@ -97,9 +97,9 @@ static void subBoatR10eIn2();
 #define ARC(no) PL_ARC_PTR(em->subArc, no)
 #define SUBARC(no) PL_ARC_PTR(sub->subArc, no)
 #define PLARC(no) PL_ARC_PTR(pl->subArc, no)
-#define VIB_TBL ((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc))
+#define VIB_TBL ((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)))
 #define PL_BOAT(pl) ((cPl0f*) (pl)->pBoat)
-#define SUB_BOAT(sub) ((cPl0f*) (sub)->dmgType)
+#define SUB_BOAT(sub) ((cPl0f*)port_ptr64((sub)->dmgType))
 #define ROPE(w) ((cObj*) (w)->pRope)
 
 // The boss (em2f) work as far as the boat reads it.
@@ -193,7 +193,7 @@ void cPl0f::move()
             w->cnt64--;
         } else {
             w->cnt64 = 0x1D;
-            EstSet((int) this, -1, 0, 0, 0xF, 7, 0, 0x35, (u32) this, 0);
+            EstSet((int)(uintptr_t)(this), -1, 0, 0, 0xF, 7, 0, 0x35, (u32)(uintptr_t)(this), 0);
         }
     }
     if (w->pRope) {
@@ -283,9 +283,9 @@ void cPl0f::setPos(Vec* p, f32 ang)
     TransMatrix(mat, &pos);
     partsMatCalc();
     partsWorldCalc();
-    EffectEspDelete(0, 0x35, (u32) this, 0);
-    EffectEspgenDelete(0, 0x35, (int) this);
-    EffectEfmDelete(0, 0x35, (int) this);
+    EffectEspDelete(0, 0x35, (u32)(uintptr_t)(this), 0);
+    EffectEspgenDelete(0, 0x35, (int)(uintptr_t)(this));
+    EffectEfmDelete(0, 0x35, (int)(uintptr_t)(this));
 }
 
 static void pl0f_R0_Init(cPl0f* em)
@@ -311,7 +311,7 @@ static void pl0f_R0_Init(cPl0f* em)
     em->atari.flags &= 0xFCFF;
     em->atari.setPriority(1);
     em->setStatus(1);
-    EspDataLoad((u32) ARC(0x4), 0xF, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(0x4)), 0xF, 0);
     w->node[0].pos.x = 0.0f;
     w->node[0].pos.y = 0.0f;
     w->node[0].pos.z = 2500.0f;
@@ -358,7 +358,7 @@ static void pl0f_R0_Init(cPl0f* em)
     }
     w->espKind = EspPullCoreKind();
     if (pG->room_id != 0x10D && pG->room_id != 0x10E) {
-        EstSet((int) em, -1, 0, 0, 0xF, 0xF, 0x800, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 0xF, 0x800, 0, (u32)(uintptr_t)(em), 0);
     }
     pl0fSetAnchor(em);
     pl0fLongRopeSet(em);
@@ -475,7 +475,7 @@ static void pl0f_R1_RideStart(cPl0f* em)
     Pl0fWork* w = PL0F_WK(em);
     cPlayer* pl = pPL;
 
-    pl->pBody->initWepHand((u32) ARC(0x8));
+    pl->pBody->initWepHand((u32)(uintptr_t)(ARC(0x8)));
     pl->setRightHand(1);
     pl->pWep->setTrans(0, 0);
     EmSet(pl->pBoat, em);
@@ -484,7 +484,7 @@ static void pl0f_R1_RideStart(cPl0f* em)
     w->flags |= 1;
     w->seNo = SndCall(8, 0x11, &em->pos, 0xF, 0, 0);
     if (pSUBS) {
-        SetSubDamage((int) em, (void*) subBoatRide);
+        SetSubDamage((int)(uintptr_t)(em), (void*) subBoatRide);
         pSUB->xFE = 2;
     }
     PlRoutineSet(em, 1, 1, 0, 0);
@@ -512,7 +512,7 @@ static void pl0f_R1_BossMove(cPl0f* em)
         {
             int zero = 0;   // one SImode zero for both stores, separate from the routine's QImode zero
 
-            w->pBoss = (cEm*) zero;
+            w->pBoss = (cEm*)port_ptr64(zero);
             w->bossMode = zero;
         }
         return;
@@ -587,7 +587,7 @@ static void pl0f_R1_Drop(cPl0f* em)
     switch (em->xFE) {
     case 0:
         MotionSetCore(em, &em->mot, ARC(0x1F), 0, 0, 5, 0);
-        EstSet((int) em, -1, 0, 0, 0xF, 0xB, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 0xB, 0, 0x35, (u32)(uintptr_t)(em), 0);
         LifeDownSet2(em, 100, 0, 1);
         em->getPartsPtr(1)->rot.y = 0.0f;
         w->timer = 60;
@@ -649,7 +649,7 @@ static void pl0f_R1_WaterRide(cPl0f* em)
     switch (em->xFE) {
     case 0:
         MotionSetCore(em, &em->mot, ARC(0x22), 0, 0, 5, 0);
-        EstSet((int) em, -1, 0, 0, 0xF, 0xC, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 0xC, 0, 0x35, (u32)(uintptr_t)(em), 0);
         SndCall(8, 0x17, &em->pos, 0xF, 0, 0);
         w->timer = 60;
         em->xFE++;
@@ -697,7 +697,7 @@ static void pl0f_R1_BossGuard(cPl0f* em)
         BoatMoveFunc = PlBoatMove; \
         PlRoutineSet(pPL, 0, 0xF, plRoutine, 0); \
         if (pSUB) { \
-            SetSubDamage((int) em, (void*) subFunc); \
+            SetSubDamage((int)(uintptr_t)(em), (void*) subFunc); \
         } \
         w->timer = t1; \
         w->timer2 = t2; \
@@ -706,7 +706,7 @@ static void pl0f_R1_BossGuard(cPl0f* em)
     case 1: \
         w->cnt++; \
         if (w->cnt & 1) { \
-            EstSet((int) em, -1, 0, 0, 1, 0xA, 0, 0x35, (u32) em, 0); \
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0xA, 0, 0x35, (u32)(uintptr_t)(em), 0); \
         } \
         if (w->timer) { \
             w->timer--; \
@@ -736,7 +736,7 @@ static void pl0f_R1_BossGuard(cPl0f* em)
         PL0F_WK(em)->flags &= ~1; \
         SndStop(PL0F_WK(em)->seNo, 0); \
         if (pSUB) { \
-            SetSubDamage((int) em, (void*) subBoatGetoff); \
+            SetSubDamage((int)(uintptr_t)(em), (void*) subBoatGetoff); \
         } \
     } \
 }
@@ -927,7 +927,7 @@ void pl0fWaterEff(cPl0f* em)
         return;
     }
     if (w->dirAngAbs > 2.443461f && w->spdXZ > 30.0f && !(pG->flags_51E4 & 3)) {
-        EstSet((int) em, -1, 0, 0, 0xF, 0x1D, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 0x1D, 0, 0x35, (u32)(uintptr_t)(em), 0);
     }
     if (w->spdXZ < 150.0f) {
         return;
@@ -940,9 +940,9 @@ void pl0fWaterEff(cPl0f* em)
         if (turn == 0) {
             turn = 1;
             if (w->dirAng < 0.0f) {
-                EstSet((int) em, -1, 0, 0, 0xF, 3, 0, 0x35, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 3, 0, 0x35, (u32)(uintptr_t)(em), 0);
             } else {
-                EstSet((int) em, -1, 0, 0, 0xF, 4, 0, 0x35, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 4, 0, 0x35, (u32)(uintptr_t)(em), 0);
             }
             SndCall(8, 0xC, &em->pos, 0xF, 0, 0);
         }
@@ -951,15 +951,15 @@ void pl0fWaterEff(cPl0f* em)
     }
     cnt++;
     if (cnt & 1) {
-        EstSet((int) em, -1, 0, 0, 0xF, 0, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 0, 0, 0x35, (u32)(uintptr_t)(em), 0);
     }
     if (a < 2.0943952f) {
-        EstSet((int) em, -1, 0, 0, 0xF, 1, 0, 0x35, (u32) em, 0);
-        EstSet((int) em, -1, 0, 0, 0xF, 2, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 1, 0, 0x35, (u32)(uintptr_t)(em), 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 2, 0, 0x35, (u32)(uintptr_t)(em), 0);
     }
     cnt3++;
     if (cnt3 % 20 == 0) {
-        EstSet((int) em, -1, 0, 0, 0xF, 9, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 9, 0, 0x35, (u32)(uintptr_t)(em), 0);
         SndCall(8, 0x12, &em->pos, 0xF, 0, 0);
     }
     if (pG->flags_5010 & 0x00800000) {
@@ -967,10 +967,10 @@ void pl0fWaterEff(cPl0f* em)
             hideCnt++;
             return;
         }
-        EstSet((int) em, -1, 0, 0, 0xF, 5, 0, 0x35, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 5, 0, 0x35, (u32)(uintptr_t)(em), 0);
     } else {
         if (hideCnt != 0) {
-            EstSet((int) em, -1, 0, 0, 0xF, 8, 0, 0x35, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xF, 8, 0, 0x35, (u32)(uintptr_t)(em), 0);
         }
         hideCnt = 0;
     }
@@ -1195,7 +1195,7 @@ void pl0fRideCamMove(cPl0f* em, f32 rate)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 static Vec pl0f_getoff_cam_ofs = { -1000.0f, 1500.0f, -5000.0f };
@@ -1218,7 +1218,7 @@ void pl0fGetoffCamMove(cPl0f* em)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 static Vec pl0f_boss_cam_ofs = { -1200.0f, 1400.0f, 0.0f };
@@ -1371,7 +1371,7 @@ void pl0fBossCamMove(cPl0f* em, int hide)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 static Vec pl0f_hide_cam_at = { -500.0f, 1850.0f, -1800.0f };
@@ -1415,7 +1415,7 @@ void pl0fHideModeCamMove(cPlayer* pl)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 static Vec pl0f_die_cam_at = { -300.0f, 1700.0f, -2500.0f };
@@ -1459,7 +1459,7 @@ void pl0fBossDieCamMove(cPlayer* pl)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 void pl0fRideActEvtCk(cPl0f* em)
@@ -1479,18 +1479,18 @@ void pl0fRideActEvtCk(cPl0f* em)
     switch (em->type) {
     case 0:
     default:
-        ActBtn.set(0x23, 5, (int) pl0fActRide, (int) em, 0, 1, 0, 0);
+        ActBtn.set(0x23, 5, (int)(uintptr_t)(pl0fActRide), (int)(uintptr_t)(em), 0, 1, 0, 0);
         break;
     case 1:
-        ActBtn.set(0x23, 5, (int) pl0fActRideR10d, (int) em, 0, 1, 0, 0);
+        ActBtn.set(0x23, 5, (int)(uintptr_t)(pl0fActRideR10d), (int)(uintptr_t)(em), 0, 1, 0, 0);
         break;
     case 2:
     case 3:
-        ActBtn.set(0x23, 5, (int) pl0fActRideR10e, (int) em, 0, 1, 0, 0);
+        ActBtn.set(0x23, 5, (int)(uintptr_t)(pl0fActRideR10e), (int)(uintptr_t)(em), 0, 1, 0, 0);
         break;
     case 4:
     case 5:
-        ActBtn.set(0x23, 5, (int) pl0fActRideR10e2, (int) em, 0, 1, 0, 0);
+        ActBtn.set(0x23, 5, (int)(uintptr_t)(pl0fActRideR10e2), (int)(uintptr_t)(em), 0, 1, 0, 0);
         break;
     }
 }
@@ -1522,7 +1522,7 @@ void pl0fGetoffActEvtCk(cPl0f* em)
         if ((pPL->pos.x - pl0f_getoff_ck[i].x) * (pPL->pos.x - pl0f_getoff_ck[i].x) + (pPL->pos.z - pl0f_getoff_ck[i].z) * (pPL->pos.z - pl0f_getoff_ck[i].z) < 4.9e7f) {
             w->getoffAng = pl0f_getoff_ang[i];
             w->getoffPos = pl0f_getoff_land[i];
-            ActBtn.set(0x24, 5, (int) pl0fActGetOff, (int) em, 0, 1, 0, 0);
+            ActBtn.set(0x24, 5, (int)(uintptr_t)(pl0fActGetOff), (int)(uintptr_t)(em), 0, 1, 0, 0);
         }
     }
 }
@@ -1534,7 +1534,7 @@ static void pl0fActRide(cPl0f* em)
     PlRoutineSet(pPL, 0, 0xF, 0, 0);
     PlRoutineSet(em, 1, 1, 0, 0);
     if (pSUB) {
-        SetSubDamage((int) em, (void*) subBoatRide);
+        SetSubDamage((int)(uintptr_t)(em), (void*) subBoatRide);
     }
 }
 
@@ -1545,7 +1545,7 @@ static void pl0fActRideR10d(cPl0f* em)
     PlRoutineSet(pPL, 0, 0xF, 0xE, 0);
     PlRoutineSet(em, 1, 9, 0, 0);
     if (pSUB) {
-        SetSubDamage((int) em, (void*) subBoatRide);
+        SetSubDamage((int)(uintptr_t)(em), (void*) subBoatRide);
     }
 }
 
@@ -1556,7 +1556,7 @@ static void pl0fActRideR10e(cPl0f* em)
     PlRoutineSet(pPL, 0, 0xF, 0x10, 0);
     PlRoutineSet(em, 1, 0xB, 0, 0);
     if (pSUB) {
-        SetSubDamage((int) em, (void*) subBoatRide);
+        SetSubDamage((int)(uintptr_t)(em), (void*) subBoatRide);
     }
 }
 
@@ -1567,7 +1567,7 @@ static void pl0fActRideR10e2(cPl0f* em)
     PlRoutineSet(pPL, 0, 0xF, 0x12, 0);
     PlRoutineSet(em, 1, 0xD, 0, 0);
     if (pSUB) {
-        SetSubDamage((int) em, (void*) subBoatRide);
+        SetSubDamage((int)(uintptr_t)(em), (void*) subBoatRide);
     }
 }
 
@@ -1583,7 +1583,7 @@ static void pl0fActGetOff(cPl0f* em)
     w->flags &= ~1;
     SndStop(w->seNo, 0);
     if (pSUB) {
-        SetSubDamage((int) em, (void*) subBoatGetoff);
+        SetSubDamage((int)(uintptr_t)(em), (void*) subBoatGetoff);
     }
 }
 
@@ -1825,7 +1825,7 @@ static void plboat_R2_Ride(cPlayer* pl)
         MotionSetCore(pl, &pl->mot, PLARC(0x29), 0, 0, 5, 0);
         pl->sightRate = 0.0f;
         pl->blendRate500 = 0.0f;
-        pl->pBody->initWepHand((u32) PLARC(0x8));
+        pl->pBody->initWepHand((u32)(uintptr_t)(PLARC(0x8)));
         pl->setRightHand(1);
         pl->pWep->setTrans(0, 0);
         pl->xFF++;
@@ -2356,7 +2356,7 @@ static void plboat_R2_FallWater(cPlayer* pl)
         pl->x3EC = 0;
         pPLS->endCamera();   // struct view: the pPL load stays below the four stores
         pl00SetDropCam(pl);
-        EstSet((int) pl, -1, 0, 0, 0xF, 0x15, 0, 0x35, (u32) boat, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 0xF, 0x15, 0, 0x35, (u32)(uintptr_t)(boat), 0);
         pl->x3E8 = 26;
         pl->setRightHand(0);
         SndCall(8, 0x16, &pl->pos, 0xF, 0, 0);
@@ -2388,7 +2388,7 @@ static void plboat_R2_FallWater(cPlayer* pl)
         if (pl->x3E8) {
             pl->x3E8--;
             if (pl->x3E8 == 0) {
-                EstSet(0, -1, &pl->pos, 0, 0xF, 0x14, 0, 0x35, (u32) pl, 0);
+                EstSet(0, -1, &pl->pos, 0, 0xF, 0x14, 0, 0x35, (u32)(uintptr_t)(pl), 0);
                 SndCall(8, 2, &pl->pos, 0xF, 0, 0);
                 SndStrVolSet(0, 5, 70, 1);
             }
@@ -2433,9 +2433,9 @@ static void plboat_R2_Swim(cPlayer* pl)
         pl->rot.x = 0.0f;
         pl->rot.z = 0.0f;
         pl0fSwimPosSet(pl);
-        EffectEspDelete(0, 0x34, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x34, (int) pl);
-        EffectEfmDelete(0, 0x34, (int) pl);
+        EffectEspDelete(0, 0x34, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x34, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x34, (int)(uintptr_t)(pl));
         pG->flags_5010 &= ~0x00100000;
         pl->x3E4 = one;
         pl->x3E0 = 0;
@@ -2447,10 +2447,10 @@ static void plboat_R2_Swim(cPlayer* pl)
         } else {
             pl00SetChaseCam(pl);
             pl->x3EC = 90;
-            EstSet(0, -1, 0, 0, 0xF, 0xE, 0, 0x34, (u32) pl, (void*) first);
+            EstSet(0, -1, 0, 0, 0xF, 0xE, 0, 0x34, (u32)(uintptr_t)(pl), (void*)port_ptr64(first));
             pG->flags_5010 |= 0x00100000;
         }
-        MotionSetCore(pl, &pl->mot, PLARC(0x14), (int) PLARC(0x15), 5, 5, 0);
+        MotionSetCore(pl, &pl->mot, PLARC(0x14), (int)(uintptr_t)(PLARC(0x15)), 5, 5, 0);
         pl->evTarget.x = 0.0f;
         pl->evTarget.y = 0.0f;
         pl->evTarget.z = 50.0f;
@@ -2512,21 +2512,21 @@ static void plboat_R2_Swim(cPlayer* pl)
             if (f >= cnt) {
                 f = 0;
             }
-            MotionSetCore(pl, &pl->mot, PLARC(0x14), (int) m, pl->x29D, 5, (u16) f);
+            MotionSetCore(pl, &pl->mot, PLARC(0x14), (int)(uintptr_t)(m), pl->x29D, 5, (u16) f);
         }
         if (pl->motEvent & 0x40) {
-            EstSet((int) pl, -1, 0, 0, 0xF, 0x11, 0, 0x35, (u32) boat, 0);
+            EstSet((int)(uintptr_t)(pl), -1, 0, 0, 0xF, 0x11, 0, 0x35, (u32)(uintptr_t)(boat), 0);
             SndCall(8, 0x1A, &pl->pos, 0xF, 0, 0);
         }
         if (pl->motEvent & 0x80) {
-            EstSet((int) pl, -1, 0, 0, 0xF, 0x12, 0, 0x35, (u32) boat, 0);
+            EstSet((int)(uintptr_t)(pl), -1, 0, 0, 0xF, 0x12, 0, 0x35, (u32)(uintptr_t)(boat), 0);
             SndCall(8, 0x19, &pl->pos, 0xF, 0, 0);
         }
         if (pl->x3E8) {
             pl->x3E8--;
         } else {
             pl->x3E8 = 3;
-            EstSet((int) pl, -1, 0, 0, 0xF, 0x10, 0, 0x35, (u32) boat, 0);
+            EstSet((int)(uintptr_t)(pl), -1, 0, 0, 0xF, 0x10, 0, 0x35, (u32)(uintptr_t)(boat), 0);
         }
         lim = 8;
         if (pG->x4F88 <= 3) {
@@ -2573,9 +2573,9 @@ static void plboat_R2_Swim(cPlayer* pl)
         pl->x3EC--;
         if (pl->x3EC == 0) {
             pl00SetSwimCam(pl);
-            EffectEspDelete(0, 0x34, (u32) pl, 0);
-            EffectEspgenDelete(0, 0x34, (int) pl);
-            EffectEfmDelete(0, 0x34, (int) pl);
+            EffectEspDelete(0, 0x34, (u32)(uintptr_t)(pl), 0);
+            EffectEspgenDelete(0, 0x34, (int)(uintptr_t)(pl));
+            EffectEfmDelete(0, 0x34, (int)(uintptr_t)(pl));
             pG->flags_5010 &= ~0x00100000;
         }
     }
@@ -2610,7 +2610,7 @@ static void plboat_R2_WaterRide(cPlayer* pl)
         PSVECSubtract(&v, &pl->pos, &pl->evTarget);
         pl->rot.y = pl->pBoat->rot.y - PI / 2;
         pl->rot.y = LIMIT_ANGLE(pl->rot.y);
-        EstSet((int) pl, -1, 0, 0, 0xF, 0x16, 0, 0x35, (u32) boat, 0);
+        EstSet((int)(uintptr_t)(pl), -1, 0, 0, 0xF, 0x16, 0, 0x35, (u32)(uintptr_t)(boat), 0);
         plboat_ride_pos = boat->pos;
         plboat_ride_ang = boat->rot.y;
         pl->xFF++;
@@ -2624,7 +2624,7 @@ static void plboat_R2_WaterRide(cPlayer* pl)
         pl->rot.y += Muku2(plboat_ride_ang, boat->rot.y, PI);
         plboat_ride_ang = boat->rot.y;
         if (MotionMoveF(pl, 0)) {
-            pl->pBody->initWepHand((u32) PLARC(0x8));
+            pl->pBody->initWepHand((u32)(uintptr_t)(PLARC(0x8)));
             pl->setRightHand(1);
             pl->pWep->setTrans(0, 0);
             PlRoutineSet(pPL, 0, 0xF, 2, 0);
@@ -2662,10 +2662,10 @@ static void plboat_R2_Die(cPlayer* pl)
             if (boss) {
                 Em2fWorkView* bw = (Em2fWorkView*) &boss->x3E0;
 
-                EffectEspDelete(0, bw->espKind, (u32) boss, 0);
-                EffectEspgenDelete(0, bw->espKind, (int) boss);
-                EffectEfmDelete(0, bw->espKind, (int) boss);
-                EstSet((int) boss, -1, 0, 0, 0x27, 0xA, 0, 0, (u32) boss, 0);
+                EffectEspDelete(0, bw->espKind, (u32)(uintptr_t)(boss), 0);
+                EffectEspgenDelete(0, bw->espKind, (int)(uintptr_t)(boss));
+                EffectEfmDelete(0, bw->espKind, (int)(uintptr_t)(boss));
+                EstSet((int)(uintptr_t)(boss), -1, 0, 0, 0x27, 0xA, 0, 0, (u32)(uintptr_t)(boss), 0);
             }
         } else {
             pl->x3E0 = eaten;
@@ -2713,7 +2713,7 @@ static void plboat_R2_Die(cPlayer* pl)
 { \
     switch (pl->xFF) { \
     case 0: \
-        pl->pBody->initWepHand((u32) PLARC(0x8)); \
+        pl->pBody->initWepHand((u32)(uintptr_t)(PLARC(0x8))); \
         pl->setRightHand(1); \
         pl->pWep->setTrans(0, 0); \
         pl->x3FC = 1; \
@@ -2765,7 +2765,7 @@ static void plboat_R2_R10dIn(cPlayer* pl)
         MotionSetCore(pl, &pl->mot, PLARC(0x29), 0, 0, 5, 0); \
         pl->sightRate = 0.0f; \
         pl->blendRate500 = 0.0f; \
-        pl->pBody->initWepHand((u32) PLARC(0x8)); \
+        pl->pBody->initWepHand((u32)(uintptr_t)(PLARC(0x8))); \
         pl->setRightHand(1); \
         pl->pWep->setTrans(0, 0); \
         pl->xFF++; \
@@ -2804,15 +2804,15 @@ static void plboat_R2_R10dIn(cPlayer* pl)
         pl->pos.z = pz; \
         pl->rot.y = ang; \
         boat->setPos(&pl->pos, ang); \
-        EffectEspDelete(0, 0x35, (u32) boat, 0); \
-        EffectEspgenDelete(0, 0x35, (int) boat); \
-        EffectEfmDelete(0, 0x35, (int) boat); \
+        EffectEspDelete(0, 0x35, (u32)(uintptr_t)(boat), 0); \
+        EffectEspgenDelete(0, 0x35, (int)(uintptr_t)(boat)); \
+        EffectEfmDelete(0, 0x35, (int)(uintptr_t)(boat)); \
         pl->x3E0 = 0; \
         pl->xFF++; \
     case 3: \
         pl->x3E0++; \
         if (pl->x3E0 & 1) { \
-            EstSet((int) boat, -1, 0, 0, 1, 0xA, 0, 0x35, (u32) boat, 0); \
+            EstSet((int)(uintptr_t)(boat), -1, 0, 0, 1, 0xA, 0, 0x35, (u32)(uintptr_t)(boat), 0); \
         } \
         if ((int) pl->x3E0 % 20 == 0) { \
             Vec p; \
@@ -2915,7 +2915,7 @@ void pl00SwimCamMove(cPlayer* pl)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 void pl00SetChaseCam(cPlayer* pl)
@@ -2950,7 +2950,7 @@ void pl00ChaseCamMove(cPlayer* pl)
     pl0f_camera.up.y = 1.0f;
     pl0f_camera.up.z = 0.0f;
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 void pl00SetDieCam(cPlayer* pl)
@@ -2988,7 +2988,7 @@ void pl00DieCamMove(cPlayer* pl)
     PSMTXRotRad(m, 'y', pl->rot.y);
     PSMTXMultVecSR(m, &v, &pl0f_camera.up);
     CAM_SET(pl0f_camera);
-    CamCtrl.x250 = (s32) &pl0f_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl0f_camera);
 }
 
 void pl00SetDropCam(cPlayer* pl)
@@ -3033,13 +3033,13 @@ void pl00DropCamMove(cPlayer* pl)
     pl00_drop_camera.up.y = 1.0f;
     pl00_drop_camera.up.z = 0.0f;
     CAM_SET(pl00_drop_camera);
-    CamCtrl.x250 = (s32) &pl00_drop_camera;
+    CamCtrl.x250 = (s32)(uintptr_t)(&pl00_drop_camera);
     pG->flags_5010 &= ~0x00100000;
     if (GetWaterHeight(&at, &h)) {
         switch (pl->x3EC) {
         case 0:
             if (h > at.y) {
-                EstSet(0, -1, 0, 0, 0xF, 0xA, 0, 0x34, (u32) pl, 0);
+                EstSet(0, -1, 0, 0, 0xF, 0xA, 0, 0x34, (u32)(uintptr_t)(pl), 0);
                 pG->flags_5010 |= 0x00100000;
                 pl->x3F0 = 10;
                 pl->x3EC++;
@@ -3058,9 +3058,9 @@ void pl00DropCamMove(cPlayer* pl)
         case 2:
             pG->flags_5010 |= 0x00100000;
             if (h <= at.y) {
-                EffectEspDelete(0, 0x34, (u32) pl, 0);
-                EffectEspgenDelete(0, 0x34, (int) pl);
-                EffectEfmDelete(0, 0x34, (int) pl);
+                EffectEspDelete(0, 0x34, (u32)(uintptr_t)(pl), 0);
+                EffectEspgenDelete(0, 0x34, (int)(uintptr_t)(pl));
+                EffectEfmDelete(0, 0x34, (int)(uintptr_t)(pl));
                 pG->flags_5010 &= ~0x00100000;
                 pl->x3EC++;
             }
@@ -3225,7 +3225,7 @@ void plboatSightCurMove(cPlayer* pl)
     Vec p;
 
     plboatSightCurGet(pl, &p);
-    EstSet(0, -1, &p, 0, 0xF, 6, 0, 0x35, (u32) pl, 0);
+    EstSet(0, -1, &p, 0, 0xF, 6, 0, 0x35, (u32)(uintptr_t)(pl), 0);
 }
 
 void plboatSpearThrow(cPlayer* pl)
@@ -3373,9 +3373,9 @@ void pl0fSwimPosSet(cPlayer* pl)
     TransMatrix(pl->worldMat, &pl->pos);
     ScaleMatrix(pl->worldMat, &pl->scale);
     PSMTXCopy(pl->worldMat, pl->mat);
-    EffectEspDelete(0, 0x35, (u32) boat, 0);
-    EffectEspgenDelete(0, 0x35, (int) boat);
-    EffectEfmDelete(0, 0x35, (int) boat);
+    EffectEspDelete(0, 0x35, (u32)(uintptr_t)(boat), 0);
+    EffectEspgenDelete(0, 0x35, (int)(uintptr_t)(boat));
+    EffectEfmDelete(0, 0x35, (int)(uintptr_t)(boat));
 }
 
 void pl0fHidePosSet(cPlayer* pl)
@@ -3396,9 +3396,9 @@ void pl0fHidePosSet(cPlayer* pl)
     boat->setPos(&v, ang);
     pl->pos = boat->pos;
     pl->rot.y = boat->rot.y;
-    EffectEspDelete(0, 0x35, (u32) boat, 0);
-    EffectEspgenDelete(0, 0x35, (int) boat);
-    EffectEfmDelete(0, 0x35, (int) boat);
+    EffectEspDelete(0, 0x35, (u32)(uintptr_t)(boat), 0);
+    EffectEspgenDelete(0, 0x35, (int)(uintptr_t)(boat));
+    EffectEfmDelete(0, 0x35, (int)(uintptr_t)(boat));
 }
 
 void pl0fBossDiePosSet(cPlayer* pl)
@@ -3413,9 +3413,9 @@ void pl0fBossDiePosSet(cPlayer* pl)
     pl->rot.y = LIMIT_ANGLE(pl->rot.y);
     boat->setPos(&v, pl->rot.y);   // the just-stored member is forwarded: f1 passes straight through
     pl->pos = boat->pos;
-    EffectEspDelete(0, 0x35, (u32) boat, 0);
-    EffectEspgenDelete(0, 0x35, (int) boat);
-    EffectEfmDelete(0, 0x35, (int) boat);
+    EffectEspDelete(0, 0x35, (u32)(uintptr_t)(boat), 0);
+    EffectEspgenDelete(0, 0x35, (int)(uintptr_t)(boat));
+    EffectEfmDelete(0, 0x35, (int)(uintptr_t)(boat));
 }
 
 // The anchor object hung on the boat (room 10B only).
@@ -3466,51 +3466,51 @@ void pl0fSetAnchorEm2f(cPlayer* pl)
     w = PL0F_WK(pl->pBoat);
     boss = w->pBoss;
     if (boss == 0) {
-        EffectEspDelete(0, 0x36, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x36, (int) pl);
-        EffectEfmDelete(0, 0x36, (int) pl);
+        EffectEspDelete(0, 0x36, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x36, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x36, (int)(uintptr_t)(pl));
         w->anchorEff = 0;
         return;
     }
     // Two separate ifs: each body is the fall-through of its own test, so cse stores the known-zero `andi.`
     // result (r28) and jump2 merges the two identical bodies; an `||` body starts at a label and gets `li r0,0`.
     if (!(boss->flags_3C8 & 0x20)) {
-        EffectEspDelete(0, 0x36, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x36, (int) pl);
-        EffectEfmDelete(0, 0x36, (int) pl);
+        EffectEspDelete(0, 0x36, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x36, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x36, (int)(uintptr_t)(pl));
         w->anchorEff = 0;
         return;
     }
     if (!(boss->flags_3C8 & 4)) {
-        EffectEspDelete(0, 0x36, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x36, (int) pl);
-        EffectEfmDelete(0, 0x36, (int) pl);
+        EffectEspDelete(0, 0x36, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x36, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x36, (int)(uintptr_t)(pl));
         w->anchorEff = 0;
         return;
     }
     ang = Muku(&pl->pos, &boss->pos, pl->rot.y, PI);
     if (fabsf(ang) < PI / 8) {
-        EffectEspDelete(0, 0x36, (u32) pl, 0);
-        EffectEspgenDelete(0, 0x36, (int) pl);
-        EffectEfmDelete(0, 0x36, (int) pl);
+        EffectEspDelete(0, 0x36, (u32)(uintptr_t)(pl), 0);
+        EffectEspgenDelete(0, 0x36, (int)(uintptr_t)(pl));
+        EffectEfmDelete(0, 0x36, (int)(uintptr_t)(pl));
         w->anchorEff = 0;
         return;
     }
     if (ang < 0.0f) {
         if (w->anchorEff != 1) {
-            EffectEspDelete(0, 0x36, (u32) pl, 0);
-            EffectEspgenDelete(0, 0x36, (int) pl);
-            EffectEfmDelete(0, 0x36, (int) pl);
+            EffectEspDelete(0, 0x36, (u32)(uintptr_t)(pl), 0);
+            EffectEspgenDelete(0, 0x36, (int)(uintptr_t)(pl));
+            EffectEfmDelete(0, 0x36, (int)(uintptr_t)(pl));
             w->anchorEff = 1;
-            EstSet(0, -1, 0, 0, 0xF, 0x1F, 0, 0x36, (u32) pl, 0);
+            EstSet(0, -1, 0, 0, 0xF, 0x1F, 0, 0x36, (u32)(uintptr_t)(pl), 0);
         }
     } else {
         if (w->anchorEff != 2) {
-            EffectEspDelete(0, 0x36, (u32) pl, 0);
-            EffectEspgenDelete(0, 0x36, (int) pl);
-            EffectEfmDelete(0, 0x36, (int) pl);
+            EffectEspDelete(0, 0x36, (u32)(uintptr_t)(pl), 0);
+            EffectEspgenDelete(0, 0x36, (int)(uintptr_t)(pl));
+            EffectEfmDelete(0, 0x36, (int)(uintptr_t)(pl));
             w->anchorEff = 2;
-            EstSet(0, -1, 0, 0, 0xF, 0x1E, 0, 0x36, (u32) pl, 0);
+            EstSet(0, -1, 0, 0, 0xF, 0x1E, 0, 0x36, (u32)(uintptr_t)(pl), 0);
         }
     }
 }
@@ -3696,13 +3696,13 @@ void cPl0f::setBossStart(Vec* p, f32 ang)
         setPos(p, ang);
         FSet(pPL->rot.y, ang);   // scalar-reference store: pPL is reloaded for the pos copy
         pPL->pos = pos;
-        EffectEspDelete(0, 0x35, (u32) this, 0);
-        EffectEspgenDelete(0, 0x35, (int) this);
-        EffectEfmDelete(0, 0x35, (int) this);
+        EffectEspDelete(0, 0x35, (u32)(uintptr_t)(this), 0);
+        EffectEspgenDelete(0, 0x35, (int)(uintptr_t)(this));
+        EffectEfmDelete(0, 0x35, (int)(uintptr_t)(this));
         PlRoutineSet(pPL, 0, 0xF, 2, 0);
         PlRoutineSet(this, 1, 6, 0, 0);
         pl = pPL;
-        pl->pBody->initWepHand((u32) PL_ARC_PTR(subArc, 8));
+        pl->pBody->initWepHand((u32)(uintptr_t)(PL_ARC_PTR(subArc, 8)));
         pl->setRightHand(1);
         pl->pWep->setTrans(0, 0);
     }

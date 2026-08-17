@@ -58,7 +58,7 @@ static void plem29_BatRush(cPlayer* pl);
 #define PL_ARC(no) PL_ARC_PTR(pl->subArc, no)
 
 // The enemy a player damage callback belongs to (pl_sub SetPlDamage's first argument).
-#define PL_EM(pl) ((cEm*) (pl)->dmgType)
+#define PL_EM(pl) ((cEm*)port_ptr64((pl)->dmgType))
 
 // Struct-member view of the player pointer: a load through it is not hoisted above the preceding
 // stores through the work pointer (cam_ctrl.cpp PlayerPtr).
@@ -280,7 +280,7 @@ void em29DmCk(cEm29* em)
     // The do-while doubles zero's ref weight so global alloc places it (r29) before `kind` (r28)
     // and `b3` (r26) -- with plain refs kind ranks above zero and the two swap registers.
     do {
-        EstSet(0, -1, &em->pos, &em->rot, 0x21, 0, 0, 0, (u32) zero, (void*) zero);
+        EstSet(0, -1, &em->pos, &em->rot, 0x21, 0, 0, 0, (u32) zero, (void*)port_ptr64(zero));
         em->be_flag &= ~2;
         Ctrl12CntAdd(w->pCtrl12, 2, 1);
         em29LastCk(em);
@@ -416,7 +416,7 @@ static void em29_R0_Init(cEm29* em)
     em->atari.flags &= ~0x200;
     em->setStatus(0xB);
     YarareInit(em, 0.0f, -30.0f, 0.0f, 100.0f, 60.0f, 5, 1);
-    EspDataLoad((u32) ARC(6), 0x21, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(6)), 0x21, 0);
     w->flags = zero;
     w->atkTimer = 180;
     w->escTimer = zero;
@@ -620,7 +620,7 @@ static void em29_R1_AtkDash(cEm29* em)
 
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, MOTION(em), ARC(0x12), (int) ARC(0x19), 5, 1, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x12), (int)(uintptr_t)(ARC(0x19)), 5, 1, 0);
         w->escTimer = 0;
         w->atkHit = 0;
         w->tgtSpd.x = 0.0f;
@@ -711,7 +711,7 @@ static void em29_R1_AtkRush(cEm29* em)
                 cModel* p = GetPartsAddr(em->pParts, 2);
 
                 EmPlBloodSet(em, &p->worldPos, 1, 0xFF, 0xFF);
-                VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xA, 1);
+                VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0xA, 1);
             }
             if ((s16) pG->pl_life <= 0) {
                 PlSetDamage(0, 0, 0);
@@ -1271,13 +1271,13 @@ int em29AtkCk(cEm29* em, int no)
             EmPlBloodSet(em, &p->worldPos, 1, 0xFF, 0xFF);
             w->atkHit = 1;
             pPL->subArc = em->subArc;
-            SetPlDamage((int) em, plem29_BatRush);
+            SetPlDamage((int)(uintptr_t)(em), plem29_BatRush);
         }
         if (hit & 2) {
             EmSubBloodSet(em, &p->worldPos, 1, 0xFF, 0xFF);
             w->atkHit = 1;
         }
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
         return 1;
     }
     return 0;

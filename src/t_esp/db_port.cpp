@@ -497,7 +497,7 @@ extern "C" void SeqSet(EspSeqData* head, int mode)
     if (evtToolOn()) {
         f |= 0x1000;
     }
-    EstSet(m, -1, 0, 0, head, f | 1, 0, (u32) m, 0xCF, (void*) zero);
+    EstSet(m, -1, 0, 0, head, f | 1, 0, (u32)(uintptr_t)(m), 0xCF, (void*)port_ptr64(zero));
 }
 
 extern "C" void DB_EventCamLoad()
@@ -582,7 +582,7 @@ extern "C" void LoadModEff()
     sprintf(path, "x:/soft/room/esp/%s.eff", db_emName);
     if (HDReadDebugAlloc(path, &buf, 1)) {
         db_effLoaded = 1;
-        EspDataLoad((u32) buf, db_effOwner, 0);
+        EspDataLoad((u32)(uintptr_t)(buf), db_effOwner, 0);
     }
 }
 
@@ -718,9 +718,9 @@ static inline void StrCpy(char* d, const char* s) { strcpy(d, s); }
 // field reads sum `rr + pModel` (`add rX,r26,rP`), the name/bin/tpl addresses `pModel + rr` (`add r4,r4,r26`, the natural
 // EXPAND_SUM order of `&pModel[i].name`); M0 is the pScr block's view through its own `lis/addi` (#13, see ed0), MJ the
 // j loop's (EvtDebug_j)
-#define M (*(EvtDebugModel*) (rr + (u32) EvtDebug.pModel))
+#define M (*(EvtDebugModel*)port_ptr64((rr + (u32)(uintptr_t)(EvtDebug.pModel))))
 #define MA ((EvtDebugModel*) ((u32) EvtDebug.pModel + rr))
-#define M0 ((EvtDebugModel*) (rr + (u32) ed0->pModel))
+#define M0 ((EvtDebugModel*)port_ptr64((rr + (u32)(uintptr_t)(ed0->pModel))))
 #define MJ ((EvtDebugModel*) ((u32) EvtDebug_j.pModel + rr))
 
 extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
@@ -805,7 +805,7 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
         sprintf(path, "x:/soft/room/esp/r%03xs%02x.eff", G_ROOM_ID, *pStage);
         if (HDReadDebugAlloc(path, &buf, 1)) {
             db_effLoaded = 1;
-            EspDataLoad((u32) buf, db_effOwner, 0);
+            EspDataLoad((u32)(uintptr_t)(buf), db_effOwner, 0);
         }
         *out = 0;
         DB_WorkPop(3, db_emArray);
@@ -859,7 +859,7 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
             // the add (priority 6 > 5) and `prod` dies at the add (tied into the sum's r9 like the target).
             prod = i * sizeof(EvtDebugModel);
             asm("" : "=r"(rr), "=m"(buf3[2]) : "0"(prod));
-            if (flagOn(*(u32*) (prod + (u32) EvtDebug.pModel + 0x63C), 0x20000000)) {
+            if (flagOn(*(u32*)port_ptr64((prod + (u32)(uintptr_t)(EvtDebug.pModel) + 0x63C)), 0x20000000)) {
                 int idx;
                 int parentModel;
 
@@ -867,7 +867,7 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
                 parent = (s8) M.pad_63A[1];
                 Vec ofs = {0.0f, 0.0f, 0.0f};
                 // an int local: `(s8)` of the field itself narrows the load to `lbz 0x637`
-                parentModel = (int) EvtDebug.pModel[idx].pModel;
+                parentModel = (int)(uintptr_t)(EvtDebug.pModel[idx].pModel);
                 dbModelParentChild((s8) i, (s8) parentModel, ((s8*) pParent)[3], &ofs, &ofs);
             } else {
                 NAME_SET(MA->name);
@@ -955,7 +955,7 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
                     tpl.append(path);
                 }
             }
-            slot = (int) M.pModel;
+            slot = (int)(uintptr_t)(M.pModel);
             dbModelLoad(slot, &bin, &tpl, &xtra);
             SetLoopFlag(0, slot);
             em = dbModGetEmPtr(slot);
@@ -973,9 +973,9 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
                 // an integer address variable: with `cModel** list` the REGNO_POINTER_FLAG makes `list` the base and
                 // the index takes r0 (target: both unflagged -> the index is BASE_REGS r9, the sum global r11); the shift
                 // keeps `la` first in the PLUS (EXPAND_SUM moves a MULT operand first)
-                la = (u32) EspEvModList;
+                la = (u32)(uintptr_t)(EspEvModList);
                 if ((u32) slot <= 0x7F) {
-                    *(cModel**) (la + ((u32) slot << 2)) = p;
+                    *(cModel**)port_ptr64((la + ((u32) slot << 2))) = p;
                 }
                 em->x12F = M.x638;
                 if (flagOn(M.flags, 0x80000000)) {
@@ -1462,12 +1462,12 @@ extern "C" void DB_VecMulEmPartsMat(u32 parts, Vec* in, Vec* out, Mtx* m, EspGen
         // leaves r9 to `p` (`la` r11). The `li r9,0` before the `bgt` is jump2's post-reload
         // "if (c) { x = a; goto l; } x = b" hoist: the else arm's first insn `slwi r9,r0,2` sets `p`'s register.
         u32 no = gen->x6;
-        u32 la = (u32) EspEvModList;
+        u32 la = (u32)(uintptr_t)(EspEvModList);
         cModel* p;
         if (no > 0x7F) {
             p = 0;
         } else {
-            p = *(cModel**) (la + (no << 2));
+            p = *(cModel**)port_ptr64((la + (no << 2)));
         }
         em = p;
         if (em == 0) {

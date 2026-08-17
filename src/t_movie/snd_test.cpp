@@ -457,12 +457,12 @@ TestPara* test_get_tpara_adrs(SndTestWork* w)
 
     if (w->tbl == 0) {
         if (w->type == 3) {
-            p = (TestPara*) (w->cur * sizeof(TestPara) + (u32) test_para_midi);
+            p = (TestPara*) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_midi));
         } else {
-            p = (TestPara*) (w->cur * sizeof(TestPara) + (u32) test_para_sit);
+            p = (TestPara*) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_sit));
         }
     } else {
-        p = (TestPara*) (w->cur * sizeof(TestPara) + (u32) test_para_rit);
+        p = (TestPara*) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_rit));
     }
     return p;
 }
@@ -1950,10 +1950,10 @@ void blk_file_disp(SndTestWork* w)
 
     if (w->loadTbl == 0) {
         eprintf(0x18, 0x10A, 0, 1, "SIT BLK[%02d] :", blk);
-        file = (char*) w->sitData[blk];
+        file = (char*)port_ptr64(w->sitData[blk]);
     } else {
         eprintf(0x18, 0x10A, 0, 1, "RIT BLK[%02d] :", blk);
-        file = (char*) w->ritData[blk];
+        file = (char*)port_ptr64(w->ritData[blk]);
     }
     if (file == NULL) {
         eprintf(0x88, 0x10A, 7, 1, "%s", "NO DATA");
@@ -2116,7 +2116,7 @@ void aram_dump_dma(SndTestWork* w)
     SND_CTRL_WORK* ctrl = &Snd_ctrl_work;
 
     ctrl->dma_busy = 1;
-    ARQPostRequest(&ctrl->arq, 0, 1, 0, w->aramAdrs, (u32) Snd_test_work.dump, 0x100, cb_dma_end);
+    ARQPostRequest(&ctrl->arq, 0, 1, 0, w->aramAdrs, (u32)(uintptr_t)(Snd_test_work.dump), 0x100, cb_dma_end);
     do {
     } while (ctrl->dma_busy != 0);
     DCInvalidateRange(w->dump, 0x100);

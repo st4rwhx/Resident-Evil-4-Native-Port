@@ -33,7 +33,7 @@ cObjWep* equipWeapon(cPlayer* pl)
         return 0;
     }
     obj->init(pl);
-    pl->pBody->initWepHand((u32) PL_ARC_PTR(pG->pPlArc, 0x12));
+    pl->pBody->initWepHand((u32)(uintptr_t)(PL_ARC_PTR(pG->pPlArc, 0x12)));
     pl->setRightHand(1);
     pl->setLeftHand(0);
     return obj;

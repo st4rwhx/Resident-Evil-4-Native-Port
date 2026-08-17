@@ -121,8 +121,8 @@ void R10cInit()
 
         PSet(r10c_work.p->eat, EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 5), 0, &zero, &zero, 6));
     }
-    EstSet((int) pPL, -1, 0, 0, 3, 2, 0x800, 0, 0, 0);
-    EstSet((int) pPL, -1, 0, 0, 1, 3, 0x800, 0, 0, 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 3, 2, 0x800, 0, 0, 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 3, 0x800, 0, 0, 0);
     pG->flags_5010 |= 0x400;
     SceExec(0x12, (TaskFunc) r10c_ThunderMove, 0, 0, 2, 0);
     SceExec(0x12, (TaskFunc) moveWheel, 0, 2, 2, 0);
@@ -396,7 +396,7 @@ static void r10c_EmEvent()
         }
         em->setNoSuspend(1);
         r10c_work.p->em = em;
-        EstSet((int) em, -1, 0, 0, 1, 0x1F, 1, 2, 0, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x1F, 1, 2, 0, 0);
         BitOn(em->flags_3C8, 1);
         MotionSetCore(em, &em->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x26), 0, 0, 1, 0);
         SndStrReq(1, 0x23, 0x80000003, 0, 0, 0.0f);
@@ -672,7 +672,7 @@ static void chkSwitchA()
         EffectEspDelete(0, 0xD, 0, 0);
         EffectEspgenDelete(0, 0xD, 0);
         EffectEfmDelete(0, 0xD, 0);
-        EstSet(0, -1, 0, 0, 1, 8, 0x2001, 6, z, (void*) z); // COMPILER-DIFF: candidate #17 (both 0, see `z`)
+        EstSet(0, -1, 0, 0, 1, 8, 0x2001, 6, z, (void*)port_ptr64(z)); // COMPILER-DIFF: candidate #17 (both 0, see `z`)
         CamCtrl.CutCall(0x19);
         while (CamCtrl.IsMotionEnd() == 0) {
             SceSleep(1);
@@ -953,60 +953,60 @@ static void SetEmHitAtari()
     spdB = 0.05f;
     spdC = 0.06f;
     if (RsfCheck(G_ROOM_ID, 14) == 0) {
-        r10c_work.p->hit[0][0] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[0][0] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x61)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[0][0], 0.0f, 0.0f, 0.0f, 750.0f, 1500.0f, 750.0f, 0, 1);
-        r10c_work.p->hit[0][1] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[0][1] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x61)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[0][1], 0.0f, 1500.0f, 0.0f, 100.0f, 1800.0f, 100.0f, 0, 1);
-        r10c_work.p->hit[0][2] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[0][2] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x61)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[0][2], 0.0f, 450.0f, 0.0f, 500.0f, 1500.0f, 500.0f, 0, 1);
     } else {
         cObj* obj;
 
         SmdSetTrans(0x6A, 0);
-        SceExec(0x12, (TaskFunc) hako_down, (int) SmdGetObjPtr(0x61), 0, 2, 0);
+        SceExec(0x12, (TaskFunc) hako_down, (int)(uintptr_t)(SmdGetObjPtr(0x61)), 0, 2, 0);
         obj = SmdGetObjPtr(0x61);
         obj->pos.x = 93412.0f;
         obj->pos.y = -16601.0f;
         obj->pos.z = 32568.0f;
     }
     if (RsfCheck(G_ROOM_ID, 15) == 0) {
-        r10c_work.p->hit[1][0] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[1][0] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x62)->pos, &SmdGetObjPtr(0x62)->rot, 0);
         YarareInitCube(r10c_work.p->hit[1][0], 0.0f, 0.0f, 0.0f, 750.0f, 1500.0f, 750.0f, 0, 1);
-        r10c_work.p->hit[1][1] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[1][1] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x62)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[1][1], 0.0f, 1500.0f, 0.0f, 100.0f, 1800.0f, 100.0f, 0, 1);
-        r10c_work.p->hit[1][2] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[1][2] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x62)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[1][2], 0.0f, 450.0f, 0.0f, 500.0f, 1500.0f, 500.0f, 0, 1);
     } else {
         cObj* obj;
 
         SmdSetTrans(0x6B, 0);
-        SceExec(0x12, (TaskFunc) hako_down, (int) SmdGetObjPtr(0x62), 0, 2, 0);
+        SceExec(0x12, (TaskFunc) hako_down, (int)(uintptr_t)(SmdGetObjPtr(0x62)), 0, 2, 0);
         obj = SmdGetObjPtr(0x62);
         obj->pos.x = 93412.0f;
         obj->pos.y = -16601.0f;
         obj->pos.z = 42216.0f;
     }
     if (RsfCheck(G_ROOM_ID, 16) == 0) {
-        r10c_work.p->hit[2][0] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[2][0] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x63)->pos, &SmdGetObjPtr(0x63)->rot, 0);
         YarareInitCube(r10c_work.p->hit[2][0], 0.0f, 0.0f, 0.0f, 750.0f, 1500.0f, 750.0f, 0, 1);
-        r10c_work.p->hit[2][1] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[2][1] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x63)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[2][1], 0.0f, 1500.0f, 0.0f, 100.0f, 1800.0f, 100.0f, 0, 1);
-        r10c_work.p->hit[2][2] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc),
+        r10c_work.p->hit[2][2] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)),
                                           &SmdGetObjPtr(0x63)->pos, &SmdGetObjPtr(0x61)->rot, 0);
         YarareInitCube(r10c_work.p->hit[2][2], 0.0f, 450.0f, 0.0f, 500.0f, 1500.0f, 500.0f, 0, 1);
     } else {
         cObj* obj;
 
         SmdSetTrans(0x6C, 0);
-        SceExec(0x12, (TaskFunc) hako_down, (int) SmdGetObjPtr(0x63), 0, 2, 0);
+        SceExec(0x12, (TaskFunc) hako_down, (int)(uintptr_t)(SmdGetObjPtr(0x63)), 0, 2, 0);
         obj = SmdGetObjPtr(0x63);
         obj->pos.x = 93412.0f;
         obj->pos.y = -16601.0f;
@@ -1100,7 +1100,7 @@ static void SetEmHitAtari()
                 SmdSetTrans(0x6A, 0);
                 SndCall(6, 1, &SmdGetObjPtr(0x61)->pos, 0, 0, 0);
                 EstSet(0, -1, &SmdGetObjPtr(0x61)->pos, 0, 1, 0xA, 0, 0, 0, 0);
-                SceExec(0x12, (TaskFunc) hako_down, (int) SmdGetObjPtr(0x61), 0, 2, 0);
+                SceExec(0x12, (TaskFunc) hako_down, (int)(uintptr_t)(SmdGetObjPtr(0x61)), 0, 2, 0);
                 RsfSet(G_ROOM_ID, 14);
             }
         }
@@ -1113,7 +1113,7 @@ static void SetEmHitAtari()
                 SmdSetTrans(0x6B, 0);
                 SndCall(6, 1, &SmdGetObjPtr(0x62)->pos, 0, 0, 0);
                 EstSet(0, -1, &SmdGetObjPtr(0x62)->pos, 0, 1, 0xA, 0, 0, 0, 0);
-                SceExec(0x12, (TaskFunc) hako_down, (int) SmdGetObjPtr(0x62), 0, 2, 0);
+                SceExec(0x12, (TaskFunc) hako_down, (int)(uintptr_t)(SmdGetObjPtr(0x62)), 0, 2, 0);
                 RsfSet(G_ROOM_ID, 15);
             }
         }
@@ -1126,7 +1126,7 @@ static void SetEmHitAtari()
                 SmdSetTrans(0x6C, 0);
                 SndCall(6, 1, &SmdGetObjPtr(0x63)->pos, 0, 0, 0);
                 EstSet(0, -1, &SmdGetObjPtr(0x63)->pos, 0, 1, 0xA, 0, 0, 0, 0);
-                SceExec(0x12, (TaskFunc) hako_down, (int) SmdGetObjPtr(0x63), 0, 2, 0);
+                SceExec(0x12, (TaskFunc) hako_down, (int)(uintptr_t)(SmdGetObjPtr(0x63)), 0, 2, 0);
                 RsfSet(G_ROOM_ID, 16);
             }
         }

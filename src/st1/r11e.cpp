@@ -305,13 +305,13 @@ static void r11e_move_sasaeki1()
 
     objA = SmdGetObjPtr(0x23);
     objB = SmdGetObjPtr(0x24);
-    EspDataLoad((u32) ROOM_ARC_PTR(pG->pRoomArc, 0x22), 0xC8, 0);
+    EspDataLoad((u32)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x22)), 0xC8, 0);
     if (EspGetEfmTplAddr(0x20, &tpl) == 0) {
         pLog->err(0, 0, "IWA init: EFM[%02x] TPL not regist.", 0x20);
         return;
     }
     if (RsfCheck(G_ROOM_ID, 4) == 0) {
-        hitA = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &objA->pos, &objA->rot, 0);
+        hitA = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &objA->pos, &objA->rot, 0);
         objA->be_flag |= 0x20;
         {
             const f32 w = 2000.0f;    // const: pool order w, h before 0.0, uses stay literal (sched ties)
@@ -333,7 +333,7 @@ static void r11e_move_sasaeki1()
         objA->be_flag &= ~2;
     }
     if (RsfCheck(G_ROOM_ID, 5) == 0) {
-        hitB = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &objB->pos, &objB->rot, 0);
+        hitB = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &objB->pos, &objB->rot, 0);
         objB->be_flag |= 0x20;
         {
             const f32 w = 2000.0f;
@@ -374,9 +374,9 @@ static void r11e_move_sasaeki1()
 // The giant's appearance is over: Leon and Ashley are put back, the second giant is set.
 static void r11e_EmSet_exit()
 {
-    EffectEspDelete(1, 0, (u32) r11e_work->em.getPtr(), 0);
-    EffectEspgenDelete(1, 0, (int) r11e_work->em.getPtr());
-    EffectEfmDelete(1, 0, (int) r11e_work->em.getPtr());
+    EffectEspDelete(1, 0, (u32)(uintptr_t)(r11e_work->em.getPtr()), 0);
+    EffectEspgenDelete(1, 0, (int)(uintptr_t)(r11e_work->em.getPtr()));
+    EffectEfmDelete(1, 0, (int)(uintptr_t)(r11e_work->em.getPtr()));
     CamCtrl.Comeback(0);
     SceEventEnd(0);
     r11e_work->em.setNoSuspend(0);
@@ -419,7 +419,7 @@ static void r11e_EmSet_exit()
             pp->y = 3.1f;
             pp->z = 0.0f;
             pSUB->setAng(pp);
-            SetSubAux((int) funcAshley, 0);
+            SetSubAux((int)(uintptr_t)(funcAshley), 0);
             SndCall(6, 2, &pSUB->pos, 0, 0, 0);
         }
     }

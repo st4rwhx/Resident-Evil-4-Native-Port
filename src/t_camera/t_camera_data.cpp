@@ -202,7 +202,7 @@ int tcDataExport(u8* buf)
                 }
             }
             if (found == 0) {
-                r->cut = (CameraCut*) found;
+                r->cut = (CameraCut*)port_ptr64(found);
                 da->enable = found;
             }
             r++;

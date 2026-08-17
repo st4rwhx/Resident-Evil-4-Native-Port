@@ -21,7 +21,7 @@ void ToolLight()
     TutilInitDefault();
     tool = new cLightTool;
     Block.dispAllBlock(1);
-    if ((u32) tool >= PORT_PTR_MIN && (u32) tool <= PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(tool) >= PORT_PTR_MIN && (u32)(uintptr_t)(tool) <= PORT_PTR_MAX) {
         int ret;
 
         TOOL_FLAG(OFS_DEBUG_FLG) |= 0x20000000;

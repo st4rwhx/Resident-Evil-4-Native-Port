@@ -294,7 +294,7 @@ static void em3d_R0_Init(cEm3d* em)
     em->lockOfs.x = 0.0f;
     em->lockOfs.y = 0.0f;
     em->lockOfs.z = 0.0f;
-    EspDataLoad((u32) ARC(4), 0x32, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(4)), 0x32, 0);
     w->flags = zero;
     w->gunTimer = zero;
     w->vibAng.x = fRand1_1() * PI;
@@ -326,8 +326,8 @@ static void em3d_R0_Init(cEm3d* em)
         }
     }
     w->patrolPos = Em3d_pos_tbl[0];
-    EstSet((int) em, -1, 0, 0, 0x32, 0, 1, 0, (u32) em, 0);
-    EstSet((int) em, -1, 0, 0, 0x32, 3, 1, 0, (u32) em, 0);
+    EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x32, 0, 1, 0, (u32)(uintptr_t)(em), 0);
+    EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x32, 3, 1, 0, (u32)(uintptr_t)(em), 0);
     EmRoutineSet(em, 1, 0, 0, 0);
     SndCall(6, 0, &em->pos, 0, 0, em);
     em3d_R0_Move(em);
@@ -661,7 +661,7 @@ void em3dRoterMove(cEm3d* em)
             rot.z = 0.0f;                                                               \
             PSVECScale(&nrm, &s, 30.0f);                                                \
             PSVECAdd(&hit, &s, &hit);                                                   \
-            EstSet(0, -1, &hit, &rot, 0x32, 6, 0, 0, zero, (void*) (zero));             \
+            EstSet(0, -1, &hit, &rot, 0x32, 6, 0, 0, zero, (void*)port_ptr64((zero)));             \
             if (se) {                                                                   \
                 SndCall(6, 0xA, &hit, 0, 0, em);                                        \
             }                                                                           \
@@ -721,8 +721,8 @@ void em3dChainGunMove(cEm3d* em)
         return;
     }
     w->gunTimer = 2;
-    EstSet((int) em, -1, 0, 0, 0x32, 1, 1, 0, (u32) em, (void*) t);
-    EstSet((int) em, -1, 0, 0, 0x32, 2, 1, 0, (u32) em, (void*) t);
+    EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x32, 1, 1, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(t));
+    EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x32, 2, 1, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(t));
     SndCall(6, 1, &em->pos, 0, 0, em);
     EM3D_GUN_SHOT(em, 4, 5000.0f, 100000.0f, 1, t);
     EM3D_GUN_SHOT(em, 7, 2000.0f, 300000.0f, 0, t);

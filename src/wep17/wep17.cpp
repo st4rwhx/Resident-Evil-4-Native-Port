@@ -24,7 +24,7 @@ f64 atan2(f64 y, f64 x);
 int MotionMoveI(cModel* m, int flag) asm("MotionMove");
 }
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 #define WEP_OBJ(pl) ((pl)->pWep->pObj)
 // The weapon object's own cAtariInfo (the object's collision with enemies while it is held).
 #define WEP_ATARI(pl) (&WEP_OBJ(pl)->sub2B4.atari)
@@ -86,7 +86,7 @@ void Wep17_init(cModel* m)
             PSet(pl->pMotTbl[0x0F], WEP_ARC_PTR(0x0C));
             PSet(pl->pMotTbl[0x10], WEP_ARC_PTR(0x1C));
         }
-        EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x4B, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x4B, 1);
         PlWepMot[0] = WEP_ARC_PTR(0x14);
         PlWepMot[1] = WEP_ARC_PTR(0x18);
         PlWepMot[2] = WEP_ARC_PTR(0x1A);
@@ -843,7 +843,7 @@ static void wep17_r2_out(cPlayer* pl)
             zero = 0;
             BitOn(pG->flags_500C, 0x00800000);
             SndCall(2, 0, &pl->getPartsPtr(4)->worldPos, 0, 0, 0);
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
             EstSet((int) WEP_OBJ(pl), -1, 0, 0, 0x4B, 0, 0, 0xA, zero, 0);
             parts = pl->getPartsPtr(0xA);
             p0.x = 234.5f;

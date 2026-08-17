@@ -86,7 +86,7 @@ def sanitize(path, out_dir, key):
     # epingles du fichier inclus (« r0 » n'existe pas sur x86). On nettoie aussi l'inclus, copie a cote. Sur ARM, rien
     # ne change (ces noms de registres y existent ; construction du telephone identique).
     incs = []
-    if os.environ.get('PORT_ABI') == 'x86':
+    if os.environ.get('PORT_ABI') in ('x86', 'x86_64', 'arm64'):   # N7 : noms de registres ARM32 absents en 64 bits aussi
         for inc in RE_INC_CPP.findall(txt):
             ip = os.path.join(os.path.dirname(path), inc)
             if os.path.exists(ip):
@@ -126,6 +126,7 @@ def main():
     BASE = '_port_build_x86' if os.environ.get('PORT_ABI') == 'x86' else '_port_build'
     ap.add_argument('--out', default=os.path.join(ROOT, BASE, 'rel'))
     ap.add_argument('--maxerr', type=int, default=20)
+    ap.add_argument('--errlog', default='')   # journal complet des erreurs (essais 64 bits, p64_casts.py)
     args = ap.parse_args()
 
     ndk = os.environ.get('NDK')
@@ -133,9 +134,16 @@ def main():
         sys.exit('definir NDK')
     bindir = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin')
     # PORT_ABI=x86 : Android x86 32 bits (banc G0, MuMu), voir build_game.py.
-    x86 = os.environ.get('PORT_ABI') == 'x86'
-    cxx = os.path.join(bindir, ('i686-linux-android28' if x86 else 'armv7a-linux-androideabi28') + '-clang++.cmd')
-    asm_flags = [] if x86 else ['-march=armv7-a']
+    # PORT_ABI=x86_64 / arm64 (N7, 17/11) : mêmes options 64 bits que build_game.py (erreurs entier<->pointeur visibles).
+    abi = os.environ.get('PORT_ABI')
+    x86 = abi in ('x86', 'x86_64')
+    triple = {'x86': 'i686-linux-android28', 'x86_64': 'x86_64-linux-android28',
+              'arm64': 'aarch64-linux-android28'}.get(abi, 'armv7a-linux-androideabi28')
+    cxx = os.path.join(bindir, triple + '-clang++.cmd')
+    if abi in ('x86_64', 'arm64') and '-w' in bg.COMMON:
+        bg.COMMON[bg.COMMON.index('-w')] = '-Wno-everything'
+        bg.COMMON.extend(['-ferror-limit=0', '-Werror=int-to-pointer-cast', '-Werror=int-to-void-pointer-cast'])
+    asm_flags = [] if x86 else (['-march=armv8-a'] if abi == 'arm64' else ['-march=armv7-a'])
 
     def alias_text(stubs):   # saut vers la vraie fonction : Thumb-2 sur ARM, jmp sur x86
         if x86:
@@ -217,6 +225,10 @@ def main():
             else:
                 failed.append((mod, unit, err))
     json.dump(stamps, open(stamp_path, 'w'))
+    if args.errlog:
+        with open(args.errlog, 'w', encoding='utf-8', errors='replace') as fh:
+            for mod, unit, err in failed:
+                fh.write('===== %s %s\n%s\n' % (mod, unit, err or ''))
     print('%d objets de module (%d depuis le cache), %d en echec' % (sum(len(v) for v in ok_objs.values()), cached, len(failed)))
     for mod, unit, err in failed[:args.maxerr]:
         first = next((l for l in (err or '').splitlines() if ' error:' in l), (err or '?').strip()[:100])

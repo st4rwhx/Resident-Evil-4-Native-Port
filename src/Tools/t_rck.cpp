@@ -954,7 +954,7 @@ void rckDrawPointLineNow()
         // row pointer `w + (near << 9) + 0xAD4` then `lhax row, ls << 2` (a plain 2-D index folds 0xAD4
         // into the base and sums the two index terms; the u32 sum keeps the row as the first operand)
         RckLine* row = w2->line[w2->near];
-        if (((RckLine*) ((u32) row + (w2->lineStart << 2)))->to != -1) {
+        if (((RckLine*) ((u32)(uintptr_t)(row) + (w2->lineStart << 2)))->to != -1) {
             p = &w2->pt[w2->near];
             v[0].x = p->pos.x;
             v[0].y = p->pos.y;

@@ -1412,7 +1412,7 @@ void wep13Init(int type)
     m->addModel(info);
     info = ssModInfoMgr.create(PL_ARC(24), PL_ARC(17));
     m->addModel(info);
-    info = (cModelInfo*) wep->modelInit(PL_ARC(0x76), PL_ARC(0x75));
+    info = (cModelInfo*)port_ptr64(wep->modelInit(PL_ARC(0x76), PL_ARC(0x75)));
     if (type == 1) {
         info->color[0] = 0xA0;
         info->color[1] = 0xD0;

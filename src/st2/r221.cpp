@@ -71,7 +71,7 @@ static R221WorkPtr r221_work;
 static inline void S16Set(s16& d, s16 v) { d = v; }
 static inline void PSetPrim(ScePrim*& d, ScePrim* v) { d = v; }
 // The death bits of enemy list `list` (pG->em_dead[list]), as an integer base (the r218 idiom).
-static inline u32* emDeadWords(int list) { return (u32*) ((list << 5) + (u32) pG + 0x501C); }
+static inline u32* emDeadWords(int list) { return (u32*)port_ptr64(((list << 5) + (u32)(uintptr_t)(pG) + 0x501C)); }
 
 // Two tests of one flag word stay separate (fold-const merges `(f & A) == 0 && (f & B) == 0`).
 static inline u32 flagBit(u32 f, u32 bit)
@@ -779,9 +779,9 @@ static void r221_checkBossAppear_end()
         }
     }
     if (em.getPtr()) {
-        EffectEspDelete(1, 2, (u32) em.getPtr(), 0);
-        EffectEspgenDelete(1, 2, (int) em.getPtr());
-        EffectEfmDelete(1, 2, (int) em.getPtr());
+        EffectEspDelete(1, 2, (u32)(uintptr_t)(em.getPtr()), 0);
+        EffectEspgenDelete(1, 2, (int)(uintptr_t)(em.getPtr()));
+        EffectEfmDelete(1, 2, (int)(uintptr_t)(em.getPtr()));
     }
     SceAtPtr(1)->x4A = 0x35;
     SceAtPtr(2)->x4A = 0x35;
@@ -820,7 +820,7 @@ static void r221_checkBossAppear()
         SceSetEventCancel(1, (TaskFunc) r221_checkBossAppear_end, 0, 2, 1);
         SceEventStart(1);
         pG->flags_5014 |= 0x02000000;
-        EstSet((int) em1.getPtr(), -1, 0, 0, 0x24, 1, 1, 2, (u32) em1.getPtr(), 0);
+        EstSet((int)(uintptr_t)(em1.getPtr()), -1, 0, 0, 0x24, 1, 1, 2, (u32)(uintptr_t)(em1.getPtr()), 0);
         pG->flags_174 |= 0x01000000;
         CamCtrl.clearAttachCamera();
         em1.setFlag(1);
@@ -1348,7 +1348,7 @@ static void r201_throwBonbe(int no)
         i = 0;
         while (MotionGetState(pPL) != 4) {
             if (i == t1) {
-                EstSet((int) bonbe, -1, 0, 0, 1, eff3, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(bonbe), -1, 0, 0, 1, eff3, 1, 0, 0, 0);
             }
             if (t2 != 0 && t2 == i) {
                 EstSet(0, -1, 0, 0, 1, (u8) eff0, 1, (u8) k0, 0, 0);
@@ -1380,7 +1380,7 @@ static void r201_throwBonbe(int no)
     EffectEfmDelete(0, (u8) k0, 0);
     EffectEspgenDelete(0, (u8) k1, 0);
     EstSet(0, -1, 0, 0, 1, (u8) eff2, 0, 0, 0, 0);
-    SceExec(0x12, (TaskFunc) r221_fadeoutBonbe, (int) bonbe, 0, 2, 0);
+    SceExec(0x12, (TaskFunc) r221_fadeoutBonbe, (int)(uintptr_t)(bonbe), 0, 2, 0);
 }
 
 static void setTexRender()

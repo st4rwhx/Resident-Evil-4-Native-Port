@@ -303,7 +303,7 @@ static void em26_R0_Init(cEm26* em)
     YarareInit(em, 0.0f, -150.0f, -150.0f, 500.0f, 1200.0f, 2, 5);
     YarareAdd(em, &w->hit[0], 0.0f, -50.0f, -100.0f, 300.0f, 350.0f, 5, 5);
     YarareAdd(em, &w->hit[1], 0.0f, 0.0f, -200.0f, 100.0f, 200.0f, 0x18, 5);
-    EspDataLoad((u32) ARC(7), 0x1E, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(7)), 0x1E, 0);
     w->flags = zero;
     w->sndId = zero;
     w->breathTimer = Rnd() % 60 + 30;
@@ -365,7 +365,7 @@ static void em26_R1_Wait(cEm26* em)
         w->estTimer--;
     } else {
         w->estTimer = Rnd() % 30 + 90;
-        EstSet((int) em, -1, 0, 0, 0x1E, 3, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1E, 3, 0, 0, (u32)(uintptr_t)(em), 0);
     }
     if (w->dmgTotal > 500) {
         cModel* p = em->getPartsPtr(4);
@@ -391,9 +391,9 @@ static void em26_R1_Atk(cEm26* em)
             mode = 0x41;
         }
         if (ang < 0.0f) {
-            MotionSetCore(em, MOTION(em), ARC(0xE), (int) ARC(0x16), 0, mode, 0);
+            MotionSetCore(em, MOTION(em), ARC(0xE), (int)(uintptr_t)(ARC(0x16)), 0, mode, 0);
         } else {
-            MotionSetCore(em, MOTION(em), ARC(0xF), (int) ARC(0x17), 0, mode, 0);
+            MotionSetCore(em, MOTION(em), ARC(0xF), (int)(uintptr_t)(ARC(0x17)), 0, mode, 0);
         }
         w->atkHit = 0;
         em->xFE++;
@@ -411,7 +411,7 @@ static void em26_R1_Atk(cEm26* em)
         w->estTimer--;
     } else {
         w->estTimer = Rnd() % 20 + 10;
-        EstSet((int) em, -1, 0, 0, 0x1E, 3, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1E, 3, 0, 0, (u32)(uintptr_t)(em), 0);
     }
 }
 
@@ -511,11 +511,11 @@ static void em26_R1_Die_Normal(cEm26* em)
         if (w->flags & 0x10) {
             mode = 0x41;
         }
-        MotionSetCore(em, MOTION(em), ARC(0xD), (int) seq, 0, mode, 0);
+        MotionSetCore(em, MOTION(em), ARC(0xD), (int)(uintptr_t)(seq), 0, mode, 0);
         em->atari.flags &= ~0x200;
         SndStop(w->sndId, 0);
         w->sndId = SndCall(8, 8, &em->pos, em->id, 0, em);
-        EstSet((int) em, -1, 0, 0, 0x1E, 2, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1E, 2, 0, 0, (u32)(uintptr_t)(em), 0);
         em->xFE++;
     }
     case 1:
@@ -572,7 +572,7 @@ int em26AtkCk(cEm26* em)
                 w->atkHit = 1;
             }
             QuakeExec(0, 0, 5, 22.0f, 2);
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             return 1;
         }
     }

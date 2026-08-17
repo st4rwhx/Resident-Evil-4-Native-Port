@@ -263,7 +263,7 @@ static void wep09_r3_fire00(cPlayer* pl)
     if (pG->wep_no == 9) {
         SndCall(2, 0, &pl->getPartsPtr(4)->worldPos, 0, 0, 0);
     }
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
     ISet(pl->x3F0, 0);
     if (pG->wep_no == 0xA) {
         obj = pl->pWep->pObj;

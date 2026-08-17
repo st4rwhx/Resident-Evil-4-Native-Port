@@ -1012,7 +1012,7 @@ void r201_setSwitchEnv(int on)
         RsfSet(G_ROOM_ID, 5);
         ((cEmBarred*) r201_work.p->barred)->setOpen(0);
         EffectEspgenDelete(0, r201_work.p->effKind, 0);
-        EstSet(0, -1, 0, 0, 1, 3, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 3, 1, 0, (u32)(uintptr_t)(zero), zero);
         SceAtSetEnable(0, 0);
         SceAtSetEnable(1, 0);
         SceAtSetEnable(3, 0);
@@ -1022,7 +1022,7 @@ void r201_setSwitchEnv(int on)
         zero = 0;
         RsfClear(G_ROOM_ID, 5);
         ((cEmBarred*) r201_work.p->barred)->setClose(0);
-        EstSet(0, -1, 0, 0, 1, 0, 1, r201_work.p->effKind, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 0, 1, r201_work.p->effKind, (u32)(uintptr_t)(zero), zero);
         SceAtSetEnable(3, 1);
         SceAtSetEnable(0x28, 1);
         SceAtSetEnable(5, 1);
@@ -1071,7 +1071,7 @@ static void r201_execEvent00()
         m = SearchEmModule(0x1B);
         MemorySwap(m->pArc, (u32) r201_work.p->evd->addr, r201_work.p->evd->size);
         EvtMgr.SetEvt(m->pArc, &key);
-        ((Event*) key)->status |= 0x800;
+        ((Event*)port_ptr64(key))->status |= 0x800;
         while (EvtMgr.IsAliveEvt(&EvtMgr.x34, 0, 0) != 0) {
             SceSleep(1);
         }

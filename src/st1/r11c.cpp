@@ -108,7 +108,7 @@ static inline u32 r11c_emDead(u32 no)
     u32 v;
 
     if (pG->emlist_no >= 0) {
-        u32* tbl = (u32*) (pG->emlist_no * 0x20 + (u32) pG + 0x501C);
+        u32* tbl = (u32*)port_ptr64((pG->emlist_no * 0x20 + (u32)(uintptr_t)(pG) + 0x501C));
 
         v = tbl[no >> 5] & (0x80000000 >> (no & 31));
     } else {
@@ -146,9 +146,9 @@ void R11cInit()
     W = (R11cWork*) MEM_CALLOC(sizeof(R11cWork), 1, 0xd);
 
     SceExec(0x12, (TaskFunc) r11c_ThunderMove, 0, 0, 2, 0);
-    EstSet((int) pPL, -1, 0, 0, 1, 0, 0x800, 0, 0, 0);
-    EstSet((int) pPL, -1, 0, 0, 3, 1, 0x800, 0, 0, 0);
-    EstSet((int) pPL, -1, 0, 0, 0, 0x23, 0x800, 0, 0, 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 0, 0x800, 0, 0, 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 3, 1, 0x800, 0, 0, 0);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0, 0x23, 0x800, 0, 0, 0);
     pG->flags_5010 |= 0x400;
     EstSet(0, -1, 0, 0, 1, 0xA, 1, 2, 0, 0);
     getRoomEtcLadder(6, (cEm**) &W->ladder[0], 1);
@@ -638,7 +638,7 @@ static void r11c_EventBesiegedStart()
         SceAtSetEnable(8, 0);
         SceAtSetEnable(9, 0);
         SmdGetObjPtr(0x3F)->be_flag &= ~2;
-        EstSet(0, -1, 0, 0, 1, 0xA, 1, 0, (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, 0xA, 1, 0, (u32)(uintptr_t)(zero), zero);
     }
     pG->flags_174 &= ~0x40000000;
     SceSetChapterEnd(4, -1);
@@ -1092,7 +1092,7 @@ extern "C" void setFire()
             return;
         }
         MotionSetCore(o, &o->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x21), 0, 0, 5, 0);
-        EstSet((int) o, -1, 0, 0, 1, 0xD, 0, 2, 0, 0);
+        EstSet((int)(uintptr_t)(o), -1, 0, 0, 1, 0xD, 0, 2, 0, 0);
     }
     {
         Vec pos = {97770.0f, -598.0f, -49354.0f};
@@ -1106,7 +1106,7 @@ extern "C" void setFire()
             return;
         }
         MotionSetCore(o, &o->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x21), 0, 0, 5, 0);
-        EstSet((int) o, -1, 0, 0, 1, 0xD, 0, 2, 0, 0);
+        EstSet((int)(uintptr_t)(o), -1, 0, 0, 1, 0xD, 0, 2, 0, 0);
     }
     {
         Vec pos = {122765.0f, -516.0f, -51246.0f};
@@ -1120,7 +1120,7 @@ extern "C" void setFire()
             return;
         }
         MotionSetCore(o, &o->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x21), 0, 0, 5, 0);
-        EstSet((int) o, -1, 0, 0, 1, 0xD, 0, 2, 0, 0);
+        EstSet((int)(uintptr_t)(o), -1, 0, 0, 1, 0xD, 0, 2, 0, 0);
     }
 }
 
@@ -1154,7 +1154,7 @@ extern "C" void Evt_R11CS00_Func(Event* e)
                 EffectEspDelete(0x2001, 3, 0, 0);
                 EffectEspgenDelete(0x2001, 3, 0);
                 EffectEfmDelete(0x2001, 3, 0);
-                EstSet(0, -1, 0, 0, 1, 0xD, 0x2001, 3, frame, (void*) frame);
+                EstSet(0, -1, 0, 0, 1, 0xD, 0x2001, 3, frame, (void*)port_ptr64(frame));
                 o = SmdGetObjPtr(0x3F);
                 if (o) {
                     e->SetMod("scr0000", o, 5, 0, 2, 0);

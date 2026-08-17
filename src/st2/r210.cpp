@@ -251,7 +251,7 @@ static void r222_dai_go()
             v.z = 0.0f;
             pSUB->setAng(&v);
         }
-        SetSubAux((int) funcAshley2, 0);
+        SetSubAux((int)(uintptr_t)(funcAshley2), 0);
         SceSleep(10);
         SndCall(6, 5, &pPL->pos, 0, 0, 0);
         SceSleep(45);

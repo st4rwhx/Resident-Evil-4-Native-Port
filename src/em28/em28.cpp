@@ -295,7 +295,7 @@ static void em28_R0_Init(cEm28* em)
     atariInitF(&em->atari, 0.0f, 0.0f, 0.0f, 300.0f, 200.0f, 200.0f, 500.0f, 3, 0x2000, 10);   // COMPILER-DIFF: #1
     em->setStatus(0xB);
     YarareInit(em, 0.0f, 0.0f, -130.0f, 200.0f, 100.0f, 3, 5);
-    EspDataLoad((u32) ARC(0xB), 0x20, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(0xB)), 0x20, 0);
     w->flags = zero;
     w->escapeWait = zero;
     w->pCtrl11 = GetCtrlCtrl11();
@@ -478,7 +478,7 @@ static void em28_R1_Dash(cEm28* em)
 
     switch (st) {
     case 0:
-        MotionSetCore(em, MOTION(em), ARC(0x10), (int) ARC(0x1B), 3, 5, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x10), (int)(uintptr_t)(ARC(0x1B)), 3, 5, 0);
         w->targetAng = GetXZAngle(&pPL->pos, &em->pos);
         w->targetAng += fRand1_1() * (PI / 2.0f);
         w->targetAng = LIMIT_ANGLE(w->targetAng);
@@ -526,7 +526,7 @@ static void em28_R1_Jump(cEm28* em)
 
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, MOTION(em), ARC(0x12), (int) ARC(0x1C), 3, 1, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x12), (int)(uintptr_t)(ARC(0x1C)), 3, 1, 0);
         w->targetAng = GetXZAngle(&pPL->pos, &em->pos);
         w->targetAng += fRand1_1() * (PI / 2.0f);
         w->targetAng = LIMIT_ANGLE(w->targetAng);
@@ -550,7 +550,7 @@ static void em28_R1_Jump(cEm28* em)
         }
         break;
     case 2:
-        MotionSetCore(em, MOTION(em), ARC(0x13), (int) ARC(0x1D), 3, 4, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x13), (int)(uintptr_t)(ARC(0x1D)), 3, 4, 0);
         w->spd.x = 0.0f;
         w->spd.y = fRand0_1() * 100.0f + 150.0f;
         w->spd.z = fRand0_1() * 50.0f + 150.0f;
@@ -588,7 +588,7 @@ static void em28_R1_Jump(cEm28* em)
         break;
     }
     case 4:
-        MotionSetCore(em, MOTION(em), ARC(0x14), (int) ARC(0x1E), 3, 1, 0);
+        MotionSetCore(em, MOTION(em), ARC(0x14), (int)(uintptr_t)(ARC(0x1E)), 3, 1, 0);
         em->xFE++;
     case 5:
         if (MotionMoveF(em, 0)) {

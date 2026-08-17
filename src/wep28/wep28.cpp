@@ -34,7 +34,7 @@ void Wep28_init(cModel* m)
     obj->init(pl);
     obj->setDisp(1, 0);
     PSet(pl->pWep->pObj->bow.allow, obj);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x50, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x50, 1);
 }
 
 void cObjBow::moveReady()
@@ -161,7 +161,7 @@ void cObjBow::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x1C));
     PSet(pl->pMotTbl[0x3F], WEP_ARC_PTR(0x17));
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x18));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x7));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x7)));
     pl->setRightHand(0);
     pl->setLeftHand(7);
 }

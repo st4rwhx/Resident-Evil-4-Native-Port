@@ -35,7 +35,7 @@ void Wep07_init(cModel* m)
     pl->pWep->pObj = obj;
     obj->init(pl);
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x3B, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x3B, 1);
     PlWepMot[0] = WEP_ARC_PTR(0x1A);
     PlWepMot[1] = WEP_ARC_PTR(0x20);
     PlWepMot[2] = WEP_ARC_PTR(0x22);
@@ -82,9 +82,9 @@ void cObjShotgun::moveFire()
         }
         MotionSetCore(this, &this->mot, m, 0, 0, 0, 0);
         SndCall(2, 0, &pos, 0, 0, 0);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         pG->flags_500C |= 0x00800000;
-        EstSet((int) this, -1, 0, 0, 0x3B, 0, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x3B, 0, 0, 0xA, 0, 0);
         wep.step = 1;
     } else {
         if (MotionCheckCrossFrame(&mot, 20.0f)) {
@@ -208,7 +208,7 @@ void cObjShotgun::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x25));
     PSet(pl->pMotTbl[0x5D], WEP_ARC_PTR(0x1C));
     PSet(pl->pMotTbl[0x5E], WEP_ARC_PTR(0x1D));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x7));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x7)));
     pl->setLeftHand(2);
     pl->setRightHand(1);
 }

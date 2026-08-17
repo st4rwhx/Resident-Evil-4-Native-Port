@@ -19,7 +19,7 @@ struct ItemScreenWork;
 struct SsArc {
     u32 ofs[0x12];
 };
-#define SS_ARC_PTR(arc, no) ((void*)port_ptr64(((arc)->ofs[no] + (u32) (arc))))
+#define SS_ARC_PTR(arc, no) ((void*)port_ptr64(((arc)->ofs[no] + (u32)(uintptr_t)((arc)))))
 
 // The work is the `SUB_SCREEN` of the Sscrn module's `Widget<SUB_SCREEN>` template (the module's
 // mangled names carry the tag); SubScreenWork is the DOL-side alias.

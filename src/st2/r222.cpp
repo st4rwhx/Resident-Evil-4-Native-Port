@@ -101,7 +101,7 @@ void em_reset();
 // RTX_UNCHANGING_P from an inlined body's pool loads, which then wait for the `hit[no]` store (cost 2);
 // as pool MEMs of the function itself the YarareInitCube constants are `mem/u` and issue before it.
 #define r222_setHit(no, objId)                                                                                  \
-    r222_work.p->hit[no] = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), &SmdGetObjPtr(objId)->pos, &SmdGetObjPtr(objId)->rot, 1); \
+    r222_work.p->hit[no] = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), &SmdGetObjPtr(objId)->pos, &SmdGetObjPtr(objId)->rot, 1); \
     YarareInitCube(r222_work.p->hit[no], 0.0f, -3500.0f, 0.0f, 550.0f, 1300.0f, 550.0f, 0, 1)
 
 void R222Init()
@@ -454,14 +454,14 @@ static void dragon_down()
     o14->rot.y = 1.5708f;
     o15->rot.y = 1.5708f;
     r222_work.p->dragon.setNoSuspend(1);
-    EstSet((int) o14, -1, 0, 0, 1, 7, 1, 0, zero, (void*) zero);
+    EstSet((int)(uintptr_t)(o14), -1, 0, 0, 1, 7, 1, 0, zero, (void*)port_ptr64(zero));
     CamCtrl.CutCall(3);
     MotionSetCore(o14, &o14->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 0, 0, 1, 0);
     MotionSetCore(o15, &o15->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 0, 0, 1, 0);
     SndStrReq(1, 5, 0x80000003, 0, 0, 0.0f);
     SceSleep(15);
-    EstSet(0, -1, &SmdGetObjPtr(0x16)->pos, 0, 1, 0xB, 1, 0, zero, (void*) zero);
-    EstSet(0, -1, &SmdGetObjPtr(0x17)->pos, 0, 1, 0xB, 1, 0, zero, (void*) zero);
+    EstSet(0, -1, &SmdGetObjPtr(0x16)->pos, 0, 1, 0xB, 1, 0, zero, (void*)port_ptr64(zero));
+    EstSet(0, -1, &SmdGetObjPtr(0x17)->pos, 0, 1, 0xB, 1, 0, zero, (void*)port_ptr64(zero));
     SmdGetObjPtr(0x16)->be_flag &= ~2;
     SmdGetObjPtr(0x17)->be_flag &= ~2;
     SndCall(6, 0xD, &SmdGetObjPtr(0x16)->pos, 0, 0, 0);
@@ -470,7 +470,7 @@ static void dragon_down()
     while (CamCtrl.IsMotionEnd() == 0) {
         SceSleep(1);
     }
-    EstSet((int) o14, -1, 0, 0, 1, 8, 1, 0, 0, 0);
+    EstSet((int)(uintptr_t)(o14), -1, 0, 0, 1, 8, 1, 0, 0, 0);
     CamCtrl.CutCall(4);
     // `&obj->pos` written at both SndCall sites (no pointer local): gcse PREs it into this block's end,
     // between LOOP_BEG and the entry jump of the poll loop, so loop.c ignores that loop and its test
@@ -561,8 +561,8 @@ static void dragon_down2()
     RsfSet(G_ROOM_ID, 1);
     oA = SmdGetObjPtr(0xA);
     oB = SmdGetObjPtr(0xB);
-    EstSet(0, -1, &SmdGetObjPtr(0xD)->pos, 0, 1, 0xB, 1, 0, zero, (void*) zero);
-    EstSet(0, -1, &SmdGetObjPtr(0xE)->pos, 0, 1, 0xB, 1, 0, zero, (void*) zero);
+    EstSet(0, -1, &SmdGetObjPtr(0xD)->pos, 0, 1, 0xB, 1, 0, zero, (void*)port_ptr64(zero));
+    EstSet(0, -1, &SmdGetObjPtr(0xE)->pos, 0, 1, 0xB, 1, 0, zero, (void*)port_ptr64(zero));
     SmdGetObjPtr(0xD)->be_flag &= ~2;
     SmdGetObjPtr(0xE)->be_flag &= ~2;
     SndCall(6, 0xD, &SmdGetObjPtr(0xD)->pos, 0, 0, 0);
@@ -584,7 +584,7 @@ static void dragon_down2()
         if (hit == 0 && oA->pos.y < -3500.0f) {
             pos = oA->pos;
             pos.y = -10000.0f;
-            EstSet(0, -1, &pos, 0, 1, 0xC, 1, 0, zero2, (void*) zero2);
+            EstSet(0, -1, &pos, 0, 1, 0xC, 1, 0, zero2, (void*)port_ptr64(zero2));
             hit = 1;
             SndCall(6, 0xE, &pos, 0, 0, 0);
         }
@@ -656,8 +656,8 @@ static void dragon_down3()
     oB = SmdGetObjPtr(0x10);
     MotionSetCore(oA, &oA->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 0, 0, 1, 0);
     MotionSetCore(oB, &oB->mot, ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 0, 0, 1, 0);
-    EstSet(0, -1, &SmdGetObjPtr(0x12)->pos, 0, 1, 0xB, 1, 0, zero, (void*) zero);
-    EstSet(0, -1, &SmdGetObjPtr(0x13)->pos, 0, 1, 0xB, 1, 0, zero, (void*) zero);
+    EstSet(0, -1, &SmdGetObjPtr(0x12)->pos, 0, 1, 0xB, 1, 0, zero, (void*)port_ptr64(zero));
+    EstSet(0, -1, &SmdGetObjPtr(0x13)->pos, 0, 1, 0xB, 1, 0, zero, (void*)port_ptr64(zero));
     SmdGetObjPtr(0x12)->be_flag &= ~2;
     SmdGetObjPtr(0x13)->be_flag &= ~2;
     SndCall(6, 0xD, &SmdGetObjPtr(0x12)->pos, 0, 0, 0);
@@ -677,7 +677,7 @@ static void dragon_down3()
         if (hit == 0 && oA->pos.y < -3500.0f) {
             pos = oA->pos;
             pos.y = -10000.0f;
-            EstSet(0, -1, &pos, 0, 1, 0xC, 1, 0, zero2, (void*) zero2);
+            EstSet(0, -1, &pos, 0, 1, 0xC, 1, 0, zero2, (void*)port_ptr64(zero2));
             hit = 1;
             SndCall(6, 0xE, &pos, 0, 0, 0);
         }

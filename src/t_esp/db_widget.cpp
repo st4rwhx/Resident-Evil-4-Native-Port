@@ -831,7 +831,7 @@ DB_STRING::DB_STRING(u32 max_, const char* s)
     ca = cb = cg = cr = 0.0f;
     type = DB_PRIM_STRING;
     len = zero;
-    str = (char*) zero;
+    str = (char*)port_ptr64(zero);
     str = new char[max_];
     strcpy(str, s);
     len = strlen(s);
@@ -945,7 +945,7 @@ DB_NUMERIC::DB_NUMERIC() : DB_STRING(255, "")
         int zero = 0;
         register f32 one asm("fr13");
         minus = zero;
-        pNum = (void*) zero;
+        pNum = (void*)port_ptr64(zero);
         min = 0.0f;
         ketaFloat = zero;
         edit = zero;

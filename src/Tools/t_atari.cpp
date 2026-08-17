@@ -247,9 +247,9 @@ static void edit(AtariToolWork* w)
     if ((w->count & 7) <= 2) {
         draw_pl_pos(w);
     }
-    idx = *(u16*) (w->cursor * 2 + (u32) &poly[w->polyNo]);
+    idx = *(u16*) (w->cursor * 2 + (u32)(uintptr_t)(&poly[w->polyNo]));
     nrm = s->nrm;
-    pv = (Vec*) (idx * sizeof(Vec) + (u32) vtx);
+    pv = (Vec*) (idx * sizeof(Vec) + (u32)(uintptr_t)(vtx));
     v.x = pv->x;
     v.y = pv->y;
     v.z = pv->z;

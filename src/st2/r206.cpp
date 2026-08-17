@@ -729,7 +729,7 @@ snipe_done:
     if ((pG->flags_174 & 0x80000000) == 0) {
         pG->flags_174 |= 0x80000000;
     }
-    SetSubAux((int) funcAshley2, 0);
+    SetSubAux((int)(uintptr_t)(funcAshley2), 0);
     SceSleep(1);
     while (SubCharGetStatus() & 0x01000000) {
         SceSleep(1);
@@ -744,7 +744,7 @@ snipe_done:
     while ((SubCharGetStatus() & 0x00800000) == 0) {
         SceSleep(1);
     }
-    SetSubAux((int) funcAshley, 0);
+    SetSubAux((int)(uintptr_t)(funcAshley), 0);
     pSUB->setNoSuspend(1);
     SceEventStart(1);
     pG->flags_170 &= ~0x20000000;
@@ -865,7 +865,7 @@ wave_done:
     while ((SubCharGetStatus() & 0x00800000) == 0) {
         SceSleep(1);
     }
-    SetSubAux((int) funcAshley3, 0);
+    SetSubAux((int)(uintptr_t)(funcAshley3), 0);
     SceSleep(0xA);
     if (at != NULL) {
         SceAtSetEnable(at->no, 0);
@@ -1072,7 +1072,7 @@ void luis_set()
     obj->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x3E), 0xA, 0, 1, 0);
     obj->lightInfo.x50 = lit;
     obj->be_flag |= 0x10;
-    EstSet((int) obj, -1, 0, 0, 1, 3, 1, 0, 0, 0);
+    EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 3, 1, 0, 0, 0);
     SceAtSetEnable(0xB, 1);
 }
 

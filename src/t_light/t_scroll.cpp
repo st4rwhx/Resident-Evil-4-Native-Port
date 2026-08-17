@@ -581,7 +581,7 @@ static void edit_name()
     name = pWork->nameTbl[pWork->top + pWork->row];
     // exits by goto: a `break` would let expand_end_loop rotate the range test to the bottom
     while (1) {
-        if ((u32) name >= PORT_PTR_MIN && (u32) name <= PORT_PTR_MAX) {
+        if ((u32)(uintptr_t)(name) >= PORT_PTR_MIN && (u32)(uintptr_t)(name) <= PORT_PTR_MAX) {
             if (i >= 0) {
                 eprintf(0x68, y, 0, 0, "%s", name);
             }
@@ -930,7 +930,7 @@ static void edit_litmask()
         pWork->sub2 = 1;
     }
     eprintf(0x40, 0x8C, 4, 0, "MODEL PROPATY");
-    if ((u32) LightMgr.getWorkPtr(pWork->id) >= PORT_PTR_MIN && (u32) LightMgr.getWorkPtr(pWork->id) <= PORT_PTR_MAX &&
+    if ((u32)(uintptr_t)(LightMgr.getWorkPtr(pWork->id)) >= PORT_PTR_MIN && (u32)(uintptr_t)(LightMgr.getWorkPtr(pWork->id)) <= PORT_PTR_MAX &&
         (LightMgr.getWorkPtr(pWork->id)->be_flag & 1)) {
         eprintf(0x40, 0x9A, 0, 0, "LIGHT-%02d %s", pWork->id,
                 (obj->lightInfo.x54 & (1 << pWork->id)) ? "ENABLE" : "DISABLE");
@@ -1463,7 +1463,7 @@ static void texture()
     }
     eprintf(0x20, 0x38, 0, 0, "NO %d", pWork->sub);
     tpl = SmdGetTplPtr(pWork->sub);
-    if ((u32) tpl - PORT_PTR_MIN <= PORT_PTR_SPAN) {
+    if ((u32)(uintptr_t)(tpl) - PORT_PTR_MIN <= PORT_PTR_SPAN) {
         DrawTpl((TEXPalette*) tpl, 0x32, 0x32, 0xC8, 0xC8);
     }
     if (pWork->joy[0].rep & 0x200) {
@@ -1845,7 +1845,7 @@ static void printEditTable()
             // outranks `no+1` (10 refs/144) for r25. The codeless insn restores the count (39 vs 145).
             asm volatile("");
             n = pWork->nameTbl[no];
-            if ((u32) n >= PORT_PTR_MIN && (u32) n <= PORT_PTR_MAX) {
+            if ((u32)(uintptr_t)(n) >= PORT_PTR_MIN && (u32)(uintptr_t)(n) <= PORT_PTR_MAX) {
                 strncpy(name, n, 7);
             }
             name[7] = 0;

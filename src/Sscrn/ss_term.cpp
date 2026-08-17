@@ -705,7 +705,7 @@ void SsTermInit::move(SUB_SCREEN* wk)
         IdSub.dispSw(2, 0);
         sscrnModelFree(wk);
         sscrnLightClear(wk);
-        wk->pTerm = (SsArc*) (wk->pzzlOfs + (u32) wk->pBuf);
+        wk->pTerm = (SsArc*)port_ptr64((wk->pzzlOfs + (u32) wk->pBuf));
         sscrnDataFilename(wk, "ss_term.dat");
 #line 1101 "D:/Bio4/Prog/ss_term.cpp"
         term_read_req = DVD_READ_N(wk->path, 0, 0, 0, 0, 5);

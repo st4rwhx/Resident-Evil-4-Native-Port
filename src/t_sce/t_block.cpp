@@ -1329,9 +1329,9 @@ static void tBlockDataLoad()
                 }
             }
             for (i = 0; i < pW->pFile->nArea; i++) {
-                TBlockArea* src = (TBlockArea*) (i * sizeof(TBlockArea) + (u32) pW->pArea);
+                TBlockArea* src = (TBlockArea*) (i * sizeof(TBlockArea) + (u32)(uintptr_t)(pW->pArea));
 
-                *(TBlockArea*) (src->x35 * sizeof(TBlockArea) + (u32) pW->area) = *src;
+                *(TBlockArea*) (src->x35 * sizeof(TBlockArea) + (u32)(uintptr_t)(pW->area)) = *src;
             }
             for (i = 0; i < pW->pFile->nConnect; i++) {
                 pW->connect[i] = pW->pConnect[i];

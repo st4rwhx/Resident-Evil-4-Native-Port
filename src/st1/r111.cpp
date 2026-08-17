@@ -51,9 +51,9 @@ void R111Init()
     {
         void* zero = 0;
 
-        EstSet((int) pPL, -1, 0, 0, 1, 0, 0x800, 0, (u32) zero, zero);
-        EstSet((int) pPL, -1, 0, 0, 3, 1, 0x800, 0, (u32) zero, zero);
-        EstSet((int) pPL, -1, 0, 0, 0, 0x23, 0x800, 0, (u32) zero, zero);
+        EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 0, 0x800, 0, (u32)(uintptr_t)(zero), zero);
+        EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 3, 1, 0x800, 0, (u32)(uintptr_t)(zero), zero);
+        EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0, 0x23, 0x800, 0, (u32)(uintptr_t)(zero), zero);
     }
     pG->flags_5010 |= 0x400;
     if (getRoomEtcWindow(0, &win, 1)) {
@@ -88,22 +88,22 @@ static void r111_ThunderMove()
                 EstSet(0, -1, 0, 0, 1, 0x10, 1, 0, 0, 0);
             }
             if (EffGetAreaState(0)) {
-                EstSet(0, -1, 0, 0, 1, 4, 0, 0, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 4, 0, 0, (u32)(uintptr_t)(zero), zero);
             }
             if (EffGetAreaState(1)) {
-                EstSet(0, -1, 0, 0, 1, 6, 0, 0, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 6, 0, 0, (u32)(uintptr_t)(zero), zero);
             }
             if (EffGetAreaState(2)) {
-                EstSet(0, -1, 0, 0, 1, 8, 0, 0, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 8, 0, 0, (u32)(uintptr_t)(zero), zero);
             }
             if (EffGetAreaState(3)) {
-                EstSet(0, -1, 0, 0, 1, 0xA, 0, 0, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 0xA, 0, 0, (u32)(uintptr_t)(zero), zero);
             }
             if (EffGetAreaState(4)) {
-                EstSet(0, -1, 0, 0, 1, 0xC, 0, 0, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 0xC, 0, 0, (u32)(uintptr_t)(zero), zero);
             }
             if (EffGetAreaState(5)) {
-                EstSet(0, -1, 0, 0, 1, 0xE, 0, 0, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 0xE, 0, 0, (u32)(uintptr_t)(zero), zero);
             }
             {
                 u8 r = Rnd() % 30;

@@ -1259,7 +1259,7 @@ int idEditPos(IdTool* w, int x, int y)
                     if ((j == 0) == (d->x109 & 1)) {
                         col = 0;
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32) onOffName));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(onOffName))));
                 }
                 break;
             case 4:
@@ -1508,7 +1508,7 @@ int idEditSize(IdTool* w, int x, int y)
                             col = 0;
                         }
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32)tbl));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(tbl))));
                 }
                 break;
             case 3:
@@ -1520,7 +1520,7 @@ int idEditSize(IdTool* w, int x, int y)
                     } else {
                         col = 7;
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32)tbl3));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(tbl3))));
                 }
                 break;
             case 4:
@@ -1531,7 +1531,7 @@ int idEditSize(IdTool* w, int x, int y)
                     } else {
                         col = 7;
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32)tbl4));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(tbl4))));
                 }
                 break;
             }
@@ -1857,7 +1857,7 @@ int idEditColor(IdTool* w, int x, int y)
                     } else {
                         col = 7;
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32) tbl3));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(tbl3))));
                 }
             }
         }
@@ -2051,7 +2051,7 @@ int idEditRot(IdTool* w, int x, int y)
                     } else {
                         col = 7;
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32)tbl));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(tbl))));
                 }
                 break;
             case 3:
@@ -2062,7 +2062,7 @@ int idEditRot(IdTool* w, int x, int y)
                     } else {
                         col = 7;
                     }
-                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)(ofs + (u32)tbl3));
+                    eprintf(x + 0x40 + ofs * 8, y + i * 0xE, col, 0, "%s", *(const char**)port_ptr64((ofs + (u32)(uintptr_t)(tbl3))));
                 }
                 break;
             }
@@ -2375,7 +2375,7 @@ void toolIdEditDisp(IdTool* w)
         if (w->dispTop == 0) {
             row = 0x13;
         } else {
-            int t2 = ((u32) w & 8) >> 4;
+            int t2 = ((u32)(uintptr_t)(w) & 8) >> 4;
             row = t2 + 12;
         }
     }
@@ -3328,7 +3328,7 @@ int toolIdDataDecode(void* buf, IdTool* w)
             d->maskSw = r1->flags_7F;
             d->power = r1->transSub;
             if (r1->ofs[0] != 0) {
-                FuncPathData* p = (FuncPathData*) (r1->ofs[0] + (u32) base);
+                FuncPathData* p = (FuncPathData*)port_ptr64((r1->ofs[0] + (u32)(uintptr_t)(base)));
 
                 d->path0.k = p->k;
                 d->path0.n = p->n;
@@ -3337,16 +3337,16 @@ int toolIdDataDecode(void* buf, IdTool* w)
                 }
             }
             if (r1->ofs[2] != 0) {
-                idDecodeCurve(&d->curve0, (Hermite1*) (r1->ofs[2] + (u32) base));
+                idDecodeCurve(&d->curve0, (Hermite1*)port_ptr64((r1->ofs[2] + (u32)(uintptr_t)(base))));
             }
             if (r1->ofs[3] != 0) {
-                idDecodeCurve(&d->curve1, (Hermite1*) (r1->ofs[3] + (u32) base));
+                idDecodeCurve(&d->curve1, (Hermite1*)port_ptr64((r1->ofs[3] + (u32)(uintptr_t)(base))));
             }
             if (r1->ofs[4] != 0) {
-                idDecodeCurve(&d->curve2, (Hermite1*) (r1->ofs[4] + (u32) base));
+                idDecodeCurve(&d->curve2, (Hermite1*)port_ptr64((r1->ofs[4] + (u32)(uintptr_t)(base))));
             }
             if (r1->ofs[5] != 0) {
-                idDecodeCurve(&d->curve3, (Hermite1*) (r1->ofs[5] + (u32) base));
+                idDecodeCurve(&d->curve3, (Hermite1*)port_ptr64((r1->ofs[5] + (u32)(uintptr_t)(base))));
             }
             break;
         case 2:
@@ -3396,7 +3396,7 @@ int toolIdDataDecode(void* buf, IdTool* w)
             d->maskSw = r2->flags_7F;
             d->power = r2->transSub;
             if (r2->ofs[0] != 0) {
-                FuncPathData* p = (FuncPathData*) (r2->ofs[0] + (u32) base);
+                FuncPathData* p = (FuncPathData*)port_ptr64((r2->ofs[0] + (u32)(uintptr_t)(base)));
 
                 d->path0.k = p->k;
                 d->path0.n = p->n;
@@ -3405,16 +3405,16 @@ int toolIdDataDecode(void* buf, IdTool* w)
                 }
             }
             if (r2->ofs[2] != 0) {
-                idDecodeCurve(&d->curve0, (Hermite1*) (r2->ofs[2] + (u32) base));
+                idDecodeCurve(&d->curve0, (Hermite1*)port_ptr64((r2->ofs[2] + (u32)(uintptr_t)(base))));
             }
             if (r2->ofs[3] != 0) {
-                idDecodeCurve(&d->curve1, (Hermite1*) (r2->ofs[3] + (u32) base));
+                idDecodeCurve(&d->curve1, (Hermite1*)port_ptr64((r2->ofs[3] + (u32)(uintptr_t)(base))));
             }
             if (r2->ofs[4] != 0) {
-                idDecodeCurve(&d->curve2, (Hermite1*) (r2->ofs[4] + (u32) base));
+                idDecodeCurve(&d->curve2, (Hermite1*)port_ptr64((r2->ofs[4] + (u32)(uintptr_t)(base))));
             }
             if (r2->ofs[5] != 0) {
-                idDecodeCurve(&d->curve3, (Hermite1*) (r2->ofs[5] + (u32) base));
+                idDecodeCurve(&d->curve3, (Hermite1*)port_ptr64((r2->ofs[5] + (u32)(uintptr_t)(base))));
             }
             break;
         }

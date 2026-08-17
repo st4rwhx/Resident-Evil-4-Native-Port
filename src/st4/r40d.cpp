@@ -311,8 +311,8 @@ void r40d_setDoorEff(int no, int on)
     } else {
         void* zero = 0;
 
-        EstSet(0, -1, 0, 0, 1, b, 1, (u8) eff, (u32) zero, zero);
-        EstSet(0, -1, 0, 0, 1, 5, 1, (u8) r40d_work.p->eff[2], (u32) zero, zero);
+        EstSet(0, -1, 0, 0, 1, b, 1, (u8) eff, (u32)(uintptr_t)(zero), zero);
+        EstSet(0, -1, 0, 0, 1, 5, 1, (u8) r40d_work.p->eff[2], (u32)(uintptr_t)(zero), zero);
     }
 }
 

@@ -35,7 +35,7 @@ void Wep33_init(cModel* m)
     pl->pWep->pObj = obj;
     obj->init(pl);
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x3B, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x3B, 1);
     PlWepMot[0] = WEP_ARC_PTR(0x1A);
     PlWepMot[1] = WEP_ARC_PTR(0x20);
     PlWepMot[2] = WEP_ARC_PTR(0x22);
@@ -85,7 +85,7 @@ void cObjShotgun::moveFire()
         // the EstSet stack zeros come from an SImode pseudo set after the SndCall (wep44)
         int type = 0;
         pG->flags_500C |= 0x00800000;
-        EstSet((int) this, -1, 0, 0, 0x3B, type, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x3B, type, 0, 0xA, 0, 0);
         wep.step = 1;
     } else {
         if (MotionCheckCrossFrame(&mot, 20.0f)) {
@@ -199,7 +199,7 @@ void cObjShotgun::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x5E], WEP_ARC_PTR(0x1D));
     PSet(pl->pMotTbl[0x5B], WEP_ARC_PTR(0x40));
     PSet(pl->pMotTbl[0x57], WEP_ARC_PTR(0x41));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x7));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x7)));
     pl->setLeftHand(2);
     pl->setRightHand(1);
 }

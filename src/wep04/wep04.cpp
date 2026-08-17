@@ -10,7 +10,7 @@
 #include "pad.h"
 #include "rnd.h"
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 void PlHandgunMove(cPlayer* pl);   // wep/pl_handgun.cpp
 cObjWep* equipWeapon(cPlayer* pl);
@@ -40,7 +40,7 @@ void Wep04_init(cModel* m)
     } else {
         pl->pWep->pObj = obj;
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x38, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x38, 1);
         PlWepMot[0] = WEP_ARC_PTR(0x26);
         PlWepMot[1] = WEP_ARC_PTR(0x27);
         PlWepMot[2] = WEP_ARC_PTR(0x28);
@@ -136,9 +136,9 @@ void cObjXd9::moveFire()
         if (pG->wep_type == 1) {
             type = 1;
         }
-        EstSet((int) this, -1, 0, 0, 0x38, type, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x38, type, 0, 0xA, 0, 0);
         setCartridge();
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         wep.step = 1;
     } else if (MotionGetState(this)) {
         wep.mode = 0;
@@ -255,7 +255,7 @@ void cObjXd9::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x5E], WEP_ARC_PTR(0x20));
     PSet(pl->pMotTbl[0x5B], WEP_ARC_PTR(0x30));
     PSet(pl->pMotTbl[0x57], WEP_ARC_PTR(0x31));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0xA));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0xA)));
     pl->setRightHand(1);
     pl->setLeftHand(4);
 }

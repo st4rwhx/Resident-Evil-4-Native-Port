@@ -31,7 +31,7 @@ cPlHunk::cPlHunk()
     init1();
     setMotion();
     arc = pG->pPlArc;
-    EspDataLoad((u32) PL_ARC_PTR(arc, 0x1A), 3, 0);
+    EspDataLoad((u32)(uintptr_t)(PL_ARC_PTR(arc, 0x1A)), 3, 0);
     startUp();
     pFootShadowTbl = pl_fs_tbl;
 }
@@ -102,7 +102,7 @@ void cPlHunk::setRightHand(int no)
         data = pBody->pWepHand;
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     if ((info = ModInfoMgr.create(data, PL_ARC(0x11))) != 0) {
@@ -138,7 +138,7 @@ void cPlHunk::setLeftHand(u32 no)
         data = PL_ARC(0x15);
         break;
     default:
-        data = (void*) no;
+        data = (void*)port_ptr64(no);
         break;
     }
     pBody->leftNoPrev = pBody->leftNo;

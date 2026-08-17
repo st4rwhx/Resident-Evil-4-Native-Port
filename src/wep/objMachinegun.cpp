@@ -94,7 +94,7 @@ void cObjMachinegun::moveFire()
         SndCall(2, 0x18, &pos, 0, 0, 0);
         SndCall(2, 0x15, &pos, 0, 0, 0);
         SndCall(2, 0, &pos, 0, 0, 0);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0xA, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0xA, 1);
         setCartridge();
         switch (pG->wep_type) {
         case 0:
@@ -106,7 +106,7 @@ void cObjMachinegun::moveFire()
             type = 1;
             break;
         }
-        EstSet((int) this, -1, 0, 0, 0x45, type, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x45, type, 0, 0xA, 0, 0);
         wep.step = 1;
     }
     if (MotionGetState(this)) {
@@ -210,7 +210,7 @@ void cObjMachinegun::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x3D], PL_ARC_PTR(pG->pPlArc, 0x5D));
     PSet(pl->pMotTbl[0x41], WEP_ARC_PTR(0x38));
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x39));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0xC));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0xC)));
     pl->setRightHand(1);
     pl->setLeftHand(3);
 }

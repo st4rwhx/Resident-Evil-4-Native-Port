@@ -18,7 +18,7 @@ void Wep29_init(cModel* m)
         pl->pWep->pObj = obj;
         obj->init(pl);
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x45, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x45, 1);
         PlWepMot[0] = WEP_ARC_PTR(0x1B);
         PlWepMot[1] = WEP_ARC_PTR(0x1F);
         PlWepMot[2] = WEP_ARC_PTR(0x21);

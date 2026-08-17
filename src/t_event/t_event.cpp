@@ -436,7 +436,7 @@ void ToolEvt::RunStop(ToolEvt* t, Event* ev)
             // literal 0 here is related by cse (record_jump_equiv on the not-taken `bne`) to the `andi.`
             // result and that register is stored instead (t_mv mvInit). `(t & 8) >> 4` is a zero cse cannot
             // fold; combine folds it (nonzero_bits) to a fresh constant after cse2.
-            t->stopWait = ((u32) t & 0x8) >> 4;
+            t->stopWait = ((u32)(uintptr_t)(t) & 0x8) >> 4;
         }
         flg = 0;
         if (--t->stopWait <= 0) {
@@ -1054,7 +1054,7 @@ void ToolEvt::SubToolLightMove(ToolEvt* /*t*/)
 {
     cLightTool* lt = pLightTool;
 
-    if ((u32) lt >= PORT_PTR_MIN && (u32) lt <= PORT_PTR_MAX) {
+    if ((u32)(uintptr_t)(lt) >= PORT_PTR_MIN && (u32)(uintptr_t)(lt) <= PORT_PTR_MAX) {
         if (lt->move() == 0) {
             SubToolLightInit(this, 0);
         }
@@ -1562,7 +1562,7 @@ static inline void EvtMessWrite(EventMessageData* m, const char* path)
         if (e->flag & 1) {
             // integer arithmetic keeps the written order (`mulli; add rMul, rBase; addi off`);
             // `d.node[d.num]` puts the base first.
-#define CUR_NODE ((XmlNode*) (d.num * sizeof(XmlNode) + (u32) d.node))
+#define CUR_NODE ((XmlNode*) (d.num * sizeof(XmlNode) + (u32)(uintptr_t)(d.node)))
             sprintf(CUR_NODE->s[XN_SETFLG], "true");
             sprintf(CUR_NODE->s[XN_CUTNO], "%ld", e->cutNo);
             sprintf(CUR_NODE->s[XN_FRAME], "%ld", e->frame);

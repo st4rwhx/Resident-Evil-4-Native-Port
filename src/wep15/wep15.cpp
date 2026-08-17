@@ -32,7 +32,7 @@ void Wep15_init(cModel* m)
     pl->pWep->pObj = obj;
     obj->init(pl);
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x49, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x49, 1);
     PlWepMot[0] = WEP_ARC_PTR(0x29);
     PlWepMot[1] = WEP_ARC_PTR(0x2A);
     PlWepMot[2] = WEP_ARC_PTR(0x2B);
@@ -73,8 +73,8 @@ void cObjMagnum::moveFire()
         SndCall(2, 0, &pos, 0, 0, 0);
         SndCall(2, 2, &pos, 0, 0, 0);
         SndCall(2, 4, &pos, 0, 0, 0);
-        EstSet((int) this, -1, 0, 0, 0x49, 0, 0, 0xA, 0, 0);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x49, 0, 0, 0xA, 0, 0);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
         wep.step = 1;
     }
 }
@@ -143,9 +143,9 @@ void cObjMagnum::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x5E], WEP_ARC_PTR(0x20));
     PSet(pl->pMotTbl[0x57], WEP_ARC_PTR(0x31));
     PSet(pl->pMotTbl[0x5B], WEP_ARC_PTR(0x30));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x8));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x8)));
     pl->setRightHand(1);
-    pl->setLeftHand((u32) WEP_ARC_PTR(0x9));
+    pl->setLeftHand((u32)(uintptr_t)(WEP_ARC_PTR(0x9)));
 }
 
 extern "C" void _prolog()

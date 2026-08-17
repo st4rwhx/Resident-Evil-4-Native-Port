@@ -69,7 +69,7 @@ struct R22cMarkRec {
     int flag;   // 0x4  target type (0xFD: UFO wait, 0xFE: pause)
 };
 
-#define RES_PTR(d, ofs) ((void*) ((d)->ofs + (u32) (d)))
+#define RES_PTR(d, ofs) ((void*)port_ptr64(((d)->ofs + (u32)(uintptr_t)((d)))))
 
 class ResultScreen {
 public:
@@ -561,7 +561,7 @@ static void r22c_ShootingStar()
     pos.z = -25337.0f;
     o->setPos(&pos);
     o->modelInit(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20));
-    EstSet((int) o, -1, 0, 0, 1, 6, 0, 0, (u32) o, 0);
+    EstSet((int)(uintptr_t)(o), -1, 0, 0, 1, 6, 0, 0, (u32)(uintptr_t)(o), 0);
     SceSleep(10);
     pos.x = -3951.0f;
     pos.y = 3000.0f;
@@ -582,7 +582,7 @@ static void r22c_ShootingStar()
     pos.y = 400.0f;
     pos.z = -17100.0f;
     o->setPos(&pos);
-    EffectEspgenDelete(0, 0x3F, (int) o);
+    EffectEspgenDelete(0, 0x3F, (int)(uintptr_t)(o));
     EstSet(0, -1, &o->pos, 0, 1, 7, 0, 0, 0, 0);
     QuakeExec(0, 0, 5, 22.0f, 2);
     SndCall(6, 0x16, 0, 0, 0, 0);
@@ -708,7 +708,7 @@ cObj* getCap(int a, int b, int c, int d, int e)
         int id = tbl[(r + i) % 5];
 
         if (ItemMgr.num((u16) (id + 0xDB)) == 0) {
-            return (cObj*) tbl[(r + i) % 5];
+            return (cObj*)port_ptr64(tbl[(r + i) % 5]);
         }
     }
     return 0;
@@ -724,28 +724,28 @@ void checkBottleCap()
         if (r22c_work.p->state == 2 && r22c_work.p->score > 3999) {
             cap = 0xF0;
         } else if (r22c_work.p->score > 2999) {
-            cap = (int) getCap(1, 2, 3, 4, 5);
+            cap = (int)(uintptr_t)(getCap(1, 2, 3, 4, 5));
         }
         break;
     case 2:
         if (r22c_work.p->state == 2 && r22c_work.p->score > 3999) {
             cap = 0xF1;
         } else if (r22c_work.p->score > 2999) {
-            cap = (int) getCap(6, 7, 8, 9, 0xA);
+            cap = (int)(uintptr_t)(getCap(6, 7, 8, 9, 0xA));
         }
         break;
     case 3:
         if (r22c_work.p->state == 2 && r22c_work.p->hits > 0x18) {
             cap = 0xF2;
         } else if (r22c_work.p->score > 2999) {
-            cap = (int) getCap(0xB, 0xC, 0xD, 0xE, 0xF);
+            cap = (int)(uintptr_t)(getCap(0xB, 0xC, 0xD, 0xE, 0xF));
         }
         break;
     case 4:
         if (r22c_work.p->state == 2 && r22c_work.p->hits > 0x18) {
             cap = 0xF3;
         } else if (r22c_work.p->score > 2999) {
-            cap = (int) getCap(0x10, 0x11, 0x12, 0x13, 0x14);
+            cap = (int)(uintptr_t)(getCap(0x10, 0x11, 0x12, 0x13, 0x14));
         }
         break;
     }
@@ -1189,7 +1189,7 @@ static void shootMain()
         JOY* joy = &Joy[0];
 
         for (;;) {
-            int n = (int) r22c_work.p->tbl[0];
+            int n = (int)(uintptr_t)(r22c_work.p->tbl[0]);
             int i;
 
             for (i = 0; i < n; i++) {
@@ -1214,7 +1214,7 @@ static void shootMain()
                     }
                 }
             }
-            if (r22c_work.p->timer > (int) r22c_work.p->tbl[1]) {
+            if (r22c_work.p->timer > (int)(uintptr_t)(r22c_work.p->tbl[1])) {
                 r22c_work.p->timer = 0;
                 r22c_work.p->resultStep = 0;
                 r22c_work.p->step = 3;

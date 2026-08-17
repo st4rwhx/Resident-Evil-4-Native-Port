@@ -213,7 +213,7 @@ static void r203_GanadoWandering(int no)
 
                 pt[no] = pt[no] < 0 ? 2 : (pt[no] > 2 ? 0 : pt[no]);
             }
-            em->setGoto((Vec*) (r203_work.p->pt[no] * sizeof(Vec) + (u32) r203_wanderPos), 6);
+            em->setGoto((Vec*) (r203_work.p->pt[no] * sizeof(Vec) + (u32)(uintptr_t)(r203_wanderPos)), 6);
         }
         SceSleep(1);
         // Dead test (store dead in flow, compare in flow2): its extra basic block takes the loop to 11

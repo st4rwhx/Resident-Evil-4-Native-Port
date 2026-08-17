@@ -324,7 +324,7 @@ static void em34_R0_Init(cEm34* em)
     em->lockOfs.x = 0.0f;
     em->lockOfs.y = 0.0f;
     em->lockOfs.z = 0.0f;
-    EspDataLoad((u32) ARC(0x10), 0x2B, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(0x10)), 0x2B, 0);
     w->neckAng = 0.0f;
     w->flags = 0;
     EmRoutineSet(em, one, 0, 0, 0);
@@ -435,7 +435,7 @@ static void em34_R1_Atk(cEm34* em)
             MotionSetCore(em, MOTION(em), ARC(0x17), 0, 10, 5, 0);
             break;
         case 1:
-            MotionSetCore(em, MOTION(em), ARC(0x15), (int) ARC(0x16), 10, 1, 0);
+            MotionSetCore(em, MOTION(em), ARC(0x15), (int)(uintptr_t)(ARC(0x16)), 10, 1, 0);
             break;
         }
         w->atkHit = 0;
@@ -628,7 +628,7 @@ int em34AtkCk(cEm34* em, int no, int parts)
                 w->atkHit = 1;
             }
             QuakeExec(0, 0, 5, 22.0f, 2);
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
             return 1;
         }
     }

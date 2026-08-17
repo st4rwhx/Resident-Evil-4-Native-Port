@@ -27,7 +27,7 @@ void Wep26_init(cModel* m)
     obj->init();
     pl->pWep->pObj = obj;
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x4E, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x4E, 1);
     PlWepMot[0] = WEP_ARC_PTR(0x2A);
     PlWepMot[1] = WEP_ARC_PTR(0x2C);
     PlWepMot[2] = WEP_ARC_PTR(0x2E);
@@ -74,7 +74,7 @@ void cObjKnife::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x0F], WEP_ARC_PTR(0x0F));
     PSet(pl->pMotTbl[0x10], WEP_ARC_PTR(0x20));
     PSet(pl->pMotTbl[0x3D], PL_ARC_PTR(pG->pPlArc, 0x5D));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x7));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x7)));
     pl->setRightHand(1);
     pl->setLeftHand(0);
 }

@@ -671,7 +671,7 @@ void pieceTblInit(SUB_SCREEN* wk)
     tbl = piece_info;
     {
         u32 z = 0;
-        if (((PieceInfo*) (z + (u32) tbl))->id == 0xFFFF) {
+        if (((PieceInfo*)port_ptr64((z + (u32)(uintptr_t)(tbl))))->id == 0xFFFF) {
             return;
         }
     }
@@ -686,13 +686,13 @@ void pieceTblInit(SUB_SCREEN* wk)
     // volatile so that gcse's PRE does not merge the identical `(mem (plus ofs base))` loads (the
     // `tbl[i].id` index form keeps them apart through the PRE'd `i*120` copies, but its giv init
     // comes after the constant).
-    mp = (void**) ((u32) base + 84);
+    mp = (void**)port_ptr64(((u32)(uintptr_t)(base) + 84));
     ofs = 0;
     do {
         int mdl;
         int tex;
 
-        switch (((PieceInfo*) (ofs + (u32) base))->id) {
+        switch (((PieceInfo*)port_ptr64((ofs + (u32)(uintptr_t)(base))))->id) {
         case 0x40:
             mdl = 0x21;
             break;
@@ -728,11 +728,11 @@ void pieceTblInit(SUB_SCREEN* wk)
             mdl = 0;
             break;
         default:
-            mdl = *(volatile u16*) (ofs + (u32) base);
+            mdl = *(volatile u16*)port_ptr64((ofs + (u32)(uintptr_t)(base)));
             break;
         }
         mdl = mdl * 2 + 4;
-        switch (*(volatile u16*) (ofs + (u32) base)) {
+        switch (*(volatile u16*)port_ptr64((ofs + (u32)(uintptr_t)(base)))) {
         case 0x40:
             tex = 0x21;
             break;
@@ -744,19 +744,19 @@ void pieceTblInit(SUB_SCREEN* wk)
             tex = 0x35;
             break;
         default:
-            tex = *(volatile u16*) (ofs + (u32) base);
+            tex = *(volatile u16*)port_ptr64((ofs + (u32)(uintptr_t)(base)));
             break;
         }
         // Index-first `lwzx` (offset + arc, not arc->ofs[no]); the tex index goes through a block-local
         // so the +20 is not folded into the load displacement.
-        mp[-1] = (void*) (*(u32*) (mdl * 4 + (u32) wk->x1E4) + (u32) wk->x1E4);
+        mp[-1] = (void*)port_ptr64((*(u32*)port_ptr64((mdl * 4 + (u32) wk->x1E4)) + (u32) wk->x1E4));
         {
             u32 tix = (tex * 2 + 5) * 4;
-            mp[0] = (void*) (*(u32*) (tix + (u32) wk->x1E4) + (u32) wk->x1E4);
+            mp[0] = (void*)port_ptr64((*(u32*)port_ptr64((tix + (u32) wk->x1E4)) + (u32) wk->x1E4));
         }
         mp += 30;
         ofs += 120;
-    } while (((PieceInfo*) (ofs + (u32) base))->id != 0xFFFF);
+    } while (((PieceInfo*)port_ptr64((ofs + (u32)(uintptr_t)(base))))->id != 0xFFFF);
 }
 
 void pieceModelOrientation(SUB_SCREEN* wk, pzlPiece* p)
@@ -1978,7 +1978,7 @@ void PieceSelect::move(SUB_SCREEN* wk)
                 // that moves REGNO_LAST_UID of the r==1 arm's getPieceNum result `n` past case 4's
                 // Key-zero store, so cse2's make_regs_eqv keeps `n` (not the Key `or.` result) as
                 // the first register of the zero quantity in the r==1 arm: `mr. r9,r3; stb r9`.
-                space = (pzlBoard*) n;
+                space = (pzlBoard*)port_ptr64(n);
                 break;
             }
         }

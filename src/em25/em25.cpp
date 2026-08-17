@@ -311,7 +311,7 @@ void cEm25::move()
                 w->estTimer--;
             } else {
                 w->estTimer = 2;
-                EstSet((int) this, -1, 0, 0, 0x1D, 0xB, 0, 0, (u32) this, 0);
+                EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x1D, 0xB, 0, 0, (u32)(uintptr_t)(this), 0);
             }
         }
     }
@@ -337,7 +337,7 @@ static void em25_R0_Init(cEm25* em)
     em->setStatus(0xB);
     zero = 0;
     em->motFlip = em25_flip_tbl;
-    EspDataLoad((u32) ARC(7), 0x1D, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(7)), 0x1D, 0);
     {
         static const Vec ofs = {0.0f, 0.0f, 0.0f};
         static const Vec size = {2000.0f, 2000.0f, 2000.0f};
@@ -355,7 +355,7 @@ static void em25_R0_Init(cEm25* em)
     YarareAdd(em, &w->hit[2], fzero, fzero, fzero, 100.0f, 100.0f, 0x1F, 1);
     w->flags = zero;
     w->scaleY = 1.0f;
-    w->pParent = (cEm*) zero;
+    w->pParent = (cEm*)port_ptr64(zero);
     w->parentParts = zero;
     w->hitCnt = zero;
     w->dead = zero;
@@ -383,7 +383,7 @@ static void em25_R0_Init(cEm25* em)
         em->xFD = 2;
         em->xFE = 0;
         em->xFF = 0;
-        EstSet((int) em, -1, 0, 0, 0x1D, 2, 0, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 2, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         em25SetParasite(em);
         break;
     }
@@ -454,7 +454,7 @@ static void em25_R1_Birth(cEm25* em)
         RotMatrix(em->mat, &em->rot);
         TransMatrix(em->mat, &em->pos);
         TransMatrix(em->mat, &em->scale);
-        MotionSetCore(em, &em->mot, ARC(0x26), (int) ARC(0x2E), 0, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x26), (int)(uintptr_t)(ARC(0x2E)), 0, 1, 0);
         for (p = em->pParts; p; p = p->pParts) {
             p->scale.x = 1.0f;
             p->scale.y = 1.0f;
@@ -465,7 +465,7 @@ static void em25_R1_Birth(cEm25* em)
         em->clearStatus(1);
         w->scaleY = 1.0f;
         w->lifeTimer = 900;
-        EstSet((int) em, -1, 0, 0, 0x1D, 2, 0, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 2, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         em25SetParasite(em);
         em->xFE++;
     case 1:
@@ -517,7 +517,7 @@ static void em25_R1_Walk(cEm25* em)
 
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x1A), (int) ARC(0x1B), 5, 5, 0);
+        MotionSetCore(em, &em->mot, ARC(0x1A), (int)(uintptr_t)(ARC(0x1B)), 5, 5, 0);
         w->timer = (u8) (Rnd() % 5) + 5;
         em->xFE++;
     case 1:
@@ -550,7 +550,7 @@ static void em25_R1_Run(cEm25* em)
 
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x1C), (int) ARC(0x1D), 5, 5, 0);
+        MotionSetCore(em, &em->mot, ARC(0x1C), (int)(uintptr_t)(ARC(0x1D)), 5, 5, 0);
         w->timer = (u8) (Rnd() % 3) + 2;
         em->xFE++;
     case 1:
@@ -584,9 +584,9 @@ static void em25_R1_Turn90(cEm25* em)
     switch (em->xFE) {
     case 0:
         if (Muku(&em->pos, &pPL->pos, em->rot.y, 3.14159274f) < 0.0f) {
-            MotionSetCore(em, &em->mot, ARC(0x1E), (int) ARC(0x1F), 5, 1, 0);
+            MotionSetCore(em, &em->mot, ARC(0x1E), (int)(uintptr_t)(ARC(0x1F)), 5, 1, 0);
         } else {
-            MotionSetCore(em, &em->mot, ARC(0x1E), (int) ARC(0x1F), 5, 0x41, 0);
+            MotionSetCore(em, &em->mot, ARC(0x1E), (int)(uintptr_t)(ARC(0x1F)), 5, 0x41, 0);
         }
         em->xFE++;
     case 1:
@@ -625,7 +625,7 @@ static void em25_R1_JumpAtk(cEm25* em)
 
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x26), (int) ARC(0x2E), 5, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x26), (int)(uintptr_t)(ARC(0x2E)), 5, 1, 0);
         w->timer = 10;
         w->atkHit = 0;
         em->xFE++;
@@ -654,8 +654,8 @@ static void em25_R1_Bite(cEm25* em)
     switch (fe) {
     case 0:
         MotionSetCore(em, &em->mot, ARC(0x27), 0, 0, 1, 0);
-        EstSet((int) em, -1, 0, 0, 0x1D, 3, 0, 0, (u32) em, (void*) fe);
-        EmCatchPLSet(em, 0.0f, 2, (int) plem25_Bite, -150.0f, 0.0f, 628.0f);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 3, 0, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(fe));
+        EmCatchPLSet(em, 0.0f, 2, (int)(uintptr_t)(plem25_Bite), -150.0f, 0.0f, 628.0f);
         PlGachaInit();
         SndCall(8, 0x12, &em->pos, em->id, 0, em);
         w->timer = 50;
@@ -705,7 +705,7 @@ static void em25_R1_Bite(cEm25* em)
         MotionSetCore(em, &em->mot, ARC(0x2B), 0, 0, 1, 0);
         SndStop(w->sndId, 0);
         PlSetDamageSe(0xD);
-        EmCatchPLSet(em, 0.0f, 2, (int) plem25_Bite, 24.3600006f, 0.0f, 307.75f);
+        EmCatchPLSet(em, 0.0f, 2, (int)(uintptr_t)(plem25_Bite), 24.3600006f, 0.0f, 307.75f);
         pPL->xFE = fe;
         em->xFE++;
     case 3:
@@ -728,7 +728,7 @@ static void plem25_Bite(cPlayer* pl)
 
     pG->flags_5010 |= 0x8000;
     pl->dmg.set(0, 10);
-    pl->subArc = ((cEm*) pPL->dmgType)->subArc;
+    pl->subArc = ((cEm*)port_ptr64(pPL->dmgType))->subArc;
     switch (pl->xFE) {
     case 0:
         MotionSetCore(pl, &pl->mot, PL_ARC(0x2F), 0, 0, 1, 0);
@@ -771,10 +771,10 @@ static void em25_R1_P_Appear(cEm25* em)
         em->scale.x = 0.0f;
         em->scale.y = 0.0f;
         em->scale.z = 0.0f;
-        MotionSetCore(em, &em->mot, ARC(0xC), (int) ARC(0xD), 0, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0xC), (int)(uintptr_t)(ARC(0xD)), 0, 1, 0);
         w->seTimer = 0;
         em->setStatus(5);
-        EstSet((int) em, -1, 0, 0, 0x1D, 2, 0, w->espKind, (u32) em, (void*) fe);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 2, 0, w->espKind, (u32)(uintptr_t)(em), (void*)port_ptr64(fe));
         w->atkEnable = 0;
         w->scaleY = 1.0f;
         em->alpha = 0.0f;
@@ -891,8 +891,8 @@ static void em25_R1_P_Atk(cEm25* em)
     fe = em->xFE;
     switch (fe) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x13), (int) ARC(0x14), 5, 1, 0);
-        EstSet((int) em, -1, 0, 0, 0x1D, 0xC, 0, 0, (u32) em, (void*) fe);
+        MotionSetCore(em, &em->mot, ARC(0x13), (int)(uintptr_t)(ARC(0x14)), 5, 1, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 0xC, 0, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(fe));
         w->atkHit = 0;
         em->xFE++;
     case 1:
@@ -912,7 +912,7 @@ static void em25_R1_P_Poison(cEm25* em)
 
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x15), (int) ARC(0x16), 5, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x15), (int)(uintptr_t)(ARC(0x16)), 5, 1, 0);
         w->atkHit = 0;
         em->xFE++;
     case 1:
@@ -992,9 +992,9 @@ static void em25_R1_Dm_P_GoOut(cEm25* em)
         w->mode = 0;
         w->pParent = 0;
         if (em->xFF) {
-            MotionSetCore(em, &em->mot, ARC(0x24), (int) ARC(0x25), 5, 1, 0);
+            MotionSetCore(em, &em->mot, ARC(0x24), (int)(uintptr_t)(ARC(0x25)), 5, 1, 0);
         } else {
-            MotionSetCore(em, &em->mot, ARC(0x26), (int) ARC(0x2E), 5, 1, 0);
+            MotionSetCore(em, &em->mot, ARC(0x26), (int)(uintptr_t)(ARC(0x2E)), 5, 1, 0);
         }
         w->lifeTimer = 900;
         em25SetParasite(em);
@@ -1035,7 +1035,7 @@ static void em25_R1_Dm_Big(cEm25* em)
 {
     switch (em->xFE) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x29), (int) ARC(0x2A), 5, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x29), (int)(uintptr_t)(ARC(0x2A)), 5, 1, 0);
         SndCall(8, 5, &em->pos, em->id, 0, em);
         em->xFE++;
     case 1:
@@ -1048,7 +1048,7 @@ static void em25_R1_Dm_Big(cEm25* em)
         }
         break;
     case 2:
-        MotionSetCore(em, &em->mot, ARC(0x24), (int) ARC(0x25), 5, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x24), (int)(uintptr_t)(ARC(0x25)), 5, 1, 0);
         em->xFE++;
     case 3:
         if (MotionMoveF(em, 0)) {
@@ -1087,7 +1087,7 @@ static void em25_R1_Dm_Frame(cEm25* em)
         }
         break;
     case 2:
-        MotionSetCore(em, &em->mot, ARC(0x24), (int) ARC(0x25), 5, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x24), (int)(uintptr_t)(ARC(0x25)), 5, 1, 0);
         em->xFE++;
     case 3:
         if (MotionMoveF(em, 0)) {
@@ -1113,9 +1113,9 @@ static void em25_R1_Die_P_Normal(cEm25* em)
         w->timer = 15;
         em->hp = 0;
         em->clearStatus(5);
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         em->xFE++;
     case 1:
         em25OnParent(em);
@@ -1148,10 +1148,10 @@ static void em25_R1_Die_Normal(cEm25* em)
     case 0:
         MotionSetCore(em, &em->mot, ARC(0x20), 0, 5, 1, 0);
         em25ClearParasite(em);
-        EstSet((int) em, -1, 0, 0, 0x1D, 4, 0, 0, (u32) em, (void*) fe);
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 4, 0, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(fe));
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         em->clearStatus(5);
         SndCall(8, 0xE, &em->pos, em->id, 0, em);
         em->hp = 0;
@@ -1186,14 +1186,14 @@ static void em25_R1_Die_Big(cEm25* em)
     fe = em->xFE;
     switch (fe) {
     case 0:
-        MotionSetCore(em, &em->mot, ARC(0x22), (int) ARC(0x23), 5, 1, 0);
+        MotionSetCore(em, &em->mot, ARC(0x22), (int)(uintptr_t)(ARC(0x23)), 5, 1, 0);
         em->clearStatus(5);
         em25ClearParasite(em);
-        EstSet((int) em, -1, 0, 0, 0x1D, 4, 0, 0, (u32) em, (void*) fe);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x1D, 4, 0, 0, (u32)(uintptr_t)(em), (void*)port_ptr64(fe));
         SndCall(8, 0xD, &em->pos, em->id, 0, em);
-        EffectEspDelete(0, w->espKind, (u32) em, 0);
-        EffectEspgenDelete(0, w->espKind, (int) em);
-        EffectEfmDelete(0, w->espKind, (int) em);
+        EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+        EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+        EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
         em->hp = 0;
         em->xFE++;
     case 1:
@@ -1394,7 +1394,7 @@ int em25AtkCk(cEm25* em, int no, int parts)
                 SndCall(8, 0x21, &em->pos, em->id, 0, em);
             }
             QuakeExec(0, 0, 5, 22.0f, 2);
-            VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+            VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
         }
         if (hit & 2) {
             if (pSUB) {
@@ -1488,7 +1488,7 @@ int em25CatchCk(cEm25* em)
     }
     pPLS->dmg.set(0, 2);
     em->dmg.set(0, 2);
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
     return 1;
 }
 
@@ -1696,12 +1696,12 @@ void em25PlHeadLost()
 
     if (pSys->region == 0) {
         PlSetDamageSe(0xD);
-        EstSet((int) pPL, -1, 0, 0, 0x1D, 0xA, 0, 0, (u32) pPL, 0);
+        EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0x1D, 0xA, 0, 0, (u32)(uintptr_t)(pPL), 0);
         return;
     }
     zero = 0;
     SndCall(1, 0x3E, &pPL->pos, 0, 0, pPL);
-    EstSet((int) pPL, -1, 0, 0, 0x10, 0x45, 0, 0, (u32) pPL, (void*) zero);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0x10, 0x45, 0, 0, (u32)(uintptr_t)(pPL), (void*)port_ptr64(zero));
     pPL->setHead(0);
     p = pPL->getPartsPtr(3);
     ofs.x = 0.0f;
@@ -1717,7 +1717,7 @@ void em25PlHeadLost()
         obj->lightInfo.x50 = 1;
         Obj01SetEst(obj, 0, -1, 4, 0, -1, 0, -1, (int) zero, -1);
     }
-    EstSet((int) obj, -1, 0, 0, 0x10, 0x46, 0, 0, (u32) obj, (void*) zero);
+    EstSet((int)(uintptr_t)(obj), -1, 0, 0, 0x10, 0x46, 0, 0, (u32)(uintptr_t)(obj), (void*)port_ptr64(zero));
 }
 
 void em25SetPoison(cEm25* em)

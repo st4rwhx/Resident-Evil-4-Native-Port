@@ -277,7 +277,7 @@ void Em1eSet(cEm10* em)
         w->x6C5 = 2;
     }
     Em1eWeaponSet(em);
-    EspDataLoad((u32) ARC(0x278), 0xcd, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(0x278)), 0xcd, 0);
 }
 
 void Em1eWeaponSet(cEm10* em)

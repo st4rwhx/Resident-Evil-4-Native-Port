@@ -159,7 +159,7 @@ void em3bDmCkTruck(cEm3b* em)
     SndCall(6, 4, pos, 0, 0, em);
     if (em->hp <= 1 && w->dmgWait == 0) {
         w->dmgWait = 150;
-        EstSet((int) em, -1, 0, 0, 1, 0x23, 0, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x23, 0, 0, (u32)(uintptr_t)(em), 0);
         SndCall(6, 6, pos, 0, 0, em);
         w->sndId = SndCall(6, 0xC, pos, 0, 0, em);
     }
@@ -180,7 +180,7 @@ void em3bDmCkCart(cEm3b* em)
             if (w->dmgWait == 0) {
                 w->dmgWait = 150;
                 EmRoutineSet(em, 1, 5, 0, 0);
-                EstSet((int) em, -1, 0, 0, 0xCA, 1, 0, w->espKind, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xCA, 1, 0, w->espKind, (u32)(uintptr_t)(em), 0);
                 w->dmgWait = 150;
                 return;
             }
@@ -241,7 +241,7 @@ void em3bDmCkCart(cEm3b* em)
             if (w->dmgWait == 0) {
                 w->dmgWait = 150;
                 EmRoutineSet(em, 1, 5, 0, 0);
-                EstSet((int) em, -1, 0, 0, 0xCA, 1, 0, w->espKind, (u32) em, 0);
+                EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xCA, 1, 0, w->espKind, (u32)(uintptr_t)(em), 0);
                 w->dmgWait = 150;
             }
             break;
@@ -446,7 +446,7 @@ static void em3b_R0_Init(cEm3b* em)
     em->lockOfs.y = 0.0f;
     em->lockOfs.z = 0.0f;
     em->setStatus(5);
-    EspDataLoad((u32) ARC(6), 0x30, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(6)), 0x30, 0);
     w->espKind = EspPullCoreKind();
     w->flags = zero;
     w->sndId2 = zero;
@@ -528,7 +528,7 @@ static void em3b_R1_Truck_Run(cEm3b* em)
         MotionSetCore(em, MOTION(em), ARC(7), 0, 3, 1, 0);
         w->timer = 450;
         w->seTimer = 30;
-        EstSet((int) em, -1, 0, 0, 1, 0, 1, 0, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0, 1, 0, (u32)(uintptr_t)(em), 0);
         em->xFE++;
     case 3: {
         int end = MotionMoveF(em, 0);
@@ -574,7 +574,7 @@ static void em3b_R1_Truck_Run(cEm3b* em)
         }
         f = em->frame;
         if (f > 464.7f && f < 465.3f) {
-            EstSet((int) em, -1, 0, 0, 1, 0x24, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x24, 0, 0, (u32)(uintptr_t)(em), 0);
             em->flags_3C8 |= 2;
             em->hp = 0;
             em->clearStatus(5);
@@ -600,11 +600,11 @@ static void em3b_R1_Truck_RunInto(cEm3b* em)
 
         if (dir) {
             MotionSetCore(em, MOTION(em), ARC(9), 0, 3, 1, 0);
-            EstSet((int) em, -1, 0, 0, 1, 0x26, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x26, 0, 0, (u32)(uintptr_t)(em), 0);
             w->timer = 60;
         } else {
             MotionSetCore(em, MOTION(em), ARC(8), 0, 3, 1, 0);
-            EstSet((int) em, -1, 0, 0, 1, 0x25, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 1, 0x25, 0, 0, (u32)(uintptr_t)(em), 0);
             w->timer = 120;
         }
         em->xFE++;
@@ -687,10 +687,10 @@ static void em3b_R1_Cart_Run(cEm3b* em)
             zero = 0;
             PlWepHitCheck2(0, &v, &v, 0x13, 2, 6000.0f);
             pG->flags_500C |= 0x00800000;
-            EffectEspDelete(0, w->espKind, (u32) em, 0);
-            EffectEspgenDelete(0, w->espKind, (int) em);
-            EffectEfmDelete(0, w->espKind, (int) em);
-            EstSet((int) em, -1, 0, 0, 0xCA, 2, 0, 0, (u32) em, 0);
+            EffectEspDelete(0, w->espKind, (u32)(uintptr_t)(em), 0);
+            EffectEspgenDelete(0, w->espKind, (int)(uintptr_t)(em));
+            EffectEfmDelete(0, w->espKind, (int)(uintptr_t)(em));
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xCA, 2, 0, 0, (u32)(uintptr_t)(em), 0);
             w->dmgWait = 150;
             SndStop(w->sndId2, 0);
             SndCall(6, 0xA, &em->pos, 0, 0, em);
@@ -727,7 +727,7 @@ static void em3b_R1_StopCart_Damage(cEm3b* em)
 
     switch (em->xFE) {
     case 0:
-        EstSet((int) em, -1, 0, 0, 0xCA, 3, 0, w->espKind, (u32) em, 0);
+        EstSet((int)(uintptr_t)(em), -1, 0, 0, 0xCA, 3, 0, w->espKind, (u32)(uintptr_t)(em), 0);
         w->dmgWait = 150;
         MotionSetCore(em, MOTION(em), ARC(0xE), 0, 3, 1, 0);
         w->timer = 1;
@@ -815,7 +815,7 @@ void em3bRunDownCkTruck(cEm3b* em)
                 // reference store: pSUB and rot.y are re-read for LIMIT_ANGLE (a plain store is forwarded)
                 FSet(pSUB->rot.y, pSUB->rot.y + Muku(&pSUB->pos, &p->worldPos, pSUB->rot.y, PI));
                 pSUB->rot.y = LIMIT_ANGLE(pSUB->rot.y);
-                SetSubDamage((int) em, (void*) subem3bRunDown);
+                SetSubDamage((int)(uintptr_t)(em), (void*) subem3bRunDown);
                 SndCall(1, 0x4B, &pSUB->pos, 0, 0, 0);
                 break;
             }
@@ -903,7 +903,7 @@ static void subem3bRunDown()
 {
     cSubChar* sub = pSUB;
     int st = sub->xFE;
-    PlArc* arc = ((cEm*) sub->dmgType)->subArc;
+    PlArc* arc = ((cEm*)port_ptr64(sub->dmgType))->subArc;
 
     sub->subArc = arc;
     switch (st) {

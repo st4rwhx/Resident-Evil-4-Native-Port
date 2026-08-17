@@ -786,7 +786,7 @@ static void EditActiveChange_callback(DB_WINDOW* w, DB_PRIMITIVE* p, DB_KEYBORD*
                 // the row offset in a local: `(plus tbl ofs)` keeps the table base first in the lbzx
                 // (`g_pEditTbl[n]` is expanded mult-first, `lbzx r0,r9,r10`)
                 u32 ofs = n * sizeof(TOOL_SEQ);
-                if (((TOOL_SEQ*) ((u32) g_pEditTbl + ofs))->stat & 1) {
+                if (((TOOL_SEQ*)port_ptr64(((u32)(uintptr_t)(g_pEditTbl) + ofs)))->stat & 1) {
                     if (selOn) {
                         if ((g_pSeqFlg[n] & 1) == 0) {
                             g_pSeqFlg[n] |= 1;

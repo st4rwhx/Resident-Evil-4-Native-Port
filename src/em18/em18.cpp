@@ -279,7 +279,7 @@ static void em18_R0_Init(cEm18* em)
     em->lockOfs.x = 0.0f;
     em->lockOfs.y = 0.0f;
     em->lockOfs.z = 0.0f;
-    EspDataLoad((u32) ARC(4), 0x15, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(4)), 0x15, 0);
     Em18ClothSet(em, &w->cloth, 0);
     w->flags = 0;
     w->neckAng = 0.0f;
@@ -404,7 +404,7 @@ void em18ActEvtSetTrade(cEm18* em)
             return;
         }
     }
-    ActBtn.set(0, 2, (int) em18TradeAction, (int) em, 0, 1, 0, 0);
+    ActBtn.set(0, 2, (int)(uintptr_t)(em18TradeAction), (int)(uintptr_t)(em), 0, 1, 0, 0);
 }
 
 static void em18TradeAction(cEm18* em)

@@ -298,7 +298,7 @@ void Em20Set(cEm10* em)
     }
     w->x6C5 = 2;
     Em20WeaponSet(em);
-    EspDataLoad((u32) ARC(0x278), 0xcd, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(0x278)), 0xcd, 0);
 }
 
 void Em20WeaponSet(cEm10* em)

@@ -50,10 +50,21 @@ def map_line_directives():
 def vrai(f, line):
     f = f.replace('\\', '/')
     rel = None
-    if f.lower().startswith(COPIE + '/'):
+    if '/rel/src/' in f:
+        # copie nettoyée par build_rel.py (sanitize : substitutions sur la même ligne, numéros de ligne gardés) :
+        # <module>__src__em2b__em2b.cpp -> src/em2b/em2b.cpp
+        cle = f.split('/rel/src/', 1)[1]
+        if '.d/' in cle:
+            return None, None
+        rel = cle.split('__', 1)[1].replace('__', '/') if '__' in cle else None
+        if rel:
+            rel = rel.replace('src/tools_lc/', 'src/tools/')
+    elif f.lower().startswith(COPIE + '/'):
         rel = f[len(COPIE) + 1:].replace('src/tools_lc/', 'src/tools/')
     elif f.startswith(ROOT + '/'):
         rel = f[len(ROOT) + 1:]
+    elif ':' not in f and not f.startswith('/'):
+        rel = f.replace('src/tools_lc/', 'src/tools/')   # chemin relatif au dossier de build (modules REL)
     if rel:
         m = map_line_directives().get(('@' + rel, line))   # fichier à `#line N` sans nom (motion.cpp)
         return m if m else (rel, line)

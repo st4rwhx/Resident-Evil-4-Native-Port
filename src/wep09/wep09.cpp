@@ -4,7 +4,7 @@
 #include "light.h"
 #include "esp.h"
 
-#define VALID_PTR(p) ((u32) (p) >= PORT_PTR_MIN && (u32) (p) <= PORT_PTR_MAX)
+#define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 
 void PlRifleMove(cPlayer* pl);   // wep/pl_rifle.cpp
 cObjWep* equipWeapon(cPlayer* pl);
@@ -20,7 +20,7 @@ void Wep09_init(cModel* m)
     } else {
         pl->pWep->pObj = obj;
         obj->setMotion(pl);
-        EspDataLoad((u32) WEP_ARC_PTR(0x8), 0x3D, 1);
+        EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x8)), 0x3D, 1);
         PlWepMot[0] = WEP_ARC_PTR(0x15);
         PlWepMot[1] = WEP_ARC_PTR(0x15);
         PlWepMot[2] = WEP_ARC_PTR(0x15);

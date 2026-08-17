@@ -35,7 +35,7 @@ void Wep08_init(cModel* m)
     pl->pWep->pObj = obj;
     obj->init(pl);
     obj->setMotion(pl);
-    EspDataLoad((u32) WEP_ARC_PTR(0x4), 0x3C, 1);
+    EspDataLoad((u32)(uintptr_t)(WEP_ARC_PTR(0x4)), 0x3C, 1);
     PlWepMot[0] = WEP_ARC_PTR(0x1A);
     PlWepMot[1] = WEP_ARC_PTR(0x20);
     PlWepMot[2] = WEP_ARC_PTR(0x22);
@@ -76,9 +76,9 @@ void cObjStriker::moveFire()
         MotionSetCore(this, &this->mot, WEP_ARC_PTR(0x30), 0, 0, 0, 0);
         SndCall(2, 0, &pos, 0, 0, 0);
         SndCall(2, 4, &pos, 0, 0, 0);
-        VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 0, 1);
+        VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 0, 1);
         pG->flags_500C |= 0x00800000;
-        EstSet((int) this, -1, 0, 0, 0x3C, 0, 0, 0xA, 0, 0);
+        EstSet((int)(uintptr_t)(this), -1, 0, 0, 0x3C, 0, 0, 0xA, 0, 0);
         wep.step = 1;
     } else if (MotionCheckCrossFrame(&mot, 21.0f)) {
         setCartridge();
@@ -175,9 +175,9 @@ void cObjStriker::setMotion(cPlayer* pl)
     PSet(pl->pMotTbl[0x42], WEP_ARC_PTR(0x29));
     PSet(pl->pMotTbl[0x3F], WEP_ARC_PTR(0x24));
     PSet(pl->pMotTbl[0x40], WEP_ARC_PTR(0x25));
-    pl->pBody->initWepHand((u32) WEP_ARC_PTR(0x7));
+    pl->pBody->initWepHand((u32)(uintptr_t)(WEP_ARC_PTR(0x7)));
     pl->setRightHand(1);
-    pl->setLeftHand((u32) PL_ARC_PTR(pG->pPlArc, 0x19));
+    pl->setLeftHand((u32)(uintptr_t)(PL_ARC_PTR(pG->pPlArc, 0x19)));
 }
 
 extern "C" void _prolog()

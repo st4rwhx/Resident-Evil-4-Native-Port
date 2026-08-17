@@ -75,7 +75,7 @@ void em2eDmCk(cEm2e* em)
         if ((pPL->pos.x - em->pos.x) * (pPL->pos.x - em->pos.x) + (pPL->pos.y - em->pos.y) * (pPL->pos.y - em->pos.y)
             + (pPL->pos.z - em->pos.z) * (pPL->pos.z - em->pos.z) < 160000.0f) {
             em->hp = 0;
-            EstSet((int) em, -1, 0, 0, 0x26, 0, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x26, 0, 0, 0, (u32)(uintptr_t)(em), 0);
             SndCall(8, 4, &em->pos, em->id, 0, em);
             EmSetDie(em);
             EmRoutineSet(em, 3, 0, 0, 0);
@@ -92,7 +92,7 @@ void em2eDmCk(cEm2e* em)
             rot.z = 0.0f;
             EstSet(0, -1, &em->pos, &rot, 0x26, 1, 0, 0, 0, 0);
         } else {
-            EstSet((int) em, -1, 0, 0, 0x26, 0, 0, 0, (u32) em, 0);
+            EstSet((int)(uintptr_t)(em), -1, 0, 0, 0x26, 0, 0, 0, (u32)(uintptr_t)(em), 0);
         }
         SndCall(8, 4, &em->pos, em->id, 0, em);
         EmSetDie(em);
@@ -168,7 +168,7 @@ static void em2e_R0_Init(cEm2e* em)
     at = &em->atari;
     em->be_flag &= ~0x01000000;
     em->setStatus(0xB);
-    EspDataLoad((u32) ARC(7), 0x26, 0);
+    EspDataLoad((u32)(uintptr_t)(ARC(7)), 0x26, 0);
     em->hp = 1;
     {
         static const Vec ofs = { 0.0f, 0.0f, 0.0f };

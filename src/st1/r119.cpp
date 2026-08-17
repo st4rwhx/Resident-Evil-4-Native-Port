@@ -307,7 +307,7 @@ static void r119_EventGolemAppear()
             SceAtSetEnable(4, 0);
             BitOff(pG->flags_5010, 0x800);
             ((cEmGolem*) r119_work->golem)->setDie();
-            EstSet((int) r119_work->golem, -1, 0, 0, 1, 0xF, 0, 0, (u32) r119_work->golem, (void*) stat);
+            EstSet((int) r119_work->golem, -1, 0, 0, 1, 0xF, 0, 0, (u32) r119_work->golem, (void*)port_ptr64(stat));
             if (r119_work->dog != 0) {
                 EmMgr.destroy(r119_work->dog);
             }

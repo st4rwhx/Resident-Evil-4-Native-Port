@@ -197,8 +197,8 @@ void R10bInit()
         ((cObj1c*) obj)->setMotion(ROOM_ARC_PTR(pG->pRoomArc, 0x20), ROOM_ARC_PTR(pG->pRoomArc, 0x21),
                                    ROOM_ARC_PTR(pG->pRoomArc, 0x22), ROOM_ARC_PTR(pG->pRoomArc, 0x23));
     }
-    EstSet(0, -1, 0, 0, 1, 2, 1, 2, (u32) zero, zero);
-    EstSet((int) pPL, -1, 0, 0, 1, 5, 1, 3, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 2, 1, 2, (u32)(uintptr_t)(zero), zero);
+    EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 1, 5, 1, 3, (u32)(uintptr_t)(zero), zero);
     r10b_work->boat = EmSetFromList2(0xA2, 1);
     RoomEfmRegist(SmdGetGroupObjPtr(0x58), 0x60);
     SetSstAddAreaFlag(0x800);
@@ -279,7 +279,7 @@ static void R10b_chkEmDie()
     SceSleep(1);
     PSet(r10b_work->em0, GetEmPtrFromList(0xA0));
     boss = r10b_work->boss;
-    Cckpt.life.flags = (u32) boss;
+    Cckpt.life.flags = (u32)(uintptr_t)(boss);
     for (;;) {
         if (DebugTrg(1)) {
             boss->hp = 1;
@@ -304,7 +304,7 @@ static void R10b_chkEmDie()
             if (r10b_work->count > 14) {
                 if (readEvent(2, 1, &evt)) {
                     if (EvtMgr.SetEvt(evt, &key) != 0) {
-                        ((Event*) key)->status |= 0x400;
+                        ((Event*)port_ptr64(key))->status |= 0x400;
                     }
                     r10b_waitEvt();
                     freeEvent(2);
@@ -312,8 +312,8 @@ static void R10b_chkEmDie()
             } else {
                 if (readEvent(1, 1, &evt)) {
                     if (EvtMgr.SetEvt(evt, &key2) != 0) {
-                        ((Event*) key2)->status |= 0x100000;
-                        ((Event*) key2)->status |= 0x200;
+                        ((Event*)port_ptr64(key2))->status |= 0x100000;
+                        ((Event*)port_ptr64(key2))->status |= 0x200;
                     }
                     r10b_waitEvt();
                     return;
@@ -376,8 +376,8 @@ static void R10b_chkWater()
                 r10b_effDelete(2);
                 r10b_effDelete(3);
                 SceSleep(1);
-                EstSet(0, -1, 0, 0, 1, 5, 1, 3, (u32) zero, zero);
-                EstSet(0, -1, 0, 0, 1, 2, 1, 2, (u32) zero, zero);
+                EstSet(0, -1, 0, 0, 1, 5, 1, 3, (u32)(uintptr_t)(zero), zero);
+                EstSet(0, -1, 0, 0, 1, 2, 1, 2, (u32)(uintptr_t)(zero), zero);
             }
         } else if ((int) pG->sceat_x17C < 0) {
             pG->flags_174 |= 0x80000000;

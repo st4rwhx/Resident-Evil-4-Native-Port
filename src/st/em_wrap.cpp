@@ -82,7 +82,7 @@ int cEmPatrol::SetPatrol(s16 no, Vec* tbl, int n, u8 prio, int errOn)
     if (SetControl(no, tbl, n, errOn) == 0) {
         return 0;
     }
-    SceExec(0x12, (TaskFunc) TaskMove, (int) this, prio, 2, 0);
+    SceExec(0x12, (TaskFunc) TaskMove, (int)(uintptr_t)(this), prio, 2, 0);
     return 1;
 }
 
@@ -117,7 +117,7 @@ int cEmGuard::SetGuard(s16 no, Vec* tbl, int n, int (*check)(cEmWrap*), f32 ang,
     if (SetControl(no, tbl, n, errOn) == 0) {
         return 0;
     }
-    SceExec(0x12, (TaskFunc) TaskMove, (int) this, prio, 2, 0);
+    SceExec(0x12, (TaskFunc) TaskMove, (int)(uintptr_t)(this), prio, 2, 0);
     this->ang = ang;
     guard_r = em.getGuard_r();
     this->check = check;

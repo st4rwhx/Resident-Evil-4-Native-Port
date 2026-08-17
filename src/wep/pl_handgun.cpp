@@ -134,7 +134,7 @@ static void wep02_r3_ready00(cPlayer* pl)
     FSet(pl->pWep->x30, CamCtrl.getCameraDirection());
     mot0 = WEP_ARC_PTR(0x22);
     mot1 = WEP_ARC_PTR(0x23);
-    mot3.set(pl, mot0, mot0, mot0, (int) mot1, 3, 0, 4, 0);
+    mot3.set(pl, mot0, mot0, mot0, (int)(uintptr_t)(mot1), 3, 0, 4, 0);
     mot3.move(m3r[0]);
     pl->xFF = 1;
 }
@@ -406,7 +406,7 @@ void wepDown(cPlayer* pl)
             hokan = 5;
             frame = 3;
         }
-        MotionSetCore(pl, &pl->mot, WEP_ARC_PTR(0x24), (int) WEP_ARC_PTR(0x25), hokan, 5, frame);
+        MotionSetCore(pl, &pl->mot, WEP_ARC_PTR(0x24), (int)(uintptr_t)(WEP_ARC_PTR(0x25)), hokan, 5, frame);
         pl->xFC = 0;
         pl->xFD = 0;
         pl->xFE = 2;

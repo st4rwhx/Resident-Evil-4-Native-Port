@@ -143,7 +143,7 @@ void R21aInit()
         if (obj) {
             for (int k = 0; k < 4; k++) {
                 R21aRoof* r = &r21a_roofTbl[k];
-                cEmHit* hit = SetEmHit((void*) (pG->pArc->ofs_20 + (u32) pG->pArc), (void*) (pG->pArc->ofs_24 + (u32) pG->pArc), 0, 0, 1);
+                cEmHit* hit = SetEmHit((void*)port_ptr64((pG->pArc->ofs_20 + (u32) pG->pArc)), (void*)port_ptr64((pG->pArc->ofs_24 + (u32) pG->pArc)), 0, 0, 1);
 
                 if (hit) {
                     hit->setParent(obj, 0, 0);
@@ -342,7 +342,7 @@ static void R21aDoorMain()
         if (obj) {
             const f32 base = -25321.0f;
 
-            EstSet(0, -1, 0, 0, 1, 0x10, 1, 0, (u32) zero, zero);
+            EstSet(0, -1, 0, 0, 1, 0x10, 1, 0, (u32)(uintptr_t)(zero), zero);
             SndCall(6, 9, &obj->pos, 0, 0, 0);
             for (i = 0; i < 60; i++) {
                 f32 y = obj->pos.y;
@@ -384,7 +384,7 @@ static void R21aFallRoofStartMain()
     r21a_work.p->str = 0;
     for (int i = 0; i < 4; i++) {
         if (obj) {
-            EstSet((int) obj, -1, 0, 0, 1, (u8) r21a_roofTbl[i].est, 1, (u8) r21a_roofTbl[i].eff, 0, 0);
+            EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, (u8) r21a_roofTbl[i].est, 1, (u8) r21a_roofTbl[i].eff, 0, 0);
         }
     }
     SceEventStart(0);
@@ -505,7 +505,7 @@ static void R21aFallRoofDie(int no)
             }
             SceSleep(1);
         }
-        EstSet((int) obj, -1, 0, 0, 1, 8, 1, 0, 0, 0);
+        EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 8, 1, 0, 0, 0);
         SndCall(6, 1, &obj->pos, 0, 0, 0);
         for (int i = 0; i < 10; i++) {
             f32 ax;
@@ -538,11 +538,11 @@ static inline void S16Set(s16& d, s16 v) { d = v; }
 // store: it is not a struct access, so pG is reloaded after every store).
 static inline u32 evtFlagBase()
 {
-    return (u32) &pG->flags_174;
+    return (u32)(uintptr_t)(&pG->flags_174);
 }
 static inline void EvtFlagOn(u32 base, u32 no)
 {
-    *(u32*) (((no >> 5) << 2) + base) |= 0x80000000 >> (no & 31);
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) |= 0x80000000 >> (no & 31);
 }
 
 // The burning roof: shakes, drops in steps, then falls (onto the player if he stands under it).
@@ -567,11 +567,11 @@ static void R21aFallRoofMove()
             cnt++;
             SetAngXYZ(obj, 0.0f, fRand1_1() * 3.1415927f / 180.0f * 0.1f, 0.0f);
             if (cnt % 10 == 0) {
-                EstSet((int) obj, -1, 0, 0, 1, 8, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 8, 1, 0, 0, 0);
             }
             SetPosXYZ(obj, obj->pos.x, obj->pos.y + -0.88611114f, obj->pos.z);
             if (obj->pos.y <= 1500.0f) {
-                EstSet((int) obj, -1, 0, 0, 1, 8, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 8, 1, 0, 0, 0);
                 spd = 0.0f;
                 cnt = 0;
                 step = 1;
@@ -581,7 +581,7 @@ static void R21aFallRoofMove()
             cnt++;
             SetAngXYZ(obj, 0.0f, fRand1_1() * 3.1415927f / 180.0f * 0.3f, 0.0f);
             if (cnt % 5 == 0) {
-                EstSet((int) obj, -1, 0, 0, 1, 8, 1, 0, 0, 0);
+                EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, 8, 1, 0, 0, 0);
             }
             if (cnt > 30) {
                 SetAngXYZ(obj, 0.0f, 0.0f, 0.0f);
@@ -639,12 +639,12 @@ static void R21aFallRoofMove()
 
             if (hit && hit->ckStatus() == 1) {
                 hit->hp = 0;
-                EvtFlagOn((u32) &pGS->flags_174, i + 1);
+                EvtFlagOn((u32)(uintptr_t)(&pGS->flags_174), i + 1);
                 EffectEspDelete(1, (u8) r21a_roofTbl[i].eff, 0, 0);
                 EffectEspgenDelete(1, (u8) r21a_roofTbl[i].eff, 0);
                 EffectEfmDelete(1, (u8) r21a_roofTbl[i].eff, 0);
                 if (obj) {
-                    EstSet((int) obj, -1, 0, 0, 1, (u8) r21a_roofTbl[i].est2, 1, 0, 0, 0);
+                    EstSet((int)(uintptr_t)(obj), -1, 0, 0, 1, (u8) r21a_roofTbl[i].est2, 1, 0, 0, 0);
                     SndCall(6, 2, &hit->pos, 0, 0, 0);
                 }
             }

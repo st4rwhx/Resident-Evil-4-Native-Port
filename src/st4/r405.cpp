@@ -97,7 +97,7 @@ void R405Init()
         PlRegistMotion(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, 0, 0, 0, 0, 0, zero, zero, zero, zero);
     }
     setTexRender();
-    SceSetRoomExitFunc((int) snd_tbl_set, 0);
+    SceSetRoomExitFunc((int)(uintptr_t)(snd_tbl_set), 0);
     if (pG->room_id_prev == 0x406) {
         SmdGetObjPtr(0x42)->be_flag |= 0x20;
         SmdGetObjPtr(0x42)->pos.y += 3000.0f;

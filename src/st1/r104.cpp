@@ -100,15 +100,15 @@ int cEmWrapSetEmI(cEmWrap* w, int no, int list, int errOn, int chkDead, int setA
 // Event flag words at pG+0x174 addressed as an integer base plus the word offset (r108).
 static inline u32 evtFlagBase()
 {
-    return (u32) &pG->flags_174;
+    return (u32)(uintptr_t)(&pG->flags_174);
 }
 static inline u32 EvtFlagChk(u32 base, u32 no)
 {
-    return *(u32*) (((no >> 5) << 2) + base) & (0x80000000 >> (no & 31));
+    return *(u32*)port_ptr64((((no >> 5) << 2) + base)) & (0x80000000 >> (no & 31));
 }
 static inline void EvtFlagOn(u32 base, u32 no)
 {
-    *(u32*) (((no >> 5) << 2) + base) |= 0x80000000 >> (no & 31);
+    *(u32*)port_ptr64((((no >> 5) << 2) + base)) |= 0x80000000 >> (no & 31);
 }
 
 // The rooms call Event::FlgOnStatus out of line (event.h has it in-class).
@@ -835,9 +835,9 @@ static void Evt_R104S00_Func(Event* e)
             if (!(pG->flags_174 & 0x80000000)) {
                 BitOff(pG->flags_58, 0x800);
                 if (!(pG->flags_174 & 0x04000000)) {
-                    ActBtn.set(0x25, 5, (int) r104_succeedAction, 0, 0x42, 4, 0, 0);
+                    ActBtn.set(0x25, 5, (int)(uintptr_t)(r104_succeedAction), 0, 0x42, 4, 0, 0);
                 } else {
-                    ActBtn.set(0x25, 5, (int) r104_succeedAction, 0, 0x42, 3, 0, 0);
+                    ActBtn.set(0x25, 5, (int)(uintptr_t)(r104_succeedAction), 0, 0x42, 3, 0, 0);
                 }
             } else {
                 e->CancelSet();

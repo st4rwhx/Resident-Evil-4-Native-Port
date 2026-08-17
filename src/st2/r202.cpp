@@ -408,10 +408,10 @@ void r202_initEmPatrol()
     r202_work.p->pat[1].pos[0] = p2;
     r202_work.p->pat[1].pos[1] = p3;
     if (r202_work.p->pat[0].em.isAlive() == 1) {
-        SceExec(0x12, (TaskFunc) r202_checkEmPatrol, (int) &r202_work.p->pat[0], 0, 2, 0);
+        SceExec(0x12, (TaskFunc) r202_checkEmPatrol, (int)(uintptr_t)(&r202_work.p->pat[0]), 0, 2, 0);
     }
     if (r202_work.p->pat[1].em.isAlive() == 1) {
-        SceExec(0x12, (TaskFunc) r202_checkEmPatrol, (int) &r202_work.p->pat[1], 0, 2, 0);
+        SceExec(0x12, (TaskFunc) r202_checkEmPatrol, (int)(uintptr_t)(&r202_work.p->pat[1]), 0, 2, 0);
     }
 }
 
@@ -446,9 +446,9 @@ static void r202_operateCannon()
     CamCtrl.CutCall(5);
     SceSleep(20);
     SceAtSetEnable(0x11, 0);
-    EstSet(0, -1, 0, 0, 1, 4, 1, 0, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 4, 1, 0, (u32)(uintptr_t)(zero), zero);
     SndCall(6, 9, 0, 0, 0, 0);
-    EstSet(0, -1, 0, 0, 1, 5, 1, 0, (u32) zero, zero);
+    EstSet(0, -1, 0, 0, 1, 5, 1, 0, (u32)(uintptr_t)(zero), zero);
     SceSleep(35);
     SndCall(6, 0xA, 0, 0, 0, 0);
     SmdGetObjPtr(0x25)->be_flag &= ~2;
@@ -544,8 +544,8 @@ static void r202_operateCrank()
     ((cUnitEventView*) pPL)->beginEvent(0);
     PlSetHand(1, 0);
     ((cUnitEventView*) r202_work.p->crank)->beginEvent(0);
-    pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x21), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x22));
-    r202_work.p->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2C), 3, 0, 5, (int) ROOM_ARC_PTR(pG->pRoomArc, 0x2D));
+    pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x21), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x22)));
+    r202_work.p->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2C), 3, 0, 5, (int)(uintptr_t)(ROOM_ARC_PTR(pG->pRoomArc, 0x2D)));
     CamCtrl.CutCall(3);
     {
         Vec v = {516.5f, 0.0f, -500.0f};
@@ -625,8 +625,8 @@ static void r202_operateCrank()
             if (frame >= n) {
                 frame = 0;
             }
-            pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x21), 3, (u16) frame, 5, (int) m0);
-            r202_work.p->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2C), 3, (u16) frame, 5, (int) m1);
+            pPL->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x21), 3, (u16) frame, 5, (int)(uintptr_t)(m0));
+            r202_work.p->crank->motionSet(ROOM_ARC_PTR(pG->pRoomArc, 0x2C), 3, (u16) frame, 5, (int)(uintptr_t)(m1));
         }
         if (MotionCheckCrossFrame(&pPL->mot, 0.0f) == 1) {
             SndCall(6, 0x35, 0, 0, 0, 0);
@@ -720,7 +720,7 @@ static void r202_CatapultGo_end()
 
         r202_work.p->em180.setFlag(1);
         r202_work.p->cat[2].state = 5;
-        SceExec(0x12, (TaskFunc) r202_waitRockImpact, (int) rock, 4, 2, 0);
+        SceExec(0x12, (TaskFunc) r202_waitRockImpact, (int)(uintptr_t)(rock), 4, 2, 0);
     }
     r202_work.p->em180.setNoSuspend(0);
     r202_work.p->cat[2].em.setNoSuspend(0);
@@ -755,12 +755,12 @@ static void r202_CatapultGo()
     r202_work.p->cat[2].fire = 1;
     pG->flags_174 |= 0x80000000;
     rock = r202_work.p->cat[2].rock;
-    EstSet((int) rock, -1, 0, 0, 1, 0, 1, EMROCK_WK(rock)->espKind, (u32) rock, zero);
+    EstSet((int)(uintptr_t)(rock), -1, 0, 0, 1, 0, 1, EMROCK_WK(rock)->espKind, (u32)(uintptr_t)(rock), zero);
     SceSleep(60);
     pG->flags_174 |= 0x02000000;
     r202_work.p->em180.setFlag(1);
     r202_work.p->cat[2].state = 5;
-    SceExec(0x12, (TaskFunc) r202_waitRockImpact, (int) rock, 0, 2, 0);
+    SceExec(0x12, (TaskFunc) r202_waitRockImpact, (int)(uintptr_t)(rock), 0, 2, 0);
     SceSleep(60);
     SceSetEventCancel(0, 0, 0, -1, 1);
     r202_CatapultGo_end();
@@ -912,7 +912,7 @@ void cCatapult::move()
         timer--;
         break;
     case 1:
-        setRockTask = SceExec(0x12, (TaskFunc) r202_setRock, (int) this, 0, 2, 0);
+        setRockTask = SceExec(0x12, (TaskFunc) r202_setRock, (int)(uintptr_t)(this), 0, 2, 0);
         rockSet = 0;
         state = 2;
         break;
@@ -971,7 +971,7 @@ void cCatapult::move()
         timer--;
         break;
     case 7:
-        throwRockTask = SceExec(0x12, (TaskFunc) r202_throwRock, (int) this, 0, 2, 0);
+        throwRockTask = SceExec(0x12, (TaskFunc) r202_throwRock, (int)(uintptr_t)(this), 0, 2, 0);
         state = 8;
         break;
     case 8:
