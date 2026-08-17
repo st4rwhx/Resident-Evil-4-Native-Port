@@ -22,8 +22,14 @@ int re4_main();   // liaison C++ : defini dans src/game/main.cpp
 extern "C" void port_rodata_writable(void);
 #include "njlink.h"
 
-int main(int argc, char **argv)
+// Point d'entree du coeur (18/11, I3 du port natif iOS). Android : main() l'appelle (processus a part, lance par l'appli).
+// iOS : le moteur Nightjar l'appelle dans un fil de son propre processus (NJ_LINK_INPROC=1, voir njlink.cpp) ; il ne
+// doit jamais appeler exit(). NJ_CORE_LOG=<fichier> : journal du coeur dans ce fichier (sur Android, l'appli redirige
+// deja la sortie du processus vers core.log).
+extern "C" int nj_core_main(int argc, char **argv)
 {
+    if (const char *lg = std::getenv("NJ_CORE_LOG"))
+        std::freopen(lg, "w", stdout);
     port_install_crash_handler();
     port_rodata_writable();
     // Journal ligne par ligne : l'appli arrete le coeur par un arret force, et un tampon plein laissait perdre les
@@ -67,3 +73,10 @@ int main(int argc, char **argv)
     std::printf("[PORT] re4_main a rendu %d\n", r);
     return r;
 }
+
+#ifndef __APPLE__   // iOS : le programme est le moteur, qui appelle nj_core_main dans un fil
+int main(int argc, char **argv)
+{
+    return nj_core_main(argc, argv);
+}
+#endif
