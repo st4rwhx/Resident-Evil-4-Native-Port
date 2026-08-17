@@ -161,7 +161,8 @@ u32 PADRead(PADStatus *status)
             ++card_reads;
             if (!up_done && card_reads == 120) { status[0].button |= PAD_BUTTON_UP; up_done = true; }
             else if (card_reads > 160 && pulse) status[0].button |= PAD_BUTTON_A;
-        } else if (st.bits & NJS_TEXT_WAIT) {
+        } else if ((st.bits & NJS_TEXT_WAIT) && !in_game) {   // 18/11 : plus d'appui A une fois en jeu (le commentaire
+            // le promettait ; A = bouton d'action de Leon : il se declenchait tout seul a chaque texte en attente)
             if (pulse) status[0].button |= PAD_BUTTON_A;
         } else if (!in_game) {
             if (st.bits & NJS_TITLE_MENU) {   // NEW GAME est au-dessus de LOAD (curseur par defaut) : une fois haut, puis A
