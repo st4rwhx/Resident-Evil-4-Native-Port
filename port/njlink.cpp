@@ -100,6 +100,10 @@ bool send_msg(const NjMsg& m, int fence)
     return sendmsg(g_fd, &mh, MSG_NOSIGNAL) == (ssize_t) sizeof m;
 }
 
+// Menu Nightjar ouvert (18/11) : le jeu s'arrete entre deux images (njlink_pause_point) ; le son tombe au silence de lui-meme
+// (la sortie joue du silence quand le jeu ne livre plus de tampons).
+volatile bool g_app_pause = false;
+
 // Messages de l'appli, sans attendre.
 void poll_host()
 {
@@ -129,6 +133,9 @@ void poll_host()
         case NJ_MSG_CASE:
             njstate_case((int) m.a, (int) m.b, m.data);
             break;
+        case NJ_MSG_PAUSE:
+            g_app_pause = m.a != 0;
+            break;
         default:
             break;
         }
@@ -138,6 +145,19 @@ void poll_host()
 }  // namespace
 
 extern "C" {
+
+// Appele par la boucle du jeu au debut de chaque image (main.cpp port_tm_frame) : attend tant que le menu de l'appli est ouvert.
+void njlink_pause_point(void)
+{
+    if (!g_app_pause)
+        return;
+    std::printf("[PORT] pause : menu Nightjar ouvert\n");
+    while (g_app_pause && !g_quit && g_fd >= 0) {
+        poll_host();
+        usleep(5000);
+    }
+    std::printf("[PORT] reprise\n");
+}
 
 int njlink_active(void) { return g_fd >= 0; }
 

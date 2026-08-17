@@ -95,9 +95,11 @@ static void port_chk_pl_chain(void)
     }
 }
 extern "C" void port_studio_frame(void);   // port/studio.cpp (Nightjar Studio S1)
+extern "C" void njlink_pause_point(void);   // port/njlink.cpp : menu Nightjar ouvert = jeu en pause
 static void port_tm_frame(void)
 {
     port_chk_pl_chain();
+    njlink_pause_point();
     port_studio_frame();
     if (++port_tm_frames < 60)
         return;

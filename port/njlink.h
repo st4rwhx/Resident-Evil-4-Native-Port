@@ -16,6 +16,7 @@ enum {
     NJ_MSG_PAD = 16,     // appli -> coeur : data = NjPad ; a = acceleration « Wiimote » en milliemes de g (commandes Wii, 0 = aucune)
     NJ_MSG_RELEASE = 17, // appli -> coeur : a = emplacement qu'elle n'affiche plus
     NJ_MSG_QUIT = 18,    // appli -> coeur
+    NJ_MSG_PAUSE = 20,   // appli -> coeur : a = 1 pause (menu Nightjar ouvert), 0 reprise
     NJ_MSG_CASE = 19,    // appli -> coeur : mallette au doigt ; a = 1 curseur (data : int32 i, j), 2 piece en main (data : f32 x, y) ; b = grille
 };
 
