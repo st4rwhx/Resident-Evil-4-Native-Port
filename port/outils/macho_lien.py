@@ -39,12 +39,12 @@ def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
-def nm(objs, flag):
+def nm(objs, flag, glob_only=True):
     """{objet: set(noms Mach-O)} ; flag '--defined-only' ou '-u'."""
     out = {}
     for k in range(0, len(objs), 60):
         chunk = objs[k:k + 60]
-        r = run([NM, flag, '-g', '--format=just-symbols' if flag == '-u' else '--format=posix'] + chunk)
+        r = run([NM, flag] + (['-g'] if glob_only else []) + ['--format=just-symbols' if flag == '-u' else '--format=posix'] + chunk)
         cur = chunk[0] if len(chunk) == 1 else None
         for line in r.stdout.splitlines():
             line = line.rstrip()
@@ -91,6 +91,7 @@ def rename(obj, pairs, dst):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--build', default=os.path.join(ROOT, '_port_build_ios'))
+    ap.add_argument('--engine', default='', help='libnjruntime.a du moteur iOS (doublons coeur/moteur)')
     args = ap.parse_args()
     b = args.build
     out = os.path.join(b, 'lien')
@@ -116,18 +117,107 @@ def main():
 
     ren = {o: {} for o in allobj}
 
+    def set_ren(o, cur, new):
+        """Renomme TOUT ce qui porte le nom COURANT `cur` dans l'objet : les references deja raccordees vers `cur` (nom
+        d'assembleur) ET le symbole brut `cur` lui-meme (definition C). Un objet peut definir `_x` et appeler `x`."""
+        hit = False
+        for k, v in list(ren[o].items()):
+            if v == cur:
+                ren[o][k] = new
+                hit = True
+        if cur not in ren[o] and (cur in DEF[o] or cur in UND[o] or not hit):
+            ren[o][cur] = new
+
+    wraps = ['malloc', 'calloc', 'memset']
+    for line in open(os.path.join(ROOT, 'port', 'gxn_wrap.rsp')):
+        line = line.strip()
+        if line.startswith('-Wl,--wrap='):
+            wraps.append(line.split('=', 1)[1])
+    wrappers = [o for o in dol if os.path.basename(o).startswith(('port__gxn', 'port__memwrap'))]
+
+    # 0. noms d'assembleur (asm("x")), EN PREMIER : en ELF le nom d'assembleur EST le nom du symbole ; en Mach-O un nom C
+    # recoit un « _ » devant, un nom d'assembleur non. Une reference sans definition dans le coeur est raccordee a la
+    # definition qui differe d'un « _ » ; une reference sans « _ » qui ne se raccorde a rien prend le « _ » (moteur ou
+    # systeme). Les definitions ne bougent pas. Les modules et --wrap travaillent ensuite sur ces noms raccordes.
+    gdef = set()
+    for o in allobj:
+        gdef |= DEF[o]
+    # noms CodeWarrior / GCC 2.95 (`setStatus__3cEmi`, `__3cEm`) : comme build_rel (alias), chaque fonction C++ definie
+    # par clang (__Z..., Mach-O) est demanglee puis remanglee au format GCC 2.95 (port/gcc2_mangle.py) ; une reference
+    # par nom CW va vers la definition du MEME module d'abord, sinon du programme principal, sinon d'un autre module.
+    sys.path.insert(0, os.path.join(ROOT, 'port'))
+    import gcc2_mangle  # noqa: E402
+    cxxfilt = os.path.join(NDKBIN, 'llvm-cxxfilt.exe')
+
+    def g2_table(objs):
+        names = sorted({s0 for o in objs for s0 in DEF[o] if s0.startswith('__Z')})
+        res = {}
+        if not names:
+            return res
+        # par l'entree standard : en arguments, la ligne de commande depasse la limite de Windows (WinError 206)
+        dm = subprocess.run([cxxfilt], input='\n'.join(n[1:] for n in names) + '\n', capture_output=True, text=True).stdout.splitlines()
+        for a0, b0 in zip(names, dm):
+            g2 = gcc2_mangle.mangle(b0)
+            if g2:
+                res.setdefault('_' + g2, a0)
+        return res
+    g2_dol = g2_table(dol)
+    g2_mod = {m: g2_table(v) for m, v in mods.items()}
+    g2_all = dict(g2_dol)
+    for m in sorted(g2_mod):
+        for k, v in g2_mod[m].items():
+            g2_all.setdefault(k, v)
+    c_funcs = {s0[1:] for o in allobj for s0 in DEF[o] if not s0.startswith('__Z') and s0.startswith('_')}
+    mod_of = {o: m for m, v in mods.items() for o in v}
+    import re as _re
+    fixed = 0
+    _loc_cache = {}
+
+    def local_def(o):
+        # etiquettes d'assembleur locales (asm(".const ... r222_k212: ...")) : en ELF le nom C et l'etiquette coincident
+        if o not in _loc_cache:
+            _loc_cache[o] = nm([o], '--defined-only', glob_only=False).get(o, set())
+        return _loc_cache[o]
+    n_cw = 0
+    for o in allobj:
+        own = g2_mod.get(mod_of.get(o), {})
+        for u in UND[o] - gdef:
+            k = '_' + u   # cle de la table : le nom d'assembleur avec le « _ » de Mach-O
+            stem = _re.match(r'^(\w+?)__(?:F|\d)', u)
+            if ('_' + u) in gdef:
+                ren[o][u] = '_' + u
+            elif u.startswith('_') and u[1:] in gdef:
+                ren[o][u] = u[1:]
+            elif u.startswith('_') and u[1:] in local_def(o):   # nom C -> etiquette d'assembleur LOCALE du meme objet
+                ren[o][u] = u[1:]
+            elif k in own or k in g2_dol or k in g2_all:   # nom CodeWarrior -> fonction clang
+                ren[o][u] = own.get(k) or g2_dol.get(k) or g2_all[k]
+                n_cw += 1
+            elif stem and stem.group(1) in c_funcs:          # fonction extern "C" appelee par son nom CW
+                ren[o][u] = '_' + stem.group(1)
+                n_cw += 1
+            elif not u.startswith('_'):
+                ren[o][u] = '_' + u
+            else:
+                continue
+            fixed += 1
+    print('%d references par nom d\'assembleur raccordees' % fixed)
+    U2 = {o: {ren[o].get(u, u) for u in UND[o]} for o in allobj}
+    dol_def = set().union(*[DEF[o] for o in dol])
+    dol_und = set().union(*[U2[o] for o in dol])
+
     # 1. modules
     MD, MU = {}, {}
     for m, objs in mods.items():
         seen = {}
         for o in objs:
-            for s in sorted(DEF[o]):
-                if s in seen:   # deuxieme definition dans le meme module : renommee dans cet objet
-                    ren[o][s] = msym('%s__D%d_%s' % (m, len(seen), cname(s)))
+            for s0 in sorted(DEF[o]):
+                if s0 in seen:   # deuxieme definition dans le meme module : renommee dans cet objet
+                    set_ren(o, s0, msym('%s__D%d_%s' % (m, len(seen), cname(s0))))
                 else:
-                    seen[s] = o
+                    seen[s0] = o
         MD[m] = set(seen)
-        MU[m] = set().union(*[UND[o] for o in objs]) - MD[m]
+        MU[m] = set().union(*[U2[o] for o in objs]) - MD[m]
     mods = {m: v for m, v in mods.items() if msym('_prolog') in MD[m]}
     need = set(dol_und)
     for m in mods:
@@ -136,41 +226,65 @@ def main():
     entry_m = {msym(e) for e in ENTRY}
     exports = {}
     for m in sorted(mods):
-        for s in MD[m]:
-            if s in need and s not in entry_m and s not in exports:
-                exports[s] = m
+        for s0 in MD[m]:
+            if s0 in need and s0 not in entry_m and s0 not in exports:
+                exports[s0] = m
     print('%d symboles partages entre modules' % len(exports))
     for m, objs in mods.items():
         loc = {}
-        for s in MD[m]:
-            if s in entry_m:
-                loc[s] = msym('%s_%s' % (m, cname(s)))            # _prolog -> <mod>__prolog
-            elif exports.get(s) != m:
-                loc[s] = msym('%s__L%s' % (m, cname(s)))
+        for s0 in MD[m]:
+            if s0 in entry_m:
+                loc[s0] = msym('%s_%s' % (m, cname(s0)))            # _prolog -> <mod>__prolog
+            elif exports.get(s0) != m:
+                loc[s0] = msym('%s__L%s' % (m, cname(s0)))
         for o in objs:
-            for s, n in loc.items():
-                if s in DEF[o] or s in UND[o]:
-                    ren[o].setdefault(s, n)
+            cur = {ren[o].get(x, x) for x in DEF[o]} | U2[o]
+            for s0, n in loc.items():
+                if s0 in cur:
+                    set_ren(o, s0, n)
 
-    # 2. --wrap
-    wraps = ['malloc', 'calloc', 'memset']
-    for line in open(os.path.join(ROOT, 'port', 'gxn_wrap.rsp')):
-        line = line.strip()
-        if line.startswith('-Wl,--wrap='):
-            wraps.append(line.split('=', 1)[1])
-    wrappers = [o for o in dol if os.path.basename(o).startswith(('port__gxn', 'port__memwrap'))]
+    # 2. --wrap (sur les noms raccordes)
     nw = 0
     for w in wraps:
         sw = msym(w)
         for o in allobj:
             if o in wrappers:
-                if msym('__real_' + w) in UND[o]:
-                    ren[o][msym('__real_' + w)] = sw
+                if msym('__real_' + w) in U2[o]:
+                    set_ren(o, msym('__real_' + w), sw)
                 continue
-            if sw in UND[o] and sw not in DEF[o]:
-                ren[o][sw] = msym('__wrap_' + w)
+            if sw in U2[o] and sw not in DEF[o]:
+                set_ren(o, sw, msym('__wrap_' + w))
                 nw += 1
     print('%d fonctions enveloppees, %d appels redirigees (objets)' % (len(wraps), nw))
+
+    # 2 ter. symboles definis A LA FOIS par le coeur et par le moteur (libnjruntime.a, --engine) : sur Android le coeur est
+    # un programme a part (sa copie gagne : --allow-multiple-definition) et le moteur garde la sienne dans son processus.
+    # Dans un seul programme (iOS) : une FONCTION doublee est renommee dans le coeur (definition et appels : chacun garde la
+    # sienne, comme sur Android) ; une VARIABLE doublee (g_guest...) n'a qu'une instance, celle du moteur, que le pont njgfx
+    # et le rendu lisent aussi : la definition du coeur est ecartee (renommee), ses references restent.
+    if args.engine and os.path.exists(args.engine):
+        eng = {}
+        for line in run([NM, '--defined-only', '-g', '--format=posix', args.engine]).stdout.splitlines():
+            p_ = line.split()
+            if len(p_) >= 2 and not line.endswith(':'):
+                eng[p_[0]] = p_[1]
+        dup_f = dup_d = 0
+        for o in allobj:
+            cur_def = {ren[o].get(x, x): x for x in DEF[o]}
+            for cur_name, raw in cur_def.items():
+                if cur_name not in eng:
+                    continue
+                if eng[cur_name] in ('T', 't'):   # fonction : le coeur garde la sienne sous un autre nom
+                    new = '_ncore' + cur_name
+                    for o2 in allobj:
+                        cur2 = {ren[o2].get(x, x) for x in DEF[o2]} | {ren[o2].get(x, x) for x in UND[o2]}
+                        if cur_name in cur2:
+                            set_ren(o2, cur_name, new)
+                    dup_f += 1
+                else:                              # variable : une seule instance, celle du moteur
+                    ren[o][raw] = '_ncore_ecartee' + cur_name
+                    dup_d += 1
+        print('doublons coeur/moteur : %d fonctions renommees dans le coeur, %d variables laissees au moteur' % (dup_f, dup_d))
 
     # 3. renommage des objets
     final = []

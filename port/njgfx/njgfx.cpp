@@ -30,6 +30,9 @@
 #ifdef __APPLE__
 #include <sys/syscall.h>
 static inline int gettid() { uint64_t t = 0; pthread_threadid_np(nullptr, &t); return (int) t; }
+// iOS : pas de compteurs perf_event ; declarations de remplacement pour que le code de mesure compile (il rend -1)
+struct perf_event_attr { uint32_t type, size; uint64_t config, exclude_hv; };
+enum { PERF_TYPE_HARDWARE = 0, PERF_COUNT_HW_CPU_CYCLES = 0, PERF_COUNT_HW_INSTRUCTIONS = 1 };
 #else
 #include <linux/perf_event.h>
 #include <sys/syscall.h>
@@ -50,11 +53,19 @@ namespace nj::runtime::gx {
 extern std::atomic<uint64_t> g_prof_xf_bank, g_prof_xf_single, g_prof_xf_none;   // fifo_parser.cpp : chemins de transformation
 extern uint64_t g_prof_dl_calls, g_prof_dl_hits;                                  // listes d'affichage developpees / en cache
 }
+#ifndef __APPLE__   // iOS : ces globales sont celles du moteur (meme programme) ; sur Android, le coeur est a part
 namespace nj::runtime {
 uint32_t g_debug_pc = 0;
 MMU *g_guest_mem = nullptr;
 GuestCpu *g_guest = nullptr;
 }  // namespace nj::runtime
+#else
+namespace nj::runtime {
+extern uint32_t g_debug_pc;
+extern MMU *g_guest_mem;
+extern GuestCpu *g_guest;
+}  // namespace nj::runtime
+#endif
 
 extern "C" void njlink_gl_ready(int w, int h);
 extern "C" void njlink_src_size(int w, int h);

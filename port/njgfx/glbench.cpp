@@ -3,7 +3,11 @@
 // Question 4 de SYNTHESE_RECHERCHE_PROFONDE_2026-11-13.md : combien coute, cote CPU, chaque appel typique sur
 // l'Adreno 420 (aucun chiffre public). Modele : flip_gl_bench du port Melee (dessin, liaison, programme, uniforme).
 // Rendu hors ecran dans un petit framebuffer, contexte GL courant fourni par l'appelant ; rien n'est modifie ensuite.
+#ifdef __APPLE__
+#include <OpenGLES/ES3/gl.h>   // iOS (port natif)
+#else
 #include <GLES3/gl3.h>
+#endif
 #include <chrono>
 #include <cstdio>
 #include <vector>

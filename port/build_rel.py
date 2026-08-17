@@ -61,9 +61,13 @@ def load_modules_py():
 # temporaire du source - les directives #line gardent les messages d'erreur sur l'original.
 RE_REGPIN = re.compile(r'\bregister\s+([A-Za-z_][\w\s\*:<>]*?)\s*(\w+)\s+asm\s*\(\s*"f?r\d+"\s*\)')
 RE_ASMEMPTY = re.compile(r'\basm\s*(?:volatile\s*)?\(\s*""[^;\n]*\)\s*;')
-# iOS (Mach-O, 18/11) : les directives d'alignement du decompile `asm(".section .data\n\t.balign 8\n\t.text")`
-# (correspondance a l'octet avec GCC 2.95, sans effet sur le port) sont refusees par l'assembleur Mach-O : retirees.
-RE_ASMSECTION = re.compile(r'\basm\s*\(\s*"\.section[^\n]*?\)\s*;')
+# iOS (Mach-O, 18/11) : les asm() du decompile utilisent les sections ELF (`.section .data`, `.section .sdata,\"aw\"`,
+# `.section \".rodata\"`...). Certaines DEFINISSENT des donnees (r222_k212, r224_zero) : on TRADUIT vers les directives
+# Mach-O au lieu de supprimer (.rodata/.sdata2 -> .const, .data/.sdata -> .data, .bss/.sbss -> .bss, .text -> .text).
+RE_ASMSECTION = re.compile(r'\.section\s+(?:\\")?\.(rodata|text|data|sdata2|sdata|bss|sbss)(?:\\")?(?:,\\"[a-z]*\\")?')
+RE_ASMLABEL = re.compile(r'(\\n)([A-Za-z_]\w*):(?!\w)')   # « \n » ecrit dans la chaine C (deux caracteres)
+MACHO_SECTION = {'rodata': '.const', 'sdata2': '.const', 'text': '.text', 'data': '.data', 'sdata': '.data',
+                 'bss': '.bss', 'sbss': '.bss'}
 
 
 # Variables `static` que le decompile designe aussi par un nom d'assembleur (`asm("sceAtCur")`) : sans
@@ -75,7 +79,11 @@ def _clean(txt):
     new = RE_REGPIN.sub(r'\1 \2', txt)
     new = RE_ASMEMPTY.sub(';', new)
     if os.environ.get('PORT_ABI') == 'ios':
-        new = RE_ASMSECTION.sub(';', new)
+        new = RE_ASMSECTION.sub(lambda m_: MACHO_SECTION[m_.group(1)], new)
+        # etiquettes de donnees definies dans un asm() (ex. r222_k212) : en ELF le nom C EST l'etiquette ; en Mach-O le
+        # nom C recoit un « _ » devant. On ajoute ce second nom au meme endroit : l'assembleur resout alors la reference
+        # C dans le meme objet (l'editeur de liens ne lie jamais une reference externe a un symbole local).
+        new = '\n'.join(RE_ASMLABEL.sub(r'\1\2:\1_\2:', ln) if 'asm(' in ln else ln for ln in new.split('\n'))
     for nm_ in STATIC_VARS:
         new = re.sub(r'\bstatic\s+((?:const\s+)?[A-Za-z_][\w:<>\*]*\s+\**)(%s)\b' % nm_, r'\1\2', new)
     return new

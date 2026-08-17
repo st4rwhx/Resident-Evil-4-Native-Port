@@ -3,7 +3,11 @@
 // Octets bruts au format GC (positions s16 gros-boutistes, pas 6, lues par un index u16 gros-boutiste du flux, comme
 // nos listes) dans des textures tampon R32UI ; le nuanceur decode (texelFetch). Compare au chemin classique (flottants
 // decodes par le CPU) : cout GPU et image identique (readPixels). Modele : Aurora 2026 (lib/gx/shader.cpp raw_fetch_*).
+#ifndef __APPLE__   // iOS : pas d'EGL ni de tampons de texture (GLES 3.0 d'Apple) : banc inactif
 #include <EGL/egl.h>
+#else
+static void* eglGetProcAddress(const char*) { return nullptr; }
+#endif
 
 namespace {
 typedef void (*PFN_TEXBUF)(GLenum, GLenum, GLuint);
@@ -28,6 +32,9 @@ GLuint prog_src(const char* vs, const char* fs, char* log, int nlog)
 
 static void njgfx_glbench_pull()
 {
+#ifdef __APPLE__
+    return;
+#endif
     const char* ext = (const char*) glGetString(GL_EXTENSIONS);
     GLint vssbo = -1, tbsize = -1, vtex = -1;
     glGetIntegerv(0x90D6, &vssbo);   // GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS
