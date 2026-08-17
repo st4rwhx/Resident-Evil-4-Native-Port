@@ -106,6 +106,7 @@ volatile bool g_app_pause = false;
 
 }  // namespace
 extern "C" void port_title_cmd_set(int cmd, int slot);   // port/arm_hooks.cpp : menu titre de Nightjar
+extern "C" void port_costume_live_set(int v);            // port/arm_hooks.cpp : garde-robe de Nightjar
 namespace {
 
 // Messages de l'appli, sans attendre.
@@ -142,6 +143,9 @@ void poll_host()
             break;
         case NJ_MSG_TITLE:
             port_title_cmd_set((int) m.a, (int) (int32_t) m.b);
+            break;
+        case NJ_MSG_SETTING:
+            if (m.a == 1) port_costume_live_set((int) (int32_t) m.b);
             break;
         default:
             break;

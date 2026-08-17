@@ -1009,6 +1009,13 @@ int Event::ExePacket_SetParts(Event* evt)
                 return evt->ExePacket_SetPartsSub(pac->parts.name, "em/pl00/pl000e.bin", "em/pl00/pl000a.tpl", pac->parts.oya);
             }
             break;
+#ifdef RE4_PORT
+        case 3:   // garde-robe : RPD choisie sans la tenue speciale d'Ashley ; dans le jeu, RPD va avec costume2 == 1
+            if (strcmp(pac->parts.name, "ev000e") == 0) {
+                return evt->ExePacket_SetPartsSub(pac->parts.name, "em/pl00/pl000e.bin", "em/pl00/pl000a.tpl", pac->parts.oya);
+            }
+            break;
+#endif
         }
         return evt->ExePacket_SetPartsSub(pac->parts.name, pac->parts.bin, pac->parts.tpl, pac->parts.oya);
     case 1:

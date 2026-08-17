@@ -19,6 +19,8 @@ enum {
     NJ_MSG_TITLE = 21,   // appli -> coeur : menu titre de Nightjar ; a = commande (1 continuer, 2 nouvelle partie, 3 ecran de
                          // chargement, 4 charger la sauvegarde b, 5 options du jeu)
     NJ_MSG_PAUSE = 20,   // appli -> coeur : a = 1 pause (menu Nightjar ouvert), 0 reprise
+    NJ_MSG_SETTING = 22, // appli -> coeur : reglage en direct ; a = numero (1 tenue de Leon : b = -1 auto, 0 veste, 1 chemise,
+                         // 2 gilet, 3 RPD)
     NJ_MSG_CASE = 19,    // appli -> coeur : mallette au doigt ; a = 1 curseur (data : int32 i, j), 2 piece en main (data : f32 x, y) ; b = grille
 };
 

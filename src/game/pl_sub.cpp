@@ -71,24 +71,24 @@ void PlSelect(int no)
 }
 
 #ifdef RE4_PORT
-extern "C" int port_knob(const char* name, int def);   // port/studio.cpp : reglage en direct
+extern "C" int port_costume_forced(void);   // port/arm_hooks.cpp : garde-robe de Nightjar (-1 automatique)
 #endif
 
 int PlSetCostume()
 {
+    if ((s32) pG->flags_54 < 0 || (pG->flags_54 & 0x40000000)) {
+        return pG->costume;
+    }
 #ifdef RE4_PORT
-    {   // garde-robe (18/11) : reglage « costume » (Studio `reglage costume N`, -1 = choix du jeu) ; Leon seulement
-        const int forced = port_knob("costume", -1);
-        if (forced >= 0 && forced <= 3 && pG->x4FB8 == 0) {
+    {   // garde-robe (18/11) : tenue choisie dans Nightjar, elle tient (l'histoire ne la change plus) ; Leon seulement
+        const int forced = port_costume_forced();
+        if (forced >= 0 && pG->x4FB8 == 0) {
             U8Set(pG->costume, (u8) forced);
             BitOn16(pG->flags_4FBE, 1);
             return pG->costume;
         }
     }
 #endif
-    if ((s32) pG->flags_54 < 0 || (pG->flags_54 & 0x40000000)) {
-        return pG->costume;
-    }
     if (pG->x4FB8 == 0) {
         if (pG->costume2 != 1) {
             if (ItemMgr.num(0xFE, 0)) {
@@ -982,6 +982,11 @@ int PlIsArmor()
     if (pG->x4FB8 != 0) {
         return 0;
     }
+#ifdef RE4_PORT
+    if (port_costume_forced() >= 0) {   // garde-robe : RPD protege comme dans le jeu ; sinon le gilet possede (objet 0xFE)
+        return pG->costume == 3 || ItemMgr.num(0xFE) != 0;
+    }
+#endif
     return pG->costume == 2 || pG->costume == 3;
 }
 

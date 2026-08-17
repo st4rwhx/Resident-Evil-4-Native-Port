@@ -238,6 +238,30 @@ void DoorFlagInit()
     BitOn(pG->door_flags_51CC, 0x400000);
 }
 
+#ifdef RE4_PORT
+extern "C" int port_costume_live_pending(void);
+extern "C" int port_costume_forced(void);
+extern "C" int port_costume_live_take(void);
+extern "C" volatile int g_port_thumb_ok;   // port/njstate.cpp : vraie partie a l'ecran (Leon, pas de menu ni de mort)
+void PlChangeData();
+// Garde-robe (18/11) : tenue changee dans Nightjar en cours de partie -> comme l'inventaire pour le gilet (sscrn.cpp) :
+// PlSetCostume + PlChangeData, ecran noir le temps du rechargement de Leon.
+static void portWardrobeLive()
+{
+    if (!port_costume_live_pending() || pG->x20 != 3 || !g_port_thumb_ok || pG->x4FB8 != 0) {
+        return;
+    }
+    port_costume_live_take();
+    const u8 before = pG->costume;
+    PlSetCostume();
+    if (pG->costume != before) {
+        systemVISetBlack(1);
+        PlChangeData();
+        systemVISetBlack(0);
+    }
+}
+#endif
+
 void GameTask()
 {
     static void (*game_func_tbl[7])() = {
@@ -255,6 +279,9 @@ void GameTask()
         gameDebug();
         GetGameTime(&h, &m, &s);
         eprintf(20, 16, 7, 0, "%d:%02d:%02d %08X", h, m, s, Joy[0].on);
+#ifdef RE4_PORT
+        portWardrobeLive();
+#endif
         game_func_tbl[pG->x20]();
         TaskSleep(1);
     }
@@ -387,6 +414,15 @@ void gameRoomInit()
         BitOff(pG->flags_6C, 0x2000);
     }
     BitOn(pG->flags_60, 0x200);
+#ifdef RE4_PORT
+    {   // garde-robe : la tenue choisie s'applique des l'entree en salle (nouvelle partie comprise : le jeu ne
+        // recalcule la tenue qu'au chargement et dans l'inventaire) ; rechargement de Leon seulement si elle change
+        const int forced = port_costume_forced();
+        if (forced >= 0 && pG->x4FB8 == 0 && pG->costume != forced) {
+            PlSetCostume();
+        }
+    }
+#endif
     ReadPlayerData(pG->x4FB8, pG->costume);
     ReadAreaData();
     DC.initDataUnit();

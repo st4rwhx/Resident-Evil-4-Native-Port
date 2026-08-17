@@ -6,6 +6,9 @@
 #include "item.h"
 #include "room_data.h"
 #include "merchant.h"
+#ifdef RE4_PORT
+extern "C" int port_costume_forced(void);   // port/arm_hooks.cpp : garde-robe de Nightjar
+#endif
 
 #define MERCHANT_NUM 1
 #define STOCK_MAX 64
@@ -1197,6 +1200,11 @@ int Merchant::stockNum(u16 id)
         if (ItemMgr.num(0xFE) != 0) {
             return 0;
         }
+#ifdef RE4_PORT
+        if (port_costume_forced() >= 0) {   // garde-robe : comme le jeu, pas de gilet a vendre en RPD (deja protege)
+            return pG->costume != 3;
+        }
+#endif
         return pG->costume != 2 && pG->costume != 3;
     case 0x7D:
         if (ItemMgr.num(0x7F) != 0 || ItemMgr.num(0x7E) != 0 || ItemMgr.num(0x7D) != 0) {

@@ -102,6 +102,36 @@ extern "C" unsigned port_start_room(void)
     static const char *e = getenv("RE4_START_ROOM");
     return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
 }
+// Garde-robe (18/11, demande de l'utilisateur) : tenue de Leon choisie dans Nightjar, toutes disponibles des le debut.
+// -1 automatique (le jeu decide : veste, chemise quand la veste tombe, gilet, RPD) ; 0 veste ; 1 chemise ; 2 gilet ; 3 RPD.
+// Au lancement : NJ_COSTUME (pose par l'appli) ; en cours de partie : NJ_MSG_SETTING 1 (port/njlink.cpp) -> changement en
+// direct au prochain moment de jeu normal (GameTask, game.cpp). Le reglage Studio « costume » passe devant (banc).
+extern "C" int port_knob(const char* name, int def);
+static volatile int g_costume = -2, g_costume_live = 0;
+extern "C" int port_costume_forced(void)
+{
+    if (g_costume == -2) {
+        const char *e = getenv("NJ_COSTUME");
+        g_costume = e ? (int) strtol(e, nullptr, 0) : -1;
+        if (g_costume < -1 || g_costume > 3) g_costume = -1;
+    }
+    const int k = port_knob("costume", -2);
+    return (k >= -1 && k <= 3) ? k : g_costume;
+}
+extern "C" void port_costume_live_set(int v)
+{
+    if (v < -1 || v > 3) v = -1;
+    port_costume_forced();
+    if (v != g_costume) { g_costume = v; g_costume_live = 1; }
+}
+extern "C" int port_costume_live_take(void)
+{
+    const int t = g_costume_live;
+    g_costume_live = 0;
+    return t;
+}
+extern "C" int port_costume_live_pending(void) { return g_costume_live; }
+
 // Sortie du titre (A2, 15/11, src/game/title.cpp titleExit) : choix direct au lieu du menu de salles de debug invisible.
 // RE4_ROOM_MENU=1 : menu de debug d'origine. Choix : port_title_choice_set() (demarrage Nightjar, a venir), sinon
 // RE4_TITLE_CHOICE=new|load|test, sinon salle de test si RE4_START_ROOM est pose, chargement si RE4_AUTOLOAD=2,
