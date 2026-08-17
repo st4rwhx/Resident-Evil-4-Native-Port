@@ -52,6 +52,7 @@ struct PortThread {
     bool finished;
     bool is_main;
     bool exited;          // N7 : sorti par OSExitThread (pthread joignable, pile de l'emplacement a recuperer)
+    bool canceled;        // OSCancelThread (18/11) : le fil doit sortir des qu'il se reveille
 };
 
 pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -138,6 +139,17 @@ void ensure_main()
 // sa pile, et tout le systeme de taches tourne a vide.
 void reschedule_if_higher();
 
+// Fil annule (OSCancelThread) reveille dans une attente du jeton : il rend son emplacement et sort pour de bon (le SDK fait
+// de meme). Sans cela, a la remise a zero (TaskAllClear) les taches endormies restaient attachees a leur OSThread, que le jeu
+// reutilise aussitot pour la tache du titre : le titre ne repartait jamais (ecran noir apres un GAME RESET en partie, 18/11).
+[[noreturn]] void cancel_exit_locked(PortThread *self)
+{
+    self->used = false;
+    self->exited = true;
+    pthread_mutex_unlock(&g_lock);
+    pthread_exit(nullptr);
+}
+
 // Rend le jeton et attend de le recevoir. A appeler avec g_lock tenu.
 void yield_locked(PortThread *self)
 {
@@ -154,8 +166,11 @@ void yield_locked(PortThread *self)
 
     if (!self)
         return;
-    while (g_current != self)
+    while (g_current != self) {
+        if (self->canceled)
+            cancel_exit_locked(self);
         pthread_cond_wait(&self->cond, &g_lock);
+    }
     if (self->os)
         self->os->state = OS_THREAD_STATE_RUNNING;
 }
@@ -174,8 +189,11 @@ void *trampoline(void *arg)
 {
     PortThread *self = (PortThread *) arg;
     pthread_mutex_lock(&g_lock);
-    while (g_current != self)
+    while (g_current != self) {
+        if (self->canceled)
+            cancel_exit_locked(self);
         pthread_cond_wait(&self->cond, &g_lock);
+    }
     pthread_mutex_unlock(&g_lock);
 
     void *ret = self->entry ? self->entry(self->param) : nullptr;
@@ -322,8 +340,14 @@ void OSCancelThread(OSThread *thread)
     pthread_mutex_lock(&g_lock);
     if (thread) {
         thread->state = OS_THREAD_STATE_MORIBUND;
-        if (PortThread *p = find(thread))
+        if (PortThread *p = find(thread)) {
             p->finished = true;
+            if (p != g_current && !p->is_main) {   // detache de son OSThread (le jeu le reutilise), reveille pour qu'il sorte
+                p->canceled = true;
+                p->os = nullptr;
+                pthread_cond_signal(&p->cond);
+            }
+        }
     }
     pthread_mutex_unlock(&g_lock);
 }

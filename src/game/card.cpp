@@ -314,6 +314,7 @@ void CardInit()
 #ifdef RE4_PORT
 extern "C" int port_card_direct(void);          // port/arm_hooks.cpp : chargement direct demande par le menu titre de Nightjar
 extern "C" void port_card_direct_set(int n);
+extern "C" void port_save_thumb(int file_no);   // port/njgfx/njgfx.cpp : image de la partie (menu titre de Nightjar)
 #endif
 
 void cCard::slotSelect()
@@ -1076,6 +1077,9 @@ void cCard::saveMain()
             ret = fileWrite(&sub, buf, blocks, &slotw[slot]);
             if (ret == 0) {
             } else if (ret > 0) {
+#ifdef RE4_PORT
+                if (isSystem == 0 && slot != 2) port_save_thumb(fileNo);   // image de la partie a cote de la sauvegarde
+#endif
                 step++;
             } else if (ret < 0) {
                 if (result == -5) {

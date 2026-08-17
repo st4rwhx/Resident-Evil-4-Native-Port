@@ -117,6 +117,7 @@ extern "C" void port_title_waiting_set(int v) { g_title_waiting = v; }
 extern "C" int port_title_waiting(void) { return g_title_waiting; }
 extern "C" int port_card_direct(void) { return g_card_direct; }
 extern "C" void port_card_direct_set(int n) { g_card_direct = n; }
+extern "C" __attribute__((weak)) void port_save_thumb(int) {}   // sans le rendu Nightjar (port/njgfx) : pas d'image
 extern "C" int port_room_menu(void)
 {
     static const char *e = getenv("RE4_ROOM_MENU");

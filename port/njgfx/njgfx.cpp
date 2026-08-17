@@ -554,7 +554,62 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
 }
 
 // Dessin d'une image lue et decodee (fil du jeu, ou fil de rendu avec NJ_RTHREAD=1) et envoi a l'appli.
+// Image des sauvegardes (menu titre de Nightjar, etape 2, 18/11) : toutes les 60 images de vraie partie (port/njstate.cpp
+// g_port_thumb_ok), l'EFB de l'image precedente est reduit a 320 x 224 et garde ; une sauvegarde reussie l'ecrit a cote de
+// son fichier (port_save_thumb, cCard::saveMain) : bh4_dataNN.thumb, PPM P6, lu par l'ecran d'accueil de l'appli.
+extern "C" volatile int g_port_thumb_ok;
+namespace {
+const int kThumbW = 320, kThumbH = 224;
+std::mutex g_thumb_mu;
+std::vector<uint8_t> g_thumb;   // RGB, haut en premier
+GLuint g_thumb_fbo = 0, g_thumb_tex = 0;
+void thumb_capture(unsigned frame) {
+  if (!g_port_thumb_ok || frame % 60 != 0 || !g_efb_fbo) return;
+  if (!g_thumb_fbo) {
+    glGenTextures(1, &g_thumb_tex);
+    glBindTexture(GL_TEXTURE_2D, g_thumb_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, kThumbW, kThumbH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glGenFramebuffers(1, &g_thumb_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_thumb_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_thumb_tex, 0);
+  }
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, g_efb_fbo);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_thumb_fbo);
+  glBlitFramebuffer(0, 0, gfx::efb_w(), gfx::efb_h(), 0, 0, kThumbW, kThumbH, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, g_thumb_fbo);
+  std::vector<uint8_t> px((size_t)kThumbW * kThumbH * 4);
+  glReadPixels(0, 0, kThumbW, kThumbH, GL_RGBA, GL_UNSIGNED_BYTE, px.data());
+  std::vector<uint8_t> rgb((size_t)kThumbW * kThumbH * 3);
+  for (int y = 0; y < kThumbH; ++y)
+    for (int x = 0; x < kThumbW; ++x) {
+      const uint8_t *s = &px[((size_t)(kThumbH - 1 - y) * kThumbW + x) * 4];
+      uint8_t *d = &rgb[((size_t)y * kThumbW + x) * 3];
+      d[0] = s[0]; d[1] = s[1]; d[2] = s[2];
+    }
+  std::lock_guard<std::mutex> lk(g_thumb_mu);
+  g_thumb.swap(rgb);
+}
+}  // namespace
+extern "C" void port_save_thumb(int file_no) {
+  std::vector<uint8_t> rgb;
+  {
+    std::lock_guard<std::mutex> lk(g_thumb_mu);
+    rgb = g_thumb;
+  }
+  if (rgb.empty()) return;
+  const char *dir = std::getenv("RE4_SAVE_DIR");
+  char path[512];
+  std::snprintf(path, sizeof path, "%s/bh4_data%02d.thumb", dir ? dir : "card", file_no);
+  if (FILE *f = std::fopen(path, "wb")) {
+    std::fprintf(f, "P6\n%d %d\n255\n", kThumbW, kThumbH);
+    std::fwrite(rgb.data(), 1, rgb.size(), f);
+    std::fclose(f);
+    std::printf("[PORT] image de sauvegarde : %s\n", path);
+  }
+}
+
 static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned frame, const unsigned vm_in[6]) {
+  thumb_capture(frame);   // image de la partie pour les sauvegardes (avant de redessiner l'EFB)
   glBindFramebuffer(GL_FRAMEBUFFER, g_efb_fbo);
   glViewport(0, 0, gfx::efb_w(), gfx::efb_h());
   const size_t nops = ops.size();
