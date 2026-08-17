@@ -9,9 +9,13 @@
 #include "njgfx_bridge.h"
 #include "../njlink.h"
 
+#ifdef __APPLE__
+#include <OpenGLES/ES3/gl.h>   // iOS (18/11, I4) : contexte fourni par le moteur, pas d'EGL
+#else
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl3.h>
+#endif
 
 #include <atomic>
 #include <condition_variable>
@@ -23,8 +27,13 @@
 #include <memory>
 #include <vector>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <sys/syscall.h>
+static inline int gettid() { uint64_t t = 0; pthread_threadid_np(nullptr, &t); return (int) t; }
+#else
 #include <linux/perf_event.h>
 #include <sys/syscall.h>
+#endif
 
 #include "common/platform.h"
 #include "runtime/config.h"
@@ -89,9 +98,23 @@ namespace gx = nj::runtime::gx;
 namespace gfx = nj::runtime::gfx;
 
 bool g_ready, g_failed;
+#ifdef __APPLE__
+// iOS : le moteur (meme processus) cree un contexte GL dans le groupe de partage du sien (SDL, partage des textures des
+// images njlink) et le donne au coeur par nj_core_set_gl ; le coeur le rend courant par le rappel du moteur.
+int (*g_host_make_current)(void *ctx) = nullptr;
+void *(*g_host_current)(void) = nullptr;
+void *g_ctx = nullptr;
+bool ctx_on() { return g_host_make_current && g_host_make_current(g_ctx) == 0; }
+bool ctx_off() { return g_host_make_current && g_host_make_current(nullptr) == 0; }
+bool ctx_is_current() { return g_host_current && g_ctx && g_host_current() == g_ctx; }
+#else
 EGLDisplay g_dpy;
 EGLContext g_ctx;
 EGLSurface g_surf;
+bool ctx_on() { return eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) == EGL_TRUE; }
+bool ctx_off() { return eglMakeCurrent(g_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) == EGL_TRUE; }
+bool ctx_is_current() { return eglGetCurrentContext() == g_ctx; }
+#endif
 GLuint g_efb_fbo, g_efb_color, g_efb_depth;
 std::unique_ptr<gx::FrameRenderer> g_renderer;
 std::vector<uint8_t> g_stream;   // octets pas encore lus (commande coupee en fin de tampon)
@@ -110,6 +133,12 @@ static inline uintptr_t njg_base() { return 0; }
 bool init() {
   if (g_ready || g_failed) return g_ready;
   g_failed = true;
+#ifdef __APPLE__
+  if (!g_ctx || !ctx_on()) {
+    std::printf("[NJGFX] iOS : contexte GL du moteur absent (nj_core_set_gl non appele)\n");
+    return false;
+  }
+#else
   g_dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   if (g_dpy == EGL_NO_DISPLAY || !eglInitialize(g_dpy, nullptr, nullptr)) return false;
   const EGLint ca[] = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR, EGL_RED_SIZE, 8,
@@ -122,6 +151,7 @@ bool init() {
   const EGLint xa[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE};
   g_ctx = eglCreateContext(g_dpy, cfg, EGL_NO_CONTEXT, xa);
   if (!eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx)) return false;
+#endif
   std::printf("[NJGFX] GL : %s\n", (const char *)glGetString(GL_RENDERER));
 
   // la memoire du jeu, telle quelle : MMU sans allocation (cpu_context.h)
@@ -177,7 +207,7 @@ void note_thread(const char *who) {
   const int tid = (int)gettid();
   for (int i = 0; i < nseen; ++i)
     if (seen[i] == tid) {
-      if (g_ready && eglGetCurrentContext() != g_ctx) {
+      if (g_ready && !ctx_is_current()) {
         static int bad;
         if (bad++ < 10) std::printf("[NJGFX] %s : fil %d sans le contexte GL\n", who, tid);
       }
@@ -185,7 +215,7 @@ void note_thread(const char *who) {
     }
   if (nseen < 8) seen[nseen++] = tid;
   std::printf("[NJGFX] %s : nouveau fil %d (contexte %s)\n", who, tid,
-              !g_ready ? "pas encore cree" : eglGetCurrentContext() == g_ctx ? "courant" : "ABSENT");
+              !g_ready ? "pas encore cree" : ctx_is_current() ? "courant" : "ABSENT");
 }
 
 // Contexte GL pris par le fil qui entre dans le rendu, rendu a la sortie : le prochain appel peut venir
@@ -202,12 +232,12 @@ struct GlScope {
   bool took = false;
   GlScope() {
     const auto t0 = std::chrono::steady_clock::now();
-    if (g_ready && !rthread_on() && eglGetCurrentContext() != g_ctx) took = eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx) == EGL_TRUE;
+    if (g_ready && !rthread_on() && !ctx_is_current()) took = ctx_on();
     g_gl_take_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
   }
   ~GlScope() {
     const auto t0 = std::chrono::steady_clock::now();
-    if (g_ready && (!rthread_on() || eglGetCurrentContext() == g_ctx)) eglMakeCurrent(g_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (g_ready && (!rthread_on() || ctx_is_current())) ctx_off();
     g_gl_rel_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
   }
 };
@@ -271,7 +301,12 @@ static void perfcnt_frame() {
       a.size = sizeof a;
       a.config = cfg;
       a.exclude_hv = 1;
+#ifdef __APPLE__
+      (void) a; (void) tid;
+      return -1;   // iOS : pas de compteurs perf_event
+#else
       return (int)syscall(__NR_perf_event_open, &a, tid, -1, -1, 0);
+#endif
     };
     fd_cyc = open_hw(PERF_COUNT_HW_CPU_CYCLES);
     fd_ins = open_hw(PERF_COUNT_HW_INSTRUCTIONS);
@@ -377,7 +412,11 @@ struct RenderCnt {
       a.size = sizeof a;
       a.config = PERF_COUNT_HW_CPU_CYCLES;
       a.exclude_hv = 1;
+#ifdef __APPLE__
+      fd = -1;   // iOS : pas de compteurs perf_event
+#else
       fd = (int) syscall(__NR_perf_event_open, &a, tid, -1, -1, 0);
+#endif
       std::printf("[PERFCNT-R] compteur du fil de rendu %d : %s\n", tid, fd >= 0 ? "ouvert" : "refuse (perf_harden ?)");
       c0 = rd(fd);
       sched(e0, w0);
@@ -396,8 +435,8 @@ struct RenderCnt {
 
 void *loop(void *) {
   port_render_thread = (unsigned long) pthread_self();
-  eglMakeCurrent(g_dpy, g_surf, g_surf, g_ctx);
-  std::printf("[RTHREAD] fil de rendu %d, contexte %s\n", (int) gettid(), eglGetCurrentContext() == g_ctx ? "courant" : "ABSENT");
+  ctx_on();
+  std::printf("[RTHREAD] fil de rendu %d, contexte %s\n", (int) gettid(), ctx_is_current() ? "courant" : "ABSENT");
   static RenderCnt cnt;
   for (;;) {
     {
@@ -828,3 +867,14 @@ static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned fra
     njlink_frame_fbo(g_efb_fbo, 0, gfx::efb_h() - 480 * s, 640 * s, 480 * s);
   }
 }
+
+#ifdef __APPLE__
+// Moteur iOS (meme processus) : donne au coeur son contexte GL partage et les rappels pour le rendre courant
+// (make_current(nullptr) = le lacher ; rend 0 si reussi).
+extern "C" void nj_core_set_gl(int (*make_current)(void *ctx), void *(*current)(void), void *ctx)
+{
+  g_host_make_current = make_current;
+  g_host_current = current;
+  g_ctx = ctx;
+}
+#endif
