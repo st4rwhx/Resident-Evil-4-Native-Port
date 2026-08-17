@@ -90,12 +90,12 @@ void SYNInitSynth(SYNSYNTH* synth, void* wavetable, u32 aramBase, u32 zeroBase, 
     ASSERTLINE(160, aramBase);
 
     p = wavetable;
-    synth->percussiveInst = (void*)((u32)wavetable + *(p)); p += 1;
-    synth->melodicInst = (void*)((u32)wavetable + *(p)); p += 1;
-    synth->region = (void*)((u32)wavetable + *(p)); p += 1;
-    synth->art = (void*)((u32)wavetable + *(p)); p += 1;
-    synth->sample = (void*)((u32)wavetable + *(p)); p += 1;
-    synth->adpcm = (void*)((u32)wavetable + *(p)); p += 1;
+    synth->percussiveInst = (void*)port_ptr64(((u32)wavetable + *(p))); p += 1;
+    synth->melodicInst = (void*)port_ptr64(((u32)wavetable + *(p))); p += 1;
+    synth->region = (void*)port_ptr64(((u32)wavetable + *(p))); p += 1;
+    synth->art = (void*)port_ptr64(((u32)wavetable + *(p))); p += 1;
+    synth->sample = (void*)port_ptr64(((u32)wavetable + *(p))); p += 1;
+    synth->adpcm = (void*)port_ptr64(((u32)wavetable + *(p))); p += 1;
     synth->aramBaseWord = (aramBase >> 1);
     synth->aramBaseByte = aramBase;
     synth->aramBaseNibble = (aramBase << 1);

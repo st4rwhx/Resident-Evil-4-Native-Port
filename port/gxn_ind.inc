@@ -302,12 +302,12 @@ void __wrap_GXSetDispCopyGamma(GXGamma g)
 }
 void __wrap_GXCopyDisp(void* dest, GXBool clear)
 {
-    if (on()) note("GXCopyDisp"), C.last_kind = 1, C.last_dest = (u32) dest, C.last_clear = clear, ++C.copies;
+    if (on()) note("GXCopyDisp"), C.last_kind = 1, C.last_dest = (u32)(uintptr_t)(dest), C.last_clear = clear, ++C.copies;
     __real_GXCopyDisp(dest, clear);
 }
 void __wrap_GXCopyTex(void* dest, GXBool clear)
 {
-    if (on()) note("GXCopyTex"), C.last_kind = 2, C.last_dest = (u32) dest, C.last_clear = clear, ++C.copies;
+    if (on()) note("GXCopyTex"), C.last_kind = 2, C.last_dest = (u32)(uintptr_t)(dest), C.last_clear = clear, ++C.copies;
     __real_GXCopyTex(dest, clear);
 }
 

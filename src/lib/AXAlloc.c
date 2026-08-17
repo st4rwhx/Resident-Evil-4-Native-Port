@@ -82,7 +82,7 @@ void __AXPushFreeStack(AXVPB* p) {
 AXVPB* __AXPopFreeStack(void) {
     AXVPB* p;
 
-    p = (void*)(u32)&__AXStackHead[0]->next;
+    p = (void*)port_ptr64((u32)&__AXStackHead[0]->next);
     if (p) {
         __AXStackHead[0] = p->next;
     }
@@ -97,7 +97,7 @@ void __AXPushCallbackStack(AXVPB* p) {
 AXVPB* __AXPopCallbackStack(void) {
     AXVPB* p;
 
-    p = (void*)(u32)&__AXCallbackStack[0];
+    p = (void*)port_ptr64((u32)&__AXCallbackStack[0]);
     if (p) {
         __AXCallbackStack = p->next1;
     }

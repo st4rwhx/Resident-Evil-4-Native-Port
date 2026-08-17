@@ -42,7 +42,7 @@ const RelEntry *find_id(u32 id)
 const RelEntry *find_prolog(u32 p)
 {
     for (const RelEntry *e = g_rel_table; e->prolog; ++e)
-        if ((u32) e->prolog == p)
+        if ((u32)(uintptr_t)(e->prolog) == p)
             return e;
     return nullptr;
 }
@@ -68,9 +68,9 @@ extern "C" const void *port_rel_prepare(void *hdr)
     // Mots 0..11 : id, liens, nombre de sections, tables, nom, version, bss, deplacements.
     for (int i = 0; i < 12; ++i)
         w[i] = bswap(w[i]);
-    w[0x34 / 4] = (u32) e->prolog;
-    w[0x38 / 4] = (u32) e->epilog;
-    w[0x3C / 4] = (u32) e->unresolved;
+    w[0x34 / 4] = (u32)(uintptr_t)(e->prolog);
+    w[0x38 / 4] = (u32)(uintptr_t)(e->epilog);
+    w[0x3C / 4] = (u32)(uintptr_t)(e->unresolved);
     return e;
 }
 

@@ -5,8 +5,13 @@ typedef signed   char          s8;
 typedef unsigned char          u8;
 typedef signed   short int     s16;
 typedef unsigned short int     u16;
+#if defined(RE4_PORT) && defined(__LP64__)   /* N7 (17/11) : 4 octets en 64 bits, comme include/types.h */
+typedef signed   int           s32;
+typedef unsigned int           u32;
+#else
 typedef signed   long          s32;
 typedef unsigned long          u32;
+#endif
 typedef signed   long long int s64;
 typedef unsigned long long int u64;
 

@@ -241,7 +241,7 @@ void load_indexed(int which, u32 reg)
     const unsigned addr = reg & 0xFFF, n = ((reg >> 12) & 0xF) + 1, idx = reg >> 16;
     const int arr = 12 + which;   // GX_POS_MTX_ARRAY - GX_VA_POS + which
     const u32 phys = S.arr_base[arr] + idx * S.arr_stride[arr];
-    const float* src = (const float*) (0x80000000u | phys);
+    const float* src = (const float*)port_ptr64((0x80000000u | phys));
     if (addr < 0x100) load_mtx(S.mtx, S.mtx_set, 256, addr, src, (int) n);
     else if (addr >= 0x400 && addr < 0x460) load_mtx(S.nrm, S.nrm_set, 96, addr - 0x400, src, (int) n);
     else if (addr >= 0x500 && addr < 0x600) load_mtx(S.post, S.post_set, 256, addr - 0x500, src, (int) n);
@@ -304,7 +304,7 @@ void scan_list(const u8* p, u32 n, int depth)
             p += 5;
         } else if (op == 0x40) {
             if (p + 9 > end) break;
-            if (depth < 4) scan_list((const u8*) be32(p + 1), be32(p + 5), depth + 1);
+            if (depth < 4) scan_list((const u8*)port_ptr64(be32(p + 1)), be32(p + 5), depth + 1);
             p += 9;
         } else if (op == 0x61) {
             if (p + 5 > end) break;
@@ -655,7 +655,7 @@ void __wrap_GXSetArray(GXAttr attr, void* base, u8 stride)
 {
     if (on()) {
         const int a = (attr == GX_VA_NBT ? GX_VA_NRM : attr) - GX_VA_POS;
-        if (a >= 0 && a < 16) S.arr_base[a] = (u32) base & 0x3FFFFFFF, S.arr_stride[a] = stride;
+        if (a >= 0 && a < 16) S.arr_base[a] = (u32)(uintptr_t)(base) & 0x3FFFFFFF, S.arr_stride[a] = stride;
         ++S.ver_attr;
         note("GXSetArray");
     }

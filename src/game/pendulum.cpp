@@ -31,7 +31,7 @@ f32 GlobalWindAdd = 1.0471976f;
 // The parts of a chain: through the parts table when the chain owner filled one, else the model's
 // parts list. The macro re-reads `no` in each arm (the link loops load `*pp` twice); the inline
 // takes an index already in a register (neighbour lookups).
-#define PEN_PARTS(m, c, no) ((c)->x54 ? (c)->x54[no] : (m)->getPartsPtr(no))
+#define PEN_PARTS(m, c, no) ((c)->x54 ? port_p((c)->x54[no]) : (m)->getPartsPtr(no))   // port_p : N7 64 bits
 static inline cModel* penPartsNo(cModel* m, PenCloth* c, int no)
 {
     if (c->x54) {

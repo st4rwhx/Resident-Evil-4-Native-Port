@@ -13,7 +13,8 @@ import collections, glob, os, re, sys
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')).replace('\\', '/')
 COPIE = 'c:/re4n/re4port_pc'
 INTERDITS = {'src/Tools/t_prim.cpp', 'src/Tools/t_util.cpp', 'src/Tools/tools.cpp', 'src/game/filter.cpp',
-             'src/tools/db_light.cpp'}
+             'src/tools/db_light.cpp',
+             'port/ptr32.h'}   # le type lui-même : une erreur qui y apparaît vient de l'appelant (instanciation)
 RE_DIAG = re.compile(r'^(.*?):(\d+):(\d+): (error|note): (.*)$')
 
 _line_maps = {}
@@ -31,9 +32,12 @@ def map_line_directives():
             continue
         cur = None
         for i, l in enumerate(L):
-            m = re.match(r'\s*#line\s+(\d+)\s+"([^"]+)"', l)
+            m = re.match(r'\s*#line\s+(\d+)(?:\s+"([^"]+)")?', l)
             if m:
-                cur = [m.group(2).replace('\\', '/').lower(), int(m.group(1))]
+                if m.group(2):
+                    cur = [m.group(2).replace('\\', '/').lower(), int(m.group(1))]
+                elif cur:   # `#line N` sans nom : même fichier présumé qu'avant
+                    cur = [cur[0], int(m.group(1))]
                 continue
             if cur:
                 _line_maps.setdefault((cur[0], cur[1]), (rel, i + 1))

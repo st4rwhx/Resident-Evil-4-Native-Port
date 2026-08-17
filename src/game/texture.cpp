@@ -163,7 +163,7 @@ void cTexSys::CalcTplAddr(TEXPalette* tpl)
     if ((s32) tpl->descriptorArray < 0) {
         return;
     }
-    tpl->descriptorArray = (TEXDescriptor*) ((u32) tpl->descriptorArray + (u32) tpl);
+    tpl->descriptorArray = (TEXDescriptor*)port_ptr64(((u32) tpl->descriptorArray + (u32)(uintptr_t)(tpl)));
     for (i = 0; i < tpl->numDescriptors; i++) {
         desc = &tpl->descriptorArray[i];
         desc->textureHeader = (TEXHeader*) ((u8*) tpl + (u32) desc->textureHeader);

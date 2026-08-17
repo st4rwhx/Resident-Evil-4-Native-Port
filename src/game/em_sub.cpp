@@ -345,7 +345,7 @@ void EmDmBloodSet2(cEm* em, int no, int prm, int rnd, int e, int f)
         pos.y = fRand1_1() * 50.0f + pos.y;
         pos.z = fRand1_1() * 50.0f + pos.z;
     }
-    EstSetB(0, -1, &pos, &dir, no, prm, e, f, (u32) em, 0);
+    EstSetB(0, -1, &pos, &dir, no, prm, e, f, (u32)(uintptr_t)(em), 0);
 }
 
 // EmDmBloodSet2 with the effect aligned to the enemy's rotation instead of the damage direction.
@@ -362,7 +362,7 @@ void EmDmBloodSet3(cEm* em, int no, int prm, int rnd, int e, int f)
         pos.y = fRand1_1() * 50.0f + pos.y;
         pos.z = fRand1_1() * 50.0f + pos.z;
     }
-    EstSetB(0, -1, &pos, &em->rot, no, prm, e, f, (u32) em, 0);
+    EstSetB(0, -1, &pos, &em->rot, no, prm, e, f, (u32)(uintptr_t)(em), 0);
 }
 
 // Blood on the player at the height of `pos` (clamped to the player's hit box), facing the attacker.
@@ -1672,7 +1672,7 @@ int PlBombHitCk(Vec* pos, f32 r)
     }
     LifeDownSet2(pPL, 1200, 0, PlLifeOver(501));
     PlSetDamage(8, 0, 0);
-    VibSetData((VibDataTbl*) (pG->pArc->ofs_1C + (u32) pG->pArc), 7, 1);
+    VibSetData((VibDataTbl*)port_ptr64((pG->pArc->ofs_1C + (u32) pG->pArc)), 7, 1);
     return 1;
 }
 
@@ -2484,9 +2484,9 @@ void EmCatchPLSet(cEm* em, f32 ang, u32 type, int a, f32 x, f32 y, f32 z)
     em->x3A8 = em->pos;
     pPL->x3A8 = pPL->pos;
     ISet(em->dmgType, (int) pPLS);
-    ISet(pPL->dmgType, (int) em);
+    ISet(pPL->dmgType, (int)(uintptr_t)(em));
     pPL->x378 = em->x378;
-    SetPlDamage((int) em, (void (*)(cPlayer*)) a);
+    SetPlDamage((int)(uintptr_t)(em), (void (*)(cPlayer*))port_ptr64(a));
 }
 
 // Never called (dead-stripped by the original linker; only its PI pool entry survives).
@@ -2547,10 +2547,10 @@ static void EmCatchSubSet(cEm* em, cEm* sub, u32 type, int a, f32 ang, f32 x, f3
     }
     em->x3A8 = em->pos;
     sub->x3A8 = sub->pos;
-    em->dmgType = (int) sub;
-    sub->dmgType = (int) em;
+    em->dmgType = (int)(uintptr_t)(sub);
+    sub->dmgType = (int)(uintptr_t)(em);
     sub->x378 = em->x378;
-    SetSubDamage((int) em, (void*) a);
+    SetSubDamage((int)(uintptr_t)(em), (void*)port_ptr64(a));
 }
 
 // Per-frame motion of a caught model: follow the catcher's movement, close the catch offset by
@@ -2560,7 +2560,7 @@ static void EmCatchSubSet(cEm* em, cEm* sub, u32 type, int a, f32 ang, f32 x, f3
 // is tied into ry / rate by local-alloc; rate then ranks below rate2 (f29 / f30).
 int EmCatchMotionMove(cEm* em, f32 rate, f32 rate2)
 {
-    cEm* target = (cEm*) em->dmgType;
+    cEm* target = (cEm*)port_ptr64(em->dmgType);
     Vec d;
     f32 ry;
     f32 tmp;
@@ -3165,7 +3165,7 @@ void EmSetDropItem(cEm* em)
         if (BullItemSetCk(&em->pos, em->itemNo, em->itemNum)) {
             return;
         }
-        SceAtCancelItemAt((int) em);
+        SceAtCancelItemAt((int)(uintptr_t)(em));
         SceAtCreateItemAt(&em->pos, em->itemNo, em->itemNum, (s8) em->itemFlag, -1, 0, -1);
     } else {
         RandomItemSet(em);
@@ -3194,7 +3194,7 @@ void EmReserveDropItem(cEm* em)
         em->itemNo = id;
         em->itemNum = num;
     }
-    SceAtReserveItemAt((int) em, &em->pos, em->itemNo, em->itemNum, (s8) em->itemFlag, -1);
+    SceAtReserveItemAt((int)(uintptr_t)(em), &em->pos, em->itemNo, em->itemNum, (s8) em->itemFlag, -1);
 }
 
 // Random drop for the enemy type (RandomItemCk) placed at the enemy.

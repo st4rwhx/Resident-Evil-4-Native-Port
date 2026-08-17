@@ -18,7 +18,7 @@ void __SYNClearVoiceReferences(void* p) {
     ASSERTLINE(33, p);
 
     axvpb = p;
-    synth = (void*)axvpb->userContext;
+    synth = (void*)port_ptr64(axvpb->userContext);
     voice = &__SYNVoice[axvpb->index];
 
     ASSERTLINE(38, synth);

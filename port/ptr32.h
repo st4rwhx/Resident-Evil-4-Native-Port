@@ -53,7 +53,9 @@ template <class T> struct P32 {
     uint32_t v;
 
     P32() = default;   // trivial : utilisable dans les unions et les structures copiées par memcpy
-    P32(T* p) : v(port_ptr32(p)) {}                       // aussi `p = 0` / NULL (pas de surcharge nullptr : ambiguë)
+    // implicite (tables statiques, initialisations) ; conséquence : `c ? champP32 : pointeur` est ambigu -> écrire
+    // `c ? port_p(champ) : pointeur` (port_p rend T* pour P32<T> comme pour T*). Pas de surcharge nullptr (ambiguë avec 0).
+    P32(T* p) : v(port_ptr32(p)) {}
     P32& operator=(T* p) { v = port_ptr32(p); return *this; }
 
     T* get() const { return (T*) port_ptr64(v); }
@@ -74,8 +76,16 @@ static_assert(sizeof(P32<int>) == 4, "P32 doit tenir sur 4 octets");
 
 // Aides du jeu qui prennent une référence de pointeur (`PSet(void*& d, void* v)` dans ss_main.h, wep_mod.h, em32.cpp ;
 // `PtrSet` dans mes.cpp) : une référence de T* ne peut pas désigner un champ P32 ; ces modèles prennent le relais.
-template <class T, class V> static inline void PSet(P32<T>& d, V v) { d = (T*) v; }
-template <class T, class V> static inline void PtrSet(P32<T>& d, V v) { d = (T*) v; }
+// La valeur passée est un pointeur (le cas courant) ou un entier 32 bits (adresse calculée : base | valeur).
+template <class V> static inline void* port_vers_ptr(V* v) { return (void*) v; }
+static inline void* port_vers_ptr(uint32_t v) { return port_ptr64(v); }
+static inline void* port_vers_ptr(int32_t v) { return port_ptr64((uint32_t) v); }
+template <class T, class V> static inline void PSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
+template <class T, class V> static inline void PtrSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
+
+// port_p(x) : le vrai pointeur, que x soit un champ P32<T> ou déjà un T* (opérateur ternaire, déductions de modèles).
+template <class T> static inline T* port_p(const P32<T>& p) { return p.get(); }
+template <class T> static inline T* port_p(T* p) { return p; }
 
 template <class F> struct FnP32 {   // pointeur de fonction : décalage depuis la même base (le code est dans la fenêtre)
     uint32_t v;
@@ -93,6 +103,7 @@ template <class F> struct FnP32 {   // pointeur de fonction : décalage depuis l
 #ifdef __cplusplus
 template <class T> using P32 = T*;
 template <class F> using FnP32 = F;
+template <class T> static inline T* port_p(T* p) { return p; }
 #endif
 #define port_ptr32(p) ((uint32_t) (uintptr_t) (p))
 #define port_ptr64(v) ((void*) (uintptr_t) (v))

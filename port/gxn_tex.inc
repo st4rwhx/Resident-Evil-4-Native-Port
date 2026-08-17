@@ -70,11 +70,11 @@ template <class E, int N> E* slot(E (&tab)[N], u32 key, bool create)
 
 void init_tex(GXTexObj* obj, void* image, u16 w, u16 h, u8 fmt, u8 ws, u8 wt, u8 mip, u8 ci, u32 tlut)
 {
-    TexEntry* e = slot(g_tex, (u32) obj, true);
+    TexEntry* e = slot(g_tex, (u32)(uintptr_t)(obj), true);
     if (!e) return;
     TexDesc& d = e->d;
     std::memset(&d, 0, sizeof d);
-    d.image = (u32) image, d.w = w, d.h = h, d.fmt = fmt, d.wrap_s = ws, d.wrap_t = wt, d.mipmap = mip;
+    d.image = (u32)(uintptr_t)(image), d.w = w, d.h = h, d.fmt = fmt, d.wrap_s = ws, d.wrap_t = wt, d.mipmap = mip;
     d.mag_filt = GX_LINEAR;
     d.edge_lod = 1;
     if (mip) {
@@ -90,7 +90,7 @@ void init_tex(GXTexObj* obj, void* image, u16 w, u16 h, u8 fmt, u8 ws, u8 wt, u8
 
 void keep_raw(const GXTexObj* obj)
 {
-    TexEntry* e = slot(g_tex, (u32) obj, false);
+    TexEntry* e = slot(g_tex, (u32)(uintptr_t)(obj), false);
     if (e) std::memcpy(e->raw, obj, 32);
 }
 
@@ -107,12 +107,12 @@ bool same_obj(const u32* a, const GXTexObj* obj)
 // Objet charge : sa description, ou celle de l'objet dont il est une copie (le jeu copie des objets entiers).
 const TexDesc* resolve(const GXTexObj* obj)
 {
-    TexEntry* e = slot(g_tex, (u32) obj, false);
+    TexEntry* e = slot(g_tex, (u32)(uintptr_t)(obj), false);
     if (e && same_obj(e->raw, obj)) return &e->d;
     for (int i = 0; i < kTexSlots; ++i)
-        if (g_tex[i].key && g_tex[i].key != (u32) obj && same_obj(g_tex[i].raw, obj)) {
+        if (g_tex[i].key && g_tex[i].key != (u32)(uintptr_t)(obj) && same_obj(g_tex[i].raw, obj)) {
             ++T.copies;
-            TexEntry* n = e ? e : slot(g_tex, (u32) obj, true);
+            TexEntry* n = e ? e : slot(g_tex, (u32)(uintptr_t)(obj), true);
             if (!n) return &g_tex[i].d;
             n->d = g_tex[i].d;
             std::memcpy(n->raw, obj, 32);
@@ -214,7 +214,7 @@ void __wrap_GXInitTexObjLOD(GXTexObj* obj, GXTexFilter minf, GXTexFilter magf, f
 {
     if (on()) {
         note("GXInitTexObjLOD");
-        TexEntry* e = slot(g_tex, (u32) obj, false);
+        TexEntry* e = slot(g_tex, (u32)(uintptr_t)(obj), false);
         if (e) {
             TexDesc& d = e->d;
             // memes bornes et quantification que la bibliotheque
@@ -256,8 +256,8 @@ void __wrap_GXInitTlutObj(GXTlutObj* obj, void* lut, GXTlutFmt fmt, u16 n)
 {
     if (on()) {
         note("GXInitTlutObj");
-        TlutEntry* e = slot(g_tlut_objs, (u32) obj, true);
-        if (e) e->d.data = (u32) lut, e->d.fmt = (u8) fmt, e->d.n = n;
+        TlutEntry* e = slot(g_tlut_objs, (u32)(uintptr_t)(obj), true);
+        if (e) e->d.data = (u32)(uintptr_t)(lut), e->d.fmt = (u8) fmt, e->d.n = n;
     }
     __real_GXInitTlutObj(obj, lut, fmt, n);
 }
@@ -265,7 +265,7 @@ void __wrap_GXLoadTlut(GXTlutObj* obj, u32 name)
 {
     if (on()) {
         note("GXLoadTlut");
-        TlutEntry* e = slot(g_tlut_objs, (u32) obj, false);
+        TlutEntry* e = slot(g_tlut_objs, (u32)(uintptr_t)(obj), false);
         if (e && name < 32) T.tlut[name] = e->d, T.tlut_set[name] = 1, T.last_tlut_data = e->d.data, T.tlut_loaded = 1;
         else if (!e) ++T.unknown_obj;
     }
@@ -280,8 +280,8 @@ void* __wrap_GXGetTexObjData(const GXTexObj* obj)
 {
     void* r = __real_GXGetTexObjData(obj);
     if (on()) {
-        TexEntry* e = slot(g_tex, (u32) obj, false);
-        if (e && ((e->d.image ^ (u32) r) & 0x03FFFFE0)) ++st.get_bad, mismatch(6, 0x94, e->d.image, (u32) r, "GXGetTexObjData");
+        TexEntry* e = slot(g_tex, (u32)(uintptr_t)(obj), false);
+        if (e && ((e->d.image ^ (u32)(uintptr_t)(r)) & 0x03FFFFE0)) ++st.get_bad, mismatch(6, 0x94, e->d.image, (u32)(uintptr_t)(r), "GXGetTexObjData");
     }
     return r;
 }

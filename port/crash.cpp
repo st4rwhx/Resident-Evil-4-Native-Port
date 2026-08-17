@@ -114,6 +114,14 @@ _Unwind_Reason_Code on_frame(struct _Unwind_Context *ctx, void *)
 #define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.gregs[REG_EIP])
 #define CTX_LR(uc) (*(const unsigned long *) (uc)->uc_mcontext.gregs[REG_ESP])
 #define CTX_FAULT(uc, info) ((unsigned long) (info)->si_addr)
+#elif defined(__x86_64__)   // N7 (17/11) : x86_64 (MuMu 64 bits) ; l'appelant est le mot en sommet de pile
+#define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.gregs[REG_RIP])
+#define CTX_LR(uc) (*(const unsigned long *) (uc)->uc_mcontext.gregs[REG_RSP])
+#define CTX_FAULT(uc, info) ((unsigned long) (info)->si_addr)
+#elif defined(__aarch64__)  // N7 : arm64 (Android 64 bits, base d'iOS) ; x30 = registre de lien
+#define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.pc)
+#define CTX_LR(uc) ((unsigned long) (uc)->uc_mcontext.regs[30])
+#define CTX_FAULT(uc, info) ((unsigned long) (uc)->uc_mcontext.fault_address)
 #else
 #define CTX_PC(uc) ((unsigned long) (uc)->uc_mcontext.arm_pc)
 #define CTX_LR(uc) ((unsigned long) (uc)->uc_mcontext.arm_lr)
@@ -180,6 +188,20 @@ void on_fault(int sig, siginfo_t *info, void *ctx)
         std::printf("[PORT] eax ebx ecx edx esi edi ebp esp : %lx %lx %lx %lx %lx %lx %lx %lx\n", (unsigned long) g[REG_EAX],
                     (unsigned long) g[REG_EBX], (unsigned long) g[REG_ECX], (unsigned long) g[REG_EDX], (unsigned long) g[REG_ESI],
                     (unsigned long) g[REG_EDI], (unsigned long) g[REG_EBP], (unsigned long) g[REG_ESP]);
+    }
+#elif defined(__x86_64__)
+    {
+        const greg_t *g = uc->uc_mcontext.gregs;
+        std::printf("[PORT] rax rbx rcx rdx rsi rdi rbp rsp : %lx %lx %lx %lx %lx %lx %lx %lx\n", (unsigned long) g[REG_RAX],
+                    (unsigned long) g[REG_RBX], (unsigned long) g[REG_RCX], (unsigned long) g[REG_RDX], (unsigned long) g[REG_RSI],
+                    (unsigned long) g[REG_RDI], (unsigned long) g[REG_RBP], (unsigned long) g[REG_RSP]);
+    }
+#elif defined(__aarch64__)
+    {
+        const auto &m = uc->uc_mcontext;
+        std::printf("[PORT] x0-x7 : %lx %lx %lx %lx %lx %lx %lx %lx  sp=%lx\n", (unsigned long) m.regs[0],
+                    (unsigned long) m.regs[1], (unsigned long) m.regs[2], (unsigned long) m.regs[3], (unsigned long) m.regs[4],
+                    (unsigned long) m.regs[5], (unsigned long) m.regs[6], (unsigned long) m.regs[7], (unsigned long) m.sp);
     }
 #else
     std::printf("[PORT] r0-r12 : %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx %lx  sp=%lx\n",

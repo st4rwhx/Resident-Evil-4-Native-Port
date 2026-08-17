@@ -112,8 +112,8 @@ void cRoomData::init()
     for (; stage <= 9; stage++) {
         for (i = 0; checkRoomRange(stage, i) == 1; i++) {
             if (Room_data_tbl[stage].tbl[i].stat == 1) {
-                *(u8*) (ofs + (u32) pSave) = stage;
-                rec = (u8*) (ofs + (u32) pSave);
+                *(u8*)port_ptr64((ofs + (u32) pSave)) = stage;
+                rec = (u8*)port_ptr64((ofs + (u32) pSave));
                 rec[1] = i;
                 ofs += sizeof(RoomSave);
             }

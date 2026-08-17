@@ -295,8 +295,8 @@ void MemSignalHeap(int no)
         OSHeapDescriptor* hh = HeapHead;
         OSHeapDescriptor* bk = heap_backup;
 
-        *(OSHeapDescriptor*) (h * sizeof(OSHeapDescriptor) + (u32) hh) =
-            *(OSHeapDescriptor*) (h * sizeof(OSHeapDescriptor) + (u32) bk);
+        *(OSHeapDescriptor*) (h * sizeof(OSHeapDescriptor) + (u32)(uintptr_t)(hh)) =
+            *(OSHeapDescriptor*) (h * sizeof(OSHeapDescriptor) + (u32)(uintptr_t)(bk));
         Heap[no].status = 0;
     }
 }
@@ -373,13 +373,13 @@ u32 MemCheckHeapEnd(int no)
     // `li r3,0` between the compare and the branch afterwards.
     if (d->allocated == NULL) {
         cell = d->free;
-        end = (u32) cell;
+        end = (u32)(uintptr_t)(cell);
     } else {
         end = 0;
     }
     for (cell = d->allocated; cell != NULL; cell = cell->next) {
-        if (end < (u32) cell + cell->size) {
-            end = (u32) cell + cell->size;
+        if (end < (u32)(uintptr_t)(cell) + cell->size) {
+            end = (u32)(uintptr_t)(cell) + cell->size;
         }
     }
     return end;
@@ -394,7 +394,7 @@ int MemCreateHeap(int no, u32 start, u32 end)
         MemDestroyHeap(no);
     }
     OSReport("-- MemCreateHeap %d %08x - %08x  ", no, start, end);
-    Heap[no].handle = OSCreateHeap((void*) start, (void*) end);
+    Heap[no].handle = OSCreateHeap((void*)port_ptr64(start), (void*)port_ptr64(end));
     if (Heap[no].handle >= 0) {
         Heap[no].start = start;
         Heap[no].end = end;
@@ -883,11 +883,11 @@ void MemCheckUsedHeap()
     cnt = 0;
     hd = HeapHead + Heap[CurrentHeap].handle;
     for (cell = hd->allocated; cell != NULL; cell = cell->next) {
-        y0 = (u32) ((f32) ((u32) cell - start) * 400.0f / (f32) size);
-        y1 = (u32) ((f32) ((u32) cell + cell->size - start) * 400.0f / (f32) size) + 1;
+        y0 = (u32) ((f32) ((u32)(uintptr_t)(cell) - start) * 400.0f / (f32) size);
+        y1 = (u32) ((f32) ((u32)(uintptr_t)(cell) + cell->size - start) * 400.0f / (f32) size) + 1;
 
         u8* tag = (u8*) cell + cell->size - 0x20;
-        if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
+        if ((s32)(uintptr_t)(tag) >= 0 || (u32)(uintptr_t)(tag) > PORT_PTR_MAX) {
             break;
         }
         if (MEM_TAG_OK(tag)) {
@@ -963,7 +963,7 @@ void MemCheckUsedHeap()
     if (CurrentHeap == 4) {
         for (cell = cell_dll; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
+            if ((s32)(uintptr_t)(tag) >= 0 || (u32)(uintptr_t)(tag) > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -986,7 +986,7 @@ void MemCheckUsedHeap()
         }
         for (cell = cell_stage; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
+            if ((s32)(uintptr_t)(tag) >= 0 || (u32)(uintptr_t)(tag) > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -1009,7 +1009,7 @@ void MemCheckUsedHeap()
         }
         for (cell = cell_game; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
+            if ((s32)(uintptr_t)(tag) >= 0 || (u32)(uintptr_t)(tag) > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
@@ -1032,7 +1032,7 @@ void MemCheckUsedHeap()
         }
         for (cell = cell_main; cell != NULL; cell = cell->next) {
             u8* tag = (u8*) cell + cell->size - 0x20;
-            if ((s32) tag >= 0 || (u32) tag > PORT_PTR_MAX) {
+            if ((s32)(uintptr_t)(tag) >= 0 || (u32)(uintptr_t)(tag) > PORT_PTR_MAX) {
                 break;
             }
             if (MEM_TAG_OK(tag)) {
