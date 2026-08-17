@@ -73,7 +73,7 @@ cObj* SetGondola(void* bin, void* tpl, Vec* pos, Vec* rot)
     cObj* obj;
     GondolaWork* w;
     int i;
-    cEm** p;
+    P32<cEm>* p;
 
     obj = ObjMgr.create(0x35);
     if (obj == 0) {

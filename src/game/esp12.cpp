@@ -190,7 +190,7 @@ int cEsp12::SetFreeWork(EspGenWork* gen, u32* seed)
         return 0;
     }
     w->n = (s8)gen->xC8 + 2;
-    if (!Esp3f_Alloc(sizeof(Vec), w->n, &w->buf, &info)) {
+    if (!Esp3f_Alloc(sizeof(Vec), w->n, port_out(w->buf), &info)) {
         pLog->err(0, 0, "ESP_12 : Buf alloc failed.");
         return 0;
     }

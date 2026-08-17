@@ -100,7 +100,7 @@ cObj* SetTrolley(void* bin, void* tpl, Vec* pos, Vec* rot)
     cObj* obj;
     TrolleyWork* w;
     int i;
-    void** p;
+    P32<void>* p;
 
     obj = ObjMgr.create(0x3B);
     if (obj == 0) {
@@ -300,7 +300,7 @@ void objTrolleySatSet(cObjTrolley* obj)
     Vec rot;
     Vec v;
     cModel* parts;
-    cSat** sat = w->sat;
+    P32<cSat>* sat = w->sat;
     u32 i;
 
     for (i = 0; i < 3; i++) {
@@ -331,7 +331,7 @@ void objTrolleySatSet(cObjTrolley* obj)
                 break;
             }
         }
-        cSat** sat2 = w->sat2;
+        P32<cSat>* sat2 = w->sat2;
         if (w->sat2[i]) {
             w->sat2[i]->flags |= 4;
             w->sat2[i]->setCoord(&pos, &rot);

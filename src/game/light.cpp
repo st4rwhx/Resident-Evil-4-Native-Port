@@ -1184,7 +1184,7 @@ cModel* cLight::calcParent()
         pParent = SmdGetGroupObjPtr(parent.no);
         break;
     case 3:
-        if (getRoomEtcOnLight(parent.no, &pParent, 0) == 0) {
+        if (getRoomEtcOnLight(parent.no, port_out(pParent), 0) == 0) {
             pParent = 0;
         }
         break;

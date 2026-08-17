@@ -38,6 +38,8 @@ def map_line_directives():
                     cur = [m.group(2).replace('\\', '/').lower(), int(m.group(1))]
                 elif cur:   # `#line N` sans nom : même fichier présumé qu'avant
                     cur = [cur[0], int(m.group(1))]
+                else:       # `#line N` sans nom dès le début : le compilateur garde le vrai nom du fichier
+                    cur = ['@' + rel, int(m.group(1))]
                 continue
             if cur:
                 _line_maps.setdefault((cur[0], cur[1]), (rel, i + 1))
@@ -47,11 +49,14 @@ def map_line_directives():
 
 def vrai(f, line):
     f = f.replace('\\', '/')
+    rel = None
     if f.lower().startswith(COPIE + '/'):
         rel = f[len(COPIE) + 1:].replace('src/tools_lc/', 'src/tools/')
-        return rel, line
-    if f.startswith(ROOT + '/'):
-        return f[len(ROOT) + 1:], line
+    elif f.startswith(ROOT + '/'):
+        rel = f[len(ROOT) + 1:]
+    if rel:
+        m = map_line_directives().get(('@' + rel, line))   # fichier à `#line N` sans nom (motion.cpp)
+        return m if m else (rel, line)
     m = map_line_directives().get((f.lower(), line))
     return m if m else (None, None)
 

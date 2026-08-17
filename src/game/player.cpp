@@ -237,9 +237,9 @@ cPlayer::cPlayer()
     pPL = this;
     hp = pGS->pl_life;
     x378 = 0x807EC000;
-    pMotTbl = (void**) PL_MEM_ALLOC(0x1B4, 373);
+    pMotTbl = (P32<void>*) PL_MEM_ALLOC(0x1B4, 373);
     memclr_asm(pMotTbl, 0x1B4);
-    pRegistMot = (void**) PL_MEM_ALLOC(0x30, 376);
+    pRegistMot = (P32<void>*) PL_MEM_ALLOC(0x30, 376);
     memclr_asm(pRegistMot, 0x30);
     flags_420 |= 1;
     debugInit();
@@ -483,7 +483,7 @@ void pl_R1_Footwork(cPlayer* pl)
 void pl_R1_Walk(cPlayer* pl)
 {
     if (pl->xFE == 0) {
-        void** tbl;
+        P32<void>* tbl;
         u32 frame;
         int hokan;
         if (pl->xFF & 4) {
@@ -538,7 +538,7 @@ void pl_R1_Walk(cPlayer* pl)
 void pl_R1_Back(cPlayer* pl)
 {
     if (pl->xFE == 0) {
-        void** tbl = pl->pMotTbl;
+        P32<void>* tbl = pl->pMotTbl;
         pl->motionSet(tbl[8], tbl[9], tbl[0x63], tbl[0x64], 8, 0);
         pl->pNeck->motL = 0;
         pl->xFE = 1;
@@ -575,7 +575,7 @@ void pl_R1_Run(cPlayer* pl)
         break;
     case 0:
     case 2: {
-        void** tbl;
+        P32<void>* tbl;
         u32 frame;
         int hokan;
         if (pl->xFF & 4) {
@@ -711,7 +711,7 @@ void pl_R1_Turn180(cPlayer* pl)
     switch (pl->xFE) {
     case 0: {
         Vec v;
-        void** tbl = pl->pMotTbl;
+        P32<void>* tbl = pl->pMotTbl;
         pl->motionSet(tbl[0xB], tbl[0xC], tbl[0x6B], tbl[0x6C], 5, 0);
         v.x = 0.0f;
         v.y = 0.0f;

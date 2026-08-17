@@ -1599,13 +1599,21 @@ static int sceAtFunc_flg(SceAtWork* w, cModel* m)
     }
     return 0;
 }
+#if PORT_P64
+void SceAtSetMes(SceAtMesData* m);
+static void port_SceAtSetMes_t(int a) { SceAtSetMes((SceAtMesData*) port_ptr64((u32) a)); }
+#endif
 
 static int sceAtFunc_mes(SceAtWork* w, cModel* m)
 {
     SceAtMesData* d = &w->mes;
 
     if (d->x4 != 0) {
+#if PORT_P64
+        SceExec(5, (TaskFunc) port_SceAtSetMes_t, (int)(uintptr_t)(d), 0, 2, 0);   // N7 : relais 64 bits
+#else
         SceExec(5, (TaskFunc) SceAtSetMes, (int) d, 0, 2, 0);
+#endif
     } else {
         SceAtSetMes(d);
     }

@@ -449,7 +449,7 @@ int pzlBoard::init(int w_, int h_, int pieceMax_)
     h = h_;
     clearState(0xFF);
 #line 560 "D:/Bio4/Prog/puzzle.cpp"
-    pieces = (pzlPiece**) MEM_ALLOC(pieceMax_ * 4, 1, 13);
+    pieces = (P32<pzlPiece>*) MEM_ALLOC(pieceMax_ * 4, 1, 13);
     if (pieces == 0) {
         Mem_free(cells);
         return 0;

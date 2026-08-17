@@ -462,7 +462,7 @@ void SEQSetVolume(SEQSEQUENCE* sequence, s32 dB) {
     SYNSetMasterVolume(&sequence->synth, dB);
 }
 
-long SEQGetVolume(SEQSEQUENCE* sequence) {
+s32 SEQGetVolume(SEQSEQUENCE* sequence) {
     ASSERTLINE(756, sequence);
     SYNGetMasterVolume(&sequence->synth);
 }

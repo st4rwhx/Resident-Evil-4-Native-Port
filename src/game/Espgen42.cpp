@@ -22,7 +22,7 @@
 
 extern "C" {
 // game/trans_lit.cpp
-void commonWaterLightSet(cLight** list, int n, u32 alpha);
+void commonWaterLightSet(P32<cLight>* list, int n, u32 alpha);
 // Dolphin SDK performance monitor registers (base/PPCArch.h)
 void PPCMtpmc1(u32 v);
 void PPCMtpmc2(u32 v);

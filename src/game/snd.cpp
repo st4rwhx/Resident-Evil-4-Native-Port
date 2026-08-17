@@ -134,26 +134,26 @@ void SndInit()
         Snd_str_blk_init(i, SndMem.str_file[i]);
     }
 
-    SndMem.bgm_file = (u32*) adr;
+    SndMem.bgm_file = (u32*) port_ptr64(adr);
 #line 133 SND_FILE
-    r = DvdRead(0x60, (void*) adr, 0, 0, 0, 0x11, __FILE__, __LINE__);
+    r = DvdRead(0x60, (void*) port_ptr64(adr), 0, 0, 0, 0x11, __FILE__, __LINE__);
     Dvd.ReadCheck(r, &len, 0, 0);
     adr += ALIGN32(len);
 
-    SndMem.door_tbl = (SndDoorTbl*) adr;
+    SndMem.door_tbl = (SndDoorTbl*) port_ptr64(adr);
 #line 140 SND_FILE
-    r = DvdRead(0x68, (void*) adr, 0, 0, 0, 0x11, __FILE__, __LINE__);
+    r = DvdRead(0x68, (void*) port_ptr64(adr), 0, 0, 0, 0x11, __FILE__, __LINE__);
     Dvd.ReadCheck(r, &len, 0, 0);
     adr += ALIGN32(len);
 
-    SndMem.bgm_tbl = (SndBgmTbl*) adr;
+    SndMem.bgm_tbl = (SndBgmTbl*) port_ptr64(adr);
 #line 147 SND_FILE
-    r = DvdRead(0x6A, (void*) adr, 0, 0, 0, 0x11, __FILE__, __LINE__);
+    r = DvdRead(0x6A, (void*) port_ptr64(adr), 0, 0, 0, 0x11, __FILE__, __LINE__);
     Dvd.ReadCheck(r, &len, 0, 0);
     adr += ALIGN32(len);
 
     ARAM_FREE_BASE = 0x800000;
-    SndMem.blk_mram[0] = (u8*) adr;
+    SndMem.blk_mram[0] = (u8*) port_ptr64(adr);
     SndMem.blk_mram[1] = SndMem.blk_mram[0] + 0x4000;
     SndMem.blk_mram[2] = SndMem.blk_mram[1] + 0x4000;
     SndMem.blk_mram[7] = SndMem.blk_mram[2] + 0x4000;
@@ -164,7 +164,7 @@ void SndInit()
     }
     SndMem.sub_adr = SndMem.str_buf[3] + 0x8000;
 #line 170 SND_FILE
-    r = DvdRead(0x59, (void*) SndMem.sub_adr, 0, 0, 0, 0x8001, __FILE__, __LINE__);
+    r = DvdRead(0x59, port_ptr64(SndMem.sub_adr), 0, 0, 0, 0x8001, __FILE__, __LINE__);
     Dvd.ReadCheck(r, &len, 0, 0);
     SndMem.sub_end = SndMem.sub_adr + len;
 
@@ -229,7 +229,7 @@ void SndDriverInit()
     SndSetMasterVol(0x40002, 0x7F);
     for (i = 0; i < 4; i++) {
         Snd_str_aram_adrs_set(i, SndStrAramAddr[i]);
-        Snd_str_buff[i] = (u8*) SndMem.str_buf[i];
+        Snd_str_buff[i] = (u8*) port_ptr64(SndMem.str_buf[i]);
     }
 }
 
@@ -2449,12 +2449,12 @@ void SndBlkInit(int type, int id, int no)
     Snd_iss_blk[blk].aram = SndMem.blk_aram[blk];
     adr = (u32) SndMem.blk_mram[blk];
 #ifdef RE4_PORT
-    port_snd_bank_fix((u8*) adr, blk);   // port/endian.cpp : la banque arrive gros-boutiste du disque
+    port_snd_bank_fix((u8*) port_ptr64(adr), blk);   // port/endian.cpp : la banque arrive gros-boutiste du disque
 #endif
     if (blk != 3 && blk != 4) {
-        adr += *(u32*) adr;
+        adr += *(u32*) port_ptr64(adr);
     }
-    Snd_iss_blk_init(blk, (void*) adr);
+    Snd_iss_blk_init(blk, (void*) port_ptr64(adr));
     SND_BIT_SET(pSnd->blk_flag, blk);
 }
 

@@ -15,9 +15,9 @@
 extern "C" {
 // game/trans_lit.cpp
 #ifdef RE4_PORT   // definie avec Vec* (trans_lit.cpp) : sur PowerPC un Vec par valeur passe par adresse, pas sur ARM
-void commonClothLightSet(cLight** list, int n, Vec* pos, f32 radius);
+void commonClothLightSet(P32<cLight>* list, int n, Vec* pos, f32 radius);
 #else
-void commonClothLightSet(cLight** list, int n, Vec pos, f32 radius);
+void commonClothLightSet(P32<cLight>* list, int n, Vec pos, f32 radius);
 #endif
 void OSReport(const char* fmt, ...);
 }

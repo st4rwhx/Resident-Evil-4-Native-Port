@@ -295,7 +295,7 @@ int cEsp16::SetFreeWork(EspGenWork* gen, u32* seed)
     w->damp = gen->xDC * 0.01f;
     w->spdRate = gen->xE0 * 0.01f;
     w->rnd = *(Vec*)&gen->xF0;
-    if (!Esp3f_Alloc(sizeof(Vec), w->nPt, &w->pos, &info) || !Esp3f_Alloc(sizeof(Vec), w->nPt, &w->spd, &info)) {
+    if (!Esp3f_Alloc(sizeof(Vec), w->nPt, port_out(w->pos), &info) || !Esp3f_Alloc(sizeof(Vec), w->nPt, port_out(w->spd), &info)) {
         pLog->warn(0, 0, "ESP_16 : Buf alloc failed.");
         return 0;
     }

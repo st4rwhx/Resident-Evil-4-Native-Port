@@ -99,7 +99,7 @@ void Esp0a_Trans(cEsp0a* esp)
             *base = *esp;
             base->id = 0;
             for (; i < 50; i++) {
-                if (PullEsp(&e.p, 0)) {
+                if (PullEsp(port_out(e.p), 0)) {
                     Vec wpos;
                     *e.p = *base;
                     int ot = 8;

@@ -14,7 +14,7 @@
 #include "trans_ot.h"
 
 // game/trans_lit.cpp
-extern "C" void commonEspLightSet(cLight** list, int n);
+extern "C" void commonEspLightSet(P32<cLight>* list, int n);
 
 int GetDrawTmpBufType();        // game/TmpBuf.cpp (C++ linkage)
 extern GXTexObj g_Get_tex_obj;  // game/trans.cpp
@@ -1142,7 +1142,7 @@ int EspSeqSet(EspGenWork* rec, EspInfo* info, u32* seed, cModel* model, Mtx* mtx
         *out = EspGetDmyPtr();
         return 0;
     }
-    if (PullEsp(&e.p, rec->x1) != 0) {
+    if (PullEsp(port_out(e.p), rec->x1) != 0) {
         e.p->info = *info;
         e.p->id = rec->x1;
         e.p->anmNo = rec->x2;

@@ -154,7 +154,7 @@ int motion_index(cPlayer* pl, void* motion)
     if (!pl || !motion)
         return -1;
     for (int t = 0; t < 2; ++t) {
-        void** tbl = t ? pl->pRegistMot : pl->pMotTbl;
+        P32<void>* tbl = t ? pl->pRegistMot : pl->pMotTbl;
         if (!tbl || !in_mem1(tbl, 192 * sizeof(void*)))
             continue;
         for (int i = 0; i < 192; ++i)

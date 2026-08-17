@@ -96,7 +96,7 @@ cObj* SetBull(void* bin, void* tpl, Vec* pos, Vec* rot, u32 type)
     cObj* obj;
     BullWork* w;
     int i;
-    void** p;
+    P32<void>* p;
 
     obj = ObjMgr.create(0x3E);
     if (obj == 0) {

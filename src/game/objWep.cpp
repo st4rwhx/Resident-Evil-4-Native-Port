@@ -225,7 +225,7 @@ void cObjWep::drawLaserSight(int draw, int noCalc)
         donfire = 0;
         partsWorldCalc();
         getMarkerPos(&lpos, &lcross);
-        res = GetWepTargetPos(&lpos, &lcross, 0, pG->wep_no, &wep.target, &attr);
+        res = GetWepTargetPos(&lpos, &lcross, 0, pG->wep_no, port_out(wep.target), &attr);
         if (wep.target && wep.target->checkStatus(10)) {
             donfire = 1;
         }

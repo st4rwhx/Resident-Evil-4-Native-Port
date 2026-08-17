@@ -12,9 +12,9 @@
 extern "C" {
 void LightSetInit();
 void LightSetModel(cModel* m);
-void commonClothLightSet(cLight** list, int n, Vec* pos, f32 size);
-void commonWaterLightSet(cLight** list, int n, u32 alpha);
-void commonEspLightSet(cLight** list, int n);
+void commonClothLightSet(P32<cLight>* list, int n, Vec* pos, f32 size);
+void commonWaterLightSet(P32<cLight>* list, int n, u32 alpha);
+void commonEspLightSet(P32<cLight>* list, int n);
 void lightSetConstant(cLight* l, GXLightObj* obj);
 void lightSetLinear(cLight* l, GXLightObj* obj);
 static void lightSetQuadratic(cLight* l, GXLightObj* obj);
@@ -63,7 +63,7 @@ void LightSetModel(cModel* m)
     GXColor amb;
     cModelInfo* info = m->pInfo;
     ModelData* data = info->pData;
-    cLight** list = m->lightInfo.pLight;
+    P32<cLight>* list = m->lightInfo.pLight;
     int n = (m->be_flag & 0x8000) ? 0 : 8;
     u32 mask;
     int i;
@@ -142,7 +142,7 @@ void LightSetModel(cModel* m)
     GXSetChanMatColor(4, mat);
 }
 
-void commonClothLightSet(cLight** list, int n, Vec* pos, f32 size)
+void commonClothLightSet(P32<cLight>* list, int n, Vec* pos, f32 size)
 {
     LIGHT_FUNC_TABLE;
     GXLightObj lobj[8];
@@ -195,7 +195,7 @@ void commonClothLightSet(cLight** list, int n, Vec* pos, f32 size)
     GXSetChanCtrl(2, 0, 0, 0, 0, 2, 2);
 }
 
-void commonWaterLightSet(cLight** list, int n, u32 alpha)
+void commonWaterLightSet(P32<cLight>* list, int n, u32 alpha)
 {
     LIGHT_FUNC_TABLE;
     GXLightObj lobj[8];
@@ -250,7 +250,7 @@ void commonWaterLightSet(cLight** list, int n, u32 alpha)
     GXSetChanCtrl(2, 0, 0, 0, 0, 2, 2);
 }
 
-void commonEspLightSet(cLight** list, int n)
+void commonEspLightSet(P32<cLight>* list, int n)
 {
     LIGHT_FUNC_TABLE;
     GXLightObj lobj[8];

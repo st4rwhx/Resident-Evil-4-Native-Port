@@ -218,8 +218,8 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
     }
     // Two statements: the end pointer lives in `tbl` (r10) before the align (one expression ties the
     // partsNo reload to the sum and allocates it).
-    tbl = (u32*) ((u32) w->partsNo + w->nParts);
-    tbl = (u32*) (((u32) tbl + 3) & ~3);
+    tbl = (u32*)port_ptr64(((u32) w->partsNo + w->nParts));
+    tbl = (u32*) port_ptr64(((u32)(uintptr_t)(tbl) + 3) & ~3);
     tbl++;
     if ((s32) tbl[0] >= 0) {
         for (i = 0; i < w->nParts; i++) {
@@ -358,20 +358,20 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
     pp->frame = w->frame;
     if (w->rootPosIdx != 0xFFFF) {
         pp->type = w->partsInfo[w->rootPosIdx] >> 12;
-        pp->key = (u8*) w->keyTbl[w->rootPosIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootPosIdx]);
         HermiteInterpolation(pp, &w->pos, hist0);
         w->posPrev = w->pos;
     }
     if (w->rootRotIdx != 0xFFFF) {
         pp->type = w->partsInfo[w->rootRotIdx] >> 12;
-        pp->key = (u8*) w->keyTbl[w->rootRotIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootRotIdx]);
         HermiteInterpolation(pp, &w->rot, hist1);
         w->rotPrev = w->rot;
     }
     if (w->rootPosIdx != 0xFFFF) {
         pp->frame = 0.0f;
         pp->type = w->partsInfo[w->rootPosIdx] >> 12;
-        pp->key = (u8*) w->keyTbl[w->rootPosIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootPosIdx]);
         HermiteInterpolation(pp, &v0, hist0);
         pp->frame = w->maxFrame;
         pp->flags |= 2;
@@ -381,7 +381,7 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
     if (w->rootRotIdx != 0xFFFF) {
         pp->frame = 0.0f;
         pp->type = w->partsInfo[w->rootRotIdx] >> 12;
-        pp->key = (u8*) w->keyTbl[w->rootRotIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootRotIdx]);
         HermiteInterpolation(pp, &v0, hist1);
         pp->frame = w->maxFrame;
         pp->flags |= 2;
@@ -395,7 +395,7 @@ void MotionSetCore(cModel* m, void* w_, void* data_, int seq_, int hokan, int fl
             if (cam->parts[4] != 0xFF) {
                 pp->frame = 0.0f;
                 pp->type = w->partsInfo[cam->parts[4]] >> 12;
-                pp->key = (u8*) w->keyTbl[cam->parts[4]];
+                pp->key = (u8*)port_ptr64(w->keyTbl[cam->parts[4]]);
                 HermiteInterpolation(pp, &v2, hist0);
             }
             cam->frame = 0;
@@ -702,7 +702,7 @@ void MotionMoveCore(cModel* m, MotionWork* w, int flag)
                 continue;
             }
             pp->type = info >> 12;
-            pp->key = (u8*) w->keyTbl[i];
+            pp->key = (u8*)port_ptr64(w->keyTbl[i]);
             if (i == cam->parts[0]) {
                 HermiteInterpolation(pp, &cam->out[0], cam->hist[0]);
                 if (w->flags & 0x40) {
@@ -753,7 +753,7 @@ void MotionMoveCore(cModel* m, MotionWork* w, int flag)
             MOTION_PARTS(p)->flags |= 0x80000000;
         }
         pp->type = w->partsInfo[i] >> 12;
-        pp->key = (u8*) w->keyTbl[i];
+        pp->key = (u8*)port_ptr64(w->keyTbl[i]);
         if (MOTION_PARTS(p)->flags & 0x04000000) {
             pp->flags |= 8;
         } else {
@@ -982,14 +982,14 @@ void MotionGetSpeed(cModel* m, MotionWork* w, int flag, Vec* pos, Vec* rot)
     if (w->rootPosIdx != 0xFFFF) {
         pp->frame = w->frame;
         pp->maxFrame = w->maxFrame;
-        pp->key = (u8*) w->keyTbl[w->rootPosIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootPosIdx]);
         pp->type = w->partsInfo[w->rootPosIdx] >> 12;
         HermiteInterpolation(pp, &a, MOT_HIST(w, flip, 1));
     }
     if (w->rootRotIdx != 0xFFFF) {
         pp->frame = w->frame;
         pp->maxFrame = w->maxFrame;
-        pp->key = (u8*) w->keyTbl[w->rootRotIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootRotIdx]);
         pp->type = w->partsInfo[w->rootRotIdx] >> 12;
         HermiteInterpolation(pp, &b, MOT_HIST(w, flip, 0));
     }
@@ -1080,14 +1080,14 @@ void MotionGetPosition(cModel* m, Vec* pos, Vec* rot)
     if (w->rootPosIdx != 0xFFFF) {
         pp->frame = w->frame;
         pp->maxFrame = w->maxFrame;
-        pp->key = (u8*) w->keyTbl[w->rootPosIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootPosIdx]);
         pp->type = w->partsInfo[w->rootPosIdx] >> 12;
         HermiteInterpolation(pp, pos, MOT_HIST(w, flip, 1));
     }
     if (w->rootRotIdx != 0xFFFF) {
         pp->frame = w->frame;
         pp->maxFrame = w->maxFrame;
-        pp->key = (u8*) w->keyTbl[w->rootRotIdx];
+        pp->key = (u8*)port_ptr64(w->keyTbl[w->rootRotIdx]);
         pp->type = w->partsInfo[w->rootRotIdx] >> 12;
         HermiteInterpolation(pp, rot, MOT_HIST(w, flip, 0));
     }
@@ -1332,7 +1332,7 @@ int HermiteInterpolation(HermitePrm* prm, Vec* out, u16* hist)
             #else
             asm("" : "+r"(idx));  // COMPILER-DIFF: the table lis is issued before the fp init
             #endif
-            u16* fp = (u16*) (idx * 2 + (u32) frames);
+            u16* fp = (u16*) port_ptr64(idx * 2 + (u32)(uintptr_t)(frames));
 
             do {
                 f0 = (f32) *fp;
@@ -1364,7 +1364,7 @@ int HermiteInterpolation(HermitePrm* prm, Vec* out, u16* hist)
                     fp--;
                     idx--;
                     if (idx < 0) {
-                        fp = (u16*) (last * 2 + (u32) frames);
+                        fp = (u16*) port_ptr64(last * 2 + (u32)(uintptr_t)(frames));
                         idx = last;
                     }
                 } else {

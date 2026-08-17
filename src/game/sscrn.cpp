@@ -397,7 +397,7 @@ void SubScreenExec()
                 wk->scope = 0;
             }
             if (pG->flags_500C & 0x400) {
-                CamCtrl.GetBinocularIDAddr(&wk->binoA, &wk->binoB);
+                CamCtrl.GetBinocularIDAddr(port_out(wk->binoA), port_out(wk->binoB));
                 CamCtrl.LowerBinocular();
                 wk->bino = 1;
             } else {

@@ -3372,7 +3372,7 @@ void subDoorKick()
     }
     switch (sub->xFE) {
     case 0:
-        MotionSetCore(sub, &sub->pMotion, PL_ARC_PTR((PlArc*) sub->x378, 0x2B), 0, 5, 1, 0);
+        MotionSetCore(sub, &sub->pMotion, PL_ARC_PTR((PlArc*) port_ptr64(sub->x378), 0x2B), 0, 5, 1, 0);
         sub->subHideMode = 0xE;
         sub->xFE++;
     case 1:
@@ -3389,7 +3389,7 @@ void subDoorKick()
         }
         break;
     case 2:
-        MotionSetCore(sub, &sub->pMotion, PL_ARC_PTR((PlArc*) sub->x378, 0x2A), 0, 5, 1, 0);
+        MotionSetCore(sub, &sub->pMotion, PL_ARC_PTR((PlArc*) port_ptr64(sub->x378), 0x2A), 0, 5, 1, 0);
         sub->subHideMode = 0xE;
         sub->xFE++;
     case 3:

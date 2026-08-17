@@ -1180,7 +1180,7 @@ void cDvd::Init()
 void cDvd::SizeTableRead()
 {
     int req = DVD_READ_N("etc/sizetbl.dat", 0, 0, 0, 0, 5);
-    int r = Dvd.ReadCheck(req, 0, 0, &pSizeTbl);
+    int r = Dvd.ReadCheck(req, 0, 0, port_out(pSizeTbl));
 
     if (req < 0 || r < 0) {
         pSizeTbl = 0;
@@ -1576,7 +1576,7 @@ int cDvd::ErrCheck(int disc, int flag)
     int cont = 1;
     int discNo = GetDiscNo();
     int shown = 0;
-    u8** pMes = MesData.ptr;
+    P32<u8>* pMes = MesData.ptr;
     SndPlayWork* pStr = Snd.str_work;
     int paused = 0;
     int msg;
@@ -1748,7 +1748,7 @@ void MesSysMessage(int msg, int disc)
 
 void RomFontPrint(int x, int y, const char* str)
 {
-    RomFont* font = new RomFont(pG->pFont);
+    RomFont* font = new RomFont(port_p(pG->pFont));
     void* image;
     s32 cx;
     s32 cy;

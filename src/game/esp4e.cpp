@@ -156,7 +156,7 @@ int cEsp4e::SetFreeWork(EspGenWork* gen, u32* seed)
         pLog->err(0, 0, "ESP4e : tex init invalid.");
         return 0;
     }
-    if (!PullCloth(&wk->cloth)) {
+    if (!PullCloth(port_out(wk->cloth))) {
         pLog->err(0, 0, "ESP4e : init invalid.");
         return 0;
     }

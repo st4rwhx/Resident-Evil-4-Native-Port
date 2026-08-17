@@ -29,7 +29,7 @@ void cDbgWindow::Init(int, int, const char *) { PORT_TODO("cDbgWindow::Init"); }
 
 namespace t_esp_namespace {
 struct TOOL_WINDOW {
-    void *operator new(unsigned int);
+    void *operator new(size_t);
 };
-void *TOOL_WINDOW::operator new(unsigned int) { PORT_TODO("TOOL_WINDOW::operator new"); return 0; }
+void *TOOL_WINDOW::operator new(size_t) { PORT_TODO("TOOL_WINDOW::operator new"); return 0; }
 } // namespace t_esp_namespace

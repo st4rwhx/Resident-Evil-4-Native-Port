@@ -83,9 +83,25 @@ static inline void* port_vers_ptr(int32_t v) { return port_ptr64((uint32_t) v); 
 template <class T, class V> static inline void PSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
 template <class T, class V> static inline void PtrSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
 
+template <class T> static inline T* PGet(P32<T>& p) { return p.get(); }                       // light.cpp
+template <class T, class V> static inline void VSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }   // shadow.cpp
+
 // port_p(x) : le vrai pointeur, que x soit un champ P32<T> ou déjà un T* (opérateur ternaire, déductions de modèles).
 template <class T> static inline T* port_p(const P32<T>& p) { return p.get(); }
 template <class T> static inline T* port_p(T* p) { return p; }
+
+// port_out(champ) : paramètre de sortie `T**` vers un champ P32 (`PullEsp(port_out(e.p), id)` au lieu de `&e.p`) : la
+// fonction écrit dans un pointeur ordinaire temporaire, recopié dans le champ à la fin de l'expression.
+template <class T> struct P32_out {
+    P32<T>* f;
+    T* t;
+    explicit P32_out(P32<T>& c) : f(&c), t(c.get()) {}
+    P32_out(const P32_out& o) : f(o.f), t(o.t) {}
+    ~P32_out() { *f = t; }
+    operator T**() { return &t; }
+    template <class U> operator U**() { return (U**) &t; }   // void** etc.
+};
+template <class T> static inline P32_out<T> port_out(P32<T>& c) { return P32_out<T>(c); }
 
 template <class F> struct FnP32 {   // pointeur de fonction : décalage depuis la même base (le code est dans la fenêtre)
     uint32_t v;
@@ -104,6 +120,7 @@ template <class F> struct FnP32 {   // pointeur de fonction : décalage depuis l
 template <class T> using P32 = T*;
 template <class F> using FnP32 = F;
 template <class T> static inline T* port_p(T* p) { return p; }
+template <class T> static inline T** port_out(T*& c) { return &c; }
 #endif
 #define port_ptr32(p) ((uint32_t) (uintptr_t) (p))
 #define port_ptr64(v) ((void*) (uintptr_t) (v))

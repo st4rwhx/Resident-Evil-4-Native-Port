@@ -254,7 +254,7 @@ void ReadAreaData()
     } else {
         StopwatchStart();
 #line 147 "D:/Bio4/Prog/read.cpp"
-        req = DVD_READ_N(name, (void*) (MemGetHeapEndAddr(MemGetCurrentHeap()) - READ_BUFF_OFS), 0, 0, 0, 0x8120);
+        req = DVD_READ_N(name, port_ptr64(MemGetHeapEndAddr(MemGetCurrentHeap()) - READ_BUFF_OFS), 0, 0, 0, 0x8120);
         while (Dvd.ReadCheck(req, 0, 0, &in_data_addr) != 1) {
             TaskSleep(1);
         }

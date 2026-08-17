@@ -33,7 +33,7 @@ static void move(FE_WORK* t);
 static void die(FE_WORK* t);
 int CkBit(u32* flags, u32 bit);
 
-static const char* dbg_s[125] = {
+static P32<const char> dbg_s[125] = {
     "DBG_TEST_MODE", "DBG_SCR_TEST", "DBG_BACK_CLIP", "DBG_DBG_CAM", "DBG_SAT_DISP", "DBG_EAT_DISP",
     "DBG_EVENT_TOOL", "DBG_SLOW_ON", "DBG_SHADOW_POLYGON", "DBG_SCE_AT_DISP", "DBG_SCR2_TEST",
     "DBG_SHADOW_FRAME", "DBG_MIRROR_POLYGON", "DBG_GROUND_DISP", "DBG_SKELETON_DISP",
@@ -58,7 +58,7 @@ static const char* dbg_s[125] = {
     "DBG_NO_LASER_LINE", "", "DBG_SHOP_FULL", "DBG_ADA_OMAKE_EV",
 };
 
-const char* spf_s[27] = {
+P32<const char> spf_s[27] = {
     "SPF_KEY", "SPF_CAMERA", "SPF_EM", "SPF_PL", "SPF_ESP", "SPF_OBJ", "SPF_CTRL", "SPF_LIGHT",
     "SPF_SCE", "SPF_SCE_AT", "SPF_CCHG", "SPF_PL_CCHG", "SPF_NOTSUBSCR", "SPF_WATER",
     "SPF_SPECULAR", "SPF_EARTHQUAKE", "SPF_VIBRATION", "SPF_CINESCO", "SPF_MIST", "SPF_SUBCHAR",
@@ -66,7 +66,7 @@ const char* spf_s[27] = {
     "SPF_ESP_AREA",
 };
 
-const char* sta_s[105] = {
+P32<const char> sta_s[105] = {
     "STA_BG_OFF", "STA_PL_CHECK", "STA_PL_CHECK2", "STA_MOVIE_ON", "STA_CUTCHG", "STA_MOVIE2_ON",
     "STA_SSCRN_ENABLE", "STA_CINESCO", "STA_PL_FIRE", "STA_09", "STA_ACT_DONT_FIRE", "STA_DIEDEMO",
     "STA_BLUR", "STA_SUB_SCRN", "STA_CARD_ACCESS", "STA_PAD_SENSITIVE", "STA_10", "STA_PL_ACTION",
@@ -88,7 +88,7 @@ const char* sta_s[105] = {
     "STA_SUB_ASHLEY", "STA_BIG_MARKER", "", "STA_KLAUSER_TRANSFORM",
 };
 
-const char* cfg_s[6] = {
+P32<const char> cfg_s[6] = {
     "CFG_AIM_REVERSE", "CFG_WIDE_MODE", "CFG_LOCK_ON", "CFG_BONUS_GET", "CFG_VIBRATION",
     "CFG_KNIFE_MODE",
 };
@@ -101,7 +101,7 @@ static inline const char* ext_name(int no)
     return no == 0 ? "EXT_COSTUME" : "EXT_HARD_MODE";
 }
 
-const char* scf_s[64] = {
+P32<const char> scf_s[64] = {
     "SCF_KEY_ID_A_GET", "SCF_KEY_ID_B_GET", "SCF_KEY_ID_C_GET", "SCF_HOOK_STALKING_R10A",
     "SCF_R10E_BATTLE_END", "SCF_R104_ACT_STATUE", "SCF_R01E_TEST", "SCF_R100_TEST00",
     "SCF_R100_TEST01", "SCF_R100_TEST02", "SCF_R106_EVENT", "SCF_R117_ASHLEY_FIND",
@@ -120,19 +120,19 @@ const char* scf_s[64] = {
     "SCF_R22C_BONUS_2", "SCF_R22C_BONUS_3", "SCF_R22C_BONUS_4",
 };
 
-const char* itf_s[16] = {
+P32<const char> itf_s[16] = {
     "ITF_DUMMY", "", "", "", "", "", "", "", "", "", "", "", "", "ITF_R101_IDCARD_A",
     "ITF_R10D_IDCARD_B", "ITF_R10B_IDCARD_C",
 };
 
-static const char* dpf_s[21] = {
+static P32<const char> dpf_s[21] = {
     "DPF_EM", "DPF_PL", "DPF_SUBCHAR", "DPF_OBJ", "DPF_SCR", "DPF_ESP", "DPF_SHADOW", "DPF_WATER",
     "DPF_MIRROR", "DPF_CTRL", "DPF_CINESCO", "DPF_FILTER\t", "DPF_GLB_ILM", "DPF_CAST_SHADOW",
     "DPF_CLOTH", "DPF_COCKPIT", "DPF_SELF_SHADOW", "DPF_FOG", "DPF_ID_SYSTEM", "DPF_ACTBTN",
     "DPF_MESSAGE",
 };
 
-static const char* sys_s[29] = {
+static P32<const char> sys_s[29] = {
     "SYS_OMAKE_ADA_GAME", "SYS_OMAKE_ETC_GAME", "SYS_EXCEPTION", "SYS_RENDER_END", "SYS_SP_USED",
     "SYS_SOFT_RESET", "SYS_DATA_READ", "SYS_ROOMJUMP", "SYS_INVISIBLE", "SYS_DOOR_AFTER",
     "SYS_DOORDEMO", "SYS_TRANS_STOP", "SYS_CONTINUE", "SYS_SET_BLACK", "SYS_SN_PC_READ",
@@ -140,7 +140,7 @@ static const char* sys_s[29] = {
     "SYS_SCISSOR_ON", "SYS_SCREEN_STOP", "SYS_CARD_ACCESS", "SYS_LOAD_GAME", "SYS_CONTINUE_AFTER",
     "SYS_START_EVT_SKIP", "SYS_HARD_MODE", "SYS_MESSAGE_INIT", "SYS_PUBLICITY_VER",
 };
-const char* kyf_s[1] = {""};
+P32<const char> kyf_s[1] = {""};
 
 static FE_DATA fe_data[12] = {
     {"DEBUG", (u32*) ((u8*) &Global + OFS_DEBUG_FLG), 128, 0, dbg_s, 125},
