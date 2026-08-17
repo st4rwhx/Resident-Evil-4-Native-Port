@@ -30,18 +30,31 @@
 // les valeurs font l'aller-retour (décalage de fichier -> pointeur -> décalage), ce que le jeu fait sans cesse.
 #ifdef __cplusplus
 extern "C" uintptr_t g_port_base;
+extern "C" uintptr_t g_port_img;
 #else
 extern uintptr_t g_port_base;
+extern uintptr_t g_port_img;
 #endif
 
 static inline uint32_t port_ptr32(const volatile void* p)
 {
     return (uint32_t) (uintptr_t) p;
 }
+#if defined(__APPLE__)
+// iOS (19/11) : le bloc de 4 Go de l'image (0x1_0000_0000) porte a +0x80000000 le cache partage du systeme : MEM1,
+// l'ARAM et les piles ne peuvent pas y etre. Deux bases, choisies par le bit haut : les adresses GameCube (>= 0x80000000 :
+// MEM1, ARAM, piles) -> g_port_base, bloc libre reserve au chargement ; le reste (code et donnees statiques, decalages
+// < 0x80000000 dans leur bloc) -> g_port_img. L'encodage ne change pas (32 bits bas). Android : une seule base.
+static inline void* port_ptr64(uint32_t v)
+{
+    return v ? (void*) (((v & 0x80000000u) ? g_port_base : g_port_img) | v) : (void*) 0;
+}
+#else
 static inline void* port_ptr64(uint32_t v)
 {
     return v ? (void*) (g_port_base | v) : (void*) 0;
 }
+#endif
 #endif
 
 #if defined(__cplusplus) && UINTPTR_MAX > 0xFFFFFFFFu
