@@ -133,7 +133,7 @@ def units():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=max(4, (os.cpu_count() or 4)))
-    ap.add_argument('--out', default=os.path.join(ROOT, {'x86': '_port_build_x86', 'x86_64': '_port_build_x86_64', 'arm64': '_port_build_arm64'}.get(os.environ.get('PORT_ABI'), '_port_build')))
+    ap.add_argument('--out', default=os.path.join(ROOT, {'x86': '_port_build_x86', 'x86_64': '_port_build_x86_64', 'arm64': '_port_build_arm64', 'ios': '_port_build_ios'}.get(os.environ.get('PORT_ABI'), '_port_build')))
     ap.add_argument('--link', action='store_true')
     ap.add_argument('--quiet', action='store_true')
     ap.add_argument('--maxerr', type=int, default=15)
@@ -151,7 +151,7 @@ def main():
     abi = os.environ.get('PORT_ABI')
     triple = {'x86': 'i686-linux-android28', 'x86_64': 'x86_64-linux-android28',
               'arm64': 'aarch64-linux-android28'}.get(abi, 'armv7a-linux-androideabi28')
-    if abi in ('x86_64', 'arm64'):
+    if abi in ('x86_64', 'arm64', 'ios'):
         COMMON.append('-ferror-limit=0')
         # entier 32 bits -> pointeur : compile en silence et perd la base de la fenetre ; erreur pour les trouver tous.
         # -w les cacherait aussi : en 64 bits, tout avertissement coupe SAUF ces deux-la, changes en erreurs.
@@ -159,6 +159,22 @@ def main():
         COMMON.extend(['-Werror=int-to-pointer-cast', '-Werror=int-to-void-pointer-cast'])
     cxx = os.path.join(bindir, triple + '-clang++.cmd')
     cc = os.path.join(bindir, triple + '-clang.cmd')
+    if abi == 'ios':
+        # PORT_ABI=ios (18/11, premiere compilation iOS du natif) : meme methode que le jeu recompile du 28/10
+        # (mesures/laptop_ios_game.sh) : clang du NDK cible arm64-apple-ios16.0, en-tetes Android (bionic), NJ_APPLE_CROSS,
+        # cale libc++ (__ndk1 -> __1). Meme modele memoire que x86_64/arm64 (P32). Lien : ld64.lld en dylib (script).
+        sysr = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'sysroot', 'usr', 'include')
+        shim = os.path.join(args.out, 'shim')
+        os.makedirs(shim, exist_ok=True)
+        cs = open(os.path.join(sysr, 'c++', 'v1', '__config_site')).read().replace('__ndk1', '__1')
+        open(os.path.join(shim, '__config_site'), 'w').write(cs)
+        COMMON[:0] = ['--target=arm64-apple-ios16.0', '-U__APPLE__', '-D__BIONIC__', '-D__ANDROID__', '-D__ANDROID_API__=24',
+                      '-DNJ_APPLE_CROSS=1', '-D_LIBCPP_HAS_THREAD_API_PTHREAD', '-fPIC', '-nostdlibinc',
+                      '-I' + shim, '-isystem', os.path.join(sysr, 'c++', 'v1'), '-isystem', sysr,
+                      '-isystem', os.path.join(sysr, 'aarch64-linux-android')]
+        CXXONLY.append('-nostdinc++')
+        cxx = os.path.join(bindir, 'clang++.exe')
+        cc = os.path.join(bindir, 'clang.exe')
     for t in (cxx, cc):
         if not os.path.exists(t):
             sys.exit('compilateur introuvable : %s' % t)
@@ -267,7 +283,7 @@ def main():
     # ARM : conversions flottant -> non signe avec le comportement du PowerPC (port/ppc_f2u.py, 15/11). x86 l'a deja ;
     # PORT_PPC_F2U=0 : sans (A/B). Idempotent : les objets en cache deja corriges ne changent plus.
     # N7 : x86_64 se comporte comme x86 (conversion 64 bits puis troncature = tour complet) ; arm64 : outil a porter (Thumb).
-    if os.environ.get('PORT_ABI') not in ('x86', 'x86_64', 'arm64') and os.environ.get('PORT_PPC_F2U', '1') != '0':
+    if os.environ.get('PORT_ABI') not in ('x86', 'x86_64', 'arm64', 'ios') and os.environ.get('PORT_PPC_F2U', '1') != '0':
         objdump = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin', 'llvm-objdump.exe')
         r = subprocess.run([sys.executable, os.path.join(ROOT, 'port', 'ppc_f2u.py'), rsp, objdump], capture_output=True, text=True, cwd=ROOT)
         print((r.stdout + r.stderr).strip()[-600:])

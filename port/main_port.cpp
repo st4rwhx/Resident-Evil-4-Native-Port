@@ -30,7 +30,9 @@ int main(int argc, char **argv)
     // Allocateur d'Android 9 (jemalloc) : rendre les pages liberees au systeme apres un delai plutot que tout de suite.
     // Mesure du 13/11 (simpleperf, cinematique r100) : 11 200 defauts de page par seconde sur le fil du jeu, ~30 % de
     // son temps dans le noyau, parce que le rendu alloue et libere des Mo de sommets a chaque image.
+#ifndef NJ_APPLE_CROSS   // iOS : pas de mallopt (allocateur d'Android seulement)
     std::printf("[PORT] mallopt(M_DECAY_TIME, 1) = %d\n", mallopt(-100 /* M_DECAY_TIME, Android 9+ */, 1));
+#endif
 
     const char *dir = (argc > 1) ? argv[1] : std::getenv("RE4_GAME_DIR");
     if (!dir) {

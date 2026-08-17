@@ -61,6 +61,9 @@ def load_modules_py():
 # temporaire du source - les directives #line gardent les messages d'erreur sur l'original.
 RE_REGPIN = re.compile(r'\bregister\s+([A-Za-z_][\w\s\*:<>]*?)\s*(\w+)\s+asm\s*\(\s*"f?r\d+"\s*\)')
 RE_ASMEMPTY = re.compile(r'\basm\s*(?:volatile\s*)?\(\s*""[^;\n]*\)\s*;')
+# iOS (Mach-O, 18/11) : les directives d'alignement du decompile `asm(".section .data\n\t.balign 8\n\t.text")`
+# (correspondance a l'octet avec GCC 2.95, sans effet sur le port) sont refusees par l'assembleur Mach-O : retirees.
+RE_ASMSECTION = re.compile(r'\basm\s*\(\s*"\.section[^\n]*?\)\s*;')
 
 
 # Variables `static` que le decompile designe aussi par un nom d'assembleur (`asm("sceAtCur")`) : sans
@@ -71,6 +74,8 @@ STATIC_VARS = ['em21_trap_cam', 'em2a_rescue_cam', 'sceAtCur', 'sceItemCur', 'sc
 def _clean(txt):
     new = RE_REGPIN.sub(r'\1 \2', txt)
     new = RE_ASMEMPTY.sub(';', new)
+    if os.environ.get('PORT_ABI') == 'ios':
+        new = RE_ASMSECTION.sub(';', new)
     for nm_ in STATIC_VARS:
         new = re.sub(r'\bstatic\s+((?:const\s+)?[A-Za-z_][\w:<>\*]*\s+\**)(%s)\b' % nm_, r'\1\2', new)
     return new
@@ -86,9 +91,11 @@ def sanitize(path, out_dir, key):
     # epingles du fichier inclus (« r0 » n'existe pas sur x86). On nettoie aussi l'inclus, copie a cote. Sur ARM, rien
     # ne change (ces noms de registres y existent ; construction du telephone identique).
     incs = []
-    if os.environ.get('PORT_ABI') in ('x86', 'x86_64', 'arm64'):   # N7 : noms de registres ARM32 absents en 64 bits aussi
+    if os.environ.get('PORT_ABI') in ('x86', 'x86_64', 'arm64', 'ios'):   # N7 : noms de registres ARM32 absents en 64 bits aussi
         for inc in RE_INC_CPP.findall(txt):
             ip = os.path.join(os.path.dirname(path), inc)
+            if not os.path.exists(ip):   # inclus trouve par le chemin d'inclusion (pl0d -> wep/pl_handgun.cpp)
+                ip = os.path.join(ROOT, 'src', inc)
             if os.path.exists(ip):
                 it = open(ip, encoding='utf-8', errors='replace', newline='').read()
                 nt = _clean(it)
@@ -123,7 +130,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=6)
     ap.add_argument('--only', default='')
-    BASE = {'x86': '_port_build_x86', 'x86_64': '_port_build_x86_64', 'arm64': '_port_build_arm64'}.get(os.environ.get('PORT_ABI'), '_port_build')
+    BASE = {'x86': '_port_build_x86', 'x86_64': '_port_build_x86_64', 'arm64': '_port_build_arm64', 'ios': '_port_build_ios'}.get(os.environ.get('PORT_ABI'), '_port_build')
     ap.add_argument('--out', default=os.path.join(ROOT, BASE, 'rel'))
     ap.add_argument('--maxerr', type=int, default=20)
     ap.add_argument('--errlog', default='')   # journal complet des erreurs (essais 64 bits, p64_casts.py)
@@ -140,10 +147,22 @@ def main():
     triple = {'x86': 'i686-linux-android28', 'x86_64': 'x86_64-linux-android28',
               'arm64': 'aarch64-linux-android28'}.get(abi, 'armv7a-linux-androideabi28')
     cxx = os.path.join(bindir, triple + '-clang++.cmd')
-    if abi in ('x86_64', 'arm64') and '-w' in bg.COMMON:
+    if abi == 'ios':   # premiere compilation iOS (18/11) : memes options que build_game.py (cible Apple, en-tetes Android)
+        sysr = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'sysroot', 'usr', 'include')
+        shim = os.path.join(ROOT, '_port_build_ios', 'shim')
+        os.makedirs(shim, exist_ok=True)
+        cs = open(os.path.join(sysr, 'c++', 'v1', '__config_site')).read().replace('__ndk1', '__1')
+        open(os.path.join(shim, '__config_site'), 'w').write(cs)
+        bg.COMMON[:0] = ['--target=arm64-apple-ios16.0', '-U__APPLE__', '-D__BIONIC__', '-D__ANDROID__', '-D__ANDROID_API__=24',
+                         '-DNJ_APPLE_CROSS=1', '-D_LIBCPP_HAS_THREAD_API_PTHREAD', '-fPIC', '-nostdlibinc',
+                         '-I' + shim, '-isystem', os.path.join(sysr, 'c++', 'v1'), '-isystem', sysr,
+                         '-isystem', os.path.join(sysr, 'aarch64-linux-android')]
+        bg.CXXONLY.append('-nostdinc++')
+        cxx = os.path.join(bindir, 'clang++.exe')
+    if abi in ('x86_64', 'arm64', 'ios') and '-w' in bg.COMMON:
         bg.COMMON[bg.COMMON.index('-w')] = '-Wno-everything'
         bg.COMMON.extend(['-ferror-limit=0', '-Werror=int-to-pointer-cast', '-Werror=int-to-void-pointer-cast'])
-    asm_flags = [] if x86 else (['-march=armv8-a'] if abi == 'arm64' else ['-march=armv7-a'])
+    asm_flags = [] if x86 else (['-march=armv8-a'] if abi in ('arm64', 'ios') else ['-march=armv7-a'])
 
     def alias_text(stubs):   # saut vers la vraie fonction : Thumb-2 sur ARM, jmp sur x86
         if x86:
@@ -161,7 +180,7 @@ def main():
     only = set(x for x in args.only.split(',') if x)
     if only:
         names = [n for n in names if n in only]
-    if abi in ('x86_64', 'arm64') and not os.environ.get('PORT_REL_OUTILS'):
+    if abi in ('x86_64', 'arm64', 'ios') and not os.environ.get('PORT_REL_OUTILS'):
         # N7 (18/11) : 1er jalon 64 bits sans les outils de debug de Capcom (éditeurs t_*, Tools : menu L+START seulement ;
         # db_light.cpp appartient à une autre session). PORT_REL_OUTILS=1 les remet.
         names = [n for n in names if not (n.startswith('t_') or n == 'Tools')]

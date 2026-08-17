@@ -1580,7 +1580,11 @@ int Fcc_next_axis_addr(int type, int n)
 // Debug speed display: dead-stripped by the linker, only the strings, constant pools and statics
 // remain. The three zeroed 4-byte statics survive as one unnamed 12-byte .sdata object; this stand-in
 // keeps the split label as its name (and the section forced) so strip_unused leaves it in place.
+#ifdef NJ_APPLE_CROSS   // iOS (Mach-O) : section ELF refusee ; .sdata (petites donnees PowerPC) sans effet sur le port
+static Vec lbl_80314C44 = { 0.0f, 0.0f, 0.0f };
+#else
 static Vec lbl_80314C44 __attribute__((section(".sdata"))) = { 0.0f, 0.0f, 0.0f };
+#endif
 
 // The two label pointers at .rodata+0x218 (relocated words) are a function-local static table
 // declared AFTER the first eprintf: its strings and the table are assembled when the declaration
