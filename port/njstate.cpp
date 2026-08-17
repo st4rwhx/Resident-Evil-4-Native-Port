@@ -21,6 +21,7 @@
 #include "id_sys.h"
 #include "event.h"
 #include "fade.h"
+extern "C" int port_title_waiting(void);   // port/arm_hooks.cpp : menu titre de Nightjar
 #include "joy.h"
 #include "act_btn.h"
 #include "cockpit.h"
@@ -182,6 +183,7 @@ extern "C" void njstate_fill(NjState* out)
         return;
     }
     s.bits |= NJS_VALID;
+    if (port_title_waiting()) s.bits |= NJS_TITLE_WAIT;   // menu titre de Nightjar (18/11)
     s.wep_no = g->wep_no;
     s.wep_type = g->wep_type;
     s.chapters_ended = g->x4F8A;

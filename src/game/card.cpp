@@ -311,6 +311,11 @@ void CardInit()
     pG->card_serial = 1;
 }
 
+#ifdef RE4_PORT
+extern "C" int port_card_direct(void);          // port/arm_hooks.cpp : chargement direct demande par le menu titre de Nightjar
+extern "C" void port_card_direct_set(int n);
+#endif
+
 void cCard::slotSelect()
 {
     int i;
@@ -327,6 +332,17 @@ void cCard::slotSelect()
         }
         break;
     case 1:
+#ifdef RE4_PORT
+        if (port_card_direct() > -2) {   // chargement direct (menu titre de Nightjar) : carte A, sans ecran de choix
+            slot = 0;
+            mode = 1;
+            step = 0;
+            sub = 0;
+            sub2 = 0;
+            formatted = 0;
+            break;
+        }
+#endif
         if (pG->dev_mode == 1) {
             if (Key.trg & KEY_DOWN) {
                 slot = 2;
@@ -549,6 +565,25 @@ void cCard::dataSelect()
     }
         // fallthrough
     case 1:
+#ifdef RE4_PORT
+        if (type == 0 && port_card_direct() > -2) {   // chargement direct : la sauvegarde demandee (-1 : la plus recente,
+            const int d = port_card_direct();         // choisie au pas 0), sans confirmation
+            port_card_direct_set(-2);
+            if (d >= 0 && d < 20) {
+                fileNo = d;
+            }
+            if ((slotw[slot].fileFlag[fileNo] & 1) && !(slotw[slot].fileFlag[fileNo] & 2)) {
+                mode = 3;
+                step = 0;
+                sub = 0;
+                sub2 = 0;
+                pG->save_no = fileNo;
+                pG->card_serial = slotw[slot].serial;
+                deleteAllMes();
+                break;
+            }
+        }
+#endif
         if (g_id->action != 0) {
             break;
         }

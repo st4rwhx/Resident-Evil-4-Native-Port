@@ -443,6 +443,52 @@ OSTime OSGetTime(void)
 
 OSTick OSGetTick(void) { return (OSTick)OSGetTime(); }
 
+// Calendrier (18/11) : etaient des souches vides -> date des sauvegardes = memoire non initialisee, et le choix de la
+// sauvegarde la plus recente (cCard::dataSelect compare OSCalendarTimeToTicks) au hasard. OSGetTime compte depuis le
+// lancement : on l'ancre sur l'heure reelle relevee au premier appel (meme t0 que OSGetTime a 1 s pres).
+static double wall_at_zero()
+{
+    static double w0 = -1.0;
+    if (w0 < 0.0) {
+        timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        w0 = (double) ts.tv_sec + ts.tv_nsec * 1e-9 - (double) OSGetTime() / 40500000.0;
+    }
+    return w0;
+}
+
+void OSTicksToCalendarTime(OSTime ticks, OSCalendarTime *td)
+{
+    const double t = wall_at_zero() + (double) ticks / 40500000.0;
+    const time_t s = (time_t) t;
+    tm lt{};
+    localtime_r(&s, &lt);
+    td->sec = lt.tm_sec;
+    td->min = lt.tm_min;
+    td->hour = lt.tm_hour;
+    td->mday = lt.tm_mday;
+    td->mon = lt.tm_mon;
+    td->year = lt.tm_year + 1900;
+    td->wday = lt.tm_wday;
+    td->yday = lt.tm_yday;
+    td->msec = (int) ((t - (double) s) * 1000.0);
+    td->usec = 0;
+}
+
+OSTime OSCalendarTimeToTicks(OSCalendarTime *td)
+{
+    tm lt{};
+    lt.tm_sec = td->sec;
+    lt.tm_min = td->min;
+    lt.tm_hour = td->hour;
+    lt.tm_mday = td->mday;
+    lt.tm_mon = td->mon;
+    lt.tm_year = td->year - 1900;
+    lt.tm_isdst = -1;
+    const double s = (double) mktime(&lt) + td->msec / 1000.0;
+    return (OSTime) ((s - wall_at_zero()) * 40500000.0);
+}
+
 // ---------------------------------------------------------------- sections critiques
 
 // Il n'y a pas d'interruptions a masquer : le portage est mono-flux tant que l'ordonnanceur

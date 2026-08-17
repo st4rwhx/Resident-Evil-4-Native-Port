@@ -562,6 +562,32 @@ int titleLevelSelect(TitleWork* w)
     return 0;
 }
 
+#ifdef RE4_PORT
+// Menu titre de Nightjar (18/11) : l'appli tient le titre (port/arm_hooks.cpp port_title_app) ; le jeu attend sa commande au
+// lieu de lire son propre menu, et rend le meme code de choix que titleMenuSelect (1 commencer, 5 options).
+extern "C" int port_title_app(void);
+extern "C" int port_title_cmd_take(int* slot);
+extern "C" void port_title_waiting_set(int v);
+extern "C" void port_title_choice_set(int choice);
+extern "C" void port_card_direct_set(int n);
+static int portTitleAppSelect(TitleWork* w)
+{
+    int slot = -1;
+    int sel = 0;
+    (void) w;
+    port_title_waiting_set(1);
+    switch (port_title_cmd_take(&slot)) {
+    case 1: port_title_choice_set(1); port_card_direct_set(-1); sel = 1; break;    // continuer
+    case 2: port_title_choice_set(2); port_card_direct_set(-2); sel = 1; break;    // nouvelle partie
+    case 3: port_title_choice_set(1); port_card_direct_set(-2); sel = 1; break;    // ecran de chargement du jeu
+    case 4: port_title_choice_set(1); port_card_direct_set(slot); sel = 1; break;  // charger la sauvegarde `slot`
+    case 5: sel = 5; break;                                                         // options du jeu
+    }
+    if (sel) port_title_waiting_set(0);
+    return sel;
+}
+#endif
+
 void titleMain(TitleWork* w)
 {
     static int demo_loop_cnt = 0;
@@ -575,11 +601,20 @@ void titleMain(TitleWork* w)
     switch (w->step) {
     case 0:
         titleMenuInit(w);
+#ifdef RE4_PORT
+        if (port_title_app()) {
+            IdSys.kill(0xFF, ID_MENU);   // le menu du jeu disparait : celui de Nightjar le remplace
+        }
+#endif
         w->step = 1;
         demo_loop_cnt = 600;
         break;
     case 1: {
+#ifdef RE4_PORT
+        int sel = port_title_app() ? portTitleAppSelect(w) : titleMenuSelect(w);
+#else
         int sel = titleMenuSelect(w);
+#endif
         BitOff(pG->flags_54, 0x80000000);
         BitOff(pG->flags_54, 0x40000000);
         switch (sel) {
@@ -638,7 +673,11 @@ void titleMain(TitleWork* w)
             SndCall(0, 0x33, 0, 0, 0, 0);
             break;
         }
+#ifdef RE4_PORT
+        if (w->step == 1 && !(pG->flags_54 & 8) && !port_title_app()) {   // pas de demonstration sous le menu de Nightjar
+#else
         if (w->step == 1 && !(pG->flags_54 & 8)) {
+#endif
             if (Key.trg & (KEY_UP | KEY_DOWN)) {
                 demo_loop_cnt = 600;
             }

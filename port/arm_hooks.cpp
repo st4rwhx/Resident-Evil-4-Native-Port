@@ -91,6 +91,32 @@ extern "C" unsigned port_start_room(void)
 // sinon nouvelle partie (salle 0x120, cinematique d'ouverture, comme le jeu commercial).
 static int g_title_choice = -1;
 extern "C" void port_title_choice_set(int choice) { g_title_choice = choice; }
+
+// Menu titre de Nightjar (18/11) : NJ_TITLE_APP=1 (pose par l'appli au lancement du coeur) -> le jeu n'affiche plus son
+// menu titre et attend une commande de l'appli (NJ_MSG_TITLE, port/njlink.cpp) : 1 continuer (sauvegarde la plus
+// recente), 2 nouvelle partie, 3 ecran de chargement du jeu, 4 charger la sauvegarde `slot`, 5 options du jeu.
+static volatile int g_title_cmd = 0, g_title_slot = -1;
+static volatile int g_title_waiting = 0;
+static int g_card_direct = -2;   // chargement direct : -2 aucun, -1 la plus recente, n = sauvegarde n (bh4_data0n)
+extern "C" int port_title_app(void)
+{
+    static const char *e = getenv("NJ_TITLE_APP");
+    return e && e[0] == '1';
+}
+extern "C" void port_title_cmd_set(int cmd, int slot) { g_title_slot = slot; g_title_cmd = cmd; }
+extern "C" int port_title_cmd_take(int *slot)
+{
+    const int c = g_title_cmd;
+    if (c) {
+        *slot = g_title_slot;
+        g_title_cmd = 0;
+    }
+    return c;
+}
+extern "C" void port_title_waiting_set(int v) { g_title_waiting = v; }
+extern "C" int port_title_waiting(void) { return g_title_waiting; }
+extern "C" int port_card_direct(void) { return g_card_direct; }
+extern "C" void port_card_direct_set(int n) { g_card_direct = n; }
 extern "C" int port_room_menu(void)
 {
     static const char *e = getenv("RE4_ROOM_MENU");

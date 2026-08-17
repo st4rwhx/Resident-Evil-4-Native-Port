@@ -16,6 +16,8 @@ enum {
     NJ_MSG_PAD = 16,     // appli -> coeur : data = NjPad ; a = acceleration « Wiimote » en milliemes de g (commandes Wii, 0 = aucune)
     NJ_MSG_RELEASE = 17, // appli -> coeur : a = emplacement qu'elle n'affiche plus
     NJ_MSG_QUIT = 18,    // appli -> coeur
+    NJ_MSG_TITLE = 21,   // appli -> coeur : menu titre de Nightjar ; a = commande (1 continuer, 2 nouvelle partie, 3 ecran de
+                         // chargement, 4 charger la sauvegarde b, 5 options du jeu)
     NJ_MSG_PAUSE = 20,   // appli -> coeur : a = 1 pause (menu Nightjar ouvert), 0 reprise
     NJ_MSG_CASE = 19,    // appli -> coeur : mallette au doigt ; a = 1 curseur (data : int32 i, j), 2 piece en main (data : f32 x, y) ; b = grille
 };
@@ -28,7 +30,7 @@ enum {
     NJS_DEATH = 1u << 4, NJS_DEATH_CONTINUE = 1u << 5, NJS_INVENTORY = 1u << 6, NJS_MAP = 1u << 7,
     NJS_BINOCULARS = 1u << 8, NJS_TITLE_MENU = 1u << 9, NJS_WIDE = 1u << 10, NJS_PLAYER = 1u << 11,
     NJS_AIMING = 1u << 12, NJS_ASHLEY = 1u << 13, NJS_AIM_TARGET = 1u << 14, NJS_HAND = 1u << 15,
-    NJS_CHOICE_VERTICAL = 1u << 16,
+    NJS_CHOICE_VERTICAL = 1u << 16, NJS_TITLE_WAIT = 1u << 17,   // 17 : le titre attend une commande du menu de Nightjar
 };
 
 typedef struct NjBoard {   // planche de la mallette (pzlBoard) : l'appli la projette elle-meme a l'ecran

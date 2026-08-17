@@ -104,6 +104,10 @@ bool send_msg(const NjMsg& m, int fence)
 // (la sortie joue du silence quand le jeu ne livre plus de tampons).
 volatile bool g_app_pause = false;
 
+}  // namespace
+extern "C" void port_title_cmd_set(int cmd, int slot);   // port/arm_hooks.cpp : menu titre de Nightjar
+namespace {
+
 // Messages de l'appli, sans attendre.
 void poll_host()
 {
@@ -135,6 +139,9 @@ void poll_host()
             break;
         case NJ_MSG_PAUSE:
             g_app_pause = m.a != 0;
+            break;
+        case NJ_MSG_TITLE:
+            port_title_cmd_set((int) m.a, (int) (int32_t) m.b);
             break;
         default:
             break;
