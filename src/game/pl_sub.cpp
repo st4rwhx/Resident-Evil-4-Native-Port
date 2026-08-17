@@ -70,8 +70,22 @@ void PlSelect(int no)
     BitOn16(pG->flags_4FBE, 1);
 }
 
+#ifdef RE4_PORT
+extern "C" int port_knob(const char* name, int def);   // port/studio.cpp : reglage en direct
+#endif
+
 int PlSetCostume()
 {
+#ifdef RE4_PORT
+    {   // garde-robe (18/11) : reglage « costume » (Studio `reglage costume N`, -1 = choix du jeu) ; Leon seulement
+        const int forced = port_knob("costume", -1);
+        if (forced >= 0 && forced <= 3 && pG->x4FB8 == 0) {
+            U8Set(pG->costume, (u8) forced);
+            BitOn16(pG->flags_4FBE, 1);
+            return pG->costume;
+        }
+    }
+#endif
     if ((s32) pG->flags_54 < 0 || (pG->flags_54 & 0x40000000)) {
         return pG->costume;
     }
