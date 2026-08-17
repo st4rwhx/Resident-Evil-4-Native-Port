@@ -1301,7 +1301,7 @@ static const char* flrAtTitleName[3] = {"SE DATA EDIT", "BGM DATA EDIT", NULL};
 
 void ToolFlrAt()
 {
-    FlrAtWork*& wp = flrAtWk.p;
+    P32<FlrAtWork>& wp = flrAtWk.p;
 
     wp = (FlrAtWork*) Debug_alloc(sizeof(FlrAtWork), 1);
     flrAtInit();

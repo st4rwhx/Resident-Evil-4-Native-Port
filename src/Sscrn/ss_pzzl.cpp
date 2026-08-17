@@ -133,6 +133,15 @@ int remarkMsgCombine(int a, int b, int* no);
 int itemCommandType(ItemWork* item);
 }
 static void setCommandId(u8 type, IdUnit** tbl, s8* num, int lang);
+#if PORT_P64   // N7 : tableau de champs P32 -> tableau ordinaire le temps de l'appel
+static void setCommandId(u8 type, P32<IdUnit>* tbl, s8* num, int lang)
+{
+    IdUnit* t[16];
+    for (int i = 0; i < 16; i++) t[i] = tbl[i];
+    setCommandId(type, t, num, lang);
+    for (int i = 0; i < 16; i++) tbl[i] = t[i];
+}
+#endif
 
 static int sscrn_pzzl_out(SUB_SCREEN* wk);
 

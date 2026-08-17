@@ -3094,7 +3094,7 @@ static void plem39_KnifeHit(cPlayer* pl)
         pl->xFE++;
     case 1:
         EmCatchMotionMove(pl, 0.3f, 0.2f);
-        if (!EM_RTN((cEm*) pPL->dmgType, 1, 0x1B)) {
+        if (!EM_RTN((cEm*) port_ptr64(pPL->dmgType), 1, 0x1B)) {
             goto END;
         }
         pl->xFE = ((cEm*)port_ptr64(pl->dmgType))->xFE;
@@ -3404,7 +3404,7 @@ static void em39_R1_Knife4Atk(cEm39* em)
 // Player side of Knife4Atk: follow the catch motion until the enemy leaves routine 0x1C.
 #define PLEM39_K4_WAIT(pl)                                                                          \
     EmCatchMotionMove(pl, 0.3f, 0.2f);                                                             \
-    if (!EM_RTN((cEm*) pPL->dmgType, 1, 0x1C)) {                                                   \
+    if (!EM_RTN((cEm*) port_ptr64(pPL->dmgType), 1, 0x1C)) {                                                   \
         EndPlDamage();                                                                             \
         (pl)->dmg.set(0, 0x1E);                                                                    \
     }                                                                                              \

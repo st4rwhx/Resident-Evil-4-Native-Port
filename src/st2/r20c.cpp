@@ -200,8 +200,8 @@ static void R20cEmSetMain()
     SceSleep(1);
     r20c_work.p->em[4].setEm(0xD6, -1, 0, 1, 1);
     R20cExecCageEmResetSub(0);
-    getRoomEtcDoor(0xD, &door0, 1);
-    getRoomEtcDoor(0xE, &door1, 1);
+    getRoomEtcDoor(0xD, port_out(door0), 1);
+    getRoomEtcDoor(0xE, port_out(door1), 1);
     if (door0) {
         ((cEmDoor*) door0)->setDowned(0);
     }
@@ -218,8 +218,8 @@ void R20cExecCageUp()
     cEm* door1;
 
     obj = SmdGetObjPtr(6);
-    getRoomEtcDoor(0xD, &door0, 1);
-    getRoomEtcDoor(0xE, &door1, 1);
+    getRoomEtcDoor(0xD, port_out(door0), 1);
+    getRoomEtcDoor(0xE, port_out(door1), 1);
     if (obj) {
         r20c_work.p->cageY = obj->pos.y;
         SetPosXYZ(obj, obj->pos.x, obj->pos.y + 4000.0f, obj->pos.z);
@@ -254,8 +254,8 @@ void R20cExecCageDown(int lock)
     }
     pG->flags_174 |= 0x80000000;
     obj = SmdGetObjPtr(6);
-    getRoomEtcDoor(0xD, &door0, 1);
-    getRoomEtcDoor(0xE, &door1, 1);
+    getRoomEtcDoor(0xD, port_out(door0), 1);
+    getRoomEtcDoor(0xE, port_out(door1), 1);
     if (obj) {
         SetPosXYZ(obj, obj->pos.x, r20c_work.p->cageY, obj->pos.z);
     }
@@ -294,8 +294,8 @@ static void R20cExecCageMain()
     int k;
 
     obj = SmdGetObjPtr(6);
-    getRoomEtcDoor(0xD, &door0, 1);
-    getRoomEtcDoor(0xE, &door1, 1);
+    getRoomEtcDoor(0xD, port_out(door0), 1);
+    getRoomEtcDoor(0xE, port_out(door1), 1);
     if (RsfCheck(G_ROOM_ID, 3) == 0) {
         RsfSet(G_ROOM_ID, 3);
         SceAtSetEnable(3, 0);
@@ -578,7 +578,7 @@ void R20cExecShootInit()
         cEm* barred;
         cObj* obj;
 
-        getRoomEtcBarred(0, &barred, 1);
+        getRoomEtcBarred(0, port_out(barred), 1);
         if (barred) {
             ((cEmBarred*) barred)->setClosed();
         }
@@ -650,7 +650,7 @@ static void R20cDoorOpenMain()
             SceSleep(1);
         }
         CamCtrl.CutCall(0xC);
-        getRoomEtcBarred(0, &barred, 1);
+        getRoomEtcBarred(0, port_out(barred), 1);
         if (barred) {
             ((cEmBarred*) barred)->setOpen(0);
         }
@@ -664,7 +664,7 @@ static void R20cDoorOpenCancel(int mode)
 {
     cEm* barred;
 
-    getRoomEtcBarred(0, &barred, 1);
+    getRoomEtcBarred(0, port_out(barred), 1);
     if (barred) {
         ((cEmBarred*) barred)->setOpened();
     }

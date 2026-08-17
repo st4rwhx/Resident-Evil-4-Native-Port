@@ -2184,7 +2184,7 @@ void em10BloodSet(cEm10* em, int near)
                 EspSeqData* est = EspGetEstAddr(0x10, 0x88, 1);
                 if (est) {
                     for (i = 0; i < est->num; i++) {
-                        if (EspEstSetSelect(0x10, 0x88, i, &esp, 0)) {
+                        if (EspEstSetSelect(0x10, 0x88, i, port_out(esp), 0)) {
                             esp->pos = pos;
                             esp->parent = em->getPartsPtr(part->partsNo - 1);
                             PSMTXInverse(((cModel*) esp->parent)->mat, m);
@@ -2923,8 +2923,8 @@ void em10InitRtnSet(cEm10* em)
     w->x6C4 = 0;
     w->x594 = 0;
     for (i = 0; i < 3; i++) {
-        void** mot0 = &w->evtMot[0];
-        void** mot4 = &w->evtMot[4];
+        P32<void>* mot0 = &w->evtMot[0];
+        P32<void>* mot4 = &w->evtMot[4];
         mot0[i] = 0;
         mot4[i] = 0;
     }
@@ -12637,7 +12637,7 @@ static void plem10_Bombhold(cPlayer* pl)
         pl->xFE++;
     case 1:
         EmCatchMotionMove(pl, 0.3f, 0.2f);
-        if (!EM_RTN((cEm*) pPL->dmgType, 1, 0x38)) {
+        if (!EM_RTN((cEm*) port_ptr64(pPL->dmgType), 1, 0x38)) {
             pl->pWep->setTrans(1, 0);
             EndPlDamage();
             pl->dmg.set(0, 0x1E);
@@ -18757,7 +18757,7 @@ extern "C" int em10WindowCk2(cEm10* em)
     b.z = 1000.0f;
     PSMTXMultVec(em->mat, &a, &a);
     PSMTXMultVec(em->mat, &b, &b);
-    if (!ChkWindow(em, &a, &b, 1, &status, &dir, &pos, &w->pWindow)) {
+    if (!ChkWindow(em, &a, &b, 1, &status, &dir, &pos, port_out(w->pWindow))) {
         return 0;
     }
     if (!w->pWindow->ChkEnableDamage()) {
@@ -23175,7 +23175,7 @@ static void plemDmFrame(cPlayer* pl)
 
 static void plem10DmGondolaShake(cPlayer* pl)
 {
-    Em10Work* w = EM10_WK((cEm10*) pPL->dmgType);
+    Em10Work* w = EM10_WK((cEm10*) port_ptr64(pPL->dmgType));
     cEm* em = (cEm*)port_ptr64(pl->dmgType);
 
     pl->subArc = em->subArc;

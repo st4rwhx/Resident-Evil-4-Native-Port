@@ -129,7 +129,7 @@ TexRenderMng* Ctrl12GetTexRenderEm2b(cCtrl* c)
     w = (Ctrl12Work*) c->work;
     t = w->tex2b;
     if (t == 0) {
-        GetTexRenderMgr(&w->tex2b);
+        GetTexRenderMgr(port_out(w->tex2b));
         if (w->tex2b != 0) {
             EstSet(0, -1, 0, 0, 1, 0x42, w->tex2b->mask | 1, 0, (u32)(uintptr_t)(t), t);
         }
@@ -149,7 +149,7 @@ TexRenderMng* Ctrl12GetTexRenderEm2c(cCtrl* c)
     }
     w = (Ctrl12Work*) c->work;
     if (w->tex2c == 0) {
-        GetTexRenderMgr(&w->tex2c);
+        GetTexRenderMgr(port_out(w->tex2c));
     }
     return w->tex2c;
 }
@@ -166,7 +166,7 @@ TexRenderMng* Ctrl12GetTexRenderEm32(cCtrl* c)
     }
     w = (Ctrl12Work*) c->work;
     if (w->tex32 == 0) {
-        GetTexRenderMgr(&w->tex32);
+        GetTexRenderMgr(port_out(w->tex32));
     }
     return w->tex32;
 }

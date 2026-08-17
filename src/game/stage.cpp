@@ -319,13 +319,13 @@ void subMissionSt1()
         }
         if (pG->x4 != 0) {
             if (G_ROOM_ID == ((SubMissionTarget*)port_ptr64(((u32)(uintptr_t)(t0) + ofs)))->room1 && !(*p1 & 1)) {
-                if (getRoomEtcItem(t->no, &item, 1)) {
+                if (getRoomEtcItem(t->no, port_out(item), 1)) {
                     item->flags &= ~2;
                     pCoin = item;
                 }
             }
             if (G_ROOM_ID == t->room2 && !(*p2 & 1)) {
-                if (getRoomEtcItem(t->no, &item, 1)) {
+                if (getRoomEtcItem(t->no, port_out(item), 1)) {
                     item->flags &= ~2;
                     pCoin = item;
                 }

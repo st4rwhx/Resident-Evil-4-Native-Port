@@ -186,13 +186,13 @@ void R11cInit()
             W->ladder[3]->setDowned();
         }
     }
-    if (getRoomEtcRack(0, &rack, 1)) {
+    if (getRoomEtcRack(0, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 0.0f, 0.0f, 10000.0f);
     }
-    if (getRoomEtcRack(1, &rack, 1)) {
+    if (getRoomEtcRack(1, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 10000.0f, 0.0f, 10000.0f);
     }
-    if (getRoomEtcRack(2, &rack, 1)) {
+    if (getRoomEtcRack(2, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 10000.0f, 0.0f, 10000.0f);
     }
     if (!(pG->flags_51BC & 0x00020000)) {
@@ -253,7 +253,7 @@ void R11cInit()
         stockDataAdd(merchantData, stock_r11c);
     }
     merchantChar.setChar(&merchant_info_A, merchantData, g_item_price_tbl, g_item_price_tbl, level_price);
-    TexRenderInit(&W->tex, 0, 2);
+    TexRenderInit(port_out(W->tex), 0, 2);
     CamCtrl.AreaOnOff(1, 0, 0);
 }
 
@@ -263,16 +263,16 @@ void R11cMain()
     cEm* ladder;
 
     if (r11c_save()->flags & 0x02000000) {
-        if (getRoomEtcLadder(6, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
+        if (getRoomEtcLadder(6, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
             r11c_save()->flags |= 0x01000000;
         }
-        if (getRoomEtcLadder(7, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
+        if (getRoomEtcLadder(7, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
             r11c_save()->flags |= 0x00800000;
         }
-        if (getRoomEtcLadder(8, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
+        if (getRoomEtcLadder(8, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
             r11c_save()->flags |= 0x00400000;
         }
-        if (getRoomEtcLadder(9, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
+        if (getRoomEtcLadder(9, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 0) {
             r11c_save()->flags |= 0x00200000;
         }
     }
@@ -309,7 +309,7 @@ static void r11c_EventBesiegedStart()
         EmMgr.destroy(pSUB);
         pG->flags_5018 &= ~0x04000000;
     }
-    if (getRoomEtcDoor(0xA, &door, 1)) {
+    if (getRoomEtcDoor(0xA, port_out(door), 1)) {
         door->setNoSuspend(0);
         cEmDoorSetCloseLock(door);
     }
@@ -419,25 +419,25 @@ static void r11c_EventBesiegedStart()
     EffectEspgenDelete(0, 2, 0);
     EffectEfmDelete(0, 2, 0);
     setFire();
-    if (getRoomEtcWindow(3, &win, 1)) {
+    if (getRoomEtcWindow(3, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
-    if (getRoomEtcWindow(4, &win, 1)) {
+    if (getRoomEtcWindow(4, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
-    if (getRoomEtcWindow(5, &win, 1)) {
+    if (getRoomEtcWindow(5, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
-    if (getRoomEtcWindow(0x12, &win, 1)) {
+    if (getRoomEtcWindow(0x12, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
-    if (getRoomEtcWindow(0x13, &win, 1)) {
+    if (getRoomEtcWindow(0x13, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
-    if (getRoomEtcWindow(0x14, &win, 1)) {
+    if (getRoomEtcWindow(0x14, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
-    if (getRoomEtcWindow(0x15, &win, 1)) {
+    if (getRoomEtcWindow(0x15, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 1);
     }
     n = 0;
@@ -514,16 +514,16 @@ static void r11c_EventBesiegedStart()
         if (t == 3600) {
             r11c_save()->flags |= 0x02000000;
             W->ashley->x38D = 2;
-            if (getRoomEtcLadder(6, &ladder, 1)) {
+            if (getRoomEtcLadder(6, port_out(ladder), 1)) {
                 ((cObjLadder*) ladder)->setOn();
             }
-            if (getRoomEtcLadder(7, &ladder, 1)) {
+            if (getRoomEtcLadder(7, port_out(ladder), 1)) {
                 ((cObjLadder*) ladder)->setOn();
             }
-            if (getRoomEtcLadder(8, &ladder, 1)) {
+            if (getRoomEtcLadder(8, port_out(ladder), 1)) {
                 ((cObjLadder*) ladder)->setOn();
             }
-            if (getRoomEtcLadder(9, &ladder, 1)) {
+            if (getRoomEtcLadder(9, port_out(ladder), 1)) {
                 ((cObjLadder*) ladder)->setOn();
             }
         }
@@ -591,28 +591,28 @@ static void r11c_EventBesiegedStart()
         EmSetFromList2(0xC8, 0);
     }
     CamCtrl.AreaOnOff(1, 0, 0);
-    if (getRoomEtcDoor(0xA, &door2, 1)) {
+    if (getRoomEtcDoor(0xA, port_out(door2), 1)) {
         ((cEmDoor*) door2)->setNormal();
     }
-    if (getRoomEtcWindow(3, &win2, 1)) {
+    if (getRoomEtcWindow(3, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
-    if (getRoomEtcWindow(4, &win2, 1)) {
+    if (getRoomEtcWindow(4, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
-    if (getRoomEtcWindow(5, &win2, 1)) {
+    if (getRoomEtcWindow(5, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
-    if (getRoomEtcWindow(0x12, &win2, 1)) {
+    if (getRoomEtcWindow(0x12, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
-    if (getRoomEtcWindow(0x13, &win2, 1)) {
+    if (getRoomEtcWindow(0x13, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
-    if (getRoomEtcWindow(0x14, &win2, 1)) {
+    if (getRoomEtcWindow(0x14, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
-    if (getRoomEtcWindow(0x15, &win2, 1)) {
+    if (getRoomEtcWindow(0x15, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableFence(1, 1);
     }
     if (W->ladder[0]) {
@@ -1250,7 +1250,7 @@ extern "C" void Evt_R11CS20_Func(Event* e)
 
     switch (e->funcMode) {
     case 0:
-        if (getRoomEtcDoor(0xA, &door, 1)) {
+        if (getRoomEtcDoor(0xA, port_out(door), 1)) {
             door->setNoSuspend(1);
         }
         setRoomEtcDisp(0xA, 1, 1);
@@ -1291,7 +1291,7 @@ extern "C" void Evt_R11CS20_Func(Event* e)
         }
         break;
     case 2:
-        if (getRoomEtcDoor(0xA, &door, 1)) {
+        if (getRoomEtcDoor(0xA, port_out(door), 1)) {
             door->setNoSuspend(0);
         }
         setRoomEtcDisp(0xA, 1, 1);

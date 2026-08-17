@@ -424,7 +424,7 @@ int SceExecCheckCondition_sub(SceCond* c)
         }
         break;
     case 4:
-        if (getRoomEtcBreak(c->param, &em, 1) == 1 && em->hp <= 0) {
+        if (getRoomEtcBreak(c->param, port_out(em), 1) == 1 && em->hp <= 0) {
             return 1;
         }
         break;

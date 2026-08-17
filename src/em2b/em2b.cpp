@@ -4175,7 +4175,7 @@ void em2bClothSet(cEm2b* em)
         // block (the two "=m" keep-alives name fields the block does not store), else the dying stores
         // are issued first. The 0.0 is expanded after 0.8 for the pool order.
         zero = 0;
-        w->cloth.x54 = (cModel**)port_ptr64(zero);
+        w->cloth.x54 = (P32<cModel>*)port_ptr64(zero);
         num = 10;
         w->cloth.num = num;
         parts = em2b_cloth_parts;
@@ -4605,7 +4605,7 @@ void em2bShortRopeSet(cEm2b* em)
     w->pObj4C4 = (cObj*) chain;
     w->rope[1].num = five;
     zero = 0;
-    w->rope[1].x54 = (cModel**)port_ptr64(zero);
+    w->rope[1].x54 = (P32<cModel>*)port_ptr64(zero);
     w->rope[1].x08 = (const u8*)port_ptr64(zero);
     w->rope[1].x0C = (const u8*)port_ptr64(zero);
     w->rope[1].x10 = (const u8*)port_ptr64(zero);

@@ -363,7 +363,7 @@ static void r20d_checkSwitch(int opened)
     int open;
     f32 zero;
 
-    getRoomEtcSwitch(0xF, &sw, 1);
+    getRoomEtcSwitch(0xF, port_out(sw), 1);
     if (sw == 0) {
         SceExit();
     }

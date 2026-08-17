@@ -58,7 +58,7 @@ void R20aInit()
 #line 42 "D:/Bio4/Prog/r20a.cpp"
     r20a_work.p = (R20aWork*) MEM_CALLOC(sizeof(R20aWork), 1, 0xd);
     if (RsfCheck(G_ROOM_ID, 0) == 0) {
-        if (getRoomEtcDoor(0x11, &r20a_work.p->door, 1) == 0) {
+        if (getRoomEtcDoor(0x11, port_out(r20a_work.p->door), 1) == 0) {
             r20a_work.p->door = NULL;
         } else {
             cEmDoorSetCloseLock(r20a_work.p->door);
@@ -193,7 +193,7 @@ void setTexRender()
     cObj* obj;
     u8* tbl = r20a_texTbl;
 
-    if (GetTexRenderMgr(&r20a_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r20a_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;
@@ -253,7 +253,7 @@ static void r20a_DoorLock()
 {
     cEm* door;
 
-    if (getRoomEtcDoor(0xB, &door, 1)) {
+    if (getRoomEtcDoor(0xB, port_out(door), 1)) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x21), ROOM_ARC_PTR(pG->pRoomArc, 0x22), 0, 0);
     }
     if (door) {

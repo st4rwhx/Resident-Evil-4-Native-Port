@@ -83,7 +83,7 @@ void R20fInit()
     cObj* obj0;
     cObj* obj1;
 
-    R20fWork*& wp = r20f_work.p;
+    P32<R20fWork>& wp = r20f_work.p;
 #line 45 "D:/Bio4/Prog/r20f.cpp"
     wp = (R20fWork*) MEM_CALLOC(sizeof(R20fWork), 1, 0xd);
     Vec pos = {0.0f, 0.0f, 0.0f};
@@ -101,7 +101,7 @@ void R20fInit()
     if (checkEmListNo(G_ROOM_ID) == 4 && (pG->em_dead[3][6] & 0x10)) {
         EmListSetAlive(0xF, 0);
     }
-    getRoomEtcDoor(0xF, &door, 1);
+    getRoomEtcDoor(0xF, port_out(door), 1);
     if (door) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, 0);
     }

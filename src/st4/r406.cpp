@@ -155,7 +155,7 @@ static void r406_checkRockWall()
     Vec pos = {9293.0f, -6600.0f, 8202.0f};
     cEm* dram;
 
-    if (getRoomEtcDram(0x12, &dram, 1)) {
+    if (getRoomEtcDram(0x12, port_out(dram), 1)) {
         pos = dram->pos;
     }
     {
@@ -350,7 +350,7 @@ void setTexRender()
     cObj* obj;
     u8* tbl = r406_texTbl;
 
-    if (GetTexRenderMgr(&r406_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r406_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

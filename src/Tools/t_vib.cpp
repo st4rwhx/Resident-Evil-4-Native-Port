@@ -128,7 +128,7 @@ void ToolVibEdit()
 
 void tvibInit()
 {
-    TvibWork*& wp = tvib.p;
+    P32<TvibWork>& wp = tvib.p;
 
     TaskSuspend(0);
     TaskSleep(1);

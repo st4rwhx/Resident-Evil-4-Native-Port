@@ -152,29 +152,29 @@ void R101Init()
     EvtMgr.SetFunc("evt_r101s21_func", (void*) Evt_R101S21_Func);
     EvtMgr.SetFunc("evt_r101s30_func", (void*) Evt_R101S30_Func);
     EatMgr.registEffInfo(4, (AtEffInfo*) &r101_eff_info);
-    if (getRoomEtcDoor(0xB, &door, 1)) {
+    if (getRoomEtcDoor(0xB, port_out(door), 1)) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x1E), ROOM_ARC_PTR(pG->pRoomArc, 0x1F), 0, 0);
     }
-    if (getRoomEtcRack(0xD, &rack, 1)) {
+    if (getRoomEtcRack(0xD, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 1000.0f, 0.0f, 2000.0f);
     }
-    if (getRoomEtcRack(0xF, &rack, 1)) {
+    if (getRoomEtcRack(0xF, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(2000.0f, 2000.0f, 0.0f, 2600.0f);
     }
-    if (getRoomEtcRack(0x11, &rack, 1)) {
+    if (getRoomEtcRack(0x11, port_out(rack), 1)) {
         FSet(rack->pos.x, 6656.0f);
         FSet(rack->pos.y, 902.0f);
         FSet(rack->pos.z, 8925.0f);
         ((cEmRack*) rack)->setRange(2000.0f, 800.0f, 0.0f, 4400.0f);
     }
     if (RsfCheck(G_ROOM_ID, 8) == 0) {
-        if (getRoomEtcLadder(5, &r101_work->ladder[0], 1)) {
+        if (getRoomEtcLadder(5, port_out(r101_work->ladder[0]), 1)) {
             ((cObjLadder*) r101_work->ladder[0])->setOff();
         }
-        if (getRoomEtcLadder(6, &r101_work->ladder[1], 1)) {
+        if (getRoomEtcLadder(6, port_out(r101_work->ladder[1]), 1)) {
             ((cObjLadder*) r101_work->ladder[1])->setOff();
         }
-        if (getRoomEtcLadder(7, &r101_work->ladder[2], 1)) {
+        if (getRoomEtcLadder(7, port_out(r101_work->ladder[2]), 1)) {
             ((cObjLadder*) r101_work->ladder[2])->setOff();
         }
     }
@@ -218,10 +218,10 @@ void R101Init()
             } else {
                 EmReadSearch(0x15, 0, r101_work->evt30->size);
             }
-            if (getRoomEtcWindow(0, &win, 1)) {
+            if (getRoomEtcWindow(0, port_out(win), 1)) {
                 ((cEmWindow*) win)->SetEnableDamage(0);
             }
-            if (getRoomEtcWindow(0x13, &win, 1)) {
+            if (getRoomEtcWindow(0x13, port_out(win), 1)) {
                 ((cEmWindow*) win)->SetEnableDamage(0);
             }
             SceAtDataSet_exec(8, 0x12, 0, (TaskFunc) r101_Event20, 0, 2);
@@ -506,10 +506,10 @@ static void r101_Event30()
     SceEventEnd(0);
     SceAtDataReset(0);
     SceAtDataReset(2);
-    if (getRoomEtcWindow(0, &win, 1)) {
+    if (getRoomEtcWindow(0, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableDamage(1);
     }
-    if (getRoomEtcWindow(0x13, &win, 1)) {
+    if (getRoomEtcWindow(0x13, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableDamage(1);
     }
     EmListSetAlive(0x14, 0);
@@ -553,13 +553,13 @@ static void r101_Event30()
     EmListSetAlive(0x45, 0);
     EmListSetAlive(0x46, 0);
     if (RsfCheck(G_ROOM_ID, 8)) {
-        if (getRoomEtcLadder(5, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
+        if (getRoomEtcLadder(5, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
             ((cObjLadder*) ladder)->setStand();
         }
-        if (getRoomEtcLadder(6, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
+        if (getRoomEtcLadder(6, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
             ((cObjLadder*) ladder)->setStand();
         }
-        if (getRoomEtcLadder(7, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
+        if (getRoomEtcLadder(7, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
             ((cObjLadder*) ladder)->setStand();
         }
     }
@@ -591,7 +591,7 @@ static void r101_DoorCk()
 {
     cEm* door;
 
-    if (getRoomEtcDoor(2, &door, 1)) {
+    if (getRoomEtcDoor(2, port_out(door), 1)) {
         door->setNoSuspend(0);
         while (1) {
             if (RsfCheck(G_ROOM_ID, 8)) {
@@ -634,7 +634,7 @@ static void r101_Event20()
     if (r101_work->evt21->waitLoadOk() == 0) {
         fail = 1;
     }
-    if (getRoomEtcRack(0xF, &rack, 1)) {
+    if (getRoomEtcRack(0xF, port_out(rack), 1)) {
         rack->setNoSuspend(0);
         FSet(rack->pos.x, 7201.0f);
         FSet(rack->pos.z, -7280.0f);
@@ -665,7 +665,7 @@ static void r101_Event20()
                     break;
                 }
                 if (em->GetEvt(key, &evt) && ((Event*) evt)->cut == 0xA && ((Event*) evt)->frame == 0x20) {
-                    if (getRoomEtcWindow(0, &win, 1)) {
+                    if (getRoomEtcWindow(0, port_out(win), 1)) {
                         ((cEmWindow*) win)->SetBreakModel();
                     }
                 }
@@ -688,10 +688,10 @@ static void r101_Event20()
     setEm(0x45, -1, 1, 1, 1);
     setEm(0x46, -1, 1, 1, 1);
     r101_work->emNum = diff + SceCountEmAlive(0x10, 0x20);
-    if (getRoomEtcWindow(0, &win, 1)) {
+    if (getRoomEtcWindow(0, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
     }
-    if (getRoomEtcWindow(0x13, &win, 1)) {
+    if (getRoomEtcWindow(0x13, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableDamage(1);
     }
     if (r101_work->ladder[0] != 0) {

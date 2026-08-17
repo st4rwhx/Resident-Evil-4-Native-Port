@@ -122,7 +122,7 @@ void R11dInit()
         r11d_setEmSister();
     }
     if (!(pG->door_unlock[0] & 0x00100000)) {
-        if (getRoomEtcDoor(0x26, &r11d_work->door, 1)) {
+        if (getRoomEtcDoor(0x26, port_out(r11d_work->door), 1)) {
             ((cEmDoor*) r11d_work->door)->setKey(0xB);
         }
         SceAtDataSet_exec(8, 0x12, 0, (TaskFunc) r11d_checkIronDoor, 0, 1);
@@ -146,7 +146,7 @@ void R11dInit()
     AreaGetCenterPos(&pos[1], &SceAtPtr(0x13)->area);
     r11d_work->patrol[4].SetPatrol(0xE7, pos, 2, 0, 0);
     FlrAtSetDefVal(0, 0, 3);
-    if (getRoomEtcLadder(1, &ladder, 1)) {
+    if (getRoomEtcLadder(1, port_out(ladder), 1)) {
         ((cObjLadder*) ladder)->setCamera(0xC);
     }
 }
@@ -273,10 +273,10 @@ static void r11d_execEmAppear_end()
     for (i = 0; i < 9; i++) {
         setEmI(list1[i], -1, 0, 1, 1);
     }
-    if (getRoomEtcLadder(0, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
+    if (getRoomEtcLadder(0, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
         ((cObjLadder*) ladder)->setStand();
     }
-    if (getRoomEtcLadder(0x27, &ladder, 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
+    if (getRoomEtcLadder(0x27, port_out(ladder), 1) && ((cObjLadder*) ladder)->getStatus() == 4) {
         ((cObjLadder*) ladder)->setStand();
     }
 }

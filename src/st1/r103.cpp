@@ -104,7 +104,7 @@ void R103Init()
     SceExec(0x12, (TaskFunc) r103_initCesspit, (int)(uintptr_t)(&r103_cesspit), 0, 2, 0);
     r103_setSubMissionTarget(8);
     EatMgr.registEffInfo(4, (AtEffInfo*) &r103_eff_info);
-    if (getRoomEtcRack(6, &rack, 1)) {
+    if (getRoomEtcRack(6, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 3000.0f, 0.0f, 3000.0f);
     }
     SceSetItemEvent(7, 0x92, 0, 0xA, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r103_shelf0), 0);
@@ -248,7 +248,7 @@ extern "C" void r103_setSubMissionTarget(u32 objNo)
 
     flg = GetEtcFlgPtr(0x13, pG->room_id);
     if (!(*flg & 1)) {
-        if (getRoomEtcItem(0x13, &item, 1)) {
+        if (getRoomEtcItem(0x13, port_out(item), 1)) {
             cObj* obj = SmdGetObjPtr(objNo);
 
             PSVECSubtract(&((cEmItem*) item)->pos, &obj->pos, &((cEmItem*) item)->pos);

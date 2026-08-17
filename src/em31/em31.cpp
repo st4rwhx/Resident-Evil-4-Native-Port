@@ -3714,7 +3714,7 @@ int cEm31::getTotalDamage()
 void em31TailAtkCk(cEm31* em)
 {
     Em31Work* w = EM31_WK(em);
-    cObj16** t;
+    P32<cObj16>* t;
     cObj16* o;
     u8 hit;
     u32 i;

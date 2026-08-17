@@ -107,7 +107,7 @@ void R20bInit()
     EvtMgr.SetFunc("evt_r20bs99_func", (void*) Evt_R20BS00_Func);
     pG->flags_174 &= 0x7FFFFFFF;
     R20bScrTrans(1);
-    if (getRoomEtcDoor(3, &door0, 1) != 0 && getRoomEtcDoor(8, &door1, 1) != 0) {
+    if (getRoomEtcDoor(3, port_out(door0), 1) != 0 && getRoomEtcDoor(8, port_out(door1), 1) != 0) {
         ((cEmDoor*) door0)->setDoor((cEmDoor*) door1);
     }
     if (RsfCheck(G_ROOM_ID, 0) == 0) {
@@ -125,11 +125,11 @@ void R20bInit()
             EmReadSearch((u8) GetEmIdFromListI(0x11), 0, 0);
         }
     }
-    getRoomEtcDoor(6, &door, 1);
+    getRoomEtcDoor(6, port_out(door), 1);
     if (door) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, 0);
     }
-    getRoomEtcDoor(7, &door, 1);
+    getRoomEtcDoor(7, port_out(door), 1);
     if (door) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, 0);
     }
@@ -165,8 +165,8 @@ void R20bInit()
         SceExec(0x12, (TaskFunc) SceBgmCheck, 0, 0, 2, 0);
     }
     setTexRender();
-    TexRenderInit(&r20b_work.p->tex1, 0, 1);
-    TexRenderInit(&r20b_work.p->tex2, 0xE0, 2);
+    TexRenderInit(port_out(r20b_work.p->tex1), 0, 1);
+    TexRenderInit(port_out(r20b_work.p->tex2), 0xE0, 2);
     SmdSetTrans(0xA1, 0);
     SetSstAddAreaFlag(0x800);
     r20b_work.p->str = zero;
@@ -370,7 +370,7 @@ static void R20bEmSetMain()
             if (RsfCheck(G_ROOM_ID, 9) == 0) {
                 RsfSet(G_ROOM_ID, 9);
                 if (r20b_work.p->em[1].isActive() || r20b_work.p->em[2].isActive() || r20b_work.p->em[3].isActive()) {
-                    getRoomEtcDoor(6, &door0, 1);
+                    getRoomEtcDoor(6, port_out(door0), 1);
                     {
                         Vec pos = {17000.0f, 87.0f, -3600.0f};
 
@@ -392,7 +392,7 @@ static void R20bEmSetMain()
             if (RsfCheck(G_ROOM_ID, 11) == 0) {
                 RsfSet(G_ROOM_ID, 11);
                 if (r20b_work.p->em[4].isActive()) {
-                    getRoomEtcDoor(7, &door1, 1);
+                    getRoomEtcDoor(7, port_out(door1), 1);
                     {
                         Vec pos = {-1100.0f, 0.0f, -39000.0f};
 
@@ -511,11 +511,11 @@ static void R20bEmSetMain()
             }
         }
         open = 0;
-        getRoomEtcDoor(6, &door, 1);
+        getRoomEtcDoor(6, port_out(door), 1);
         if (door) {
             open = ((cEmDoor*) door)->ckOpen() == 1;
         }
-        getRoomEtcDoor(7, &door, 1);
+        getRoomEtcDoor(7, port_out(door), 1);
         if (door) {
             if (((cEmDoor*) door)->ckOpen() == 1) {
                 open = 1;
@@ -655,7 +655,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r20b_texTbl;
 
-    if (GetTexRenderMgr(&r20b_work.p->tex0) == 0) {
+    if (GetTexRenderMgr(port_out(r20b_work.p->tex0)) == 0) {
         pLog->err(0, 0, "setTexRender() : Manager alloc failed!!");
     } else {
         tbl[0] = 1;

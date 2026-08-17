@@ -169,7 +169,7 @@ void R213Init()
     PSetSat(r213_work.p->sat[2], SatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 5), 0, &pos, pr, 3));
     r213_work.p->eat[2] = EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 0x12), 0, &r213_satPos, &r213_satRot, 2);
     EvtMgr.SetFunc("evt_r213s00_func", (void*) Evt_R213S00_Func);
-    if (getRoomEtcDoor(0x22, &door0, 1) && getRoomEtcDoor(0x23, &door1, 1)) {
+    if (getRoomEtcDoor(0x22, port_out(door0), 1) && getRoomEtcDoor(0x23, port_out(door1), 1)) {
         ((cEmDoor*) door0)->setDoor((cEmDoor*) door1);
     }
     if (RsfCheck(G_ROOM_ID, 0) == 0) {
@@ -237,7 +237,7 @@ void R213SuInit()
         SceAtSetEnable(0x8C, 0);
         SceAtSetEnable(0x8D, 0);
         SceAtSetEnable(0x8E, 0);
-        if (GetTexRenderMgr(&r213_work.p->tex)) {
+        if (GetTexRenderMgr(port_out(r213_work.p->tex))) {
             tbl[0] = 1;
             tbl[1] = 0;
             tbl[4] = 0xF7;

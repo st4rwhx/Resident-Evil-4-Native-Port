@@ -114,7 +114,7 @@ void R223Init()
     f32 h;
 
 #line 67 "D:/Bio4/Prog/r223.cpp"
-    R223Work*& wp = r223_work.p;
+    P32<R223Work>& wp = r223_work.p;
     wp = (R223Work*) MEM_CALLOC(sizeof(R223Work), 1, 0xD);
     BitOn(pG->flags_64, 0x20000);
     if (pG->x4F9F == 1) {

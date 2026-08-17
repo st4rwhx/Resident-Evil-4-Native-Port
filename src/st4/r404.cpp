@@ -630,7 +630,7 @@ void r404_checkEmSetG()
 {
     cEm* door;
 
-    getRoomEtcDoor(0x11, &door, 1);
+    getRoomEtcDoor(0x11, port_out(door), 1);
     if (door != 0 && r404_work.p->cnt <= 0xF) {
         if (SceAtHitCheck(0x11) == 1 || (SceAtHitCheck(0x15) == 1 && ((cEmDoor*) door)->ckOpen() == 1)) {
             r404_setEm9();
@@ -713,7 +713,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r404_texTbl;
 
-    if (GetTexRenderMgr(&r404_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r404_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

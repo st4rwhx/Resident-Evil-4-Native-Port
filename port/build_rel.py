@@ -161,6 +161,10 @@ def main():
     only = set(x for x in args.only.split(',') if x)
     if only:
         names = [n for n in names if n in only]
+    if abi in ('x86_64', 'arm64') and not os.environ.get('PORT_REL_OUTILS'):
+        # N7 (18/11) : 1er jalon 64 bits sans les outils de debug de Capcom (éditeurs t_*, Tools : menu L+START seulement ;
+        # db_light.cpp appartient à une autre session). PORT_REL_OUTILS=1 les remet.
+        names = [n for n in names if not (n.startswith('t_') or n == 'Tools')]
 
     os.makedirs(args.out, exist_ok=True)
     objdir = os.path.join(args.out, 'obj')

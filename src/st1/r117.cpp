@@ -165,7 +165,7 @@ void R117Init()
     if (!(pG->flags_51BC & 0x00100000)) {
         cEm* door;
 
-        if (getRoomEtcDoor(0, &door, 1)) {
+        if (getRoomEtcDoor(0, port_out(door), 1)) {
             cEmDoorSetCloseLock(door);
         }
         W->evd0 = DC.setData(EvtMgr.NameChange("evd/r117s00.evd"));
@@ -325,17 +325,17 @@ extern "C" void r117_LightSet(int n)
     }
     }
     if (n != 0) {
-        if (EspEstSetSelect(1, type[0], 0, &W->esp[0], 1) == 1) {
+        if (EspEstSetSelect(1, type[0], 0, port_out(W->esp[0]), 1) == 1) {
             W->esp[0]->rot.z = (f32) W->cur[0] * 1.5707964f;
         } else {
             W->esp[0] = 0;
         }
-        if (EspEstSetSelect(1, type[1], 0, &W->esp[1], 1) == 1) {
+        if (EspEstSetSelect(1, type[1], 0, port_out(W->esp[1]), 1) == 1) {
             W->esp[1]->rot.z = (f32) W->cur[1] * 1.5707964f;
         } else {
             W->esp[1] = 0;
         }
-        if (EspEstSetSelect(1, type[2], 0, &W->esp[2], 1) == 1) {
+        if (EspEstSetSelect(1, type[2], 0, port_out(W->esp[2]), 1) == 1) {
             W->esp[2]->rot.z = (f32) W->cur[2] * 1.5707964f;
         } else {
             W->esp[2] = 0;
@@ -414,7 +414,7 @@ static void r117_EventAshleyFind()
     }
     W->evd1->setCommand(2, 0, 0);
     SceAtDataSet_exec(6, 0x12, 0, (TaskFunc) r117_EventSaddlerAppear, 0, 1);
-    if (getRoomEtcDoor(0, &door, 1)) {
+    if (getRoomEtcDoor(0, port_out(door), 1)) {
         ((cEmDoor*) door)->setNormal();
     }
 }
@@ -568,7 +568,7 @@ static void r117_LightMechanismMove()
         EffectEspgenDelete(1, 3, 0);
         EffectEfmDelete(1, 3, 0);
         r117_LightSet(4);
-        if (EspEstSetSelect(1, effTbl[W->cur[0]][W->cur[1]][W->cur[2]], 0, &esp2, 1) == 1) {
+        if (EspEstSetSelect(1, effTbl[W->cur[0]][W->cur[1]][W->cur[2]], 0, port_out(esp2), 1) == 1) {
             esp2->rot.z = angTbl[W->cur[0]] * 1.5707964f;
         }
         if (W->cur[0] == 0 && W->cur[1] == 0 && W->cur[2] == 0) {

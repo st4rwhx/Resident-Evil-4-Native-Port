@@ -159,7 +159,7 @@ void R105Init()
         }
         SceAtSetEnable(0x17, 0);
     } else {
-        if (getRoomEtcWindow(5, &win, 1)) {
+        if (getRoomEtcWindow(5, port_out(win), 1)) {
             ((cEmWindow*) win)->SetBreakModel();
         }
         SceAtSetEnable(0x17, 1);
@@ -172,12 +172,12 @@ void R105Init()
             SceExec(0x12, r105_openTerm, 0, 0, 2, 0);
         }
     }
-    if (getRoomEtcWindow(5, &win2, 1)) {
+    if (getRoomEtcWindow(5, port_out(win2), 1)) {
         ((cEmWindow*) win2)->SetEnableDamage(0);
         ((cEmWindow*) win2)->SetEnableFence(0, 0);
     }
     SceAtSetEnable(8, 0);
-    if (getRoomEtcDoor(1, &door, 1)) {
+    if (getRoomEtcDoor(1, port_out(door), 1)) {
         door->lightInfo.x50 = 4;
     }
     SceExec(0x12, r105_initCesspit, 0, 0, 2, 0);
@@ -187,7 +187,7 @@ void R105Main()
 {
     cEm* door;
 
-    getRoomEtcDoor(1, &door, 1);
+    getRoomEtcDoor(1, port_out(door), 1);
     if ((pG->item_flags[0] & 0x20000000) && !(pG->flags_174 & 0x40000000)) {
         BitOn(pG->flags_174, 0x40000000);
         if (RsfCheck(G_ROOM_ID, 1) == 0 || RsfCheck(G_ROOM_ID, 2) == 0) {
@@ -556,7 +556,7 @@ static void r105_Event()
         RsfSet(G_ROOM_ID, 2);
         EvtMgr.EvtReadExec("event/evd/r105s10.evd", 0x15, 0);
         SceAtSetEnable(8, 0);
-        getRoomEtcDoor(1, &door, 1);
+        getRoomEtcDoor(1, port_out(door), 1);
         if (door) {
             ((cEmDoor*) door)->setNormal();
         }
@@ -724,7 +724,7 @@ extern "C" void Evt_R105S10_Func(Event* e)
             break;
         case 0x14:
             if (e->frame == 2) {
-                if (getRoomEtcWindow(5, &win, 1)) {
+                if (getRoomEtcWindow(5, port_out(win), 1)) {
                     ((cEmWindow*) win)->SetBreakModel();
                 }
             }
@@ -781,7 +781,7 @@ extern "C" void Evt_R105S10_Func(Event* e)
         break;
     case 2:
         setRoomEtcDisp(1, 1, 1);
-        if (getRoomEtcWindow(5, &win2, 1)) {
+        if (getRoomEtcWindow(5, port_out(win2), 1)) {
             ((cEmWindow*) win2)->SetBreakModel();
         }
         SceAtSetEnable(0x17, 1);

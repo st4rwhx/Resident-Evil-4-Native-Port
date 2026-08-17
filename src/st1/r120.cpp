@@ -48,7 +48,7 @@ void R120Init()
     if (DebugTrg(1) == 0) {
         SceExec(0x12, R120Event, 0, 0, 2, 0);
     }
-    TexRenderInit(&r120_work->mgr, 0x100, 1);
+    TexRenderInit(port_out(r120_work->mgr), 0x100, 1);
 }
 
 void R120Main()

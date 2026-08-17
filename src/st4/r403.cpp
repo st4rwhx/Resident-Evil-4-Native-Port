@@ -122,7 +122,7 @@ void R403Init()
     r403_work.p = (R403Work*) MEM_CALLOC(sizeof(R403Work), 1, 0xd);
     setLadderMotion(0);
     setLadderMotion(0x1D);
-    if (getRoomEtcWindow(0x1E, &win, 1)) {
+    if (getRoomEtcWindow(0x1E, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
         win->be_flag &= ~2;
     }
@@ -694,7 +694,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r403_texTbl;
 
-    if (GetTexRenderMgr(&r403_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r403_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;
@@ -719,7 +719,7 @@ static void setLadderMotion(int no)
     cEm* ladder;
     void* das;
 
-    if (getRoomEtcLadder(no, &ladder, 1)) {
+    if (getRoomEtcLadder(no, port_out(ladder), 1)) {
         if (pG->x4FB8 == 2) {
             if (EtcGetDasAddr(6, &das)) {
                 void* mot[20];

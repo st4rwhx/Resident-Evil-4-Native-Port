@@ -452,10 +452,10 @@ static void r202_operateCannon()
     SceSleep(35);
     SndCall(6, 0xA, 0, 0, 0, 0);
     SmdGetObjPtr(0x25)->be_flag &= ~2;
-    if (getRoomEtcTorch(8, &torch, 1) != 0) {
+    if (getRoomEtcTorch(8, port_out(torch), 1) != 0) {
         ((cEmTorch*) torch)->setBreak();
     }
-    if (getRoomEtcTorch(9, &torch, 1) != 0) {
+    if (getRoomEtcTorch(9, port_out(torch), 1) != 0) {
         ((cEmTorch*) torch)->setBreak();
     }
     SceSleep(10);

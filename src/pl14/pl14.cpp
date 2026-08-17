@@ -166,9 +166,9 @@ void cSubLuis::init()
     YarareAdd(EM, &hit[9], 0.0f, 0.0f, 0.0f, 120.0f, 180.0f, 0xE, 3);
     MotionSetCore(subSelf, &subSelf->mot, SUBARC(0x40 / 4), 0, 0, 5, 0);
     motionMove();
-    getRoomEtcRack(0, &rack[0], 1);
-    getRoomEtcRack(1, &rack[1], 1);
-    getRoomEtcRack(2, &rack[2], 1);
+    getRoomEtcRack(0, port_out(rack[0]), 1);
+    getRoomEtcRack(1, port_out(rack[1]), 1);
+    getRoomEtcRack(2, port_out(rack[2]), 1);
 }
 
 void cSubLuis::modelSet()

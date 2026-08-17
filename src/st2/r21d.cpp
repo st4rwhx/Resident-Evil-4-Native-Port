@@ -172,7 +172,7 @@ static inline void r21d_FadeSetW(int no, u32 time, u32 z, int late)
 
 void R21dInit()
 {
-    R21dWork*& wp = r21d_work.p;   // the pG load that follows stays below the store
+    P32<R21dWork>& wp = r21d_work.p;   // the pG load that follows stays below the store
 #line 46 "D:/Bio4/Prog/r21d.cpp"
     wp = (R21dWork*) MEM_CALLOC(sizeof(R21dWork), 1, 0xd);
     if (pGS->x4F9F == 1 || pGS->x4F9F == 2) {
@@ -1061,7 +1061,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r21d_texTbl;
 
-    if (GetTexRenderMgr(&r21d_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r21d_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

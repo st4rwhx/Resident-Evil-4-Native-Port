@@ -467,7 +467,7 @@ void em2dDmCk(cEm2d* em)
             EspSeqData* seq = EspGetEstAddr(0x25, 0x24, 1);
             if (seq) {
                 for (i = 0; i < seq->num; i++) {
-                    if (EspEstSetSelect(0x25, 0x24, i, &esp, 0)) {
+                    if (EspEstSetSelect(0x25, 0x24, i, port_out(esp), 0)) {
                         esp->pos = pos;
                         esp->parent = em->getPartsPtr(part->partsNo - 1);
                         PSMTXInverse(((cModel*) esp->parent)->mat, inv);
@@ -499,7 +499,7 @@ void em2dDmCk(cEm2d* em)
             EspSeqData* seq = EspGetEstAddr(0x25, 0x25, 1);
             if (seq) {
                 for (i = 0; i < seq->num; i++) {
-                    if (EspEstSetSelect(0x25, 0x25, i, &esp2, 0)) {
+                    if (EspEstSetSelect(0x25, 0x25, i, port_out(esp2), 0)) {
                         esp2->pos = pos;
                         esp2->parent = em->getPartsPtr(part->partsNo - 1);
                         PSMTXInverse(((cModel*) esp2->parent)->mat, inv);

@@ -122,9 +122,9 @@ void R204Init()
     if (RsfCheck(G_ROOM_ID, 0) && RsfCheck(G_ROOM_ID, 7) == 0) {
         SceExec(0x12, (TaskFunc) r204_openTerm, 0, 0, 2, 0);
     }
-    getRoomEtcSwitch(8, &r204_work.p->sw, 1);
-    getRoomEtcBarred(0xB, &r204_work.p->barred[0], 1);
-    getRoomEtcBarred(6, &r204_work.p->barred[1], 1);
+    getRoomEtcSwitch(8, port_out(r204_work.p->sw), 1);
+    getRoomEtcBarred(0xB, port_out(r204_work.p->barred[0]), 1);
+    getRoomEtcBarred(6, port_out(r204_work.p->barred[1]), 1);
     if (r204_work.p->sw != 0 && r204_work.p->barred[0] != 0) {
         ((cEmSwitch*) r204_work.p->sw)->setBarred((cEmBarred*) r204_work.p->barred[0]);
         ((cEmSwitch*) r204_work.p->sw)->setBarred2nd((cEmBarred*) r204_work.p->barred[1]);
@@ -281,7 +281,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r204_texTbl;
 
-    if (GetTexRenderMgr(&r204_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r204_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

@@ -300,7 +300,7 @@ void drawPoint(Vec* p0, Vec* p1)
     if (pG->flags_6C & 0x40) {
         return;
     }
-    if (EspEstSetSelect(0, 0x50, 0, &esp, 1) != 1) {
+    if (EspEstSetSelect(0, 0x50, 0, port_out(esp), 1) != 1) {
         return;
     }
     PSVECSubtract(&pG->Cam.param.pos, p1, &d);

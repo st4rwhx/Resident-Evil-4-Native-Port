@@ -76,13 +76,23 @@ static_assert(sizeof(P32<int>) == 4, "P32 doit tenir sur 4 octets");
 
 // Aides du jeu qui prennent une référence de pointeur (`PSet(void*& d, void* v)` dans ss_main.h, wep_mod.h, em32.cpp ;
 // `PtrSet` dans mes.cpp) : une référence de T* ne peut pas désigner un champ P32 ; ces modèles prennent le relais.
-// La valeur passée est un pointeur (le cas courant) ou un entier 32 bits (adresse calculée : base | valeur).
+// La valeur passée est un pointeur (le cas courant), un champ P32, NULL, ou un entier 32 bits (adresse : base | valeur).
 template <class V> static inline void* port_vers_ptr(V* v) { return (void*) v; }
+template <class V> static inline void* port_vers_ptr(const P32<V>& v) { return (void*) v.get(); }
+static inline void* port_vers_ptr(decltype(nullptr)) { return nullptr; }
 static inline void* port_vers_ptr(uint32_t v) { return port_ptr64(v); }
 static inline void* port_vers_ptr(int32_t v) { return port_ptr64((uint32_t) v); }
+static inline void* port_vers_ptr(long v) { return v ? port_ptr64((uint32_t) v) : nullptr; }   // NULL (= 0L)
 template <class T, class V> static inline void PSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
 template <class T, class V> static inline void PtrSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
 
+// Variantes locales des modules (salles, objets) : même rôle que PSet, autre nom.
+template <class T, class V> static inline void PSetSat(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
+template <class T, class V> static inline void PSetRobo(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
+template <class T, class V> static inline void PSetTex(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
+template <class T, class V> static inline void PSetPrim(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }
+template <class T, class V> static inline void EmSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }    // pl0f
+template <class T, class V> static inline void EmiSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }   // em3a
 template <class T> static inline T* PGet(P32<T>& p) { return p.get(); }                       // light.cpp
 template <class T, class V> static inline void VSet(P32<T>& d, V v) { d = (T*) port_vers_ptr(v); }   // shadow.cpp
 
@@ -102,6 +112,7 @@ template <class T> struct P32_out {
     template <class U> operator U**() { return (U**) &t; }   // void** etc.
 };
 template <class T> static inline P32_out<T> port_out(P32<T>& c) { return P32_out<T>(c); }
+template <class T> static inline T** port_out(T*& c) { return &c; }   // déjà un vrai pointeur : son adresse
 
 template <class F> struct FnP32 {   // pointeur de fonction : décalage depuis la même base (le code est dans la fenêtre)
     uint32_t v;

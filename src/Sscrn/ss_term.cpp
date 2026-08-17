@@ -381,7 +381,7 @@ int cFileList::update()
         p++;
         num++;
     }
-    list = (char**) Debug_alloc(num * 4, 1);
+    list = (P32<char>*) Debug_alloc(num * 4, 1);
     p = text;
     for (i = 0; i < num; i++) {
         if (filter) {

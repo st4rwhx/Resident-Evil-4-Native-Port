@@ -35,13 +35,13 @@ void R111Init()
 #line 47 "D:/Bio4/Prog/r111.cpp"
     r111_work = (R111Work*) MEM_CALLOC(sizeof(R111Work), 1, 0xd);
 
-    if (getRoomEtcRack(0xD, &rack, 1)) {
+    if (getRoomEtcRack(0xD, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 1000.0f, 0.0f, 2000.0f);
     }
-    if (getRoomEtcRack(0xF, &rack, 1)) {
+    if (getRoomEtcRack(0xF, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(2000.0f, 2000.0f, 0.0f, 2600.0f);
     }
-    if (getRoomEtcRack(0x11, &rack, 1)) {
+    if (getRoomEtcRack(0x11, port_out(rack), 1)) {
         FSet(rack->pos.x, 6656.0f);
         FSet(rack->pos.y, 902.0f);
         FSet(rack->pos.z, 8925.0f);
@@ -56,10 +56,10 @@ void R111Init()
         EstSet((int)(uintptr_t)(pPL), -1, 0, 0, 0, 0x23, 0x800, 0, (u32)(uintptr_t)(zero), zero);
     }
     pG->flags_5010 |= 0x400;
-    if (getRoomEtcWindow(0, &win, 1)) {
+    if (getRoomEtcWindow(0, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
     }
-    if (getRoomEtcWindow(0x13, &win, 1)) {
+    if (getRoomEtcWindow(0x13, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
     }
     FlrAtSetDefVal(0, 0, 3);

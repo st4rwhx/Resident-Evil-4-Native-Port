@@ -74,7 +74,7 @@ static void r21b_HalfWaySwitchMoveEndProc();
 void R21bInit()
 {
     Vec pos = {0.0f, 0.0f, 0.0f};
-    R21bWork*& wp = r21b_work.p;   // the store's `lis` sits before the mem_calloc call
+    P32<R21bWork>& wp = r21b_work.p;   // the store's `lis` sits before the mem_calloc call
     Vec rot = {0.0f, 0.0f, 0.0f};
 
 #line 46 "D:/Bio4/Prog/r21b.cpp"

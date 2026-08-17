@@ -90,7 +90,7 @@ void R40eInit()
         SceAtDataSet_exec(3, 0x12, 0, (TaskFunc) R40EExecEventS00, 0, 1);
         EvtMgr.EvtReadAram("event/evd/r40es00.evd", (u8) GetEmIdFromListI(0xDD), 0, 0, 0);
     }
-    TexRenderInit(&r40e_work->tex, 0, 1);
+    TexRenderInit(port_out(r40e_work->tex), 0, 1);
     if (RsfCheck(G_ROOM_ID, 3) == 0) {
         SceExec(0x12, (TaskFunc) r40e_execShowView, 0, 0, 2, 0);
     }

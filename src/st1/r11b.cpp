@@ -215,8 +215,8 @@ void R11bInit()
                                       ROOM_ARC_PTR(pG->pRoomArc, 0x23), ROOM_ARC_PTR(pG->pRoomArc, 0x24));
         }
     }
-    TexRenderInit(&r11b_work.p->tex[0], 0xE0, 2);
-    TexRenderInit(&r11b_work.p->tex[1], 0xE0, 2);
+    TexRenderInit(port_out(r11b_work.p->tex[0]), 0xE0, 2);
+    TexRenderInit(port_out(r11b_work.p->tex[1]), 0xE0, 2);
     FlrAtSetDefVal(0, 0, 3);
 }
 

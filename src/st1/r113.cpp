@@ -117,7 +117,7 @@ void R113Init()
     EatMgr.registEffInfo(4, (AtEffInfo*) &r113_eff_info);
     SceExec(0x12, (TaskFunc) r103_initCesspit, (int)(uintptr_t)(&r113_cesspit), 0, 2, 0);
     r103_setSubMissionTarget(8);
-    if (getRoomEtcRack(6, &rack, 1)) {
+    if (getRoomEtcRack(6, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 3000.0f, 0.0f, 3000.0f);
     }
     SceSetItemEvent(8, 0x8E, 0, 0xA, (void (*)(int)) r103_openShelf, (void (*)()) r103_openedShelf, (int)(uintptr_t)(&r113_shelf0), 0);

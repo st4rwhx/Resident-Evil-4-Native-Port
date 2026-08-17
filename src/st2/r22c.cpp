@@ -491,7 +491,7 @@ void R22cInit()
     SceAtDataSet_exec(7, 0x12, 0, (TaskFunc) r22c_checkShootingScore, 0, 1);
     SceAtDataSet_exec(2, 0x12, 0, (TaskFunc) r22c_checkExitDoor, 0, 1);
     SceAtSetActColor(2, 1);
-    if (getRoomEtcDoor(0, &r22c_work.p->door[0], 1) && getRoomEtcDoor(1, &r22c_work.p->door[1], 1)) {
+    if (getRoomEtcDoor(0, port_out(r22c_work.p->door[0]), 1) && getRoomEtcDoor(1, port_out(r22c_work.p->door[1]), 1)) {
         ((cEmDoor*) r22c_work.p->door[0])->setDoor((cEmDoor*) r22c_work.p->door[1]);
         cEmDoorSetCloseLock(r22c_work.p->door[0]);
         cEmDoorSetCloseLock(r22c_work.p->door[1]);

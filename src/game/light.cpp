@@ -441,7 +441,7 @@ void lightMove(cLight* l)
     l->hitAdjust();
     l->move();
     if (l->parentType == 3) {
-        if (getRoomEtcOnLight(l->parentId, &em, 0) == 1) {
+        if (getRoomEtcOnLight(l->parentId, port_out(em), 0) == 1) {
             if (((cEm*) em)->hp <= 0) {
                 l->be_flag &= ~2;
             }
@@ -1250,7 +1250,7 @@ int cLight::calcPos(Vec* src, Vec* dst)
     case 3:
         partsNo = parentId >> 16;
         no = parentId & 0xFFFF;
-        if (getRoomEtcOnLight(parentId, &p, 0) == 0) {
+        if (getRoomEtcOnLight(parentId, port_out(p), 0) == 0) {
             p = 0;
             if (!(pG->flags_60 & 0x80000000)) {
                 pLog->err(0, 0, "Lit:calcPos() %d-%d ETCMODEL PARENT NOT FOUND", no, partsNo);
@@ -1320,7 +1320,7 @@ int cLight::getNormal(Vec* src, Vec* dst)
     case 3:
         partsNo = parentId >> 16;
         no = parentId & 0xFFFF;
-        if (getRoomEtcOnLight(parentId, &p, 0) == 0) {
+        if (getRoomEtcOnLight(parentId, port_out(p), 0) == 0) {
             p = 0;
             if (!(pG->flags_60 & 0x80000000)) {
                 pLog->err(0, 0, "cLight::getNormal() ETCMODEL PARENT NOT FOUND %d %d", no, partsNo);

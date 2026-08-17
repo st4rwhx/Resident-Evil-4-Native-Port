@@ -138,8 +138,8 @@ void ToolRctRouteCheck()
 {
     void (*tbl[6])() = {tool_quit, mode_clear, mode_main, mode_menu, mode_save, mode_load};
 
-    RckWork*& wp = rckWork.p;
-    u8*& sp = rckSave.p;
+    P32<RckWork>& wp = rckWork.p;
+    P32<u8>& sp = rckSave.p;
 
     wp = (RckWork*) Debug_alloc(sizeof(RckWork), 1);
     sp = (u8*) Debug_alloc(RCK_SAVE_SIZE, 1);

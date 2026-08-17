@@ -498,7 +498,7 @@ extern "C" void setTexRender()
     cObj* obj;
     u8* tbl = r10c_texTbl;
 
-    if (GetTexRenderMgr(&r10c_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r10c_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

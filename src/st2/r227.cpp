@@ -103,13 +103,13 @@ static void Evt_R227S02_Func(Event* e);
 void R227Init()
 {
 #line 57 "D:/Bio4/Prog/r227.cpp"
-    R227Work*& wp = r227_work.p;
+    P32<R227Work>& wp = r227_work.p;
     wp = (R227Work*) MEM_CALLOC(sizeof(R227Work), 1, 0xD);
     if (pG->x4F9F == 2) {
         RsfSet(G_ROOM_ID, 0);
         EmReadSearch(0x14, 0, 0);
     }
-    getRoomEtcSwitch(4, &r227_work.p->sw, 1);
+    getRoomEtcSwitch(4, port_out(r227_work.p->sw), 1);
     if (r227_work.p->sw) {
         ((cEmSwitch*) r227_work.p->sw)->setAutoOpen();
         ((cEmSwitch*) r227_work.p->sw)->setBarrel();
@@ -542,20 +542,20 @@ void r227_initCargoElv()
         SceAtSetParent(0xE, r227_work.p->elv, 0);
         SceAtSetParent(3, r227_work.p->elv, 0);
         SceAtDataSet_exec(3, 0x12, 0, (TaskFunc) r227_operateElv, 0, 1);
-        if (getRoomEtcRack(5, &r227_work.p->rack[0], 1)) {
+        if (getRoomEtcRack(5, port_out(r227_work.p->rack[0]), 1)) {
             if (RsfCheck(G_ROOM_ID, 1) == 0) {
                 ((cEmRack*) r227_work.p->rack[0])->setRange(0.0f, 0.0f, 3000.0f, 0.0f);
                 SceExec(0x12, (TaskFunc) r227_checkBox0Fall, 0, 0, 2, 0);
             }
         }
-        if (getRoomEtcRack(9, &r227_work.p->rack[1], 1)) {
+        if (getRoomEtcRack(9, port_out(r227_work.p->rack[1]), 1)) {
             if (RsfCheck(G_ROOM_ID, 2) == 0) {
                 ((cEmRack*) r227_work.p->rack[1])->setRange(0.0f, 0.0f, 0.0f, 3000.0f);
                 SceExec(0x12, (TaskFunc) r227_checkBox1Fall, 0, 0, 2, 0);
             }
         }
         for (i = 0; i < 3; i++) {
-            if (getRoomEtcBox(r227_boxNo[i], &r227_work.p->box[i], 1)) {
+            if (getRoomEtcBox(r227_boxNo[i], port_out(r227_work.p->box[i]), 1)) {
                 r227_work.p->boxY0[i] = r227_work.p->box[i]->pos.y;
             }
         }

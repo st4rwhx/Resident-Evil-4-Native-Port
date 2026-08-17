@@ -33,10 +33,10 @@ void R40bInit()
 
 #line 37 "D:/Bio4/Prog/r40b.cpp"
     r40b_work = (R40bWork*) MEM_CALLOC(sizeof(R40bWork), 1, 0xd);
-    if (getRoomEtcWindow(0xA, &win, 1)) {
+    if (getRoomEtcWindow(0xA, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 0);
     }
-    if (getRoomEtcWindow(0xB, &win, 1)) {
+    if (getRoomEtcWindow(0xB, port_out(win), 1)) {
         ((cEmWindow*) win)->SetEnableFence(0, 0);
     }
     {
@@ -94,7 +94,7 @@ static void r40b_checkEmSet1()
 {
     cEm* barred;
 
-    getRoomEtcBarred(0x32, &barred, 1);
+    getRoomEtcBarred(0x32, port_out(barred), 1);
     while (SceAtHitCheck(2) != 1) {
         SceSleep(1);
     }

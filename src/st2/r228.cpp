@@ -96,7 +96,7 @@ void R228Init()
     EvtMgr.SetFunc("evt_r228s02_func", (void*) Evt_R228S02_Func);
     r228_work.p->eff2 = EspPullCoreKind();
     r228_initEvent00();
-    TexRenderInit(&r228_work.p->texEvt, 0xE0, 2);
+    TexRenderInit(port_out(r228_work.p->texEvt), 0xE0, 2);
     EstSet(0, -1, 0, 0, 1, 3, r228_work.p->texEvt->mask | 0x3001, 0, 0, 0);
 }
 
@@ -585,7 +585,7 @@ void setTexRender()
     u8* tbl0 = r228_texTbl0;
     u8* tbl1 = r228_texTbl1;
 
-    if (GetTexRenderMgr(&r228_work.p->tex[0])) {
+    if (GetTexRenderMgr(port_out(r228_work.p->tex[0]))) {
         tbl0[0] = 1;
         tbl0[1] = 0;
         tbl0[4] = 0xF7;
@@ -595,7 +595,7 @@ void setTexRender()
     } else {
         pLog->err(0, 0, "setTexRender() : Manager alloc failed!!");
     }
-    if (GetTexRenderMgr(&r228_work.p->tex[1])) {
+    if (GetTexRenderMgr(port_out(r228_work.p->tex[1]))) {
         tbl1[0] = 1;
         tbl1[1] = 0;
         tbl1[4] = 0xF7;

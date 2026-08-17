@@ -66,7 +66,7 @@ extern "C" void Evt_R200S00_Func(Event* e);
 void R200Init()
 {
 #line 51 "D:/Bio4/Prog/r200.cpp"
-    R200Work*& wp = r200_work.p;   // reference: the following `lwz pG` stays below the store (r227 idiom)
+    P32<R200Work>& wp = r200_work.p;   // reference: the following `lwz pG` stays below the store (r227 idiom)
     wp = (R200Work*) MEM_CALLOC(sizeof(R200Work), 1, 0xd);
     if (pG->x4F9F == 1) {
         RsfSet(G_ROOM_ID, 4);

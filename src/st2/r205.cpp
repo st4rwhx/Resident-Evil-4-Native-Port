@@ -128,7 +128,7 @@ void R205Init()
 {
     // The work address is taken before the calloc call (`lis` above the `bl`, as the plain-pointer
     // rooms do): the store goes through a pointer to the member.
-    R205Work** wp;
+    P32<R205Work>* wp;
     u32 i;
 
     pG->flags_5010 |= 0x400;
@@ -183,12 +183,12 @@ void R205Init()
     }
     SceAtSetEnable(0x21, 0);
     SceAtSetEnable(0x22, 0);
-    if (getRoomEtcDoor(0x13, &r205_work.p->door0, 1) != 0) {
+    if (getRoomEtcDoor(0x13, port_out(r205_work.p->door0), 1) != 0) {
         if (RsfCheck(G_ROOM_ID, 7) == 0) {
             cEmDoorSetCloseLock(r205_work.p->door0);
         }
     }
-    if (getRoomEtcDoor(0x14, &r205_work.p->door1, 1) != 0) {
+    if (getRoomEtcDoor(0x14, port_out(r205_work.p->door1), 1) != 0) {
         if (RsfCheck(G_ROOM_ID, 2) == 0) {
             cEmDoorSetCloseLock(r205_work.p->door1);
         }
@@ -564,7 +564,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r205_texTbl;
 
-    if (GetTexRenderMgr(&r205_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r205_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

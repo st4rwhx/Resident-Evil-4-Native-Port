@@ -137,7 +137,7 @@ void R10fInit()
             ((cEmGanado*) em)->setGondolaMotion(ROOM_ARC_PTR(pG->pRoomArc, 0x2D), ROOM_ARC_PTR(pG->pRoomArc, 0x2E), ROOM_ARC_PTR(pG->pRoomArc, 0x2F), ROOM_ARC_PTR(pG->pRoomArc, 0x32));
         }
     }
-    if (getRoomEtcWindow(0xC, &win, 1)) {
+    if (getRoomEtcWindow(0xC, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
     }
     SceSetItemEvent(0xA, 0x81, 1, 0xD, (void (*)(int)) r10f_LockerOpen, (void (*)()) r10f_LockerOpened, 0x35, 0);

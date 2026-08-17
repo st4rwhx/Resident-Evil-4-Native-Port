@@ -69,7 +69,7 @@ void R218Init()
 
 #line 37 "D:/Bio4/Prog/r218.cpp"
     r218_work.p = (R218Work*) MEM_CALLOC(sizeof(R218Work), 1, 0xd);
-    if (getRoomEtcDoor(3, &d0, 1) && getRoomEtcDoor(4, &d1, 1)) {
+    if (getRoomEtcDoor(3, port_out(d0), 1) && getRoomEtcDoor(4, port_out(d1), 1)) {
         ((cEmDoor*) d0)->setDoor((cEmDoor*) d1);
     }
     SceAtSetEnable(2, 0);

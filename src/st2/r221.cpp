@@ -1388,7 +1388,7 @@ static void setTexRender()
     cObj* obj;
     u8* tbl = r221_texTbl;
 
-    if (GetTexRenderMgr(&r221_work.p->tex)) {
+    if (GetTexRenderMgr(port_out(r221_work.p->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

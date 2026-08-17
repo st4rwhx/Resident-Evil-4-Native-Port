@@ -159,7 +159,7 @@ void getInfoData(SndRoomHdr* hdr)
 void init()
 {
     u8 i;
-    SndVolWork*& wp = sndVolWork.p;
+    P32<SndVolWork>& wp = sndVolWork.p;
 
     TaskSuspend(0);
     TutilInitDefault();

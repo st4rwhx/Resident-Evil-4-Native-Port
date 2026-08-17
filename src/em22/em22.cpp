@@ -2386,7 +2386,7 @@ void em22SetParasiteAtk(cEm22* em)
 void em22ParaSetMotWait(cEm22* em)
 {
     u32 i;
-    cObj16** pp = EM22_WK(em)->pParaAtk;
+    P32<cObj16>* pp = EM22_WK(em)->pParaAtk;
 
     for (i = 0; i < 3; i++) {
         if (pp[i]) {
@@ -2404,7 +2404,7 @@ void em22ParaSetMotWait(cEm22* em)
 void em22ParaSetMotAtk(cEm22* em)
 {
     u32 i;
-    cObj16** pp = EM22_WK(em)->pParaAtk;
+    P32<cObj16>* pp = EM22_WK(em)->pParaAtk;
 
     for (i = 0; i < 3; i++) {
         if (pp[i]) {
@@ -2422,7 +2422,7 @@ void em22ParaSetMotAtk(cEm22* em)
 void em22ParaSetMotAtkHit(cEm22* em)
 {
     u32 i;
-    cObj16** pp = EM22_WK(em)->pParaAtk;
+    P32<cObj16>* pp = EM22_WK(em)->pParaAtk;
 
     for (i = 0; i < 3; i++) {
         if (pp[i]) {

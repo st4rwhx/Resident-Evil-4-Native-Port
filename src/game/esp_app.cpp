@@ -402,7 +402,7 @@ void EffEm2d_setTexRender(cModel* m)
         TexRenderMng* mgr;
         TexRenderMng* mgr2;
 
-        if (!GetTexRenderMgr(&pMgr)) {
+        if (!GetTexRenderMgr(port_out(pMgr))) {
             pLog->err(0, 0, "EffEm2d_setTexRender() : Manager alloc failed!!");
             return;
         }
@@ -446,7 +446,7 @@ void EspDrawLaserLine(Vec from, Vec to, f32 width)
     if (pG->flags_6C & 0x40) {
         return;
     }
-    if (!EspEstSetSelect(0, 3, 0, &esp, 0)) {
+    if (!EspEstSetSelect(0, 3, 0, port_out(esp), 0)) {
         return;
     }
     e = (cEsp19*) esp;
@@ -474,7 +474,7 @@ void EspDrawLaserLine2(Vec* from, Vec* to, u8 r, u8 g, u8 b, u8 a)
 {
     cEsp* esp;
 
-    if (EspEstSetSelect(0, 3, 0, &esp, 1)) {
+    if (EspEstSetSelect(0, 3, 0, port_out(esp), 1)) {
         cEsp19* e = (cEsp19*) esp;
         e->pos = *from;
         e->w.target = *to;
@@ -483,7 +483,7 @@ void EspDrawLaserLine2(Vec* from, Vec* to, u8 r, u8 g, u8 b, u8 a)
         esp->colB = (f32) b;
         esp->colA = (f32) a;
     }
-    if (EspEstSetSelect(0, 3, 0, &esp, 1)) {
+    if (EspEstSetSelect(0, 3, 0, port_out(esp), 1)) {
         cEsp19* e = (cEsp19*) esp;
         e->pos = *to;
         e->w.target = *from;
@@ -498,7 +498,7 @@ void EspSetGatling(Vec pos, Vec dir)
 {
     cEsp* esp;
 
-    if (!EspEstSetSelect(0, 0x52, 0, &esp, 0)) {
+    if (!EspEstSetSelect(0, 0x52, 0, port_out(esp), 0)) {
         return;
     }
     esp->pos = pos;

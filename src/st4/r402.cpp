@@ -110,7 +110,7 @@ void R402Init()
     SceSetItemEvent(0x14, 0x80, 2, -1, OpenBoxTreasure, (void (*)()) OpenedBoxTreasure, 0x80, 0);
     SceSetItemEvent(0x15, 0x81, 3, -1, OpenBoxTreasure, (void (*)()) OpenedBoxTreasure, 0x81, 0);
     SceSetItemEvent(0x16, 0x82, 4, -1, OpenBoxTreasure, (void (*)()) OpenedBoxTreasure, 0x82, 0);
-    if (getRoomEtcDoor(0x18, &door0, 1) && getRoomEtcDoor(0x19, &door1, 1)) {
+    if (getRoomEtcDoor(0x18, port_out(door0), 1) && getRoomEtcDoor(0x19, port_out(door1), 1)) {
         ((cEmDoor*) door0)->setDoor((cEmDoor*) door1);
     }
     R402EmSetSub(0x27, 0xA0, 0);
@@ -126,10 +126,10 @@ void R402Init()
     SceAtDataSet_exec(0x10, 0x12, 0, (TaskFunc) R402ExecEvent02Main, 0, 1);
     SceAtDataSet_exec(0xF, 0x12, 0, (TaskFunc) R402ExecEvent01Main, 0, 1);
     SceAtSetEnable(0x11, 0);
-    if (getRoomEtcLadder(0x15, &ladder, 1)) {
+    if (getRoomEtcLadder(0x15, port_out(ladder), 1)) {
         ((cObjLadder*) ladder)->setOff();
     }
-    if (getRoomEtcLadder(0x1E, &ladder, 1)) {
+    if (getRoomEtcLadder(0x1E, port_out(ladder), 1)) {
         ((cObjLadder*) ladder)->setOff();
     }
     setLadderMotion(0x15);
@@ -185,7 +185,7 @@ static void setLadderMotion(int no)
     cEm* ladder;
     void* das;
 
-    if (getRoomEtcLadder(no, &ladder, 1)) {
+    if (getRoomEtcLadder(no, port_out(ladder), 1)) {
         if (pG->x4FB8 == 2) {
             if (EtcGetDasAddr(6, &das)) {
                 void* mot[20];
@@ -265,11 +265,11 @@ static void R402ExecEvent01Main()
     r402_work.p->em[0x5A].setNoSuspend(1);
     r402_work.p->em[0x5B].setNoSuspend(1);
     r402_work.p->em[0x5C].setNoSuspend(1);
-    if (getRoomEtcLadder(0x15, &ladder, 1)) {
+    if (getRoomEtcLadder(0x15, port_out(ladder), 1)) {
         ((cObjLadder*) ladder)->setOn();
         ((cObjLadder*) ladder)->setDowned();
     }
-    if (getRoomEtcLadder(0x1E, &ladder, 1)) {
+    if (getRoomEtcLadder(0x1E, port_out(ladder), 1)) {
         ((cObjLadder*) ladder)->setOn();
         ((cObjLadder*) ladder)->setDowned();
     }
@@ -773,7 +773,7 @@ static void R402EmSetMain()
             if (!(pG->flags_174 & 0x8000)) {
                 cEm* door;
 
-                getRoomEtcDoor(0x1B, &door, 1);
+                getRoomEtcDoor(0x1B, port_out(door), 1);
                 if (door->flags_3C8 & 0x10000000) {
                     pG->flags_174 |= 0x8000;
                     R402EmSetSub(0x53, 0xDC, 1);

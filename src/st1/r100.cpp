@@ -625,7 +625,7 @@ static void r100_DoorCk()
     int found = 0;
     int i;
 
-    if (getRoomEtcDoor(2, &door, 1) == 0) {
+    if (getRoomEtcDoor(2, port_out(door), 1) == 0) {
         return;
     }
     while (RsfCheck(G_ROOM_ID, 3) == 0) {
@@ -680,10 +680,10 @@ static void r100_WindowBreakCk()
     cEm* win0;
     cEm* win1;
 
-    if (getRoomEtcWindow(0, &win0, 1) == 0) {
+    if (getRoomEtcWindow(0, port_out(win0), 1) == 0) {
         return;
     }
-    if (getRoomEtcWindow(1, &win1, 1) == 0) {
+    if (getRoomEtcWindow(1, port_out(win1), 1) == 0) {
         return;
     }
     while (RsfCheck(G_ROOM_ID, 10) == 0) {
@@ -1212,7 +1212,7 @@ extern "C" void setTexRender()
     cObj* obj;
     u8* tbl = r100_texTbl;
 
-    if (GetTexRenderMgr(&W->tex)) {
+    if (GetTexRenderMgr(port_out(W->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

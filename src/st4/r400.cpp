@@ -95,7 +95,7 @@ void R400Init()
     setLadderMotion(7);
     setLadderMotion(0x24);
     EvtMgr.SetEmWindowFcv(ROOM_ARC_PTR(pG->pRoomArc, 0x2E), ROOM_ARC_PTR(pG->pRoomArc, 0x2F), ROOM_ARC_PTR(pG->pRoomArc, 0x30));
-    if (getRoomEtcWindow(0, &win, 1)) {
+    if (getRoomEtcWindow(0, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
     }
     MercSysInitStage();
@@ -389,7 +389,7 @@ void setLadderMotion(int no)
     cEm* ladder;
     void* das;
 
-    if (getRoomEtcLadder(no, &ladder, 1)) {
+    if (getRoomEtcLadder(no, port_out(ladder), 1)) {
         if (pG->x4FB8 == 2) {
             if (EtcGetDasAddr(6, &das)) {
                 void* mot[20];

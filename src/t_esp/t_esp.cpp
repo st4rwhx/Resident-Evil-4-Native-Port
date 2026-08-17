@@ -6132,7 +6132,7 @@ void ToolEspMain()
             }
         }
         if (pG->flags_5010 & 0x8000000) {
-            if (g_pTexRender == NULL) GetTexRenderMgr(&g_pTexRender);
+            if (g_pTexRender == NULL) GetTexRenderMgr(port_out(g_pTexRender));
         }
         DB_DispProc();
         TaskSleep(1);

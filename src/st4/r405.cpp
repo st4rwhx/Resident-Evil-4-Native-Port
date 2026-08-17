@@ -141,7 +141,7 @@ void setTexRender()
     u8* tbl0 = r405_texTbl0;
     u8* tbl1 = r405_texTbl1;
 
-    if (GetTexRenderMgr(&r405_work.p->tex[0])) {
+    if (GetTexRenderMgr(port_out(r405_work.p->tex[0]))) {
         tbl0[0] = 1;
         tbl0[1] = 0;
         tbl0[4] = 0xF7;
@@ -154,7 +154,7 @@ void setTexRender()
     obj = SmdGetObjPtr(0xC);
     obj->pInfo->setTexBlendTbl(tbl0);
     obj->pInfo->setBlendRatio(0xFF);
-    if (GetTexRenderMgr(&r405_work.p->tex[1])) {
+    if (GetTexRenderMgr(port_out(r405_work.p->tex[1]))) {
         tbl1[0] = 1;
         tbl1[1] = 0;
         tbl1[4] = 0xF7;

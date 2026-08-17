@@ -53,7 +53,7 @@ static void setTexRender();
 
 void R229Init()
 {
-    R229Work*& wp = r229_work.p;   // the store's `lis` sits before the mem_calloc call (r30)
+    P32<R229Work>& wp = r229_work.p;   // the store's `lis` sits before the mem_calloc call (r30)
 
     pG->flags_54 &= ~0x400;
 #line 56 "D:/Bio4/Prog/r229.cpp"
@@ -151,7 +151,7 @@ static void setTexRender()
     u8* tbl0 = r229_texTbl0;
     u8* tbl1 = r229_texTbl1;
 
-    if (GetTexRenderMgr(&r229_work.p->tex[0])) {
+    if (GetTexRenderMgr(port_out(r229_work.p->tex[0]))) {
         tbl0[0] = 1;
         tbl0[1] = 0;
         tbl0[4] = 0xF7;
@@ -165,7 +165,7 @@ static void setTexRender()
     R229_TEX_OBJ(0xC, tbl0, 0xF0, 0x30, 2, 0x10);
     R229_TEX_OBJ(0xD, tbl0, 0xF0, 0x30, 2, 0x10);
     R229_TEX_OBJ(0xE, tbl0, 0xF0, 0x30, 2, 0x10);
-    if (GetTexRenderMgr(&r229_work.p->tex[1])) {
+    if (GetTexRenderMgr(port_out(r229_work.p->tex[1]))) {
         tbl1[0] = 1;
         tbl1[1] = 0;
         tbl1[4] = 0xF7;

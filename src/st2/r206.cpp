@@ -196,7 +196,7 @@ void R206Init()
         SceAtDataSet_exec(8, 0x12, 0, (TaskFunc) r206_asl_call, 0, 1);
     }
     SceExec(0x12, (TaskFunc) r206_snipe_end, 0, 0, 2, 0);
-    TexRenderInit(&r206_work.p->tex, 0, 2);
+    TexRenderInit(port_out(r206_work.p->tex), 0, 2);
 }
 
 void R206Main()
@@ -259,10 +259,10 @@ static void r206_auto_door_ck()
     cEm* gate0;
     cEm* gate1;
 
-    if (getRoomEtcBarred(0x10, &gate0, 1) != 1) {
+    if (getRoomEtcBarred(0x10, port_out(gate0), 1) != 1) {
         return;
     }
-    if (getRoomEtcBarred(0x11, &gate1, 1) != 1) {
+    if (getRoomEtcBarred(0x11, port_out(gate1), 1) != 1) {
         return;
     }
     ((cEmBarred*) gate0)->setClosed();
@@ -781,7 +781,7 @@ snipe_done:
     r206_work.p->em[4].setNoSuspend(1);
     r206_work.p->em[5].setNoSuspend(1);
     r206_work.p->em[7].setNoSuspend(1);
-    if (getRoomEtcBarred(0x11, &gate, 1) == 1) {
+    if (getRoomEtcBarred(0x11, port_out(gate), 1) == 1) {
         gate->setNoSuspend(1);
         ((cEmBarred*) gate)->setOpen(0);
     }

@@ -227,7 +227,7 @@ void R226Init()
     u32 i;
     cObj* o;
 
-    R226Work*& wp = r226_work.p;
+    P32<R226Work>& wp = r226_work.p;
 #line 99 "D:/Bio4/Prog/r226.cpp"
     wp = (R226Work*) MEM_CALLOC(sizeof(R226Work), 1, 0xd);
     PSetRobo(wp->robo, NULL);
@@ -255,7 +255,7 @@ void R226Init()
             }
         }
     }
-    getRoomEtcDoor(0xA, &door, 1);
+    getRoomEtcDoor(0xA, port_out(door), 1);
     if (door) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x5A), ROOM_ARC_PTR(pG->pRoomArc, 0x5B), 1, 0);
     }
@@ -895,7 +895,7 @@ static void R226EventTowerLookMain()
     }
     RsfSet(G_ROOM_ID, 14);
     SceAtSetEnable(0x22, 0);
-    getRoomEtcDoor(0xA, &door, 1);
+    getRoomEtcDoor(0xA, port_out(door), 1);
     while (!(door->flags_3C8 & 0x10000000)) {
         SceSleep(1);
     }

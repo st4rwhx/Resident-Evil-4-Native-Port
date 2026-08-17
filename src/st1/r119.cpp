@@ -442,7 +442,7 @@ extern "C" void koyaA_destroy()
         EstSet(0, -1, &pos, &rot, 1, 3, 0, 0, 0, 0);
     }
     koyaA_delete();
-    if (getRoomEtcTorch(0, &torch, 1)) {
+    if (getRoomEtcTorch(0, port_out(torch), 1)) {
         ((cEmTorch*) torch)->setBreak();
     }
 }
@@ -460,7 +460,7 @@ extern "C" void koyaB_destroy()
         EstSet(0, -1, &pos, &rot, 1, 3, 0, 0, 0, 0);
     }
     koyaB_delete();
-    if (getRoomEtcTorch(1, &torch, 1)) {
+    if (getRoomEtcTorch(1, port_out(torch), 1)) {
         ((cEmTorch*) torch)->setBreak();
     }
 }
@@ -478,7 +478,7 @@ extern "C" void koyaC_destroy()
         EstSet(0, -1, &pos, &rot, 1, 3, 0, 0, 0, 0);
     }
     koyaC_delete();
-    if (getRoomEtcTorch(2, &torch, 1)) {
+    if (getRoomEtcTorch(2, port_out(torch), 1)) {
         ((cEmTorch*) torch)->setBreak();
     }
 }

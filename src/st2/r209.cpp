@@ -284,7 +284,7 @@ void R209Init()
 
 #line 94 "D:/Bio4/Prog/r209.cpp"
     r209_work.p = (R209Work*) MEM_CALLOC(sizeof(R209Work), 1, 0xd);
-    getRoomEtcDoor(4, &r209_work.p->door4, 1);
+    getRoomEtcDoor(4, port_out(r209_work.p->door4), 1);
     r209_work.p->door[0].init(0xB3);
     r209_work.p->door[1].init(0xB4);
     r209_work.p->door[2].init(0xB5);
@@ -293,7 +293,7 @@ void R209Init()
     r209_work.p->door[5].init(3);
     r209_work.p->door[6].init(0xA1);
     if (RsfCheck(G_ROOM_ID, 2) == 0) {
-        if (getRoomEtcDoor(9, &r209_work.p->door9, 1) == 1) {
+        if (getRoomEtcDoor(9, port_out(r209_work.p->door9), 1) == 1) {
             cEmDoorSetCloseLock(r209_work.p->door9);
             SceAtDataSet_exec(2, 0x12, 0, (TaskFunc) r209_DoorMessage, 0, 1);
             SceExec(0x12, (TaskFunc) r209_CheckUseSalonKey, 0, 0, 2, 0);
@@ -304,7 +304,7 @@ void R209Init()
         EmReadSearch(0x1A, 0, r209_work.p->evd->size);
         r209_work.p->evd->setCommand(2, 0, 0);
         EvtMgr.SetFunc("evt_r209s00_func", (void*) Evt_R209S00_Func);
-        getRoomEtcDoor(4, &r209_work.p->door4, 1);
+        getRoomEtcDoor(4, port_out(r209_work.p->door4), 1);
         SceExec(0x12, (TaskFunc) r209_2ndBattle, 0, 0, 2, 0);
     }
     if (RsfCheck(G_ROOM_ID, 3) == 0) {
@@ -322,8 +322,8 @@ void R209Init()
         r209_work.p->em[7].w.setEm(0x8D, 3, 1, 0, 0);
         r209_work.p->em[1].w.setEm(0x7B, 3, 1, 0, 0);
         r209_work.p->em[2].w.setEm(0x7C, 3, 1, 0, 0);
-        getRoomEtcDoor(2, &r209_work.p->door2, 1);
-        getRoomEtcDoor(3, &r209_work.p->door3, 1);
+        getRoomEtcDoor(2, port_out(r209_work.p->door2), 1);
+        getRoomEtcDoor(3, port_out(r209_work.p->door3), 1);
         SceAtDataSet_exec(0xA, 0x12, 0, (TaskFunc) r209_LeaderPointAtPlayer, 0, 1);
         SceAtDataSet_exec(0x16, 0x12, 0, (TaskFunc) r209_LeaderEscapeToD, 0, 1);
         SceAtDataSet_exec(0xD, 0x12, 0, (TaskFunc) r209_StrStopReqFunc, (void*) 0xD, 1);
@@ -564,7 +564,7 @@ static void r209_LeaderPointAtPlayer()
     cEm* door;
     int opened = 0;
 
-    getRoomEtcDoor(1, &door, 1);
+    getRoomEtcDoor(1, port_out(door), 1);
     r209_work.p->leader.setFindPL();
     do {
         if (door->flags_3C8 & 0x10000000) {
@@ -1307,7 +1307,7 @@ static void r209_PotBreakCheck()
 {
     cEm* box;
 
-    if (getRoomEtcBox(0x20, &box, 1) == 1) {
+    if (getRoomEtcBox(0x20, port_out(box), 1) == 1) {
         while (box->hp > 0) {
             SceSleep(1);
         }
@@ -1381,7 +1381,7 @@ static void r209_BridgeAppearCheckEnd()
     // and `lis work@ha` / `&door` are hoisted before the loop
     while (1) {
         if (SceAtHitCheck(0x25) != 0) {
-            getRoomEtcDoor(0x21, &door, 1);
+            getRoomEtcDoor(0x21, port_out(door), 1);
             if (door != NULL && door->hp > 0 && (door->flags_3C8 & 0x10000000) == 0) {
                 SceSleep(1);
             }

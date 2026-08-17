@@ -216,10 +216,10 @@ void r212_TrapInit()
             SubCharCtrl(1, 0);
         }
     }
-    if (getRoomEtcRack(5, &r212_work.p->rack[0], 1)) {
+    if (getRoomEtcRack(5, port_out(r212_work.p->rack[0]), 1)) {
         ((cEmRack*) r212_work.p->rack[0])->setRange(5100.0f, 3000.0f, 7156.0f, 3000.0f);
     }
-    if (getRoomEtcRack(6, &r212_work.p->rack[1], 1)) {
+    if (getRoomEtcRack(6, port_out(r212_work.p->rack[1]), 1)) {
         ((cEmRack*) r212_work.p->rack[1])->setRange(5500.0f, 3000.0f, 6756.0f, 3000.0f);
     }
     Vec zero = {0.0f, 0.0f, 0.0f};
@@ -870,7 +870,7 @@ static void r212_DoorLock()
 {
     cEm* door;
 
-    if (getRoomEtcDoor(0, &door, 1)) {
+    if (getRoomEtcDoor(0, port_out(door), 1)) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x1F), ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, 0);
     }
     if (door) {

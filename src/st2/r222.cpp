@@ -113,7 +113,7 @@ void R222Init()
     // stays below it. The reference is declared after the pG flag store so that `high(pG)` is the earlier
     // gcse expression: the two PRE'd highs fill the prologue's free slots in first-occurrence order.
     pG->flags_64 |= 0x20000;
-    R222Work*& wp = r222_work.p;
+    P32<R222Work>& wp = r222_work.p;
 #line 70 "D:/Bio4/Prog/r222.cpp"
     wp = (R222Work*) MEM_CALLOC(sizeof(R222Work), 1, 0xd);
     pG->flags_5010 |= 1;

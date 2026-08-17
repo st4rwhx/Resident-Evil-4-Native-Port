@@ -226,7 +226,7 @@ void R20eInit()
         m->setNoSuspend(1);
         m->lightInfo.x50 |= 4;
     }
-    if (getRoomEtcRack(8, &r20e_work->rack, 1)) {
+    if (getRoomEtcRack(8, port_out(r20e_work->rack), 1)) {
         ((cEmRack*) r20e_work->rack)->setRange(0.0f, 1180.0f, 0.0f, 5000.0f);
     }
     if (pG->x4FB8 == 1) {

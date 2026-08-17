@@ -44,7 +44,7 @@ extern "C" void setTexRender(cModelInfo* info)
 {
     u8* tbl = pl0aTexTbl;
 
-    if (GetTexRenderMgr(&pl0aTex.p)) {
+    if (GetTexRenderMgr(port_out(pl0aTex.p))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;

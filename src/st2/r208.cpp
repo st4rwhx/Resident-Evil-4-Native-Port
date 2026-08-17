@@ -346,7 +346,7 @@ void R208Init()
         cEm* b0;
         cEm* b1;
 
-        if (getRoomEtcBarred(0xE, &b0, 1) == 1 && getRoomEtcBarred(0xF, &b1, 1) == 1) {
+        if (getRoomEtcBarred(0xE, port_out(b0), 1) == 1 && getRoomEtcBarred(0xF, port_out(b1), 1) == 1) {
             ((cEmBarred*) b0)->setClosed();
             ((cEmBarred*) b1)->setClosed();
         }
@@ -385,7 +385,7 @@ void R208Main()
         cEm* b0;
         cEm* b1;
 
-        if (getRoomEtcBarred(0xE, &b0, 1) == 1 && getRoomEtcBarred(0xF, &b1, 1) == 1) {
+        if (getRoomEtcBarred(0xE, port_out(b0), 1) == 1 && getRoomEtcBarred(0xF, port_out(b1), 1) == 1) {
             if (pG->sceat_x17C & 0x08000000) {
                 if (((cEmBarred*) b0)->ckStatus() == 2) {
                     ((cEmBarred*) b0)->setOpen(0);
@@ -850,7 +850,7 @@ extern "C" void setTexRender()
     cObj* obj;
     u8* tbl = r208_texTbl;
 
-    if (GetTexRenderMgr(&W->tex)) {
+    if (GetTexRenderMgr(port_out(W->tex))) {
         tbl[0] = 1;
         tbl[1] = 0;
         tbl[4] = 0xF7;
@@ -1044,12 +1044,12 @@ extern "C" void emGroupeD_reset()
     W->em[2].setGoto(&r208_goPos8, 0xC);
     W->em[1].setGoto(&r208_goPos9, 0xC);
     W->em[3].setGoto(&r208_goPos8, 0xC);
-    if (getRoomEtcBarred(0xE, &b0, 1) == 1 && getRoomEtcBarred(0xF, &b1, 1) == 1) {
+    if (getRoomEtcBarred(0xE, port_out(b0), 1) == 1 && getRoomEtcBarred(0xF, port_out(b1), 1) == 1) {
         ((cEmBarred*) b0)->setOpen(0);
         ((cEmBarred*) b1)->setOpen(0);
     }
     for (i = 0; i < 0x41; i++) {
-        if (getRoomEtcBarred(0xE, &b0, 1) == 1 && getRoomEtcBarred(0xF, &b1, 1) == 1) {
+        if (getRoomEtcBarred(0xE, port_out(b0), 1) == 1 && getRoomEtcBarred(0xF, port_out(b1), 1) == 1) {
             ((cEmBarred*) b0)->setOpen(0);
             ((cEmBarred*) b1)->setOpen(0);
         }
@@ -1057,7 +1057,7 @@ extern "C" void emGroupeD_reset()
     }
     CamCtrl.CutCall(0xB);
     for (i = 0; i < 0x2D; i++) {
-        if (getRoomEtcBarred(0xE, &b0, 1) == 1 && getRoomEtcBarred(0xF, &b1, 1) == 1) {
+        if (getRoomEtcBarred(0xE, port_out(b0), 1) == 1 && getRoomEtcBarred(0xF, port_out(b1), 1) == 1) {
             ((cEmBarred*) b0)->setOpen(0);
             ((cEmBarred*) b1)->setOpen(0);
         }
@@ -1065,7 +1065,7 @@ extern "C" void emGroupeD_reset()
     }
     while (CamCtrl.IsMotionEnd() == 0) {
         SceSleep(1);
-        if (getRoomEtcBarred(0xE, &b0, 1) == 1 && getRoomEtcBarred(0xF, &b1, 1) == 1) {
+        if (getRoomEtcBarred(0xE, port_out(b0), 1) == 1 && getRoomEtcBarred(0xF, port_out(b1), 1) == 1) {
             ((cEmBarred*) b0)->setOpen(0);
             ((cEmBarred*) b1)->setOpen(0);
         }

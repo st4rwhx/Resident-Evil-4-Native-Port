@@ -84,7 +84,7 @@ void R106Init()
     pG->flags_51BC |= 0x800;
     EvtMgr.SetFunc("evt_r106s00_func", (void*) Evt_R106S00_Func);
     EatMgr.registEffInfo(4, (AtEffInfo*) &r106_eff_info);
-    if (getRoomEtcDoor(8, &door, 1)) {
+    if (getRoomEtcDoor(8, port_out(door), 1)) {
         ((cEmDoor*) door)->setLock(ROOM_ARC_PTR(pG->pRoomArc, 0x32), ROOM_ARC_PTR(pG->pRoomArc, 0x33), 0, 0);
     }
     SceSetItemEvent(6, 0x85, 0, 6, r106_openShelf, (void (*)()) r106_openedShelf, 0, 0);
@@ -109,7 +109,7 @@ void R106Init()
         r106_setRollingStone();
     }
     r106_setEm();
-    if (getRoomEtcRack(0, &rack, 1)) {
+    if (getRoomEtcRack(0, port_out(rack), 1)) {
         ((cEmRack*) rack)->setRange(0.0f, 1800.0f, 0.0f, 2200.0f);
     }
     pos.x = 33528.0f;

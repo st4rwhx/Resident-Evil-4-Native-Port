@@ -45,7 +45,7 @@ void R107Init()
 #line 50 "D:/Bio4/Prog/r107.cpp"
     r107_work = (R107Work*) MEM_CALLOC(1, 1, 0xd);
 
-    if (getRoomEtcDoor(0, &door0, 1) && getRoomEtcDoor(0x15, &door1, 1)) {
+    if (getRoomEtcDoor(0, port_out(door0), 1) && getRoomEtcDoor(0x15, port_out(door1), 1)) {
         ((cEmDoor*) door0)->setDoor((cEmDoor*) door1);
     }
     SceExec(0x12, (TaskFunc) r107_checkBgmPlay, 0, 0, 2, 0);

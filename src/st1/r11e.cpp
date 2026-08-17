@@ -108,8 +108,8 @@ void R11eInit()
     PSet(r11e_work->eat[1], EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 0x29), 0, &r11e_koyaBPos, &r11e_koyaBRot, 0));
     PSet(r11e_work->eat[2], EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 0, &r11e_sakuAPos, &r11e_sakuARot, 0));
     PSet(r11e_work->eat[3], EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 0x2A), 0, &r11e_sakuBPos, &r11e_sakuBRot, 0));
-    getRoomEtcDoor(0xE, &door, 1);
-    getRoomEtcDoor(0xF, &door, 1);
+    getRoomEtcDoor(0xE, port_out(door), 1);
+    getRoomEtcDoor(0xF, port_out(door), 1);
     if (RsfCheck(G_ROOM_ID, 0)) {
         koyaA_delete();
     }
@@ -254,7 +254,7 @@ extern "C" void sakuA_destroy()
 
     SndCall(8, 0x1B, &pos, 0x2B, 0, 0);
     EstSet(0, -1, &pos, &rot, 1, 3, 0, 0, 0, 0);
-    if (getRoomEtcDoor(0xE, &door, 1)) {
+    if (getRoomEtcDoor(0xE, port_out(door), 1)) {
         ((cEmDoor*) door)->setBreak(&r11e_sakuATarget);
     }
     sakuA_delete();
@@ -268,7 +268,7 @@ extern "C" void sakuB_destroy()
 
     SndCall(8, 0x1B, &pos, 0x2B, 0, 0);
     EstSet(0, -1, &pos, &rot, 1, 3, 0, 0, 0, 0);
-    if (getRoomEtcDoor(0xF, &door, 1)) {
+    if (getRoomEtcDoor(0xF, port_out(door), 1)) {
         ((cEmDoor*) door)->setBreak(&r11e_sakuBTarget);
     }
     sakuB_delete();

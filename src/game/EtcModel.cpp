@@ -2460,7 +2460,7 @@ int setRoomEtcDisp(int no, int on, int flag)
     if (setRoomEtcBreakDisp(no, on, 0) == 1) {
         return 1;
     }
-    if (getRoomEtc2(no, &em, 0)) {
+    if (getRoomEtc2(no, port_out(em), 0)) {
         etcDispSet(em, on);
         return 1;
     }
@@ -2479,7 +2479,7 @@ static int setRoomEtcBreakDisp(int no, int on, int flag)
 #endif
     cEm* em;
 
-    if (getRoomEtcBreak(no, &em, 0)) {
+    if (getRoomEtcBreak(no, port_out(em), 0)) {
         if (em->hp > 0) {
             etcDispSet(em, on);
         }

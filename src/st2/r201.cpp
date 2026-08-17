@@ -174,8 +174,8 @@ void R201Init()
             r201_setBattleArea(0, 1);
         }
     }
-    getRoomEtcBarred(0x10, &r201_work.p->barred, 1);
-    getRoomEtcSwitch(0x1C, &r201_work.p->sw, 1);
+    getRoomEtcBarred(0x10, port_out(r201_work.p->barred), 1);
+    getRoomEtcSwitch(0x1C, port_out(r201_work.p->sw), 1);
     if (r201_work.p->barred && r201_work.p->sw) {
         ((cEmSwitch*) r201_work.p->sw)->setOpenOnly();
         if (RsfCheck(G_ROOM_ID, 5) == 0) {

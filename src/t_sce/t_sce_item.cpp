@@ -681,7 +681,7 @@ void tSceItemAreaEdit_disp()
         if (SceAtItemHitCheck(&pW->area[i], NULL) == 1) col = colA;
         obj = NULL;
         if (pW->area[i].linkType == 2 && !(pW->area[i].item.flag2 & 1)) {
-            if (getRoomEtcBreak(pW->area[i].linkNo, &obj, 0) == 1) {
+            if (getRoomEtcBreak(pW->area[i].linkNo, port_out(obj), 0) == 1) {
                 col = colB;
                 if (SceAtItemHitCheck(&pW->area[i], &obj->pos) == 1) col = colA;
                 Draw_sphere(&obj->pos, 100.0f, col, 0, 0);

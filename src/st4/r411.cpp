@@ -68,7 +68,7 @@ static void r411_checkDoorUnlock()
     }
     RsfClear(G_ROOM_ID, 3);
     SceAtSetEnable(0xF, 0);
-    if (getRoomEtcDoor(1, &door, 1)) {
+    if (getRoomEtcDoor(1, port_out(door), 1)) {
         ((cEmDoor*) door)->setNormal();
     }
     SceExec(0x12, (TaskFunc) r411_checkEmSet3, 0, 0, 2, 0);
@@ -78,7 +78,7 @@ extern "C" void r411_lockDoor()
 {
     cEm* door;
 
-    if (getRoomEtcDoor(1, &door, 1)) {
+    if (getRoomEtcDoor(1, port_out(door), 1)) {
         cEmDoorSetCloseLock(door);
     }
     SceAtSetEnable(0xF, 1);

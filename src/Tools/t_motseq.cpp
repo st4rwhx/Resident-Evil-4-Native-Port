@@ -160,7 +160,7 @@ void msqToolInit()
     MsqWork* w;
     Camera* cam;
     TprimRect rect;
-    MsqWork*& wp = msqWork.p;
+    P32<MsqWork>& wp = msqWork.p;
     f32 zero;
 
     TutilInitDefault();

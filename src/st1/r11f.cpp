@@ -114,14 +114,14 @@ void R11fInit()
         SmdSetTrans(0x15, 1);
         SceAtSetEnable(4, 0);
     }
-    if (getRoomEtcWindow(0xB, &r11f_work->win, 1)) {
+    if (getRoomEtcWindow(0xB, port_out(r11f_work->win), 1)) {
         ((cEmWindow*) r11f_work->win)->SetEnableDamage(0);
         ((cEmWindow*) r11f_work->win)->SetEtcFlag(3, 1);
         ((cEmWindow*) r11f_work->win)->SetEnableFence(0, 0);
         BitOff(r11f_work->win->be_flag, 2);
         r11f_work->win->hp = 0;
     }
-    if (getRoomEtcDram(9, &r11f_work->dram, 1) == 0) {
+    if (getRoomEtcDram(9, port_out(r11f_work->dram), 1) == 0) {
         SceAtSetEnable(7, 0);
     }
     SeAtSetOnOff(0, 0);

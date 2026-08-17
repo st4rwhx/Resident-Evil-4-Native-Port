@@ -155,7 +155,7 @@ void R214Init()
     cEm* barred;
 
 #line 98 "D:/Bio4/Prog/r214.cpp"
-    R214Work*& wp = r214_work.p;   // reference: the following `lwz pG` stays below the store (r227 idiom)
+    P32<R214Work>& wp = r214_work.p;   // reference: the following `lwz pG` stays below the store (r227 idiom)
     wp = (R214Work*) MEM_CALLOC(sizeof(R214Work), 1, 0xD);
     if (pG->x4F9F == 1) {
         BitOn(pG->flags_51C0, 0x40000000);
@@ -163,10 +163,10 @@ void R214Init()
         RsfSet(G_ROOM_ID, 5);
     }
     EvtMgr.SetFunc("evt_r214s00_func", (void*) Evt_R214S00_Func);
-    if (getRoomEtcBarred(0x11, &r214_work.p->barred[0], 1)) {
+    if (getRoomEtcBarred(0x11, port_out(r214_work.p->barred[0]), 1)) {
         ((cEmBarred*) r214_work.p->barred[0])->setClosed();
     }
-    if (getRoomEtcBarred(0x12, &r214_work.p->barred[1], 1)) {
+    if (getRoomEtcBarred(0x12, port_out(r214_work.p->barred[1]), 1)) {
         ((cEmBarred*) r214_work.p->barred[1])->setClosed();
     }
     if (pG->x4F9E == 2) {
@@ -249,10 +249,10 @@ void R214Init()
             }
         }
     }
-    if (getRoomEtcBarred(0x11, &barred, 1)) {
+    if (getRoomEtcBarred(0x11, port_out(barred), 1)) {
         barred->lightInfo.x54 &= ~0x40;
     }
-    if (getRoomEtcBarred(0x12, &barred, 1)) {
+    if (getRoomEtcBarred(0x12, port_out(barred), 1)) {
         barred->lightInfo.x54 &= ~0x40;
     }
     SceExec(0x12, (TaskFunc) r214_checkBgmPlay, 0, 0, 2, 0);

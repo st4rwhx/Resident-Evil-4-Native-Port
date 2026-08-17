@@ -55,13 +55,13 @@ void R109Init()
     PSet(r109_work->eat[1], EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, &r109_pos1, &r109_rot1, 0));
     PSet(r109_work->eat[2], EatMgr.create(ROOM_ARC_PTR(pG->pRoomArc, 0x20), 0, &r109_pos2, &r109_rot2, 0));
 
-    if (getRoomEtcTorch(0, &torch, 1)) {
+    if (getRoomEtcTorch(0, port_out(torch), 1)) {
         ((cEmTorch*) torch)->setDelete();
     }
-    if (getRoomEtcTorch(1, &torch, 1)) {
+    if (getRoomEtcTorch(1, port_out(torch), 1)) {
         ((cEmTorch*) torch)->setDelete();
     }
-    if (getRoomEtcTorch(2, &torch, 1)) {
+    if (getRoomEtcTorch(2, port_out(torch), 1)) {
         ((cEmTorch*) torch)->setDelete();
     }
     koya_init();

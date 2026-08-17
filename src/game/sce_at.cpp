@@ -3364,7 +3364,7 @@ void SceAtLinkEtcDead(int no, int etcNo, int on)
         pLog->err(0, 0, "SceAtLinkEtcDead(): AT NOT FOUND");
         return;
     }
-    if (getRoomEtcBreak(etcNo, &em, 1) != 1) {
+    if (getRoomEtcBreak(etcNo, port_out(em), 1) != 1) {
         return;
     }
     if (bitOff(*GetEtcFlgPtr(etcNo, pG->room_id))) {
@@ -3449,7 +3449,7 @@ void sceAtLink_check()
         case 2: {
             cEm* etc;
 
-            if (getRoomEtcBreak(w->linkNo, &etc, 0) == 1) {
+            if (getRoomEtcBreak(w->linkNo, port_out(etc), 0) == 1) {
                 if (*GetEtcFlgPtr(w->linkNo, pG->room_id) & 1) {
                     if (w->flag & 1) {
                         SceAtSetEnable(w->no, 0);
@@ -3929,7 +3929,7 @@ void sceAtSetItem(SceAtWork* w)
         break;
     }
     case 2:
-        if (getRoomEtcBreak(w->linkNo, &em, 1) == 0) {
+        if (getRoomEtcBreak(w->linkNo, port_out(em), 1) == 0) {
             ok = 0;
         } else if (bitOff(*GetEtcFlgPtr(w->linkNo, pG->room_id))) {
             ok = 0;

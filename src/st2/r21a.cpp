@@ -115,14 +115,14 @@ void R21aInit()
     cEm* door;
     u32 i;
 
-    R21aWork*& wp = r21a_work.p;
+    P32<R21aWork>& wp = r21a_work.p;
 #line 50 "D:/Bio4/Prog/r21a.cpp"
     wp = (R21aWork*) MEM_CALLOC(sizeof(R21aWork), 1, 0xd);
     SceSetItemEvent(0xA, 0x84, 5, 1, r21a_moveShelf, (void (*)()) r21a_movedShelf, 0x84, 0);
     SceSetItemEvent(9, 0x85, 4, 2, r21a_moveShelf, (void (*)()) r21a_movedShelf, 0x85, 0);
     SceSetItemEvent(9, 0x88, 4, 2, r21a_moveShelf, (void (*)()) r21a_movedShelf, 0x88, 0);
     SceSetItemEvent(9, 0x89, 4, 2, r21a_moveShelf, (void (*)()) r21a_movedShelf, 0x89, 0);
-    if (getRoomEtcWindow(0x12, &win, 1)) {
+    if (getRoomEtcWindow(0x12, port_out(win), 1)) {
         ((cEmWindow*) win)->SetBreakModel();
         win->be_flag &= ~2;
     }
@@ -156,7 +156,7 @@ void R21aInit()
         SceAtSetEnable(6, 0);
         SceAtSetEnable(4, 0);
         SmdSetTrans(0x40, 0);
-        getRoomEtcDoor(5, &door, 1);
+        getRoomEtcDoor(5, port_out(door), 1);
         if (door) {
             cEmDoorSetCloseLock(door);
         }
@@ -460,7 +460,7 @@ static void R21aFallRoofStartEnd()
         SetAngXYZ(obj, 0.0f, 0.0f, 0.0f);
         SetPosXYZ(obj, obj->pos.x, 3095.0f, obj->pos.z);
     }
-    getRoomEtcDoor(5, &door, 1);
+    getRoomEtcDoor(5, port_out(door), 1);
     if (door) {
         cEmDoorSetCloseLock(door);
     }
