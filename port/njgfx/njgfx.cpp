@@ -558,13 +558,15 @@ extern "C" void njgfx_frame(const unsigned char *bytes, unsigned size) {
 // g_port_thumb_ok), l'EFB de l'image precedente est reduit a 320 x 224 et garde ; une sauvegarde reussie l'ecrit a cote de
 // son fichier (port_save_thumb, cCard::saveMain) : bh4_dataNN.thumb, PPM P6, lu par l'ecran d'accueil de l'appli.
 extern "C" volatile int g_port_thumb_ok;
+extern "C" { extern void (*nj_clean_frame_hook)(void); }   // renderer_gl.cpp
+extern "C" void port_save_info(int file_no);               // port/njstate.cpp : fiche de la sauvegarde
 namespace {
 const int kThumbW = 320, kThumbH = 224;
 std::mutex g_thumb_mu;
 std::vector<uint8_t> g_thumb;   // RGB, haut en premier
 GLuint g_thumb_fbo = 0, g_thumb_tex = 0;
-void thumb_capture(unsigned frame) {
-  if (!g_port_thumb_ok || frame % 60 != 0 || !g_efb_fbo) return;
+bool g_thumb_want = false;   // une image propre est demandee pour cette image (crochet du rendu, avant le HUD)
+void thumb_grab(GLuint src) {
   if (!g_thumb_fbo) {
     glGenTextures(1, &g_thumb_tex);
     glBindTexture(GL_TEXTURE_2D, g_thumb_tex);
@@ -573,7 +575,7 @@ void thumb_capture(unsigned frame) {
     glBindFramebuffer(GL_FRAMEBUFFER, g_thumb_fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_thumb_tex, 0);
   }
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, g_efb_fbo);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, src);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_thumb_fbo);
   glBlitFramebuffer(0, 0, gfx::efb_w(), gfx::efb_h(), 0, 0, kThumbW, kThumbH, GL_COLOR_BUFFER_BIT, GL_LINEAR);
   glBindFramebuffer(GL_READ_FRAMEBUFFER, g_thumb_fbo);
@@ -588,6 +590,28 @@ void thumb_capture(unsigned frame) {
     }
   std::lock_guard<std::mutex> lk(g_thumb_mu);
   g_thumb.swap(rgb);
+}
+// Crochet du rendu (renderer_gl, premier dessin 2D apres la 3D) : la 3D seule, sans HUD ni debug ni bandes.
+void thumb_clean_hook() {
+  if (!g_thumb_want) return;
+  g_thumb_want = false;
+  GLint d = 0, r = 0;
+  glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &d);
+  glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &r);
+  const GLboolean sc = glIsEnabled(GL_SCISSOR_TEST);
+  glDisable(GL_SCISSOR_TEST);
+  thumb_grab((GLuint)d);
+  if (sc) glEnable(GL_SCISSOR_TEST);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, (GLuint)d);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint)r);
+}
+void thumb_capture(unsigned frame) {
+  if (g_thumb_want && g_efb_fbo) {   // l'image precedente n'avait aucun dessin 2D : image entiere
+    g_thumb_want = false;
+    thumb_grab(g_efb_fbo);
+  }
+  if (!nj_clean_frame_hook) nj_clean_frame_hook = thumb_clean_hook;
+  if (g_port_thumb_ok && frame % 60 == 0 && g_efb_fbo) g_thumb_want = true;
 }
 }  // namespace
 extern "C" void port_save_thumb(int file_no) {
@@ -606,6 +630,7 @@ extern "C" void port_save_thumb(int file_no) {
     std::fclose(f);
     std::printf("[PORT] image de sauvegarde : %s\n", path);
   }
+  port_save_info(file_no);
 }
 
 static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned frame, const unsigned vm_in[6]) {

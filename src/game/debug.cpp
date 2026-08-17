@@ -71,15 +71,32 @@ struct OSClock {
 
 #line 66 "D:/Bio4/Prog/debug.cpp"
 
+#ifdef RE4_PORT
+#include <stdlib.h>
+#endif
+#ifdef RE4_PORT
+static bool portDebugHud()   // le joueur ne voit pas les barres du debug ; Nightjar : Rapport -> Mode debug
+{
+    static int on = -1;
+    if (on < 0) {
+        const char* e = getenv("NJ_DEBUG_HUD");
+        on = (e && e[0] == '1') ? 1 : 0;
+    }
+    return on != 0;
+}
+#define PORT_DEBUG_HUD() portDebugHud()
+#else
+#define PORT_DEBUG_HUD() 1
+#endif
 void DebugControl()
 {
-    if ((pG->flags_68 & 0x40000000) && pG->debug_mode) {
+    if ((pG->flags_68 & 0x40000000) && pG->debug_mode && PORT_DEBUG_HUD()) {
         MemCheckUsedHeap();
         processBarDisp();
         PrimitiveBuffDisp();
         DC.dispDebug();
     }
-    if ((pG->flags_68 & 0x8000) && pG->debug_mode) {
+    if ((pG->flags_68 & 0x8000) && pG->debug_mode && PORT_DEBUG_HUD()) {
         debugPadInfoDisp();
     }
     HALT(Joy[2].on == 0x1600);

@@ -20,7 +20,8 @@ enum {
                          // chargement, 4 charger la sauvegarde b, 5 options du jeu)
     NJ_MSG_PAUSE = 20,   // appli -> coeur : a = 1 pause (menu Nightjar ouvert), 0 reprise
     NJ_MSG_SETTING = 22, // appli -> coeur : reglage en direct ; a = numero (1 tenue de Leon : b = -1 auto, 0 veste, 1 chemise,
-                         // 2 gilet, 3 RPD ; 2 camera de la scene du titre : b = 0 normale, 1 garde-robe)
+                         // 2 gilet, 3 RPD ; 2 camera de la scene du titre : b = 0 normale, 1 garde-robe ;
+                         // 3 son de menu du jeu : b = id SndCall(0, b), 4 valider, 5 retour)
     NJ_MSG_CASE = 19,    // appli -> coeur : mallette au doigt ; a = 1 curseur (data : int32 i, j), 2 piece en main (data : f32 x, y) ; b = grille
 };
 
@@ -34,7 +35,9 @@ enum {
     NJS_AIMING = 1u << 12, NJS_ASHLEY = 1u << 13, NJS_AIM_TARGET = 1u << 14, NJS_HAND = 1u << 15,
     NJS_CHOICE_VERTICAL = 1u << 16, NJS_TITLE_WAIT = 1u << 17,   // 17 : le titre attend une commande du menu de Nightjar
     NJS_GAME_CLEARED = 1u << 18,  // 18 : jeu fini (pSys->x4 bit 30) : choix de la difficulte, Professionnel, Bonus
-    NJS_EASY_OK = 1u << 19,       // 19 : la version propose Facile au choix de difficulte (pas en anglais US, titleLevelInit)
+    NJS_EASY_OK = 1u << 19,
+    NJS_SCENE_LOADING = 1u << 20, // 20 : menu titre, le decor se prepare (titre d'origine masque par l'appli)
+    NJS_SCENE_LIVE = 1u << 21,    // 21 : le decor du menu titre est pret (fondu d'ouverture)       // 19 : la version propose Facile au choix de difficulte (pas en anglais US, titleLevelInit)
 };
 
 typedef struct NjBoard {   // planche de la mallette (pzlBoard) : l'appli la projette elle-meme a l'ecran

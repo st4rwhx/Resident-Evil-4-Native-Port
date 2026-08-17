@@ -442,6 +442,15 @@ s32 DVDGetDriveStatus(void) { return 0; }
 DVDDiskID *DVDGetCurrentDiskID(void)
 {
     ensure_index();
+    if (!g_disk_id_ok && g_image < 0) {   // dossier extrait : l'identite du disque est dans sys/boot.bin (numero de disque)
+        char bp[600];
+        std::snprintf(bp, sizeof(bp), "%s/sys/boot.bin", g_root);
+        if (FILE *bf = std::fopen(bp, "rb")) {
+            if (std::fread(&g_disk_id, 1, sizeof(g_disk_id), bf) == sizeof(g_disk_id))
+                g_disk_id_ok = true;
+            std::fclose(bf);
+        }
+    }
     if (!g_disk_id_ok) {
         // Plutot que de rendre un pointeur nul - que le jeu dereference aussitot -, on rend une
         // identite plausible. Le portage sans image reste ainsi debogable.
@@ -451,6 +460,61 @@ DVDDiskID *DVDGetCurrentDiskID(void)
         g_disk_id_ok = true;
     }
     return &g_disk_id;
+}
+
+// Identites de disque et changement de disque (18/11) : etaient des souches (Generate ne remplissait rien, Compare
+// rendait toujours « different », ChangeDisk ne faisait rien) -> le natif restait sur le disque 1 et l'ile (stage 3,
+// disque 2) etait introuvable. Dossiers extraits : « .../disc1 » et « .../disc2 » cote a cote (l'appli range ainsi
+// les disques) ; le changement reindexe le dossier du disque demande. Image disque unique : pas de second disque.
+DVDDiskID *DVDGenerateDiskID(DVDDiskID *id, const char *game, const char *company, u8 diskNum, u8 version)
+{
+    std::memset(id, 0, sizeof(*id));
+    if (game) std::memcpy(id->gameName, game, 4);
+    if (company) std::memcpy(id->company, company, 2);
+    id->diskNumber = diskNum;
+    id->gameVersion = version;
+    return id;
+}
+
+int DVDCompareDiskID(const DVDDiskID *id1, const DVDDiskID *id2)   // comme le SDK : 0xFF = numero / version indifferents
+{
+    if (std::memcmp(id1->gameName, id2->gameName, 4) != 0 || std::memcmp(id1->company, id2->company, 2) != 0)
+        return 0;
+    if (id1->diskNumber != 0xFF && id2->diskNumber != 0xFF && id1->diskNumber != id2->diskNumber)
+        return 0;
+    if (id1->gameVersion != 0xFF && id2->gameVersion != 0xFF && id1->gameVersion != id2->gameVersion)
+        return 0;
+    return 1;
+}
+
+int DVDChangeDiskAsync(DVDCommandBlock *block, DVDDiskID *id, DVDCBCallback callback)
+{
+    ensure_index();
+    const int want = id ? id->diskNumber : 0;
+    char next[512];
+    std::snprintf(next, sizeof(next), "%s", g_root);
+    const size_t n = std::strlen(next);
+    bool ok = false;
+    if (g_image < 0 && n > 5 && (next[n - 5] == 'd' || next[n - 5] == 'D') && next[n - 1] >= '1' && next[n - 1] <= '9'
+        && want >= 0 && want < 9) {
+        next[n - 1] = (char) ('1' + want);
+        char probe[600];
+        std::snprintf(probe, sizeof(probe), "%s/files", next);
+        struct stat stt{};
+        if (stat(probe, &stt) == 0 && S_ISDIR(stt.st_mode)) {
+            std::snprintf(g_root, sizeof(g_root), "%s", next);
+            g_count = 0;
+            g_ready = false;
+            g_disk_id_ok = false;
+            ensure_index();
+            DVDGetCurrentDiskID();
+            ok = g_count > 0;
+        }
+    }
+    std::printf("[PORT] DVD : changement vers le disque %d %s (%s)\n", want + 1, ok ? "fait" : "IMPOSSIBLE", g_root);
+    if (block) block->state = 0;
+    if (callback) callback(ok ? 1 : -1, block);
+    return 1;
 }
 
 void *DVDGetFSTLocation(void)

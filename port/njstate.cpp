@@ -8,6 +8,8 @@
 // et on envoie le resultat a l'appli par njlink une fois par image (NJ_MSG_STATE). Les ecritures de
 // l'appli (mallette au doigt) reviennent par NJ_MSG_CASE et sont appliquees par njstate_case().
 // Chaque test reprend celui de re4_context.cpp, qui cite sa source dans le decompile.
+#include <cstdio>
+#include <cstdlib>
 #include <string.h>
 
 #include "global.h"
@@ -24,6 +26,8 @@
 #include "main.h"   // pSys : jeu fini, langue (menu titre de Nightjar)
 extern "C" int port_title_waiting(void);   // port/arm_hooks.cpp : menu titre de Nightjar
 extern "C" int port_menu_scene_active(void);
+extern "C" int port_title_phase(void);
+extern "C" int port_scene_live(void);
 extern "C" volatile int g_port_thumb_ok = 0;   // vraie partie a l'ecran : port/njgfx (image des sauvegardes)
 #include "joy.h"
 #include "act_btn.h"
@@ -190,7 +194,9 @@ extern "C" void njstate_fill(NjState* out)
     if (pSys != nullptr) {   // menu titre : difficulte comme le jeu (titleMain / titleLevelInit)
         if (pSys->x4 & 0x40000000) s.bits |= NJS_GAME_CLEARED;
         if (pSys->language != 1) s.bits |= NJS_EASY_OK;
-    }   // menu titre de Nightjar (18/11), scene comprise
+    }
+    if (port_title_phase() && !port_scene_live()) s.bits |= NJS_SCENE_LOADING;
+    if (port_scene_live() && port_menu_scene_active()) s.bits |= NJS_SCENE_LIVE;   // menu titre de Nightjar (18/11), scene comprise
     s.wep_no = g->wep_no;
     s.wep_type = g->wep_type;
     s.chapters_ended = g->x4F8A;
@@ -366,5 +372,19 @@ extern "C" void njstate_debug_ids(void)
                  i, u.type, u.id, u.flags, (unsigned) u.texId, (int) u.col[0], (int) u.col[1], (int) u.col[2], (int) u.col[3],
                  u.col0[0], u.col0[1], u.col0[2], u.col0[3], u.col1[0], u.col1[1], u.col1[2], u.col1[3], (int) (s16) u.timer[2],
                  knum, (int) kt, u.parent ? (int) (u.parent - IdSys.pUnit) : -1);
+    }
+}
+
+// Fiche de sauvegarde (18/11 soir) : bh4_dataNN.info a cote du fichier, lue par l'accueil de l'appli (nom du lieu,
+// tenue) ; SaveInfo.chapter/room restent a 0 dans cette build.
+extern "C" void port_save_info(int file_no)
+{
+    if (pG == nullptr) return;
+    const char *dir = getenv("RE4_SAVE_DIR");
+    char path[512];
+    snprintf(path, sizeof path, "%s/bh4_data%02d.info", dir ? dir : "card", file_no);
+    if (FILE *f = fopen(path, "w")) {
+        fprintf(f, "room=%u\nstage=%u\ncostume=%u\n", (unsigned) pG->room_id, (unsigned) pG->stage_no, (unsigned) pG->costume);
+        fclose(f);
     }
 }

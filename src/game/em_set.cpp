@@ -146,9 +146,17 @@ int checkListId(int no)
     return 1;
 }
 
+#ifdef RE4_PORT
+extern "C" int port_menu_scene_active(void);
+#endif
 void EmSetFromList()
 {
     u32 i;
+#ifdef RE4_PORT
+    if (port_menu_scene_active()) {   // decor du menu titre : aucun ennemi
+        return;
+    }
+#endif
 
     for (i = 0; i < 256; i++) {
         EmListData* d = EM_LIST(i);

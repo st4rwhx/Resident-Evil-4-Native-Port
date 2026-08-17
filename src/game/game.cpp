@@ -243,6 +243,8 @@ extern "C" int port_costume_live_pending(void);
 extern "C" int port_costume_forced(void);
 extern "C" int port_menu_scene_active(void);
 extern "C" int port_scene_cam(void);
+extern "C" void port_scene_live_set(int v);
+extern "C" int port_menu_se_take(void);
 extern "C" int port_costume_live_take(void);
 extern "C" volatile int g_port_thumb_ok;   // port/njstate.cpp : vraie partie a l'ecran (Leon, pas de menu ni de mort)
 void PlChangeData();
@@ -284,6 +286,13 @@ void GameTask()
         eprintf(20, 16, 7, 0, "%d:%02d:%02d %08X", h, m, s, Joy[0].on);
 #ifdef RE4_PORT
         portWardrobeLive();
+        if (const int se = port_menu_se_take()) {   // son de menu du jeu demande par l'appli (NJ_MSG_SETTING 3)
+            if (se == -1) {   // la voix « Resident Evil 4 » (PRESS START du menu titre de Nightjar)
+                SndCall(6, pSys->language == 0 ? 0 : 2, 0, 0, 0, 0);
+            } else {
+                SndCall(0, se, 0, 0, 0, 0);
+            }
+        }
 #endif
         game_func_tbl[pG->x20]();
         TaskSleep(1);
@@ -629,9 +638,15 @@ extern "C" int port_title_cmd_pending(void);
 void portMenuSceneFrame()   // appelee par CameraMove (camera.cpp) avant le calcul des matrices
 {
     static f32 t = 0.0f;
+    static int live_n = 0;
     if (!port_menu_scene_active() || pPL == NULL) {
         t = 0.0f;
+        live_n = 0;
+        port_scene_live_set(0);
         return;
+    }
+    if (++live_n == 20) {
+        port_scene_live_set(1);   // decor pret : fondu d'ouverture cote appli
     }
     if (port_title_cmd_pending()) {
         port_menu_scene_set(3);
@@ -651,7 +666,7 @@ void portMenuSceneFrame()   // appelee par CameraMove (camera.cpp) avant le calc
     }
     const f32 a = pPL->rot.y + (0.35f * sinf(t * 0.21f)) * (1.0f - k) + turn * k;
     const f32 dist = 2600.0f + (3300.0f - 2600.0f) * k;   // cabine : Leon en entier
-    const f32 side = -1150.0f * k;   // visee decalee : Leon sur le tiers droit de l ecran, la liste a gauche
+    const f32 side = -650.0f + (-1150.0f + 650.0f) * k;   // visee decalee : Leon sur le tiers droit de l ecran, la liste a gauche
     Vec at;
     Vec pos;
     at.x = pPL->pos.x + cosf(a) * side;

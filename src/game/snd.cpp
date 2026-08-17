@@ -1736,8 +1736,16 @@ void SndRoomBgmStartCheck(int reset)
     }
 }
 
+#ifdef RE4_PORT
+extern "C" int port_menu_scene_active(void);
+#endif
 int SndRoomBgmStart(u8 no, int vol)
 {
+#ifdef RE4_PORT
+    if (port_menu_scene_active()) {   // decor du menu titre : ambiance seule, pas de musique de salle
+        return 0;
+    }
+#endif
     u16 b = (u16) (pSnd->room_bgm[0] >> (no * 16));
     int seq = (b >> 8) & 0x3;
     int ret = 0;

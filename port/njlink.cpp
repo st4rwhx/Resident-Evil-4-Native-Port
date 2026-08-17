@@ -108,6 +108,7 @@ volatile bool g_app_pause = false;
 extern "C" void port_title_cmd_set(int cmd, int slot);   // port/arm_hooks.cpp : menu titre de Nightjar
 extern "C" void port_costume_live_set(int v);            // port/arm_hooks.cpp : garde-robe de Nightjar
 extern "C" void port_scene_cam_set(int v);               // port/arm_hooks.cpp : camera de la scene du titre
+extern "C" void port_menu_se_set(int id);                // port/arm_hooks.cpp : son de menu du jeu
 namespace {
 
 // Messages de l'appli, sans attendre.
@@ -148,6 +149,7 @@ void poll_host()
         case NJ_MSG_SETTING:
             if (m.a == 1) port_costume_live_set((int) (int32_t) m.b);
             else if (m.a == 2) port_scene_cam_set((int) (int32_t) m.b);
+            else if (m.a == 3) port_menu_se_set((int) (int32_t) m.b);
             break;
         default:
             break;

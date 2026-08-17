@@ -133,6 +133,16 @@ extern "C" int port_costume_live_take(void)
 extern "C" int port_costume_live_pending(void) { return g_costume_live; }
 // Camera de la scene du titre (18/11) : 0 plan normal, 1 cabine d'essayage de la garde-robe (plus pres, tour lent de Leon)
 static volatile int g_scene_cam = 0;
+// Menu titre (18/11 soir) : phase titre (titleMain en mode scene, jusqu'a ce que la scene soit prete) et scene prete
+// (camera posee depuis quelques images) -> l'appli masque le titre d'origine puis fait un fondu sur le decor.
+static volatile int g_title_phase = 0, g_scene_live = 0, g_menu_se = 0;
+extern "C" void port_title_phase_set(int v) { g_title_phase = v; }
+extern "C" int port_title_phase(void) { return g_title_phase; }
+extern "C" void port_scene_live_set(int v) { g_scene_live = v; if (v) g_title_phase = 0; }
+extern "C" int port_scene_live(void) { return g_scene_live; }
+// son de menu du jeu (SndCall(0, id) : 4 valider, 5 retour), joue par GameTask (game.cpp)
+extern "C" void port_menu_se_set(int id) { g_menu_se = id; }
+extern "C" int port_menu_se_take(void) { const int s = g_menu_se; g_menu_se = 0; return s; }
 extern "C" void port_scene_cam_set(int v) { g_scene_cam = v; }
 extern "C" int port_scene_cam(void) { return g_scene_cam; }
 

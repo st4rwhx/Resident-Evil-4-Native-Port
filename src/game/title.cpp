@@ -102,6 +102,12 @@ void titleWait(TitleWork* w);
 void titleNintendo(TitleWork* w);
 void titleWarning(TitleWork* w);
 void titleLogo(TitleWork* w);
+#ifdef RE4_PORT
+extern "C" int port_title_app(void);            // port/arm_hooks.cpp : menu titre de Nightjar
+extern "C" unsigned port_scene_room(void);
+extern "C" void port_title_phase_set(int v);
+extern "C" int port_title_choice(void);
+#endif
 void titleMain(TitleWork* w);
 void titleSub(TitleWork* w);
 void titleExit(TitleWork* w);
@@ -391,6 +397,13 @@ void titleLogo(TitleWork* w)
         }
         break;
     case 6:
+#ifdef RE4_PORT
+        {   // menu titre de Nightjar avec decor : fondu au noir des la fin des logos, puis le decor
+            if (port_title_app() && port_scene_room() != 0) {
+                port_title_phase_set(1);
+            }
+        }
+#endif
         w->mode = 5;
         w->step = 0;
         break;
@@ -574,6 +587,7 @@ extern "C" unsigned port_scene_room(void);
 extern "C" int port_menu_scene_state(void);
 extern "C" void port_menu_scene_set(int v);
 extern "C" int port_title_cmd_pending(void);
+extern "C" void port_title_phase_set(int v);
 static int portTitleAppSelect(TitleWork* w)
 {
     int slot = -1;
@@ -620,6 +634,9 @@ void titleMain(TitleWork* w)
 #ifdef RE4_PORT
         if (port_title_app()) {
             IdSys.kill(0xFF, ID_MENU);   // le menu du jeu disparait : celui de Nightjar le remplace
+            if (port_scene_room() != 0 && !port_title_cmd_pending()) {
+                port_title_phase_set(1);   // l'appli masque le titre d'origine jusqu'a ce que le decor soit pret
+            }
         }
 #endif
         w->step = 1;
@@ -636,6 +653,9 @@ void titleMain(TitleWork* w)
         switch (sel) {
         case 1:
             Snd.room_ok = 1;
+#ifdef RE4_PORT   // menu titre de Nightjar : la voix seulement a la nouvelle partie (pas a Continuer / Charger / decor)
+            if (!port_title_app() || port_title_choice() == 2)
+#endif
             if (pSys->language == 0) {
                 w->sndId = SndCall(6, 0, 0, 0, 0, 0);
             } else {
