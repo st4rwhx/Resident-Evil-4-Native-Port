@@ -254,7 +254,7 @@ void EspRoomInit()
     SstTbl* et;
     SstTbl* st;
     SstTbl* pt;
-    cModel** m;
+    P32<cModel>* m;
     int i;
 
     EspFreeSizeCheckAll();

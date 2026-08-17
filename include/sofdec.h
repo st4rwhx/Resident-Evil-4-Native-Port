@@ -19,14 +19,14 @@ struct SofdecTex {
         struct {
             GXTexObj texY;  // 0x08
             GXTexObj texUV; // 0x28
-            void* bufY;     // 0x48
+            P32<void> bufY;     // 0x48
             u32 sizeY;      // 0x4C
-            void* bufUV;    // 0x50
+            P32<void> bufUV;    // 0x50
             u32 sizeUV;     // 0x54
         } yuv;
         struct {
             GXTexObj tex; // 0x08
-            void* buf;    // 0x28
+            P32<void> buf;    // 0x28
             u32 size;     // 0x2C
         } argb;
     };
@@ -47,7 +47,7 @@ struct SofdecApp {
     u8 pad_48[0xC];         // 0x48
     int stat;               // 0x54
     MWS_FRM frm;            // 0x58
-    void* work;             // 0xE0
+    P32<void> work;             // 0xE0
     int xE4;                // 0xE4
     int disp;               // 0xE8  1: draw the debug frame info
     char fname[0x44];       // 0xEC

@@ -37,14 +37,14 @@ struct DatTblEntry {
     u8 flag;           // 0x30  bit0: in use, bit1: `dat2` is a debug-heap block freed with the entry
     u8 type;           // 0x31
     u16 count;         // 0x32  reference count (SetDat of an existing name increments it)
-    void* dat;         // 0x34
-    void* dat2;        // 0x38
+    P32<void> dat;         // 0x34
+    P32<void> dat2;        // 0x38
 };
 
 class DatTbl {
 public:
     int num;               // 0x00
-    DatTblEntry* pWork;    // 0x04
+    P32<DatTblEntry> pWork;    // 0x04
 
     DatTbl();
     ~DatTbl();
@@ -130,12 +130,12 @@ struct EvtDebugModel {
     char bin[16][0x30];    // 0x30
     char tpl[16][0x30];    // 0x330
     s32 nBin;              // 0x630
-    cModel* pModel;        // 0x634
+    P32<cModel> pModel;        // 0x634
     u8 x638;               // 0x638  cModel::x12F
     u8 x639;               // 0x639  cModel::lightInfo.x50
     u8 pad_63A[2];
     u32 flags;             // 0x63C  bit31: scroll object, bit30: be_flag bit12
-    cModel* pScr;          // 0x640  the model when its name starts with "scr"
+    P32<cModel> pScr;          // 0x640  the model when its name starts with "scr"
 };
 
 // Event work (game/event.cpp): a cUnit managed by EventMgr, 0x13C bytes.
@@ -149,15 +149,15 @@ public:
     u8 pad_11[3];
     int effNo;             // 0x14  effect owner slot: -1 none, 0/1 -> EspDataLoad owner 0xC4 + effNo
     char name[0x20];       // 0x18  event name ("r105s10")
-    EvtHeader* pData;      // 0x38
-    EvtPacket* pPacket;    // 0x3C  current packet
-    EvtPacket* pPrevPacket;  // 0x40  packet executed before it
+    P32<EvtHeader> pData;      // 0x38
+    P32<EvtPacket> pPacket;    // 0x3C  current packet
+    P32<EvtPacket> pPrevPacket;  // 0x40  packet executed before it
     u32 status;            // 0x44  EVT_ST_* bits (FlgOnStatus numbers them from bit 31 down)
     DatTbl datTbl;         // 0x48  models of the event (name -> cModel*, type)
     Mtx camMat;            // 0x50  camera base matrix (ExePacket_Pos "cam0000")
-    cModel* pOya;          // 0x80  the "pl0000" object model (player stand-in)
-    cModel* pPosOya;       // 0x84  "oya0000" position base
-    void* x88;             // 0x88
+    P32<cModel> pOya;          // 0x80  the "pl0000" object model (player stand-in)
+    P32<cModel> pPosOya;       // 0x84  "oya0000" position base
+    P32<void> x88;             // 0x88
     u32 funcTbl;           // 0x8C  ExePacket_Func table (void (*[])(Event*, int)), kept as an address
     int totalFrame;        // 0x90
     int maxTotalFrame;     // 0x94
@@ -183,15 +183,15 @@ public:
     int actBtnNo;          // 0xEC
     int funcMode;          // 0xF0  ExeFunc mode the Evt_*_Func handler sees (0 begin, 1 run, 2 end, 3 cancel)
     int nEspModel;         // 0xF4  EspEvModList entries used
-    void* pFog;            // 0xF8  fog Hermite curves (ExePacket_Fog)
-    void* pFocus;          // 0xFC  focus Hermite curves (ExePacket_Focus)
+    P32<void> pFog;            // 0xF8  fog Hermite curves (ExePacket_Fog)
+    P32<void> pFocus;          // 0xFC  focus Hermite curves (ExePacket_Focus)
     int mesNo;             // 0x100
     int mesWait;           // 0x104
     int strTime;           // 0x108  ExePacket_Str time override
     int nextCut;           // 0x10C  cut jump pending (CalNextFrame)
     int toolCut;           // 0x110
     int toolFrame2;        // 0x114
-    cLit* pLit;            // 0x118  room lit set by ExePacket_Lit
+    P32<cLit> pLit;            // 0x118  room lit set by ExePacket_Lit
     u8 pad_11C[0x13C - 0x11C];
 
     Event(u8 type);
@@ -300,7 +300,7 @@ public:
     char nameBuf[0x20];    // 0x84  NameChange result
     u32 xA4[0x20];         // 0xA4  cleared by myRoomInit
     u8 pad_124[0x144 - 0x124];
-    void* emWindowFcv[3];  // 0x144  window jump motions (emwindow ExeWindowEvent)
+    P32<void> emWindowFcv[3];  // 0x144  window jump motions (emwindow ExeWindowEvent)
     DatTbl evdTbl;         // 0x150  event data by name (0x20)
     DatTbl binTbl;         // 0x158  bin/tpl files by name (0x140)
     DatTbl funcTbl;        // 0x160  Evt_*_Func handlers by name (0x10)
@@ -320,7 +320,7 @@ public:
     int DelAll();
     int SetEvs(void* evs);      // room "EVS" data (game gameRoomInit)
     int Run();
-    int IsAliveEvt(u32* key, int out, int chk);
+    int IsAliveEvt(u32* key, intptr_t out, int chk);   // N7 : out = adresse (GetEvt), intptr_t pour le 64 bits
     int EvtReadAram(char* name, int em, int* out, int wait, u32 size);
     int EvtReadMram(char* name, int em, int* out, int wait, u32 size);
     int NameCheck(char* name);
@@ -370,7 +370,7 @@ public:
     s32 strWait;           // 0xD4
     int toolCut;           // 0xD8
     s32 nModel;            // 0xDC
-    EvtDebugModel* pModel; // 0xE0  0x60 entries
+    P32<EvtDebugModel> pModel; // 0xE0  0x60 entries
     u32 flags;             // 0xE4  tool switches (bit19 fog off, bit20 focus off, bit18 lit off, bit21 mes off)
 
     EventDebug();

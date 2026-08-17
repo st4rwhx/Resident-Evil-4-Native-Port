@@ -28,11 +28,11 @@
 namespace {
 
 struct Freq {            // Yz2Freq (src/game/yz2code.cpp)
-    u16 *freq;           // 0x00
+    P32<u16> freq;       // 0x00  (N7 : P32 comme src/game/yz2code.cpp)
     u32 max;             // 0x04
     int bits;            // 0x08
     u32 range;           // 0x0C
-    u16 *cum;            // 0x10  paires (largeur, debut)
+    P32<u16> cum;        // 0x10  paires (largeur, debut)
     int n;               // 0x14
     u32 acc;             // 0x18
 };
@@ -40,9 +40,9 @@ struct Freq {            // Yz2Freq (src/game/yz2code.cpp)
 struct Dec;
 
 struct ModelMem {        // Yz2Model
-    Dec *dec;            // 0x00
+    P32<Dec> dec;        // 0x00
     Freq fd;             // 0x04
-    u32 *table;          // 0x20  fente de 15 bits -> symbole
+    P32<u32> table;      // 0x20  fente de 15 bits -> symbole
 };
 
 struct Dec {             // Yz2Dec
@@ -59,16 +59,16 @@ struct DicEnt {          // Yz2DicEnt
 };
 
 struct Ctx {             // Yz2Ctx
-    DicEnt *dic;         // 0x00
+    P32<DicEnt> dic;     // 0x00
     Dec d;               // 0x04
     u32 pad_54;
     int n;
 };
 
 struct InEv {            // Yz2InEv
-    u8 *src;
-    u8 *heap;
-    u8 *free_;
+    P32<u8> src;
+    P32<u8> heap;
+    P32<u8> free_;
     u32 size0;
     u32 size1;
 };
@@ -177,8 +177,10 @@ void yz2Decode_Decode(void *ctxp, void *dstp, u32 size, void *evp)
     const u8 *src = ev->src;
     DicEnt *dic = ctx->dic;
 
-    Model m1 = { ctx->d.m1.dec, ctx->d.m1.fd.cum, ctx->d.m1.fd.freq, ctx->d.m1.fd.max, ctx->d.m1.fd.bits, false, &ctx->d.m1 };
-    Model m2 = { ctx->d.m2.dec, ctx->d.m2.fd.cum, ctx->d.m2.fd.freq, ctx->d.m2.fd.max, ctx->d.m2.fd.bits, false, &ctx->d.m2 };
+    // N7 : `dec` designe toujours ctx->d ; ctx est sur la pile de Yz2DecodeExec, hors de la fenetre de 4 Go en 64 bits,
+    // donc le champ P32 `dec` ne peut pas la porter : on prend l'adresse directement.
+    Model m1 = { &ctx->d, ctx->d.m1.fd.cum, ctx->d.m1.fd.freq, ctx->d.m1.fd.max, ctx->d.m1.fd.bits, false, &ctx->d.m1 };
+    Model m2 = { &ctx->d, ctx->d.m2.fd.cum, ctx->d.m2.fd.freq, ctx->d.m2.fd.max, ctx->d.m2.fd.bits, false, &ctx->d.m2 };
 
     while (out < end) {
         const u32 sym = decode_symbol(m1, src);
@@ -190,7 +192,7 @@ void yz2Decode_Decode(void *ctxp, void *dstp, u32 size, void *evp)
         } else {
             DicEnt *e = &dic[*hist];
             const u32 idx = (sym + (e->cnt & 0xFFFFu)) & 0x1FFu;
-            const u8 *from = (const u8 *) (uintptr_t) e->src[idx];
+            const u8 *from = (const u8 *) port_ptr64(e->src[idx]);   // N7 : adresse 32 bits -> fenetre
 
             if (sym > 0x1ff) {                   // entree connue : longueur enregistree
                 len = e->len[idx];

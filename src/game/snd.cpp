@@ -126,11 +126,11 @@ void SndInit()
     memclr_asm(pSndRaw, sizeof(SndWork));
 
 #line 120 SND_FILE
-    r = DvdRead(0, (void*) SND_DATA_TOP, 0, 0, 0, 0x11, __FILE__, __LINE__);
+    r = DvdRead(0, (void*) port_ptr64(SND_DATA_TOP), 0, 0, 0, 0x11, __FILE__, __LINE__);
     str_flag = Dvd.ReadCheck(r, &len, 0, 0) > 0;
     adr = SND_DATA_TOP + ALIGN32(len);
     for (i = 0; i < 2; i++) {
-        SndMem.str_file[i] = (SndStrFile*) (SND_DATA_TOP + ((u32*) SND_DATA_TOP)[i]);
+        SndMem.str_file[i] = (SndStrFile*) port_ptr64(SND_DATA_TOP + ((u32*) port_ptr64(SND_DATA_TOP))[i]);
         Snd_str_blk_init(i, SndMem.str_file[i]);
     }
 
@@ -1133,7 +1133,7 @@ u32 SndStrReq(int blk, int no, int req, int time, int vol, f32 pos)
         SndStrEnt* e;
 
         if (FileTbl[StrFileTbl[blk]].entrynum == -1) {
-            OSReport("SND: File Not Found : %s\n", FileTbl[StrFileTbl[blk]].name);
+            OSReport("SND: File Not Found : %s\n", port_p(FileTbl[StrFileTbl[blk]].name));
             return 0;
         }
         if (no >= (int) SndMem.str_file[blk]->num) {
@@ -1169,7 +1169,7 @@ u32 SndStrReq(int blk, int no, int req, int time, int vol, f32 pos)
         Snd_str_blk_init(blk, sf);
         w->id = Snd_str_prepare(blk, no, (char*) FileTbl[StrFileTbl[blk]].name, wk);
 #ifdef RE4_PORT
-        OSReport("[AUDIO]   prepare blk %d no %d -> id %x (%s)\n", blk, no, (unsigned) w->id, FileTbl[StrFileTbl[blk]].name);
+        OSReport("[AUDIO]   prepare blk %d no %d -> id %x (%s)\n", blk, no, (unsigned) w->id, port_p(FileTbl[StrFileTbl[blk]].name));
 #endif
         w->blk = blk;
         w->no = no;

@@ -42,7 +42,7 @@ static inline u32 IdBitGet(u32* tbl, u8 n) { return ID_BIT_WORD(tbl, n) & (0x800
 static inline int IdBitChk(u32* tbl, u8 n) { return IdBitGet(tbl, n) ? 1 : 0; }
 static inline void IdBitOn(u32* tbl, u8 n) { ID_BIT_WORD(tbl, n) |= 0x80000000 >> (n & 0x1F); }
 static inline void IdBitOff(u32* tbl, u8 n) { ID_BIT_WORD(tbl, n) &= ~(0x80000000 >> (n & 0x1F)); }
-#define ID_UNIT(i) ((IdUnit*) ((i) * sizeof(IdUnit) + (u32) pUnit))
+#define ID_UNIT(i) ((IdUnit*) port_ptr64((u32) ((i) * sizeof(IdUnit) + (u32) pUnit)))
 
 void IDSystem::gameInit(int n)
 {

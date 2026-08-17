@@ -49,7 +49,7 @@ struct R103Shelf {
 class R103Em : public cModel {
 public:
     u8 pad_320[0x378 - 0x320];
-    PlArc* subArc;        // 0x378
+    P32<PlArc> subArc;        // 0x378
     u8 pad_37C[0x3E0 - 0x37C];
 
     R103Em() asm("__3cEm");
@@ -196,7 +196,7 @@ extern "C" void r103_setCorpse(void* m0, void* m1, void* m2, void* m3, void* m4,
     R103Em* pe = &em;
     int i;
 
-    *(PlArc**) ((u8*) pe + 0x378) = (PlArc*) EmReadSearch(0x12, 0, 0);
+    pe->subArc = (PlArc*) EmReadSearch(0x12, 0, 0);   // N7 : champ nomme
     Vec pos = {0.0f, 0.0f, 0.0f};
     Vec rot = {0.0f, 0.0f, 0.0f};
     {

@@ -107,10 +107,10 @@ struct TBlockWork {
     TBlockArea area[AREA_NUM];   // 0x5E0
     BlockConnect connect[CONNECT_NUM];  // 0x21E0
     TBlockFile file;             // 0x2BE0  load / save image
-    TBlockHeader* pFile;         // 0x5378
-    BlockLink* pLink;            // 0x537C
-    TBlockArea* pArea;           // 0x5380
-    BlockConnect* pConnect;      // 0x5384
+    P32<TBlockHeader> pFile;         // 0x5378
+    P32<BlockLink> pLink;            // 0x537C
+    P32<TBlockArea> pArea;           // 0x5380
+    P32<BlockConnect> pConnect;      // 0x5384
     u32 fileSize;                // 0x5388
 };
 
@@ -1329,9 +1329,9 @@ static void tBlockDataLoad()
                 }
             }
             for (i = 0; i < pW->pFile->nArea; i++) {
-                TBlockArea* src = (TBlockArea*) (i * sizeof(TBlockArea) + (u32)(uintptr_t)(pW->pArea));
+                TBlockArea* src = (TBlockArea*) port_ptr64((u32) (i * sizeof(TBlockArea) + (u32)(uintptr_t)(pW->pArea)));
 
-                *(TBlockArea*) (src->x35 * sizeof(TBlockArea) + (u32)(uintptr_t)(pW->area)) = *src;
+                *(TBlockArea*) port_ptr64((u32) (src->x35 * sizeof(TBlockArea) + (u32)(uintptr_t)(pW->area))) = *src;
             }
             for (i = 0; i < pW->pFile->nConnect; i++) {
                 pW->connect[i] = pW->pConnect[i];

@@ -31,8 +31,8 @@ extern "C" void* memset(void* dst, int c, unsigned int n);
 
 struct R402Work {
     cEmWrap em[0x70];    // 0x000
-    cSat* sat[2];        // 0x540  the door 02 collision pieces
-    cSat* eat[2];        // 0x548
+    P32<cSat> sat[2];        // 0x540  the door 02 collision pieces
+    P32<cSat> eat[2];        // 0x548
     int c550;            // 0x550  per-wave respawn counts (R402EmSetSubMugen)
     int c554;
     int c558;

@@ -295,8 +295,8 @@ void MemSignalHeap(int no)
         OSHeapDescriptor* hh = HeapHead;
         OSHeapDescriptor* bk = heap_backup;
 
-        *(OSHeapDescriptor*) (h * sizeof(OSHeapDescriptor) + (u32)(uintptr_t)(hh)) =
-            *(OSHeapDescriptor*) (h * sizeof(OSHeapDescriptor) + (u32)(uintptr_t)(bk));
+        *(OSHeapDescriptor*) port_ptr64((u32) (h * sizeof(OSHeapDescriptor) + (u32)(uintptr_t)(hh))) =
+            *(OSHeapDescriptor*) port_ptr64((u32) (h * sizeof(OSHeapDescriptor) + (u32)(uintptr_t)(bk)));
         Heap[no].status = 0;
     }
 }
@@ -691,8 +691,8 @@ void SetDebugAlloc()
 
 // The cell header fields the debug code reads (the real OSHeapCell is 0x20 bytes).
 struct MemCellHead {
-    OSHeapCell* prev;  // 0x00
-    OSHeapCell* next;  // 0x04
+    P32<OSHeapCell> prev;  // 0x00
+    P32<OSHeapCell> next;  // 0x04
     s32 size;          // 0x08
 };
 
@@ -903,7 +903,7 @@ void MemCheckUsedHeap()
         if (next != NULL && next->next != NULL &&
             ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
             pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
-            pLog->err(0, 0, "next addr    : %08x", cell->next);
+            pLog->err(0, 0, "next addr    : %08x", port_p(cell->next));
 #line 770
             HALT();
         }
@@ -979,7 +979,7 @@ void MemCheckUsedHeap()
             if (next != NULL && next->next != NULL &&
                 ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
-                pLog->err(0, 0, "next addr    : %08x", cell->next);
+                pLog->err(0, 0, "next addr    : %08x", port_p(cell->next));
 #line 870
                 HALT();
             }
@@ -1002,7 +1002,7 @@ void MemCheckUsedHeap()
             if (next != NULL && next->next != NULL &&
                 ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
-                pLog->err(0, 0, "next addr    : %08x", cell->next);
+                pLog->err(0, 0, "next addr    : %08x", port_p(cell->next));
 #line 904
                 HALT();
             }
@@ -1025,7 +1025,7 @@ void MemCheckUsedHeap()
             if (next != NULL && next->next != NULL &&
                 ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
-                pLog->err(0, 0, "next addr    : %08x", cell->next);
+                pLog->err(0, 0, "next addr    : %08x", port_p(cell->next));
 #line 938
                 HALT();
             }
@@ -1048,7 +1048,7 @@ void MemCheckUsedHeap()
             if (next != NULL && next->next != NULL &&
                 ((s32) next->next >= 0 || (u32) next->next > PORT_PTR_MAX)) {
                 pLog->err(0, 0, "heap next err:%-18s %6x %08x", tag + 4, cell->size - 0x20, cell);
-                pLog->err(0, 0, "next addr    : %08x", cell->next);
+                pLog->err(0, 0, "next addr    : %08x", port_p(cell->next));
 #line 974
                 HALT();
             }

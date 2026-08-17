@@ -58,8 +58,8 @@ public:
 
 class ItemCommand : public Widget<SUB_SCREEN> {
 public:
-    IdUnit* id[16];    // 0x10  command menu units (setCommandId)
-    IdUnit* sub[11];   // 0x50  sub menu units
+    P32<IdUnit> id[16];    // 0x10  command menu units (setCommandId)
+    P32<IdUnit> sub[11];   // 0x50  sub menu units
     u8 pad_7C[0x90 - 0x7C];
     int mode;          // 0x90  0 command, 1 open sub menu, 2 sub menu
     s8 num;            // 0x94  commands
@@ -95,6 +95,18 @@ void itemFrameMove(SUB_SCREEN* wk, int col);
 void itemListMake();
 int itemSelect(SUB_SCREEN* wk, int mode);
 void setCommandId(u8 mode, IdUnit** tbl, s8* num);
+}
+#if PORT_P64
+// N7 : la table du menu de commande est un champ P32 (SubScreen id[16]) : on remplit un tableau ordinaire puis on recopie.
+static void setCommandId(u8 mode, P32<IdUnit>* tbl, s8* num)
+{
+    IdUnit* t[16] = {};
+    setCommandId(mode, t, num);
+    for (int i = 0; i < 16; ++i)
+        tbl[i] = t[i];
+}
+#endif
+extern "C" {
 void itemMakeInit(SUB_SCREEN* wk);
 void itemMakeMove(SUB_SCREEN* wk);
 void itemMakeDisp(SUB_SCREEN* wk, int x, int y);

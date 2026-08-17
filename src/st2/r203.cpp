@@ -32,7 +32,7 @@ struct R203Work {
     cEmWrap em[3];      // 0x00  (the tables index up to em[8]: the original work was smaller than its use)
     s8 pt[3];           // 0x24  wandering way point per task (overlaps em[3] in the original)
     u8 pad_27[0xA8 - 0x27];
-    cDataUnit* data;    // 0xA8  the s00 event data
+    P32<cDataUnit> data;    // 0xA8  the s00 event data
 };
 
 // The work pointer is a struct member: every store through the work reloads it.
@@ -213,7 +213,7 @@ static void r203_GanadoWandering(int no)
 
                 pt[no] = pt[no] < 0 ? 2 : (pt[no] > 2 ? 0 : pt[no]);
             }
-            em->setGoto((Vec*) (r203_work.p->pt[no] * sizeof(Vec) + (u32)(uintptr_t)(r203_wanderPos)), 6);
+            em->setGoto((Vec*) port_ptr64((u32) (r203_work.p->pt[no] * sizeof(Vec) + (u32)(uintptr_t)(r203_wanderPos))), 6);
         }
         SceSleep(1);
         // Dead test (store dead in flow, compare in flow2): its extra basic block takes the loop to 11

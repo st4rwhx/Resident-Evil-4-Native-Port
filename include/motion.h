@@ -28,9 +28,9 @@ struct IkParts {
 };
 
 #define MOTION(m) (&((cMotModel*)(m))->mot)
-#define MOTION_PARTS(p) ((MotionParts*)((u8*)(p) + 0x174))
-#define IK_PARTS(p) ((IkParts*)((u8*)(p) + 0xF8))
-#define PARTS_BIND_MAT(p) (*(Mtx*)((u8*)(p) + 0xF8))
+#define MOTION_PARTS(p) ((MotionParts*)((u8*)(p) + 0x174 + PORT_VDELTA))   /* N7 : cParts a une table virtuelle */
+#define IK_PARTS(p) ((IkParts*)((u8*)(p) + 0xF8 + PORT_VDELTA))
+#define PARTS_BIND_MAT(p) (*(Mtx*)((u8*)(p) + 0xF8 + PORT_VDELTA))
 
 // HermiteInterpolation parameter block.
 struct HermitePrm {

@@ -33,9 +33,9 @@
 // rendered to texture, the Ganado ambush on the shore and the s00 event (Del Lago).
 
 struct R11bWork {
-    cEm* em[9];           // 0x00  the shore Ganado (7 in the event, 9 after EmSetChange)
-    cEm* boat;            // 0x24  the boat (list entry 0x3C)
-    TexRenderMng* tex[2]; // 0x28  water render targets
+    P32<cEm> em[9];           // 0x00  the shore Ganado (7 in the event, 9 after EmSetChange)
+    P32<cEm> boat;            // 0x24  the boat (list entry 0x3C)
+    P32<TexRenderMng> tex[2]; // 0x28  water render targets
     u8 texTbl[2][0x80];   // 0x30  their blend tables (TexRenderModSet)
 };
 

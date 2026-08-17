@@ -294,10 +294,10 @@ static void move(FE_WORK* t)
         }
     }
     bit += p->base;
-    eprintf(184, 56, 6, 0, "[%s]", p->name);
+    eprintf(184, 56, 6, 0, "[%s]", port_p(p->name));
     eprintf(184, 70, 0, 0, " (0x%02x)", bit, bit);
     if ((u32) bit < p->num_names) {
-        eprintf(264, 70, 4, 0, "%s", p->names[bit]);
+        eprintf(264, 70, 4, 0, "%s", port_p(p->names[bit]));
     }
     if (joy->trg & JOY_B) {
         t->mode++;

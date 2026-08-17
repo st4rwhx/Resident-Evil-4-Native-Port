@@ -52,14 +52,14 @@ void cEmDoorSetCloseLock(cEm* door) asm("setCloseLock__7cEmDoori");
 struct R101Work {
     s8 emNum;             // 0x00  enemies alive when the fight started (+5 per reset wave)
     u8 pad_1[7];
-    cDataUnit* evt00;     // 0x08  evd/r101s00.evd
-    cDataUnit* evt21;     // 0x0C  evd/r101s21.evd
-    cDataUnit* evt30;     // 0x10  evd/r101s30.evd
-    cObj* obj00;          // 0x14
+    P32<cDataUnit> evt00;     // 0x08  evd/r101s00.evd
+    P32<cDataUnit> evt21;     // 0x0C  evd/r101s21.evd
+    P32<cDataUnit> evt30;     // 0x10  evd/r101s30.evd
+    P32<cObj> obj00;          // 0x14
     u8 pad_18[8];
-    cEm* ladder[3];       // 0x20  etc ladders 5 / 6 / 7
+    P32<cEm> ladder[3];       // 0x20  etc ladders 5 / 6 / 7
     cEmWrap em[10];       // 0x2C  the reset waves (5 per side)
-    cEmWrap* pEm[10];     // 0xA4
+    P32<cEmWrap> pEm[10];     // 0xA4
 };
 
 static R101Work* r101_work;

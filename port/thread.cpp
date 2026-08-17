@@ -33,6 +33,9 @@
 #include "port_log.h"
 
 extern "C" void OSExitThread(void *val);
+#if PORT_P64
+extern "C" void* port_pile_fenetre(int slot, size_t* taille);   // port/os.cpp
+#endif
 
 namespace {
 
@@ -48,6 +51,7 @@ struct PortThread {
     bool started;
     bool finished;
     bool is_main;
+    bool exited;          // N7 : sorti par OSExitThread (pthread joignable, pile de l'emplacement a recuperer)
 };
 
 pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -69,6 +73,12 @@ PortThread *alloc_slot()
     for (int i = 0; i < MAX_THREADS; ++i)
         if (!g_threads[i].used) {
             PortThread &p = g_threads[i];
+#if PORT_P64
+            // La pile de cet emplacement (dans la fenetre) servait peut-etre a un fil qui finit son pthread_exit : on
+            // attend qu'il l'ait quittee avant de la redonner.
+            if (p.exited)
+                pthread_join(p.tid, nullptr);
+#endif
             std::memset(&p, 0, sizeof(p));
             pthread_cond_init(&p.cond, nullptr);
             p.used = true;
@@ -213,7 +223,18 @@ int OSCreateThread(OSThread *thread, void *(*func)(void *), void *param, void *s
     p->entry = func;
     p->param = param;
 
-    if (pthread_create(&p->tid, nullptr, trampoline, p) != 0) {
+    pthread_attr_t at;
+    pthread_attr_init(&at);
+#if PORT_P64
+    {   // pile dans la fenetre de 4 Go (port/os.cpp port_pile_fenetre)
+        size_t t = 0;
+        void* pile = port_pile_fenetre((int) (p - g_threads), &t);
+        pthread_attr_setstack(&at, pile, t);
+    }
+#endif
+    const int cree = pthread_create(&p->tid, &at, trampoline, p);
+    pthread_attr_destroy(&at);
+    if (cree != 0) {
         p->used = false;
         pthread_mutex_unlock(&g_lock);
         std::printf("[PORT] OSCreateThread : creation impossible\n");
@@ -285,6 +306,7 @@ void OSExitThread(void *val)
             g_current = nullptr;
         }
         self->used = false;
+        self->exited = !self->is_main;
     }
     const bool was_main = self && self->is_main;
     pthread_mutex_unlock(&g_lock);

@@ -47,6 +47,41 @@ extern "C" void port_fenetre_init()
     std::printf("[PORT] fenetre 64 bits : base %lx (code %lx, donnees %lx)\n", (unsigned long) g_port_base,
                 (unsigned long) code, (unsigned long) data);
 }
+// La base ne dépend que de l'adresse de l'image : on la calcule au chargement, AVANT toutes les initialisations
+// statiques (priorité 101 = la première permise), car certaines rangent déjà des adresses GameCube
+// (`static void* usb_buf = port_ptr64(0x81800000)`, file.cpp) et des pointeurs dans des champs P32.
+__attribute__((constructor(101))) static void port_fenetre_au_chargement()
+{
+    port_fenetre_init();
+}
+
+// Piles DANS la fenêtre (18/11). Le jeu passe des adresses de variables locales comme entiers de 32 bits (EstSet(...,
+// (u32) &pos), TaskExec(..., this), make_tile(&g), GetEvt(&out)… près de 3 000 appels) et les relit par base | valeur :
+// une pile hors de la fenêtre perd ses 32 bits hauts. Comme sur la console, toutes les piles du jeu sont donc dans les
+// 4 Go : une par emplacement de fil (port/thread.cpp), plus celle du fil principal du jeu (re4_main).
+//   0x9E000000 : fil principal, 16 Mo        0xA0000000 + n * 2 Mo : fil n (1 page de garde en bas)
+extern "C" void* port_pile_fenetre(int slot, size_t* taille)
+{
+    static void* faites[64];
+    const bool principal = slot < 0;
+    if (!principal && slot >= 63)
+        std::abort();
+    const u32 adr = principal ? 0x9E000000u : 0xA0000000u + (u32) slot * 0x200000u;
+    const size_t t = principal ? 0x1000000u : 0x200000u;
+    void*& f = faites[principal ? 63 : slot];
+    if (!f) {
+        void* voulu = port_ptr64(adr);
+        void* p = mmap(voulu, t, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (p != voulu) {
+            std::printf("[PORT] pile du fil %d : 0x%08x occupe dans la fenetre (rendu %p)\n", slot, adr, p);
+            std::abort();
+        }
+        mprotect(p, 0x1000, PROT_NONE);   // garde : un débordement plante net au lieu d'écraser la pile voisine
+        f = p;
+    }
+    *taille = t - 0x1000;
+    return (u8*) f + 0x1000;
+}
 #endif
 
 namespace {
@@ -138,18 +173,21 @@ void arena_init()
 // Disposition (include/main_mem.h, qui la decrit telle que le jeu la lit) :
 //   OSHeapCell       { prev, next, size } — en-tete de **0x20 octets**, `size` le comprend
 //   OSHeapDescriptor { size, free, allocated } — 12 octets, size < 0 = tas inexistant
+// N7 (18/11) : P32 (4 octets, base | valeur en 64 bits) comme include/main_mem.h ; avec de vrais pointeurs, le jeu lisait
+// en 64 bits des descripteurs decales (MemSuspendHeap/MemReplaceHeap du film d'ouverture) et le tas se vidait.
 struct HeapCell {
-    HeapCell *prev;
-    HeapCell *next;
+    P32<HeapCell> prev;
+    P32<HeapCell> next;
     s32 size;            // en-tete comprise
-    u8 pad[0x20 - 3 * sizeof(void *) - 0];
+    u8 pad[0x20 - 0x0C];
 };
 
 struct HeapDesc {
     s32 size;
-    HeapCell *free;
-    HeapCell *allocated;
+    P32<HeapCell> free;
+    P32<HeapCell> allocated;
 };
+static_assert(sizeof(HeapCell) == 0x20 && sizeof(HeapDesc) == 12, "disposition du SDK (main_mem.h)");
 
 const u32 CELL_HDR = 0x20;      // taille de l en-tete, imposee par le format du SDK
 const u32 ALIGN = 32;

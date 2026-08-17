@@ -13,7 +13,7 @@
 #include "snd.h"
 #include "db_log.h"
 
-cModel* EspEvModList[0x80];
+P32<cModel> EspEvModList[0x80];
 
 // Effect set table: starts effect controller 10 on the est data block `head`.
 void EstSet(cModel* model, int no, Vec* pos, Vec* rot, EspSeqData* head, int e, int f, u32 g, u32 owner, void* h);
@@ -228,7 +228,7 @@ void EspDelete(int a, int b, u32 c, cModel* model)
     u32 i;
 
     for (i = 0; i < sys->xC554; i++) {
-        cEsp* esp = (cEsp*) (sys->pEspBuf + i * 0x150);
+        cEsp* esp = (cEsp*) (sys->pEspBuf + i * ESP_SLOT);
 
         if ((esp->flag & 1) == 0) {
             continue;
@@ -260,7 +260,7 @@ void EspDeleteEvent()
     u32 i;
 
     for (i = 0; i < sys->xC554; i++) {
-        cEsp* esp = (cEsp*) (sys->pEspBuf + i * 0x150);
+        cEsp* esp = (cEsp*) (sys->pEspBuf + i * ESP_SLOT);
 
         if (esp->flag & 1) {
             int ev = !(esp->info.x0 & 1);

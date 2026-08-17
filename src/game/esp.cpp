@@ -123,14 +123,14 @@ void* cEsp::operator new(size_t size)
     start = i;
     ret = sys->pDmy;
     if (i < sys->xC554) {
-        ofs = i * 0x150;
+        ofs = i * ESP_SLOT;
 loop1:
         esp = (cEsp*) (sys->pEspBuf + ofs);
         if (!(esp->flag & 1)) {
             goto found;
         }
         i++;
-        ofs += 0x150;
+        ofs += ESP_SLOT;
         if (i < sys->xC554) {
             goto loop1;
         }
@@ -144,14 +144,14 @@ loop2:
             goto found;
         }
         i++;
-        ofs += 0x150;
+        ofs += ESP_SLOT;
         if (i < start) {
             goto loop2;
         }
     }
     if (ret == sys->pDmy) {
         for (i = start; i < sys->xC554; i++) {
-            esp = (cEsp*) (sys->pEspBuf + i * 0x150);
+            esp = (cEsp*) (sys->pEspBuf + i * ESP_SLOT);
             if ((esp->flag & 1) && (esp->flags & 0x40000)) {
                 do { // keeps loop.c from moving this block out of the loop (see above)
                     PushEsp(esp);
@@ -166,12 +166,12 @@ loop4:
             esp = (cEsp*) (sys->pEspBuf + ofs);
             if ((esp->flag & 1) && (esp->flags & 0x40000)) {
 found:
-                memclr_asm(esp, 0x150);
+                memclr_asm(esp, ESP_SLOT);
                 old_hit = i + 1;
                 return esp;
             }
             i++;
-            ofs += 0x150;
+            ofs += ESP_SLOT;
             if (i < start) {
                 goto loop4;
             }
@@ -212,7 +212,7 @@ int EspMove()
     }
     cnt = 0;
     for (i = 0; i < sys->xC554; i++) {
-        esp = (cEsp*) (sys->pEspBuf + i * 0x150);
+        esp = (cEsp*) (sys->pEspBuf + i * ESP_SLOT);
         if (!ESP_IsActive(esp)) {
             continue;
         }
@@ -314,7 +314,7 @@ int EspTrans()
         sys->camPan2 = -atan2f(dir.y, SQRTF(dir.x * dir.x + dir.z * dir.z)) * 57.295776f;
     }
     for (i = 0; i < sys->xC554; i++) {
-        esp = (cEsp*) (sys->pEspBuf + i * 0x150);
+        esp = (cEsp*) (sys->pEspBuf + i * ESP_SLOT);
         if (!ESP_IsActive(esp)) {
             continue;
         }
@@ -487,7 +487,7 @@ int EspDispInfo()
     }
     cnt = 0;
     for (i = 0; i < sys->xC554; i++) {
-        if (((cEsp*) (p + i * 0x150))->flag & 1) {
+        if (((cEsp*) (p + i * ESP_SLOT))->flag & 1) {
             cnt++;
         }
     }
@@ -510,7 +510,7 @@ int EspArrayAlloc(u32 n)
     if (n == 0) {
         return 0;
     }
-    size = n * 0x150;
+    size = n * ESP_SLOT;
 #line 879 "D:/Bio4/Prog/esp.cpp"
     p = (u8*) MEM_ALLOC(size, 1, 0xD);
     sys->pEspBuf = p;
@@ -542,7 +542,7 @@ int EspArrayPush(u32 n)
         return 0;
     }
     sys->pEspBufSave = sys->pEspBuf;
-    sys->pEspBuf = (u8*) Debug_alloc(n * 0x150, 1);
+    sys->pEspBuf = (u8*) Debug_alloc(n * ESP_SLOT, 1);
     sys->numSave = sys->xC554;
     sys->xC554 = n;
     return 1;
@@ -569,7 +569,7 @@ void EspArrayClear()
     u32 i;
 
     for (i = 0; i < sys->xC554; i++) {
-        esp = (cEsp*) (sys->pEspBuf + i * 0x150);
+        esp = (cEsp*) (sys->pEspBuf + i * ESP_SLOT);
         if (esp->flag & 1) {
             PushEsp(esp);
         }

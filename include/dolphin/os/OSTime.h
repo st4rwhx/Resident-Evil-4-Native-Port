@@ -35,7 +35,7 @@ extern "C" {
 
 #define BIAS 0xB2575
 
-#define __OSSystemTime (OSTime*)0x800030D8
+#define __OSSystemTime (OSTime*)port_ptr64(0x800030D8)
 
 #ifdef __cplusplus
 }

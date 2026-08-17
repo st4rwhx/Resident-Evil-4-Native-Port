@@ -42,7 +42,7 @@
 // with the partner, the Ganados riding along, the false-eye door and the lockers.
 
 struct R10fWork {
-    cObjGondola* gondola[10];  // 0x00
+    P32<cObjGondola> gondola[10];  // 0x00
     int idx;                   // 0x28  gondola the player rides
     int pad_2C;
 };

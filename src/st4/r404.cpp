@@ -233,6 +233,12 @@ u8 r404_initEmSet()
     // `t += &pos` re-sets the (mult n 12) holder before the second `n * 12`, so cse1 keeps a second
     // real mulli (gcse PREs only the first occurrence into the block between the template copies),
     // and the re-set chain's output/anti dependences give the target's issue order.
+#ifdef RE4_PORT
+    // N7 : `&pos + 0x28` supposait la pile de CodeWarrior (rot juste apres pos) ; et en 64 bits une adresse de pile
+    // ne tient pas dans un u32. Ce que le code voulait : pos[n] et rot[n].
+    Vec* b = &pos[n];
+    Vec* r = &rot[n];
+#else
     u32 t = n * 12;
     t += (u32)(uintptr_t)(&pos);
     Vec* b = (Vec*)port_ptr64(t);
@@ -240,6 +246,7 @@ u8 r404_initEmSet()
     t += (u32)(uintptr_t)(&pos);
     t += 0x28;
     Vec* r = (Vec*)port_ptr64(t);
+#endif
     cPlayer* pl = pPLS;
 
     pl->setPos(b);

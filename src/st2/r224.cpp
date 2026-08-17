@@ -39,8 +39,8 @@
 // and the exit door.
 
 struct R224Work {
-    cObj* obj;       // 0x000  the cart (SetObjSmd)
-    cObj* obj2;      // 0x004  the grate collision object
+    P32<cObj> obj;       // 0x000  the cart (SetObjSmd)
+    P32<cObj> obj2;      // 0x004  the grate collision object
     cEmWrap em0;     // 0x008
     cEmWrap em1;     // 0x014
     Camera cam;      // 0x020  lever camera

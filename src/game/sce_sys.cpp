@@ -414,7 +414,7 @@ int SceExecCheckCondition_sub(SceCond* c)
     case 2:
         em = (cEm*) c->param;
         // Raw (non-struct) read: keeps the load behind the store of `em` to its stack slot.
-        if (*(s16*)port_ptr64(((u32)(uintptr_t)(em) + 0x320)) <= 0 && em->xFC == 3) {
+        if (em->hp <= 0 && em->xFC == 3) {   // N7 : champ typé (0x320 en dur faux en 64 bits)
             return 1;
         }
         break;

@@ -340,6 +340,6 @@ struct GlobalWorkPtr {
 #define pGS (((GlobalWorkPtr*) &pG)->p)
 
 // Same effect for the room camera data pointer store in CameraControl::RoomDataRead.
-#define G_ROOM_CAM_DATA (*(void**) ((u8*) pG + 0x4F28))
+#define G_ROOM_CAM_DATA (*(P32<void>*) ((u8*) pG + 0x4F28))   // N7 : champ de 4 octets
 
 #endif

@@ -56,7 +56,7 @@ extern cSceSys SceSys;
 // game/game.cpp
 struct GameWork {
     u8 pad_0[0x18];
-    void* pWepBuf;   // 0x18  weapon data buffer (Klauser)
+    P32<void> pWepBuf;   // 0x18  weapon data buffer (Klauser) ; P32 comme la vraie GameWork (game.cpp)
     u8 pad_1C[0x1C - 0x1C];
 };
 extern GameWork Game;
@@ -128,13 +128,13 @@ ReadModule WepReadModule __attribute__((aligned(32)));
 #ifdef RE4_PORT
 #define CORE_DATA_ADDR ((void*) PORT_MEM1(0x80578000))
 #else
-#define CORE_DATA_ADDR ((void*) 0x80578000)
+#define CORE_DATA_ADDR ((void*) port_ptr64(0x80578000))
 #endif
 #define CORE_DATA_MAX 0x234000
 #ifdef RE4_PORT
 #define OPTION_DATA_ADDR ((void*) PORT_MEM1(0x807AC000))
 #else
-#define OPTION_DATA_ADDR ((void*) 0x807AC000)
+#define OPTION_DATA_ADDR ((void*) port_ptr64(0x807AC000))
 #endif
 #define OPTION_DATA_MAX 0x40000
 #ifdef RE4_PORT
@@ -145,7 +145,7 @@ ReadModule WepReadModule __attribute__((aligned(32)));
 #ifdef RE4_PORT
 #define WEP_DATA_ADDR ((void*) PORT_MEM1(0x80904000))
 #else
-#define WEP_DATA_ADDR ((void*) 0x80904000)
+#define WEP_DATA_ADDR ((void*) port_ptr64(0x80904000))
 #endif
 #define WEP_DATA_MAX 0x70000
 #define DLL_BSS_MAX 0x80
@@ -190,7 +190,7 @@ static void decodeData()
         sprintf(buf, "r%03x.dat", pG->room_id);
         OSReport("-- %s DATA ENCODE ERROR!\n", buf);
         OSReport("-- %s DATA TOO LARGE!\n", buf);
-        OSReport("--  pG->pRoom      = %x\n", pG->pRoomArc);
+        OSReport("--  pG->pRoom      = %x\n", port_p(pG->pRoomArc));
         OSReport("--  out_data_size  = %x\n", out_data_size);
         OSReport("--  read data addr = %x\n", in_data_addr);
 #line 82 "D:/Bio4/Prog/read.cpp"
@@ -567,7 +567,7 @@ void setEmModule(ReadModule* m, int id)
                     if (e->dll != 0) {
                         eprintf(100, 116, 0, 0, " %s", e->dll);
                     } else {
-                        eprintf(100, 116, 0, 0, " %s", FileTbl[e->file].name);
+                        eprintf(100, 116, 0, 0, " %s", port_p(FileTbl[e->file].name));
                     }
                     TaskSleep(1);
                 }
@@ -667,8 +667,8 @@ void ReadPlayerData(int type, int costume)
     }
     pG->flags_4FBE &= ~1;
     ReleasePlData();
-    pG->pPlArc = (PlArc*) PL_DATA_ADDR;
-    data = (u8*) PL_DATA_ADDR;
+    pG->pPlArc = (PlArc*) port_ptr64(PL_DATA_ADDR);
+    data = (u8*) port_ptr64(PL_DATA_ADDR);
     dll = 0;
     switch (type) {
     case 0:
@@ -720,10 +720,10 @@ void ReadPlayerData(int type, int costume)
     name = (char*) FileTbl[file].name;
     SET_DRS_NAME(name);
 #line 1124 "D:/Bio4/Prog/read.cpp"
-    req = DVD_READ_N(FileTbl[file].name, (void*) PL_DATA_ADDR, 0, 0, 0, 0x8100);
+    req = DVD_READ_N(FileTbl[file].name, (void*) port_ptr64(PL_DATA_ADDR), 0, 0, 0, 0x8100);
     while ((ret = Dvd.ReadCheckInfo(req, &info)) != 1) {
         if (ret < 0) {
-            pLog->err(0, 0, "ReadPlayerData(): error! %s", FileTbl[file].name);
+            pLog->err(0, 0, "ReadPlayerData(): error! %s", port_p(FileTbl[file].name));
 #line 1139 "D:/Bio4/Prog/read.cpp"
             HALT();
         }
@@ -744,7 +744,7 @@ void ReadPlayerData(int type, int costume)
     pModule = NULL;
     if (dll != 0) {
         ReleasePlData();
-        pArc = (void*) PL_DATA_ADDR;
+        pArc = (void*) port_ptr64(PL_DATA_ADDR);
         pModule = (OSModuleHeader*)port_ptr64((*(u32*) (data + 4) + (u32)(uintptr_t)(data)));
         dataSize = (u32)(uintptr_t)(pModule) - (u32)(uintptr_t)(data);
         bssSize = size - dataSize;

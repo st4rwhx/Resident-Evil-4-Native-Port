@@ -118,7 +118,7 @@ int ToolMenuDisp_cur(int x, int y, int flag, s8* cursor, TOOL_MENU* menu, int si
         if (p->enable) {
             color = 0;
         }
-        eprintf(x, y + i * 16, color, 0, "%s", p->name);
+        eprintf(x, y + i * 16, color, 0, "%s", port_p(p->name));
         p++;
     }
     if (flicker & 0x18) {

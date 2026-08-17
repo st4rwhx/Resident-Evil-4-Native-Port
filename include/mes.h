@@ -185,7 +185,7 @@ public:
 #ifdef RE4_PORT
     Message* getMes(int no) { return &mes[no]; }
 #else
-    Message* getMes(int no) { return (Message*) (no * sizeof(Message) + (u32) this + sizeof(u32)); }
+    Message* getMes(int no) { return (Message*) port_ptr64((u32) (no * sizeof(Message) + (u32) this + sizeof(u32))); }
 #endif
 
     void setLayout(int no, int layout);

@@ -96,7 +96,7 @@ struct FlrAtWork {
     TFlrAt file[256];    // 0x84A0
     TFlrAt copyBuf;      // 0x108A0
     FlrSys flrSys;       // 0x10924
-    FlrSys* saveFlrSys;  // 0x109B0
+    P32<FlrSys> saveFlrSys;  // 0x109B0
 };
 
 static int flrAtSaveNum;

@@ -18,6 +18,9 @@ JOBS=${JOBS:-4}
 if [ "$ABI" = x86 ]; then
     OUT=_port_build_x86; L=C:/re4n/android-x86-m1; TGT=i686-none-linux-android24; CXX=$B/i686-linux-android28-clang++.cmd
     ABIFLAGS=""; APKABI=x86; export PORT_ABI=x86
+elif [ "$ABI" = x86_64 ]; then   # N7 (18/11) : coeur 64 bits pour MuMu ; moteur : scratchpad m1/laptop_x86_64_host.sh
+    OUT=_port_build_x86_64; L=C:/re4n/android-x86_64-m1; TGT=x86_64-none-linux-android24; CXX=$B/x86_64-linux-android28-clang++.cmd
+    ABIFLAGS=""; APKABI=x86_64; export PORT_ABI=x86_64
 else
     OUT=_port_build; L=C:/re4n/android-armeabi-v7a-m1; TGT=armv7-none-linux-androideabi24; CXX=$B/armv7a-linux-androideabi28-clang++.cmd
     ABIFLAGS="-mfpu=neon-vfpv4 -march=armv7-a -mthumb"; APKABI=armeabi-v7a; unset PORT_ABI
@@ -25,7 +28,7 @@ fi
 mkdir -p $W
 T0=$(date +%s)
 # 1. copie (rsync absent : tar ; les fichiers inchanges gardent leur date, donc le cache de build_game reste valable)
-tar cf - -C "$SRC" --exclude=./.git --exclude=./_port_build --exclude=./_port_build_x86 --exclude=./_port_dbg . | (cd $W && tar xf - 2>/dev/null)
+tar cf - -C "$SRC" --exclude=./.git --exclude=./_port_build --exclude=./_port_build_x86 --exclude=./_port_build_x86_64 --exclude=./_port_dbg . | (cd $W && tar xf - 2>/dev/null)
 $PY "C:/Users/Admin/AppData/Local/Temp/claude/b1655763106ab44b/803bda34-669c-4bb9-b360-e05a864e00ed/scratchpad/m1/casse_tar.py" "$SRC" | (cd $W && tar xf -)
 cd $W
 sed -i 's|"tools/|"tools_lc/|g' config/G4BE08/modules.py

@@ -38,7 +38,7 @@
 // One fence of the maze: lifted (state 1) or lowered (state 0) by the switch tasks.
 class cFence20e {
 public:
-    cObj* obj;     // 0x00
+    P32<cObj> obj;     // 0x00
     int state;     // 0x04  1 = up
     int force;     // 0x08  1 = snap to the end position on the next move
     int active;    // 0x0C  moving
@@ -67,7 +67,7 @@ struct R20eFenceData {
 struct R20ePiece {
     int state;     // 0x00  0 idle, 1 start sliding, 2 sliding
     int visible;   // 0x04
-    cObj* obj;     // 0x08
+    P32<cObj> obj;     // 0x08
     Vec target;    // 0x0C
     Vec spd;       // 0x18
     int cnt;       // 0x24  frames left
@@ -83,7 +83,7 @@ struct R20ePuzzle {
     int cx;                  // 0x00  cursor
     int cy;                  // 0x04
     int hidden;              // 0x08  the piece taken out of the board
-    cObj* frame;             // 0x0C  cursor frame object
+    P32<cObj> frame;             // 0x0C  cursor frame object
     R20ePiece piece[9];      // 0x10
     R20eCell cell[3][3];     // 0x178  [x][y]
 };
@@ -94,7 +94,7 @@ struct R20eWork {
     f32 crestDoorY;          // 0x21C
     u8 pad_220[0xC];
     cFence20e fence[3];      // 0x22C
-    cEm* rack;               // 0x298
+    P32<cEm> rack;               // 0x298
     int effKind;             // 0x29C
     u32 snd;                 // 0x2A0
 };
@@ -103,7 +103,7 @@ static R20eWork* r20e_work;
 
 // `&p->piece[i]` as integer arithmetic, index first (`mulli; add idx, p; addi 0x10`): the array
 // subscript folds the 0x10 into the product and puts the pointer first in the add.
-#define PUZZLE_PIECE(p, i) ((R20ePiece*) ((i) * sizeof(R20ePiece) + (u32)(uintptr_t)((p)) + 0x10))
+#define PUZZLE_PIECE(p, i) ((R20ePiece*) port_ptr64((u32) ((i) * sizeof(R20ePiece) + (u32)(uintptr_t)((p)) + 0x10)))
 // `&p->cell[x][y]` as integer arithmetic, `(x*48 + 0x178) + p + y*16`: fold moves the constant to
 // the other operand (`(V+C)+A -> V+(A+C)`), so the tree is `x*48 + (p + 0x178) + y*16`, which is what
 // the puzzleMove loops need: `PUZZLE_CELL(p, 0, cy)` gives `p + (cy*16 + 0x178)` (`addi r0,r11,0x178;
@@ -112,7 +112,7 @@ static R20eWork* r20e_work;
 // order as `from`, so reload_cse turns the second `add` into `mr r9,r11`) but the column `to` cell
 // `((cx48 + p) + k16) + 0x168` (the other order: a separate `add r9,r9,r6`).  The `y*16` is never
 // grouped with 0x178 (`(k-1)*16` must distribute to `k*16 - 16` under EXPAND_SUM).
-#define PUZZLE_CELL(p, x, y) ((R20eCell*) ((x) * sizeof(R20eCell[3]) + 0x178 + (u32)(uintptr_t)((p)) + (y) * sizeof(R20eCell)))
+#define PUZZLE_CELL(p, x, y) ((R20eCell*) port_ptr64((u32) ((x) * sizeof(R20eCell[3]) + 0x178 + (u32)(uintptr_t)((p)) + (y) * sizeof(R20eCell))))
 
 // The address of the caller's Vec goes straight into the argument register (no PRE'd pseudo).
 static inline void SetAngV(cModel* m, Vec* v)

@@ -1012,7 +1012,7 @@ int cLightMgr::saveLit(cLightWork* w)
     return 1;
 }
 
-cLit** cLightMgr::getLitPPtr()
+P32<cLit>* cLightMgr::getLitPPtr()
 {
     return &pLit;
 }

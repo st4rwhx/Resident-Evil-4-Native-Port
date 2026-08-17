@@ -3,19 +3,33 @@
 
 #include "__gx.h"
 
+#include <stdint.h>
+#if UINTPTR_MAX > 0xFFFFFFFFu
+#define PORT_TEX_UD_SET(p) port_ptr32(p)
+#define PORT_TEX_UD_GET(v) port_ptr64(v)
+#else
+#define PORT_TEX_UD_SET(p) (p)
+#define PORT_TEX_UD_GET(v) (v)
+#endif
+
 // GXTexObj internal data
 typedef struct __GXTexObjInt_struct {
     u32 mode0;
     u32 mode1;
     u32 image0;
     u32 image3;
+#if UINTPTR_MAX > 0xFFFFFFFFu
+    u32 userData;   // N7 : 4 octets (base | valeur), sinon la structure deborde des 0x20 de GXTexObj en 64 bits
+#else
     void* userData;
+#endif
     GXTexFmt fmt;
     u32 tlutName;
     u16 loadCnt;
     u8 loadFmt;
     u8 flags;
 } __GXTexObjInt;
+_Static_assert(sizeof(__GXTexObjInt) <= sizeof(GXTexObj), "__GXTexObjInt deborde de GXTexObj");
 
 // GXTexRegion internal data
 typedef struct __GXTexRegionInt_struct {
@@ -443,14 +457,14 @@ void GXInitTexObjUserData(GXTexObj* obj, void* user_data) {
 
     ASSERTMSGLINE(1068, obj, "Texture Object Pointer is null");
     CHECK_GXBEGIN(1069, "GXInitTexObjUserData");
-    t->userData = user_data;
+    t->userData = PORT_TEX_UD_SET(user_data);
 }
 
 void* GXGetTexObjUserData(const GXTexObj* obj) {
     const __GXTexObjInt* t = (const __GXTexObjInt *)obj;
 
     ASSERTMSGLINE(1075, obj, "Texture Object Pointer is null");
-    return t->userData;
+    return PORT_TEX_UD_GET(t->userData);
 }
 
 void GXGetTexObjAll(const GXTexObj* obj, void** image_ptr, u16* width, u16* height, GXTexFmt* format, GXTexWrapMode* wrap_s, GXTexWrapMode* wrap_t, u8* mipmap) {

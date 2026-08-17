@@ -60,8 +60,8 @@ f64 log10(f64);
 // The motion work of this build: model.h's MotionWork without the trailing blend/flip/blendTbl pointers
 // (0xD0 bytes; em.h MotionWorkSub is the same block).
 struct DbMotWork {
-    MotionData* data;     // 0x00
-    u32* keyTbl;          // 0x04
+    P32<MotionData> data;     // 0x00
+    P32<u32> keyTbl;          // 0x04
     u16 hist[2][2][3];    // 0x08
     f32 maxFrame;         // 0x20
     f32 frame;            // 0x24
@@ -69,8 +69,8 @@ struct DbMotWork {
     f32 prevFrame2;       // 0x2C
     u8 nParts;            // 0x30
     u8 pad_31[3];
-    u8* partsNo;          // 0x34
-    u16* partsInfo;       // 0x38
+    P32<u8> partsNo;          // 0x34
+    P32<u16> partsInfo;       // 0x38
     u16 rootPosIdx;       // 0x3C
     u16 rootRotIdx;       // 0x3E
     u16 flags;            // 0x40
@@ -84,7 +84,7 @@ struct DbMotWork {
     Vec rot;              // 0x84
     Vec rotPrev;          // 0x90
     Vec rotDelta;         // 0x9C
-    MotionSeqKey* seq;    // 0xA8
+    P32<MotionSeqKey> seq;    // 0xA8
     MotionSeqKey key0;    // 0xAC
     MotionSeqKey key1;    // 0xB0
     MotionSeqKey key2;    // 0xB4
@@ -96,7 +96,7 @@ struct DbMotWork {
     u8 hokanCnt;          // 0xC5
     u8 pad_C6[2];
     f32 blendRate;        // 0xC8
-    AttachCamera* cam;    // 0xCC
+    P32<AttachCamera> cam;    // 0xCC
 };
 
 // File list of one model / texture / motion set (0x85C): names or data pointers, the load state per entry.
@@ -107,7 +107,7 @@ public:
     u8 m_num;                         // 0x008
     char m_name[FILE_NUM][NAME_LEN];  // 0x009
     s8 m_stat[FILE_NUM];              // 0x809  0 empty, 1 loaded, 2 not found, 3 new name
-    void* m_data[FILE_NUM];           // 0x81C
+    P32<void> m_data[FILE_NUM];           // 0x81C
 
     DB_MODEL_FILES() { init(); }
     void init();
@@ -125,7 +125,7 @@ public:
     s8 x1;                    // motion load step
     u8 alive;                 // 0x002  model loaded
     u8 x3;
-    cEm* pEm;                 // 0x004
+    P32<cEm> pEm;                 // 0x004
     Vec pos;                  // 0x008
     Vec rot;                  // 0x014
     s16 x20;                  // 0x020
@@ -133,16 +133,16 @@ public:
     s8 x24;                   // 0x024
     s8 lightType;             // 0x025  0 pl / 1 em / 2 obj / 3 scr / 4 item / 5 none
     char name[0x22];          // 0x026  set name (dbModBinName)
-    void* bin[FILE_NUM];      // 0x048
-    void* tex[FILE_NUM];      // 0x088
-    void* motData[FILE_NUM];  // 0x0C8
+    P32<void> bin[FILE_NUM];      // 0x048
+    P32<void> tex[FILE_NUM];      // 0x088
+    P32<void> motData[FILE_NUM];  // 0x0C8
     DbMotWork mot[FILE_NUM];  // 0x108
     s8 motStat[FILE_NUM];     // 0xE08
     u8 motFlag[FILE_NUM];     // 0xE18
     s8 xE28;                  // 0xE28
     s8 xE29;                  // 0xE29
     u16 setNo;                // 0xE2A
-    cEm* parent;              // 0xE2C  parent model (setParent)
+    P32<cEm> parent;              // 0xE2C  parent model (setParent)
     s8 no;                    // 0xE30  slot number / parent slot
     u8 xE31;
     s16 parentParts;          // 0xE32  parts of the parent this model hangs on (-1: the model itself)
@@ -164,14 +164,14 @@ public:
 
 // Parsed mot_tbl.txt (0x560): the image bounds, the unit pointers and the five label buffers.
 struct MotTbl {
-    char* data;         // 0x000
-    char* end;          // 0x004
-    char* cur;          // 0x008
+    P32<char> data;         // 0x000
+    P32<char> end;          // 0x004
+    P32<char> cur;          // 0x008
     int xC;             // 0x00C
     int unitNum[5];     // 0x010  blocks per unit (0 set, 1 bin, 2 tex, 3 motion, 4 locate)
     int count[5];       // 0x024  entries of the current block per unit
     int x38[5];         // 0x038
-    char* unit[5];      // 0x04C  unit pointers per type
+    P32<char> unit[5];      // 0x04C  unit pointers per type
     char name[5][0x100];  // 0x060
 };
 

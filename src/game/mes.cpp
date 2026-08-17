@@ -70,7 +70,7 @@ static inline void SetU16(u16& d, u16 v) { d = v; }
 #ifdef RE4_PORT
 #define MES(no) (&this->mes[no])
 #else
-#define MES(no) ((Message*) ((no) * sizeof(Message) + (u32) this + sizeof(u32)))
+#define MES(no) ((Message*) port_ptr64((u32) ((no) * sizeof(Message) + (u32) this + sizeof(u32))))
 #endif
 static inline void PtrSet(void*& d, void* v) { d = v; }
 

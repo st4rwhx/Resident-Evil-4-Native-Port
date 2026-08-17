@@ -388,7 +388,7 @@ void Event::EspSetModelPtr(cModel* m)
     int n = nEspModel;
 
     if (n >= 0 && n < 0x80) {
-        *(cModel**)port_ptr64((tbl + (n << 2))) = m;
+        *(P32<cModel>*)port_ptr64((tbl + (n << 2))) = m;
     }
     nEspModel++;
 }
@@ -2209,7 +2209,7 @@ int EventMgr::Run()
     return 1;
 }
 
-int EventMgr::IsAliveEvt(u32* key, int out, int chk)
+int EventMgr::IsAliveEvt(u32* key, intptr_t out, int chk)
 {
     char nm[0x20];
     u32 i;
@@ -2231,7 +2231,7 @@ int EventMgr::IsAliveEvt(u32* key, int out, int chk)
             continue;
         }
         if (out != 0) {
-            *(Event**)port_ptr64(out) = e;
+            *(Event**) out = e;   // N7 : vraie adresse (pile de l'appelant de GetEvt)
         }
         return 1;
     }
@@ -2594,7 +2594,7 @@ int EventMgr::SetEvt(char* nm, Event** out)
 
 int EventMgr::GetEvt(u32* key, void** out)
 {
-    return IsAliveEvt(key, (int)(uintptr_t)(out), 1);
+    return IsAliveEvt(key, (intptr_t) out, 1);
 }
 
 int EventMgr::DelEvt(void* evt_, int flag)
@@ -2720,7 +2720,7 @@ int EventMgr::SetEvd(char* nm, void* data, void* dat2, int flag)
         return 0;
     }
     for (i = 0; i < hdr->nBin; i++) {
-        e = (EvtBinEntry*) (i * sizeof(EvtBinEntry) + (hdr->binOfs + (u32)(uintptr_t)(hdr)));
+        e = (EvtBinEntry*) port_ptr64((u32) (i * sizeof(EvtBinEntry) + (hdr->binOfs + (u32)(uintptr_t)(hdr))));
         if (SetBin(e->name, (u8*)port_ptr64((e->ofs + (u32)(uintptr_t)(hdr))), 0, flag) == 0) {
             pLog->err(0, 0, "EventMgr::SetEvd : failed");
             return 0;
@@ -3278,7 +3278,7 @@ int DatTbl::ChkDatWkNoName(int wkNo, const char* nm)
         pLog->err(0, 0, "cDatTbl::GetDatWkNo : work_no failed[%d]", wkNo);
         return 0;
     }
-    e = (DatTblEntry*) (wkNo * sizeof(DatTblEntry) + (u32)(uintptr_t)(pWork));
+    e = (DatTblEntry*) port_ptr64((u32) (wkNo * sizeof(DatTblEntry) + (u32)(uintptr_t)(pWork)));
     if ((e->flag & 1) && strcmp(e->name, nm) == 0) {
         return 1;
     }

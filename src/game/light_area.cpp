@@ -40,7 +40,7 @@ struct LightAreaWep {
 };
 
 struct LightAreaLauncher {
-    u8 pad_0[0x384];
+    u8 pad_0[0x384 + PORT_VDELTA];   // N7 : cEm a une table virtuelle
     P32<cEm> rocket; // 0x384
 };
 

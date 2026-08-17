@@ -109,9 +109,13 @@ static inline void gpuSetup(int prim, int nverts)
     GXBegin(prim, 0, nverts);
 }
 
-void make_g3(u32 tag)
+// N7 : le corps prend un vrai pointeur ; les variantes « f » lui passent une primitive sur la PILE, hors de la
+// fenetre de 4 Go en 64 bits (une adresse u32 y perdait ses 32 bits hauts).
+static void make_g3_p(POLY_G3* pp);
+void make_g3(u32 tag) { make_g3_p((POLY_G3*) port_ptr64(tag)); }
+static void make_g3_p(POLY_G3* pp)
 {
-#define p ((POLY_G3*)port_ptr64(tag))
+#define p (pp)
     gpuSetup(0x90, 3);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -122,9 +126,11 @@ void make_g3(u32 tag)
 }
 #undef p
 
-void make_g4(u32 tag)
+static void make_g4_p(POLY_G4* pp);
+void make_g4(u32 tag) { make_g4_p((POLY_G4*) port_ptr64(tag)); }
+static void make_g4_p(POLY_G4* pp)
 {
-#define p ((POLY_G4*)port_ptr64(tag))
+#define p (pp)
     gpuSetup(0x98, 4);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -155,7 +161,7 @@ void make_f3(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = p->c0.cd;
-    make_g3((u32)(uintptr_t)(&g));
+    make_g3_p(&g);
 }
 #undef p
 
@@ -180,7 +186,7 @@ void make_f4(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = g.c3.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = g.c3.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = g.c3.cd = p->c0.cd;
-    make_g4((u32)(uintptr_t)(&g));
+    make_g4_p(&g);
 }
 #undef p
 
@@ -198,13 +204,15 @@ void make_tile(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = g.c3.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = g.c3.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = g.c3.cd = p->c0.cd;
-    make_g4((u32)(uintptr_t)(&g));
+    make_g4_p(&g);
 }
 #undef p
 
-void make_lg2(u32 tag)
+static void make_lg2_p(LINE_G2* pp);
+void make_lg2(u32 tag) { make_lg2_p((LINE_G2*) port_ptr64(tag)); }
+static void make_lg2_p(LINE_G2* pp)
 {
-#define p ((LINE_G2*)port_ptr64(tag))
+#define p (pp)
     gpuSetup(0xB0, 2);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -213,9 +221,11 @@ void make_lg2(u32 tag)
 }
 #undef p
 
-void make_lg3(u32 tag)
+static void make_lg3_p(LINE_G3* pp);
+void make_lg3(u32 tag) { make_lg3_p((LINE_G3*) port_ptr64(tag)); }
+static void make_lg3_p(LINE_G3* pp)
 {
-#define p ((LINE_G3*)port_ptr64(tag))
+#define p (pp)
     gpuSetup(0xB0, 3);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -226,9 +236,11 @@ void make_lg3(u32 tag)
 }
 #undef p
 
-void make_lg4(u32 tag)
+static void make_lg4_p(LINE_G4* pp);
+void make_lg4(u32 tag) { make_lg4_p((LINE_G4*) port_ptr64(tag)); }
+static void make_lg4_p(LINE_G4* pp)
 {
-#define p ((LINE_G4*)port_ptr64(tag))
+#define p (pp)
     gpuSetup(0xB0, 4);
     GXPosition3s16(p->x0, p->y0, p->z0);
     GXColor4u8(p->c0.r, p->c0.g, p->c0.b, 0xFF);
@@ -256,7 +268,7 @@ void make_lf2(u32 tag)
     g.c0.g = g.c1.g = p->c0.g;
     g.c0.b = g.c1.b = p->c0.b;
     g.c0.cd = g.c1.cd = p->c0.cd;
-    make_lg2((u32)(uintptr_t)(&g));
+    make_lg2_p(&g);
 }
 #undef p
 
@@ -278,7 +290,7 @@ void make_lf3(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = p->c0.cd;
-    make_lg3((u32)(uintptr_t)(&g));
+    make_lg3_p(&g);
 }
 #undef p
 
@@ -303,6 +315,6 @@ void make_lf4(u32 tag)
     g.c0.g = g.c1.g = g.c2.g = g.c3.g = p->c0.g;
     g.c0.b = g.c1.b = g.c2.b = g.c3.b = p->c0.b;
     g.c0.cd = g.c1.cd = g.c2.cd = g.c3.cd = p->c0.cd;
-    make_lg4((u32)(uintptr_t)(&g));
+    make_lg4_p(&g);
 }
 #undef p

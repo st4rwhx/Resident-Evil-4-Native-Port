@@ -30,7 +30,7 @@ int EspgenDataSet(EspSeqData* head, int no, EspInfo* info, u32* seed, cModel* mo
         if (no > 0x7F) {
             model = NULL;
         } else {
-            model = *(cModel**)port_ptr64((list + (no << 2)));
+            model = *(P32<cModel>*)port_ptr64((list + (no << 2)));
         }
     }
 

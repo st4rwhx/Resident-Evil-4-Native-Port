@@ -1268,14 +1268,14 @@ void gameRoomMemInit()
 {
     if (pG->flags_54 & 0x200000) {
         MemReplaceHeap(3, 4);
-        MemorySwap((void*) 0x807EC000, ARAM_FREE_BASE, 0x188000);
-        memclr_asm((void*) 0x807EC000, 0x188000);
+        MemorySwap((void*) port_ptr64(0x807EC000), ARAM_FREE_BASE, 0x188000);
+        memclr_asm((void*) port_ptr64(0x807EC000), 0x188000);
         MemCreateHeap(10, 0x807EC000, 0x80974000);
         MemSetCurrentHeap(10);
     } else {
         if (pG->flags_54 & 0x400000) {
             MemDestroyHeap(10);
-            MemorySwap((void*) 0x807EC000, ARAM_FREE_BASE, 0x188000);
+            MemorySwap((void*) port_ptr64(0x807EC000), ARAM_FREE_BASE, 0x188000);
         } else {
             MemReplaceHeap(3, 4);
         }

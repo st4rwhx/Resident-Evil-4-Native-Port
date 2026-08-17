@@ -269,7 +269,7 @@ static void tDrArea_ListDisp()
 
 void dispAreaList1(int x, int y, int no)
 {
-    DrArea* a = (DrArea*) (no * sizeof(DrArea) + (u32)(uintptr_t)(DR->area));
+    DrArea* a = (DrArea*) port_ptr64((u32) (no * sizeof(DrArea) + (u32)(uintptr_t)(DR->area)));
 
     if (a->flag & 1) {
         int col;
@@ -521,9 +521,9 @@ static void tDrDataLoad()
             DR->pArea = (DrArea*) (data + 0x10);
             DR->pStr = (char*) (((DrHeader*) DR->pData)->strOfs + (u32)(uintptr_t)(data));
             for (i = 0; i < ((DrHeader*) DR->pData)->nArea; i++) {
-                DrArea* src = (DrArea*) (i * sizeof(DrArea) + (u32) DR->pArea);
+                DrArea* src = (DrArea*) port_ptr64((u32) (i * sizeof(DrArea) + (u32) DR->pArea));
 
-                *(DrArea*) (src->no * sizeof(DrArea) + (u32)(uintptr_t)(DR->area)) = *src;
+                *(DrArea*) port_ptr64((u32) (src->no * sizeof(DrArea) + (u32)(uintptr_t)(DR->area))) = *src;
             }
             for (i = 0; i < ((DrHeader*) DR->pData)->nFile; i++) {
                 if (*DR->pStr != 0) {

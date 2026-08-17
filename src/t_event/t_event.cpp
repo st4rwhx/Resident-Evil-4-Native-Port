@@ -1562,7 +1562,7 @@ static inline void EvtMessWrite(EventMessageData* m, const char* path)
         if (e->flag & 1) {
             // integer arithmetic keeps the written order (`mulli; add rMul, rBase; addi off`);
             // `d.node[d.num]` puts the base first.
-#define CUR_NODE ((XmlNode*) (d.num * sizeof(XmlNode) + (u32)(uintptr_t)(d.node)))
+#define CUR_NODE ((XmlNode*) port_ptr64((u32) (d.num * sizeof(XmlNode) + (u32)(uintptr_t)(d.node))))
             sprintf(CUR_NODE->s[XN_SETFLG], "true");
             sprintf(CUR_NODE->s[XN_CUTNO], "%ld", e->cutNo);
             sprintf(CUR_NODE->s[XN_FRAME], "%ld", e->frame);

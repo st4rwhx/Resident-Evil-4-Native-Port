@@ -36,8 +36,8 @@
 // SceElevator with the chapter end on the way out.
 
 struct R225Work {
-    cObj* crank;   // 0x00
-    cObj* door;    // 0x04  the SetObjSmd dummy that rides along with the door
+    P32<cObj> crank;   // 0x00
+    P32<cObj> door;    // 0x04  the SetObjSmd dummy that rides along with the door
 };
 
 // sce_com.cpp SceElevatorData

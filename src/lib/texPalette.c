@@ -43,21 +43,27 @@ static void UnpackTexPalette(TEXPalettePtr pal) {
         OSPanic(__FILE__, 86, "invalid version number for texture palette");
     }
 
-    pal->descriptorArray = (TEXDescriptorPtr)((Ptr)pal->descriptorArray + (u32)pal);
+    // N7 : champs de quatre octets (DISC_PTR) ; decalage + adresse du fichier, en u32 comme sur la console.
+    DISC_SET(pal->descriptorArray, (TEXDescriptorPtr) port_ptr64((u32) pal->descriptorArray + port_ptr32(pal)));
     for (i = 0; i < pal->numDescriptors; i++) {
-        if (pal->descriptorArray[i].textureHeader) {
-            pal->descriptorArray[i].textureHeader = (TEXHeaderPtr)((Ptr)pal + (u32)pal->descriptorArray[i].textureHeader);
-            if (!pal->descriptorArray[i].textureHeader->unpacked) {
-                pal->descriptorArray[i].textureHeader->data = (Ptr)pal + (u32)pal->descriptorArray[i].textureHeader->data;
-                pal->descriptorArray[i].textureHeader->unpacked = TRUE;
+        TEXDescriptorPtr d = &DISC_GET(TEXDescriptor, pal->descriptorArray)[i];
+        if (d->textureHeader) {
+            TEXHeaderPtr h;
+            DISC_SET(d->textureHeader, (TEXHeaderPtr) port_ptr64(port_ptr32(pal) + (u32) d->textureHeader));
+            h = DISC_GET(TEXHeader, d->textureHeader);
+            if (!h->unpacked) {
+                DISC_SET(h->data, (unsigned char*) port_ptr64(port_ptr32(pal) + (u32) h->data));
+                h->unpacked = TRUE;
             }
         }
 
-        if (pal->descriptorArray[i].CLUTHeader) {
-            pal->descriptorArray[i].CLUTHeader = (CLUTHeaderPtr)((u8 *)pal + (u32)pal->descriptorArray[i].CLUTHeader);
-            if (!pal->descriptorArray[i].CLUTHeader->unpacked) {
-                pal->descriptorArray[i].CLUTHeader->data = (Ptr)pal + (u32)pal->descriptorArray[i].CLUTHeader->data;
-                pal->descriptorArray[i].CLUTHeader->unpacked = TRUE;
+        if (d->CLUTHeader) {
+            CLUTHeaderPtr c;
+            DISC_SET(d->CLUTHeader, (CLUTHeaderPtr) port_ptr64(port_ptr32(pal) + (u32) d->CLUTHeader));
+            c = DISC_GET(CLUTHeader, d->CLUTHeader);
+            if (!c->unpacked) {
+                DISC_SET(c->data, (unsigned char*) port_ptr64(port_ptr32(pal) + (u32) c->data));
+                c->unpacked = TRUE;
             }
         }
     }
@@ -65,7 +71,7 @@ static void UnpackTexPalette(TEXPalettePtr pal) {
 
 TEXDescriptorPtr TEXGet(TEXPalettePtr pal, u32 id) {
     ASSERTMSGLINE(147, id < pal->numDescriptors, "GetTexture():  Texture Not Found ");
-    return &pal->descriptorArray[id];
+    return &DISC_GET(TEXDescriptor, pal->descriptorArray)[id];
 }
 
 static void TexFreeFunc(TEXPalettePtr* pal) {
@@ -87,13 +93,13 @@ void TEXGetGXTexObjFromPalette(TEXPalettePtr pal, GXTexObj* to, u32 id) {
     GXBool mipMap;
 
     tdp = TEXGet(pal, id);
-    if (tdp->textureHeader->minLOD == tdp->textureHeader->maxLOD) {
+    if (DISC_GET(TEXHeader, tdp->textureHeader)->minLOD == DISC_GET(TEXHeader, tdp->textureHeader)->maxLOD) {
         mipMap = GX_FALSE;
     } else {
         mipMap = GX_TRUE;
     }
-    GXInitTexObj(to, tdp->textureHeader->data, tdp->textureHeader->width, tdp->textureHeader->height, tdp->textureHeader->format, tdp->textureHeader->wrapS, tdp->textureHeader->wrapT, mipMap);
-    GXInitTexObjLOD(to, tdp->textureHeader->minFilter, tdp->textureHeader->magFilter, tdp->textureHeader->minLOD, tdp->textureHeader->maxLOD, tdp->textureHeader->LODBias, GX_DISABLE, tdp->textureHeader->edgeLODEnable, GX_ANISO_1);
+    GXInitTexObj(to, DISC_GET(void, DISC_GET(TEXHeader, tdp->textureHeader)->data), DISC_GET(TEXHeader, tdp->textureHeader)->width, DISC_GET(TEXHeader, tdp->textureHeader)->height, DISC_GET(TEXHeader, tdp->textureHeader)->format, DISC_GET(TEXHeader, tdp->textureHeader)->wrapS, DISC_GET(TEXHeader, tdp->textureHeader)->wrapT, mipMap);
+    GXInitTexObjLOD(to, DISC_GET(TEXHeader, tdp->textureHeader)->minFilter, DISC_GET(TEXHeader, tdp->textureHeader)->magFilter, DISC_GET(TEXHeader, tdp->textureHeader)->minLOD, DISC_GET(TEXHeader, tdp->textureHeader)->maxLOD, DISC_GET(TEXHeader, tdp->textureHeader)->LODBias, GX_DISABLE, DISC_GET(TEXHeader, tdp->textureHeader)->edgeLODEnable, GX_ANISO_1);
 }
 
 void TEXGetGXTexObjFromPaletteCI(TEXPalettePtr pal, GXTexObj* to, GXTlutObj* tlo, GXTlut tluts, u32 id) {
@@ -101,12 +107,12 @@ void TEXGetGXTexObjFromPaletteCI(TEXPalettePtr pal, GXTexObj* to, GXTlutObj* tlo
     TEXDescriptorPtr tdp;
 
     tdp = TEXGet(pal, id);
-    if (tdp->textureHeader->minLOD == tdp->textureHeader->maxLOD) {
+    if (DISC_GET(TEXHeader, tdp->textureHeader)->minLOD == DISC_GET(TEXHeader, tdp->textureHeader)->maxLOD) {
         mipMap = GX_FALSE;
     } else {
         mipMap = GX_TRUE;
     }
-    GXInitTlutObj(tlo, tdp->CLUTHeader->data, tdp->CLUTHeader->format, tdp->CLUTHeader->numEntries);
-    GXInitTexObjCI(to, tdp->textureHeader->data, tdp->textureHeader->width, tdp->textureHeader->height, tdp->textureHeader->format, tdp->textureHeader->wrapS, tdp->textureHeader->wrapT, mipMap, tluts);
-    GXInitTexObjLOD(to, tdp->textureHeader->minFilter, tdp->textureHeader->magFilter, tdp->textureHeader->minLOD, tdp->textureHeader->maxLOD, tdp->textureHeader->LODBias, GX_DISABLE, tdp->textureHeader->edgeLODEnable, GX_ANISO_1);
+    GXInitTlutObj(tlo, DISC_GET(void, DISC_GET(CLUTHeader, tdp->CLUTHeader)->data), DISC_GET(CLUTHeader, tdp->CLUTHeader)->format, DISC_GET(CLUTHeader, tdp->CLUTHeader)->numEntries);
+    GXInitTexObjCI(to, DISC_GET(void, DISC_GET(TEXHeader, tdp->textureHeader)->data), DISC_GET(TEXHeader, tdp->textureHeader)->width, DISC_GET(TEXHeader, tdp->textureHeader)->height, DISC_GET(TEXHeader, tdp->textureHeader)->format, DISC_GET(TEXHeader, tdp->textureHeader)->wrapS, DISC_GET(TEXHeader, tdp->textureHeader)->wrapT, mipMap, tluts);
+    GXInitTexObjLOD(to, DISC_GET(TEXHeader, tdp->textureHeader)->minFilter, DISC_GET(TEXHeader, tdp->textureHeader)->magFilter, DISC_GET(TEXHeader, tdp->textureHeader)->minLOD, DISC_GET(TEXHeader, tdp->textureHeader)->maxLOD, DISC_GET(TEXHeader, tdp->textureHeader)->LODBias, GX_DISABLE, DISC_GET(TEXHeader, tdp->textureHeader)->edgeLODEnable, GX_ANISO_1);
 }

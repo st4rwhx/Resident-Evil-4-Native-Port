@@ -48,9 +48,9 @@ struct R10cRotWork {
 };
 
 struct R10cWork {
-    TexRenderMng* tex;   // 0x00  water render target
-    cEm* em;             // 0x04  the enemy of the area-1 event
-    cEm* ems[7];         // 0x08  the ambush after the switch
+    P32<TexRenderMng> tex;   // 0x00  water render target
+    P32<cEm> em;             // 0x04  the enemy of the area-1 event
+    P32<cEm> ems[7];         // 0x08  the ambush after the switch
     cEmHit* hit[3][3];   // 0x24  the three crates' hit boxes
     u32 se[3];           // 0x48  attribute sounds (SeAtSndCall)
     u32 seSwitch;        // 0x54
@@ -58,9 +58,9 @@ struct R10cWork {
     u32 seWheelA[2];     // 0x60
     u32 seGate;          // 0x68
     u32 cnt;             // 0x6C  frames since the room started
-    cSat* eat;           // 0x70  water attribute (swapped by eat_swap)
-    cSat* eat2;          // 0x74
-    cSat* crate[3];      // 0x78  crate collision (follows the crate objects)
+    P32<cSat> eat;           // 0x70  water attribute (swapped by eat_swap)
+    P32<cSat> eat2;          // 0x74
+    P32<cSat> crate[3];      // 0x78  crate collision (follows the crate objects)
 };
 
 // The work pointer is a struct member: every store through the work reloads it.

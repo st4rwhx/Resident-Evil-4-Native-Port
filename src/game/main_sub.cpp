@@ -91,7 +91,7 @@ struct OSLowMem {
     u8 pad_0[0xF8];
     u32 busClock;  // 0xF8
 };
-#define OS_BUS_CLOCK (((OSLowMem*) 0x80000000)->busClock)
+#define OS_BUS_CLOCK (((OSLowMem*) port_ptr64(0x80000000))->busClock)
 #define OS_TIMER_CLOCK (OS_BUS_CLOCK / 4)
 #define OSTicksToSeconds(ticks) ((ticks) / OS_TIMER_CLOCK)
 #define OSTicksToMicroseconds(ticks) (((ticks) * 8) / (OS_TIMER_CLOCK / 125000))
@@ -151,10 +151,10 @@ void Render_init()
     GXRenderModeObj* rm = &Rmode;
 
     SetTvMode(rm);
-    pFrame_buff[0] = (void*) 0x80460000;
+    pFrame_buff[0] = (void*) port_ptr64(0x80460000);
     pCurrent_buff = pFrame_buff[1] =
         (void*)port_ptr64((0x80460000 + VIPadFrameBufferWidth(rm->viWidth) * rm->xfbHeight * 2));
-    DefaultFifo = (void*) 0x803F0000;
+    DefaultFifo = (void*) port_ptr64(0x803F0000);
     VIConfigure(rm);
     DefaultFifoObj = GXInit(DefaultFifo, 0x70000);
     ScreenGXSet();

@@ -280,12 +280,12 @@ void roomJumpMove(test* w)
     eprintf(0xD8, 0x38, 0, 0, "STAGE = %d", w->stage);
     eprintf(0xD8, 0x46, 0, 0, "ROOM  = %02x", info->room);
     eprintf(0xD8, 0x54, 0, 0, "POINT = %d", w->point);
-    eprintf(0xD8, 0x2A, 4, 0, "%s", info->name);
+    eprintf(0xD8, 0x2A, 4, 0, "%s", port_p(info->name));
     if (info->soft[0] != 0) {
-        eprintf(0xD8, 0x1C, 0, 0, "     SOFT(%s)", info->soft);
+        eprintf(0xD8, 0x1C, 0, 0, "     SOFT(%s)", port_p(info->soft));
     }
     if (info->scr[0] != 0) {
-        eprintf(0xD8, 0xE, 0, 0, "     SCR(%s)", info->scr);
+        eprintf(0xD8, 0xE, 0, 0, "     SCR(%s)", port_p(info->scr));
     }
     eprintf(0xD0, (w->mode + 4) * 0xE, 0, 0, ">");
     if (joy->trg & 0x100) {

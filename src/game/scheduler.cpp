@@ -186,7 +186,14 @@ void* TaskExec_hook(void* arg)
         : "r3");
 #endif
     GXSetCurrentGXThread();
+#if PORT_P64
+    // N7 (18/11) : `arg` vaut déjà base | valeur (TaskStart). Beaucoup de tâches reçoivent un objet
+    // (cSofdec::ThreadMove(this)…) : on le passe entier dans un registre de 64 bits ; une tâche qui attend un int n'en
+    // lit que les 32 bits bas (ABI x86_64 / arm64).
+    ((void (*)(void*)) (void (*)(int)) CTASK->func)(arg);
+#else
     CTASK->func((int)(uintptr_t)(arg));
+#endif
     return NULL;
 }
 

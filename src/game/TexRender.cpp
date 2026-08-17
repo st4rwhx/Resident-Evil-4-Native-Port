@@ -370,7 +370,7 @@ void CamRenderPrev(TexRenderCam* c)
         if ((n++ % 60) == 0) {
             const u8* d = (const u8*) c->data;
             port_studio_event("texrender_camera data=%p octets=%02x%02x%02x%02x image=%d pos=%g,%g,%g at=%g,%g,%g sauve_pos=%g dist=%g",
-                              c->data, d ? d[0] : 0, d ? d[1] : 0, d ? d[2] : 0, d ? d[3] : 0, frame, (double) c->pCam->param.pos.x,
+                              port_p(c->data), d ? d[0] : 0, d ? d[1] : 0, d ? d[2] : 0, d ? d[3] : 0, frame, (double) c->pCam->param.pos.x,
                               (double) c->pCam->param.pos.y, (double) c->pCam->param.pos.z, (double) c->pCam->param.at.x,
                               (double) c->pCam->param.at.y, (double) c->pCam->param.at.z, (double) pG->Cam.param.pos.x, (double) pG->Cam.dist);
         }

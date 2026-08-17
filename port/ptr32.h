@@ -16,13 +16,23 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(__cplusplus) && UINTPTR_MAX > 0xFFFFFFFFu
+// PORT_VDELTA (N7, 18/11) : ce que le pointeur de table virtuelle ajoute en 64 bits (8 octets au lieu de 4). Les champs
+// d'une classe à table virtuelle glissent tous de 4 (les pointeurs du jeu sont des P32) ; les « calques » des .cpp qui
+// sautent un nombre fixe d'octets dans une telle classe (`u8 pad[0x308]`) l'ajoutent. Inventaire : port/outils/calques_64.py.
+#define PORT_VDELTA (sizeof(void*) - 4)
 
+#if UINTPTR_MAX > 0xFFFFFFFFu
+// 64 bits, C comme C++ (les unités C du SDK, GXInit.c..., lisent aussi des adresses GameCube fixes : 18/11, plantage à
+// 0xffffffff800000f8 quand port_ptr64 n'existait qu'en C++).
 #define PORT_P64 1
 // Base de la fenêtre de 4 Go (port/os.cpp), ALIGNÉE SUR 4 Go (32 bits bas nuls), comme la « racine » de V8 : les 32 bits
 // bas d'un pointeur de la fenêtre sont son décalage, donc `(u32)(uintptr_t) p` encode gratuitement et `base | v` décode ;
 // les valeurs font l'aller-retour (décalage de fichier -> pointeur -> décalage), ce que le jeu fait sans cesse.
+#ifdef __cplusplus
 extern "C" uintptr_t g_port_base;
+#else
+extern uintptr_t g_port_base;
+#endif
 
 static inline uint32_t port_ptr32(const volatile void* p)
 {
@@ -30,8 +40,11 @@ static inline uint32_t port_ptr32(const volatile void* p)
 }
 static inline void* port_ptr64(uint32_t v)
 {
-    return v ? (void*) (g_port_base | v) : nullptr;
+    return v ? (void*) (g_port_base | v) : (void*) 0;
 }
+#endif
+
+#if defined(__cplusplus) && UINTPTR_MAX > 0xFFFFFFFFu
 
 template <class T> struct P32_ref { typedef T& type; };
 template <> struct P32_ref<void> { typedef void type; };
@@ -53,6 +66,13 @@ template <class T> struct P32 {
     uint32_t v;
 
     P32() = default;   // trivial : utilisable dans les unions et les structures copiées par memcpy
+#ifdef PORT_P32_VARARGS
+    // Compilation de DIAGNOSTIC seulement (18/11) : un constructeur de copie écrit à la main rend P32 non trivial, et
+    // clang refuse alors de le passer à une fonction variadique (printf/sprintf/OSReport…), qui recevrait sinon les 4 octets
+    // bruts (adresse sans la base). Liste les endroits à corriger avec port_p(...). Casse les unions : ne pas livrer.
+    P32(const P32& o) : v(o.v) {}
+    P32& operator=(const P32& o) { v = o.v; return *this; }
+#endif
     // implicite (tables statiques, initialisations) ; conséquence : `c ? champP32 : pointeur` est ambigu -> écrire
     // `c ? port_p(champ) : pointeur` (port_p rend T* pour P32<T> comme pour T*). Pas de surcharge nullptr (ambiguë avec 0).
     P32(T* p) : v(port_ptr32(p)) {}
@@ -126,6 +146,7 @@ template <class F> struct FnP32 {   // pointeur de fonction : décalage depuis l
 
 #else   // 32 bits (ou C) : les champs restent de vrais pointeurs
 
+#if UINTPTR_MAX <= 0xFFFFFFFFu   // vrai 32 bits (en 64 bits, ce bloc ne sert qu'au C : port_ptr32/64 sont définis plus haut)
 #define PORT_P64 0
 #ifdef __cplusplus
 template <class T> using P32 = T*;
@@ -135,6 +156,7 @@ template <class T> static inline T** port_out(T*& c) { return &c; }
 #endif
 #define port_ptr32(p) ((uint32_t) (uintptr_t) (p))
 #define port_ptr64(v) ((void*) (uintptr_t) (v))
+#endif
 
 #endif
 #endif

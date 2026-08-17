@@ -42,13 +42,13 @@ struct R213SuYarare {
 };
 
 struct R213Work {
-    TexRenderMng* tex;    // 0x00  statue render target
+    P32<TexRenderMng> tex;    // 0x00  statue render target
     u32 pad_4;
-    cEmHit* hit[5];       // 0x08  [0] the statue, [1] [2] the chains
+    P32<cEmHit> hit[5];       // 0x08  [0] the statue, [1] [2] the chains
     cEmWrap em[9];        // 0x1C
-    cSat* sat[3];         // 0x88
-    cSat* eat[3];         // 0x94
-    cObjChain* chain[2];  // 0xA0
+    P32<cSat> sat[3];         // 0x88
+    P32<cSat> eat[3];         // 0x94
+    P32<cObjChain> chain[2];  // 0xA0
     f32 ang;              // 0xA8  bridge angle
     f32 angCur;           // 0xAC  angle BridgeAngMove is heading for
     f32 angDown;          // 0xB0  angle after a chain break

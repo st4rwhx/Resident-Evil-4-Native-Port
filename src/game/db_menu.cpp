@@ -276,7 +276,7 @@ void move(struct test* t)
     eprintf(t->x + 160, t->y + 405, 0, 0, "MOVE BY SUB-STICK");
     for (i = 0; i < n; i++) {
         color = ((i / 2) & 1) ? 0x18 : 0;
-        eprintf(t->x + ((i & 1) * 20 - 4) * 8, t->y + (i / 2 + 2) * 15, color, 0, "%s", menu[i].name);
+        eprintf(t->x + ((i & 1) * 20 - 4) * 8, t->y + (i / 2 + 2) * 15, color, 0, "%s", port_p(menu[i].name));
     }
     eprintf(t->x + ((t->cursor & 1) * 20 - 5) * 8, t->y + (t->cursor / 2 + 2) * 15, 0, 0, ">");
     if (joy->rep & 0x80008) {
@@ -333,7 +333,7 @@ void move(struct test* t)
                 DLL_Link(pModule, pModule_bss);
                 TaskChain(pModule->prolog, 0);
             } else {
-                pLog->err(0, 0, "%s FILE NOT FOUND", menu[t->cursor].rel);
+                pLog->err(0, 0, "%s FILE NOT FOUND", port_p(menu[t->cursor].rel));
                 exit(t);
             }
         } else {

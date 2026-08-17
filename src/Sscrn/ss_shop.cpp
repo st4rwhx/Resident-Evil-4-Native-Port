@@ -46,7 +46,7 @@ struct ShopWork {
     u16 buyId;       // 0x10
     ItemWork buy;    // 0x12  slot template of the item being bought (case placement)
     int placed;      // 0x20  the bought piece was put on the case
-    ItemWork* item;  // 0x24  item being sold / tuned
+    P32<ItemWork> item;  // 0x24  item being sold / tuned
     int price;       // 0x28  tune-up price
     int lvType;      // 0x2C  tune type (0 fire, 1 magazine, 2 speed, 3 exclusive, 4 all)
     int lv[4];       // 0x30  tune levels after the purchase

@@ -1048,7 +1048,7 @@ void cSatMgr::disp(int flag)
             break;
         }
         for (j = s; j < e; j++) {
-            AtPoly* poly = (AtPoly*) (j * sizeof(AtPoly) + (u32)(uintptr_t)(sat->poly));
+            AtPoly* poly = (AtPoly*) port_ptr64((u32) (j * sizeof(AtPoly) + (u32)(uintptr_t)(sat->poly)));
             u32 attr = (poly->attrHi & 0xFF) << 16;
             attr |= poly->attrLo;
             u32 color;
@@ -1168,7 +1168,7 @@ void cSat::disp(int no, u32 color, int zupd)
 
     PSMTXConcat(pG->Cam.viewMat, mat, m);
     for (i = 0; i < 3; i++) {
-        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32)(uintptr_t)(pt));
+        AtPoly* pl = (AtPoly*) port_ptr64((u32) (no * sizeof(AtPoly) + (u32)(uintptr_t)(pt)));
         Vec* v = (Vec*) (*(u16*)port_ptr64((i * 2 + (u32)(uintptr_t)(pl))) * sizeof(Vec) + (u32)(uintptr_t)(vt));
         p[i].x = v->x;
         p[i].y = v->y;
@@ -1176,7 +1176,7 @@ void cSat::disp(int no, u32 color, int zupd)
     }
     switch (zupd & 3) {
     case 0: {
-        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32)(uintptr_t)(pt));
+        AtPoly* pl = (AtPoly*) port_ptr64((u32) (no * sizeof(AtPoly) + (u32)(uintptr_t)(pt)));
         Draw_line3d_local(&p[0], &p[1], m, (pl->e[0] & 0x2000) ? 0x80808080 : color, 0);
         Draw_line3d_local(&p[1], &p[2], m, (pl->e[0] & 0x4000) ? 0x80808080 : color, 0);
         Draw_line3d_local(&p[0], &p[2], m, (pl->e[0] & 0x8000) ? 0x80808080 : color, 0);
@@ -1191,7 +1191,7 @@ void cSat::disp(int no, u32 color, int zupd)
     PSVECAdd(&p[0], &p[2], &p[0]);
     PSVECScale(&p[0], &p[0], 1.0f / 3.0f);
     {
-        AtPoly* pl = (AtPoly*) (no * sizeof(AtPoly) + (u32)(uintptr_t)(poly));
+        AtPoly* pl = (AtPoly*) port_ptr64((u32) (no * sizeof(AtPoly) + (u32)(uintptr_t)(poly)));
         n.x = nrm[pl->n].x;
         n.y = nrm[pl->n].y;
         n.z = nrm[pl->n].z;
@@ -1409,9 +1409,9 @@ cSatFile* createSat(Vec* v, u32 attr, f32 h)
     }
     e = &nrm[4];
     for (i = 0; i < 8; i++) {
-        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
-        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
-        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v1 = (Vec*) port_ptr64((u32) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
+        Vec* v0 = (Vec*) port_ptr64((u32) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
+        Vec* v2 = (Vec*) port_ptr64((u32) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
         e->x = v1->x - v0->x;
         e->y = v1->y - v0->y;
         e->z = v1->z - v0->z;
@@ -1529,9 +1529,9 @@ cSatFile* createBoxSat(Vec* v, u32 attr, f32 h)
     }
     e = &nrm[6];
     for (i = 0; i < 12; i++) {
-        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
-        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
-        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v1 = (Vec*) port_ptr64((u32) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
+        Vec* v0 = (Vec*) port_ptr64((u32) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
+        Vec* v2 = (Vec*) port_ptr64((u32) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
         e->x = v1->x - v0->x;
         e->y = v1->y - v0->y;
         e->z = v1->z - v0->z;
@@ -1631,9 +1631,9 @@ static cSatFile* createFloorSat(Vec* v, u32 attr, f32 h)
     }
     e = &nrm[1];
     for (i = 0; i < 2; i++) {
-        Vec* v1 = (Vec*) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
-        Vec* v0 = (Vec*) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
-        Vec* v2 = (Vec*) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+        Vec* v1 = (Vec*) port_ptr64((u32) (poly0[i].v[1] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
+        Vec* v0 = (Vec*) port_ptr64((u32) (poly0[i].v[0] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
+        Vec* v2 = (Vec*) port_ptr64((u32) (poly0[i].v[2] * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
         e->x = v1->x - v0->x;
         e->y = v1->y - v0->y;
         e->z = v1->z - v0->z;

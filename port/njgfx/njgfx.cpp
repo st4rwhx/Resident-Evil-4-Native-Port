@@ -100,6 +100,13 @@ size_t g_decoded;                // g_ops[0..g_decoded) decodes
 unsigned g_frames;
 unsigned g_skipped;   // images sans dessin, non envoyees
 
+// N7 (18/11) : en 64 bits la memoire du jeu est dans une fenetre de 4 Go alignee (port/os.cpp) : base | adresse.
+#if defined(__LP64__)
+extern "C" uintptr_t g_port_base;
+static inline uintptr_t njg_base() { return g_port_base; }
+#else
+static inline uintptr_t njg_base() { return 0; }
+#endif
 bool init() {
   if (g_ready || g_failed) return g_ready;
   g_failed = true;
@@ -118,7 +125,7 @@ bool init() {
   std::printf("[NJGFX] GL : %s\n", (const char *)glGetString(GL_RENDERER));
 
   // la memoire du jeu, telle quelle : MMU sans allocation (cpu_context.h)
-  rt::MMU::external_mem1 = reinterpret_cast<uint8_t *>(0x80000000u);
+  rt::MMU::external_mem1 = reinterpret_cast<uint8_t *>(njg_base() | 0x80000000u);
   static rt::GuestCpu *ctx = new rt::GuestCpu;
   rt::g_guest = ctx;
   rt::g_guest_mem = &ctx->mmu;
@@ -724,7 +731,7 @@ static void render_frame(std::vector<gx::GxOp> &ops, unsigned size, unsigned fra
     std::printf("[NJGFX] image %u : %zu commandes (%zu dessins, %zu BP, %zu XF), %u octets lus, pixel central %02x%02x%02x%02x\n",
                 frame, nops, ndraws, nbp, nxf, size, px[0], px[1], px[2], px[3]);
     {   // diagnostic N3 : debut de la texture du titre (CMPR 640x360) telle qu'elle est en memoire
-      const uint8_t *t = reinterpret_cast<const uint8_t *>(0x811E3100u);
+      const uint8_t *t = reinterpret_cast<const uint8_t *>(njg_base() | 0x811E3100u);
       std::printf("[NJGFX] texture 011E3100 :");
       for (int i = 0; i < 32; ++i) std::printf(" %02x", t[i]);
       std::printf("\n");

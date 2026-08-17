@@ -68,9 +68,9 @@ struct Ctrl12Work {
     s16 timer[13];              // 0x00
     u16 cnt[6];                 // 0x1A
     u16 flag[1];                // 0x26
-    struct TexRenderMng* tex2b; // 0x28
-    struct TexRenderMng* tex2c; // 0x2C
-    struct TexRenderMng* tex32; // 0x30
+    P32<struct TexRenderMng> tex2b; // 0x28
+    P32<struct TexRenderMng> tex2c; // 0x2C
+    P32<struct TexRenderMng> tex32; // 0x30
 };
 
 class cCtrl12 : public cCtrl {
@@ -89,14 +89,14 @@ struct TexRenderMng* Ctrl12GetTexRenderEm32(cCtrl* c);
 
 // ctrl14: the dragon head (stage 4 el gigante fire statue) pieces and their fire.
 struct Ctrl14Work {
-    cModel* obj[5];    // 0x00  [0] base, [1] head, [2] unused, [3]/[4] jaws
+    P32<cModel> obj[5];    // 0x00  [0] base, [1] head, [2] unused, [3]/[4] jaws
     u8 type;           // 0x14  dragon number (0..2)
     u8 espKind;        // 0x15  EspPullCoreKind at creation
     u8 flags;          // 0x16  bit0 moving, bit1 moved this frame
     u8 pad_17;
     s32 fireTimer;     // 0x18  frames the flame stays
     s32 fireDelay;     // 0x1C  frames until the flame starts
-    class cSat* sat[3]; // 0x20  collision pieces
+    P32<class cSat> sat[3]; // 0x20  collision pieces
 };
 
 class cCtrl14 : public cCtrl {

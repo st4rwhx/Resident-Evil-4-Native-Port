@@ -1605,7 +1605,7 @@ void titleDebugMenu(TitleWork* w)
     y = w->dbgY;
     info = pRj->getRoomInfo(w->dbgStage, w->dbgRoom[w->dbgStage] + w->dbgPoint);
     if (pRj->checkRoomNo(w->dbgStage, w->dbgRoom[w->dbgStage]) == w->dbgRoom[w->dbgStage]) {
-        eprintf(x, y - 16, 4, 0, "%s", info->name);
+        eprintf(x, y - 16, 4, 0, "%s", port_p(info->name));
     }
     for (i = 0; i < lines; i++) {
         int col = 0;

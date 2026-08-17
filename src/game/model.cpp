@@ -463,7 +463,7 @@ void cModel::partsWorldCalc()
         return;
     }
     if (!PTR_OK(p->pParent)) {
-        pLog->err(2, 0, "partsWorldCalc() PARENT ADDR ERR %08x", p->pParent);
+        pLog->err(2, 0, "partsWorldCalc() PARENT ADDR ERR %08x", port_p(p->pParent));
         return;
     }
     for (; p; p = p->pNext) {

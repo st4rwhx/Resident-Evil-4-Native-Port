@@ -123,7 +123,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=6)
     ap.add_argument('--only', default='')
-    BASE = '_port_build_x86' if os.environ.get('PORT_ABI') == 'x86' else '_port_build'
+    BASE = {'x86': '_port_build_x86', 'x86_64': '_port_build_x86_64', 'arm64': '_port_build_arm64'}.get(os.environ.get('PORT_ABI'), '_port_build')
     ap.add_argument('--out', default=os.path.join(ROOT, BASE, 'rel'))
     ap.add_argument('--maxerr', type=int, default=20)
     ap.add_argument('--errlog', default='')   # journal complet des erreurs (essais 64 bits, p64_casts.py)

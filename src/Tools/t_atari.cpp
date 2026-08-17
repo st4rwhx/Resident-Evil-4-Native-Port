@@ -249,7 +249,7 @@ static void edit(AtariToolWork* w)
     }
     idx = *(u16*) (w->cursor * 2 + (u32)(uintptr_t)(&poly[w->polyNo]));
     nrm = s->nrm;
-    pv = (Vec*) (idx * sizeof(Vec) + (u32)(uintptr_t)(vtx));
+    pv = (Vec*) port_ptr64((u32) (idx * sizeof(Vec) + (u32)(uintptr_t)(vtx)));
     v.x = pv->x;
     v.y = pv->y;
     v.z = pv->z;

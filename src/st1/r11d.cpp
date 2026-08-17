@@ -45,9 +45,9 @@ struct R11dWork {
     u8 pad_3;
     cEmWrap em0;          // 0x04  the big sister
     cEmWrap em1;          // 0x10  the little sister
-    cEm* door;            // 0x1C  the iron door (etc door 0x26)
+    P32<cEm> door;            // 0x1C  the iron door (etc door 0x26)
     u32 strId;            // 0x20  SndStrReq handle of the show-view stream
-    cModelInfo* mi;       // 0x24  the big sister's extra model
+    P32<cModelInfo> mi;       // 0x24  the big sister's extra model
     cEmPatrol patrol[5];  // 0x28
 };
 

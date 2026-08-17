@@ -325,7 +325,7 @@ void SceAtInit(void* atData, void* itemData)
             PSet(pS->pAtData, atData);
             PSet(pS->pAtWork, (u8*) atData + 0x10);
             for (i = ((SceAtFileHead*) pS->pAtData)->num - 1; i >= 0; i--) {
-                SceAtWork* w = (SceAtWork*) (i * sizeof(SceAtWork) + pS->pAtWork);
+                SceAtWork* w = (SceAtWork*) port_ptr64((u32) (i * sizeof(SceAtWork) + pS->pAtWork));
 
                 AddPrim(&pS->ot[w->x44], (u32*) w);
             }
@@ -342,8 +342,8 @@ void SceAtInit(void* atData, void* itemData)
             for (i = ((SceAtFileHead*) pS->pItemData)->num - 1; i >= 0; i--) {
                 SceAtWork* w;
 
-                ((SceAtWork*) (i * sizeof(SceAtWork) + pS->pItemWork))->no += 0x80;
-                w = (SceAtWork*) (i * sizeof(SceAtWork) + pS->pItemWork);
+                ((SceAtWork*) port_ptr64((u32) (i * sizeof(SceAtWork) + pS->pItemWork)))->no += 0x80;
+                w = (SceAtWork*) port_ptr64((u32) (i * sizeof(SceAtWork) + pS->pItemWork));
                 AddPrim(&pS->ot[w->x44], (u32*) w);
             }
         }

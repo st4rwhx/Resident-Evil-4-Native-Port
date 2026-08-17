@@ -118,7 +118,7 @@ public:
     int deleteList(T* p) {
         T* q;
         if (!p->isAlive()) {
-            log("%s::deleteList() WORK IS ALREADY DEAD 0x%08X", name, p);
+            log("%s::deleteList() WORK IS ALREADY DEAD 0x%08X", port_p(name), p);
             return 0;
         }
         q = pAlive;
@@ -134,14 +134,14 @@ public:
                 return 1;
             }
         }
-        log("%s::deleteList() WORK CANT FOUND 0x%08X", name, p);
+        log("%s::deleteList() WORK CANT FOUND 0x%08X", port_p(name), p);
         return 0;
     }
     void addListFront(T* p) {
         T* q;
         for (q = pAlive; q; q = (T*)q->next) {
             if (q == p) {
-                log("%s::addListFront() ERROR SET x2 0x%08X", name, p);
+                log("%s::addListFront() ERROR SET x2 0x%08X", port_p(name), p);
                 return;
             }
         }
@@ -152,7 +152,7 @@ public:
         T* q;
         for (q = pAlive; q; q = (T*)q->next) {
             if (q == p) {
-                log("%s::addListBack() ERROR 0x%08X", name, p);
+                log("%s::addListBack() ERROR 0x%08X", port_p(name), p);
                 return;
             }
         }
@@ -269,7 +269,7 @@ u32 cManager<T>::countActiveWork()
         maxAlive = n;
     }
     if (nArray - n < nArray / warnDiv) {
-        log("countActiveWork() warning, %s work remain under 1/%d", name, warnDiv);
+        log("countActiveWork() warning, %s work remain under 1/%d", port_p(name), warnDiv);
     }
     return n;
 }
@@ -283,7 +283,7 @@ T* cManager<T>::create(int id)
         if (!(p->be_flag & 0x601)) {
             memClear(p, size);
             if (construct(p, id) == 0) {
-                log("create()->construct() failed. %s id:%d", name, id);
+                log("create()->construct() failed. %s id:%d", port_p(name), id);
                 return 0;
             }
             addListFront(p);
@@ -291,7 +291,7 @@ T* cManager<T>::create(int id)
             return p;
         }
     }
-    log("create() failed. %s work is full id:%d", name, id);
+    log("create() failed. %s work is full id:%d", port_p(name), id);
     return 0;
 }
 
@@ -309,7 +309,7 @@ T* cManager<T>::create(int id, u32 no)
     }
     T* p = (T*)((u8*)pArray + size * no);
     if (p->be_flag & 0x601) {
-        log("create() failed %s id:%d", name, id);
+        log("create() failed %s id:%d", port_p(name), id);
         return 0;
     }
     memClear(p, size);
@@ -371,7 +371,7 @@ inline void cManager<T>::destroy(T* p)
 {
     if ((u32)(uintptr_t)(p) < PORT_PTR_MIN || (u32)(uintptr_t)(p) > PORT_PTR_MAX) {
         if (p != 0) {
-            log("%s::destroy() ERROR, INVALID  PTR %08X", name, p);
+            log("%s::destroy() ERROR, INVALID  PTR %08X", port_p(name), p);
         }
         return;
     }
@@ -379,7 +379,7 @@ inline void cManager<T>::destroy(T* p)
     switch (flag) {
     case 0:
         if (!p->isAlive()) {
-            log("%s::destroy() delete but not alive", name);
+            log("%s::destroy() delete but not alive", port_p(name));
             return;
         }
         delete p;
@@ -392,7 +392,7 @@ inline void cManager<T>::destroy(T* p)
         p->be_flag |= 0x200;
         break;
     default:
-        log("%s::destroy() INVALID ID %d", name, flag);
+        log("%s::destroy() INVALID ID %d", port_p(name), flag);
         break;
     }
 }
@@ -417,7 +417,7 @@ T* cManager<T>::createBack(int id)
         if (!(p->be_flag & 0x601)) {
             memClear(p, size);
             if (construct(p, id) == 0) {
-                log("create()->construct() failed. %s id:%d", name, id);
+                log("create()->construct() failed. %s id:%d", port_p(name), id);
                 return 0;
             }
             addListBack(p);
@@ -425,7 +425,7 @@ T* cManager<T>::createBack(int id)
             return p;
         }
     }
-    log("create() failed. %s work is full id:%d", name, id);
+    log("create() failed. %s work is full id:%d", port_p(name), id);
     return 0;
 }
 

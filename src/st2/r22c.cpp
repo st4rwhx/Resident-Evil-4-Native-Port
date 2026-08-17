@@ -74,7 +74,7 @@ struct R22cMarkRec {
 class ResultScreen {
 public:
     int state;              // 0x0
-    R22cResultData* data;   // 0x4
+    P32<R22cResultData> data;   // 0x4
 
     void read();
     void reloadtime();
@@ -101,7 +101,7 @@ struct R22cWork {
     int ufoWait;         // 0x2C
     u32 shotTotal;       // 0x30  pG->shotTotal2 at the start
     u32 shotHit;         // 0x34  pG->shotHit2 at the start
-    cSat* eat;           // 0x38
+    P32<cSat> eat;           // 0x38
     int wepSel;          // 0x3C
     u32 effFlags;        // 0x40  R22cHitEffect bits
     u8 wepNo;            // 0x44
@@ -110,14 +110,14 @@ struct R22cWork {
     u8 cnt47;            // 0x47  kind 0 hits
     u8 pad_48[4];
     s32** tbl;           // 0x4C  level script
-    void* itemSaveBuf;   // 0x50
+    P32<void> itemSaveBuf;   // 0x50
     int itemSel;         // 0x54
     int cap[24];         // 0x58
     u16 capId;           // 0xB8
     u8 pad_BA[2];
-    cEm* door[2];        // 0xBC
+    P32<cEm> door[2];        // 0xBC
     u32 strId;           // 0xC4  SndStrReq handle
-    cEm* wepMan;         // 0xC8
+    P32<cEm> wepMan;         // 0xC8
     int effTimer;        // 0xCC
     int itemNum[24];     // 0xD0
     ResultScreen result; // 0x130

@@ -63,7 +63,7 @@ int proc_tick_idx;
 int proc_tick_idx_bak;
 int g_proc_cnt;
 
-#define OS_BUS_CLOCK (((OSClock*) 0x80000000)->busClock)
+#define OS_BUS_CLOCK (((OSClock*) port_ptr64(0x80000000))->busClock)
 struct OSClock {
     u8 pad_0[0xF8];
     u32 busClock;   // 0xF8
@@ -150,7 +150,7 @@ void processBarDisp()
     // stands in for it (its read below folds back to `li 0`, no code).
     s16 zz = 0;
     // clk's `lis 0x8000` (a block-0 filler at sched1) follows the zero's `li` in the target: LUID order.
-    clk = (OSClock*) 0x80000000;
+    clk = (OSClock*) port_ptr64(0x80000000);
     t->code = 4;
     t->x0 = 6;
     t->y0 = 30;

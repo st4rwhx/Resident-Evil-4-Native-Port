@@ -46,8 +46,8 @@ class cCatapult {
 public:
     int emNo;          // 0x00  enemy list entry of the operator
     cEmWrap em;        // 0x04
-    cEmRock* rock;     // 0x10
-    cObj* obj;         // 0x14  the catapult scroll object
+    P32<cEmRock> rock;     // 0x10
+    P32<cObj> obj;         // 0x14  the catapult scroll object
     int state;         // 0x18
     int timer;         // 0x1C
     u8 thrown;         // 0x20
@@ -65,8 +65,8 @@ public:
     u8 fireAll;        // 0x3D
     u8 pad_3E[2];
     f32 speed;         // 0x40
-    ScePrim* setRockTask;    // 0x44
-    ScePrim* throwRockTask;  // 0x48
+    P32<ScePrim> setRockTask;    // 0x44
+    P32<ScePrim> throwRockTask;  // 0x48
 
     void move();
     int checkHitArea();
@@ -88,20 +88,20 @@ public:
 struct R202Work {
     cCatapult cat[4];      // 0x000
     int throwWait;         // 0x130
-    cObj* ido0;            // 0x134  the wall sections
-    cObj* ido1;            // 0x138
-    cObj* crank;           // 0x13C
-    cObj* ido2;            // 0x140
-    cObj* box;             // 0x144
+    P32<cObj> ido0;            // 0x134  the wall sections
+    P32<cObj> ido1;            // 0x138
+    P32<cObj> crank;           // 0x13C
+    P32<cObj> ido2;            // 0x140
+    P32<cObj> box;             // 0x144
     f32 idoY0;             // 0x148  wall positions when raised
     f32 idoY1;             // 0x14C
     f32 idoY2;             // 0x150
-    ScePrim* checkTask;    // 0x154
+    P32<ScePrim> checkTask;    // 0x154
     u8 pad_158[0x180 - 0x158];
     cEmWrap em180;         // 0x180  the Ganado that opens the gate
     cPatrol pat[2];        // 0x18C
     u32 strId;             // 0x1DC
-    cSat* sat;             // 0x1E0
+    P32<cSat> sat;             // 0x1E0
 };
 
 // The work pointer is a struct member: every store through the work reloads it.

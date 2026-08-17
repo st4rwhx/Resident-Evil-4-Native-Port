@@ -58,10 +58,10 @@ struct R207Work {
     R207Em em[10];     // 0x00
     R207At area[4];    // 0xC8
     int timer;         // 0xE8  frames until the next patrol order
-    cObj* item0;       // 0xEC  sword item model (slot 0x80)
-    cObj* item1;       // 0xF0  sword item model (slot 0xC4)
+    P32<cObj> item0;       // 0xEC  sword item model (slot 0x80)
+    P32<cObj> item1;       // 0xF0  sword item model (slot 0xC4)
     Vec wallOfs;       // 0xF4  wall sword position relative to the wall object
-    cSubChar* sub;     // 0x100 partner hidden during the enemy event
+    P32<cSubChar> sub;     // 0x100 partner hidden during the enemy event
 };
 
 // The work pointer is a struct member: every store through the work reloads it.

@@ -56,7 +56,7 @@ struct SndVolWork {
     SndEfxParam efx[2];     // 0x2C
     CombSel sel[32];        // 0x6C
     CombSel selBackup;      // 0x16C
-    EditTbl* curTbl;        // 0x174
+    P32<EditTbl> curTbl;        // 0x174
     EditTbl vol[32];        // 0x178
     EditTbl pitch[32];      // 0x6778
     EditTbl filter[32];     // 0xCD78

@@ -24,7 +24,10 @@
 #ifndef PORT_DISC_PTR_H
 #define PORT_DISC_PTR_H
 
+#include <stdint.h>   // UINTPTR_MAX, teste plus bas
+
 #if defined(RE4_PORT) && defined(__cplusplus)
+#include "ptr32.h"   // N7 (18/11) : en 64 bits, adresse = base de la fenetre | u32 (en 32 bits, identite)
 
 template <class T>
 struct DiscPtr {
@@ -34,7 +37,7 @@ struct DiscPtr {
     // `(u8*) h->data` que `TEXDescriptor* d = tpl->descriptorArray;` ; un unique
     // `operator T*` ne couvrirait que le second, car une conversion definie par
     // l utilisateur ne s enchaine pas avec un `void*` -> `u8*`.
-    template <class U> operator U *() const { return (U *) (unsigned long long) addr; }
+    template <class U> operator U *() const { return (U *) (unsigned long long) (uintptr_t) port_ptr64(addr); }
 
     // Et vers les entiers, parce que le jeu manipule ces champs comme des nombres : il relit
     // le decalage du fichier avant de le remplacer par une adresse, et teste son signe pour
@@ -52,16 +55,16 @@ struct DiscPtr {
     // Modeles, pour que ces deux operations ne soient instanciees que si on les emploie :
     // DiscPtr<void> existe (les champs `data` des en-tetes de texture) et n a ni dereference
     // ni fleche.
-    template <class U = T> U *operator->() const { return (U *) (unsigned long long) addr; }
-    template <class U = T> U &operator*() const { return *(U *) (unsigned long long) addr; }
+    template <class U = T> U *operator->() const { return (U *) (unsigned long long) (uintptr_t) port_ptr64(addr); }
+    template <class U = T> U &operator*() const { return *(U *) (unsigned long long) (uintptr_t) port_ptr64(addr); }
     template <class U = T> U &operator[](unsigned long i) const
     {
-        return ((U *) (unsigned long long) addr)[i];
+        return ((U *) (unsigned long long) (uintptr_t) port_ptr64(addr))[i];
     }
 
     DiscPtr &operator=(T *p)
     {
-        addr = (unsigned int) (unsigned long long) p;
+        addr = port_ptr32(p);
         return *this;
     }
     DiscPtr &operator=(long long v)   // pour les affectations litterales (0, NULL)
@@ -79,8 +82,16 @@ struct PortDiscPtrSizeCheck {
 
 #define DISC_PTR(T) DiscPtr<T>
 
+#elif defined(RE4_PORT) && UINTPTR_MAX > 0xFFFFFFFFu
+// C en 64 bits (N7, 18/11) : quatre octets aussi, sinon la disposition du C glisse par rapport au C++ et au disque
+// (src/lib/texPalette.c lisait descriptorArray sur huit octets). Lecture par DISC_GET (base | u32).
+#define DISC_PTR(T) uint32_t
+#define DISC_GET(T, f) ((T *) port_ptr64(f))
+#define DISC_SET(f, p) ((f) = port_ptr32(p))
 #else
 #define DISC_PTR(T) T *
+#define DISC_GET(T, f) ((T *) (f))
+#define DISC_SET(f, p) ((f) = (p))
 #endif
 
 #endif

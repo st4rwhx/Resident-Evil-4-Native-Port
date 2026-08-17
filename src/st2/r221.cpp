@@ -40,8 +40,8 @@ class cObjWep;
 // r201_* functions are the bomb code shared with room 2-01).
 
 struct R221Work {
-    cObj* bonbe[4];       // 0x000  gas bombs (SetObjSmd copies)
-    TexRenderMng* tex;    // 0x010
+    P32<cObj> bonbe[4];       // 0x000  gas bombs (SetObjSmd copies)
+    P32<TexRenderMng> tex;    // 0x010
     u8 eff;               // 0x014  EspPullCoreKind
     u8 pad_15[3];
     u32 bossStr;          // 0x018  boss BGM stream
@@ -55,8 +55,8 @@ struct R221Work {
     u32 elvSe0;           // 0x4FC
     u32 elvSe1;           // 0x500
     u32 doorSe;           // 0x504
-    ScePrim* wireTask;    // 0x508
-    ScePrim* wireTask2;   // 0x50C
+    P32<ScePrim> wireTask;    // 0x508
+    P32<ScePrim> wireTask2;   // 0x50C
     f32 elvY;             // 0x510  elevator rest height
 };
 

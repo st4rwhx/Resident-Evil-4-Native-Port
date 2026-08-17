@@ -85,7 +85,7 @@ struct DbPathWork {
     u16 id;           // 0x02
     u16 seg;          // 0x04
     u8 pad_06[2];
-    void* path;       // 0x08
+    P32<void> path;       // 0x08
     u8 pad_0C[0x1C - 0x0C];
     Mtx mtx;          // 0x1C
 };
@@ -783,7 +783,7 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
         u8 hi;
         u32 nLit;
         int k;
-        cModel** list;
+        P32<cModel>* list;
 
         EvtDebug.flags = (EvtDebug.flags & 0x7FFFFFFF) | 0x40000000;
         BitOn(pG->flags_5010, 0x10000000);
@@ -975,7 +975,7 @@ extern "C" void EspToolInit(int* out, u8* pStage, u8* pCut)
                 // keeps `la` first in the PLUS (EXPAND_SUM moves a MULT operand first)
                 la = (u32)(uintptr_t)(EspEvModList);
                 if ((u32) slot <= 0x7F) {
-                    *(cModel**)port_ptr64((la + ((u32) slot << 2))) = p;
+                    *(P32<cModel>*)port_ptr64((la + ((u32) slot << 2))) = p;
                 }
                 em->x12F = M.x638;
                 if (flagOn(M.flags, 0x80000000)) {
@@ -1467,7 +1467,7 @@ extern "C" void DB_VecMulEmPartsMat(u32 parts, Vec* in, Vec* out, Mtx* m, EspGen
         if (no > 0x7F) {
             p = 0;
         } else {
-            p = *(cModel**)port_ptr64((la + (no << 2)));
+            p = *(P32<cModel>*)port_ptr64((la + (no << 2)));
         }
         em = p;
         if (em == 0) {

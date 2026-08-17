@@ -156,7 +156,7 @@ void Yz2DecodeExec(void* dst)
 
     c->dic = (Yz2DicEnt*) yz2Alloc(0x100 * sizeof(Yz2DicEnt));
     for (i = 0; i < 0x100; i++) {
-        Yz2DicEnt* p = (Yz2DicEnt*) (i * sizeof(Yz2DicEnt) + (u32) c->dic);
+        Yz2DicEnt* p = (Yz2DicEnt*) port_ptr64((u32) (i * sizeof(Yz2DicEnt) + (u32) c->dic));
         p->cnt = 0;
         memset(p->a, 0, sizeof(p->a));
         memset(p->b, 0, sizeof(p->b));

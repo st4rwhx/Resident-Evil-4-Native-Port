@@ -94,9 +94,9 @@ struct TSceAtValue {
 
 // game/sce_at.cpp's SceAtSysWork (static there; the REL imports it by name).
 struct TSceAtSys {
-    TSceAtFile* pAtData;   // 0x00
+    P32<TSceAtFile> pAtData;   // 0x00
     u32 pAtWork;           // 0x04
-    void* pItemData;       // 0x08
+    P32<void> pItemData;       // 0x08
     u8 pad_C[0x11C - 0xC];
     u8 x11C;               // 0x11C  pAtData was allocated by the tool
     u8 pad_11D[7];

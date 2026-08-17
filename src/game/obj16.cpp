@@ -42,7 +42,7 @@ public:
 
 // Model part as obj16NeckMove writes it: the parts rotation and the override flag.
 struct Obj16Parts {
-    u8 pad_0[0x128];
+    u8 pad_0[0x128 + PORT_VDELTA];   // N7 : cParts a une table virtuelle
     Vec rot;        // 0x128
     u8 pad_134[0x1C0 - 0x134];
     u32 flags;      // 0x1C0  bit30: rotation override

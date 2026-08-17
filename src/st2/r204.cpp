@@ -47,15 +47,15 @@
 // the player out of the room, the dropping shutter and the texture-rendered object.
 
 struct R204Work {
-    cObj* chand[2];        // 0x000  chandelier scroll objects
-    cEm* sw;               // 0x008
+    P32<cObj> chand[2];        // 0x000  chandelier scroll objects
+    P32<cEm> sw;               // 0x008
     u8 pad_C[4];
-    cEm* barred[2];        // 0x010
+    P32<cEm> barred[2];        // 0x010
     cEmWrap em[11];        // 0x018  the mob (enemy list 0x4A..0x54)
     u8 pad_9C[0x438 - 0x9C];
-    TexRenderMng* tex;     // 0x438
+    P32<TexRenderMng> tex;     // 0x438
     u32 cnt;               // 0x43C  frames since the chase started
-    cObj* head[11];        // 0x440  the head objects riding the enemies
+    P32<cObj> head[11];        // 0x440  the head objects riding the enemies
     u8 pad_46C[0x5A0 - 0x46C];
     u8 esp[11];            // 0x5A0  effect kinds of the head fires
     u8 pad_5AB[0x5F8 - 0x5AB];

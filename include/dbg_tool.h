@@ -465,7 +465,7 @@ public:
         return 0;
     }
     // tool-style integer address: the index is the first `add` operand
-    T* WorkPtr(int no) { return (T*) (no * sizeof(T) + (u32) pWork); }
+    T* WorkPtr(int no) { return (T*) port_ptr64((u32) (no * sizeof(T) + (u32) pWork)); }
 #line 571 "D:/Bio4/Prog/db_toolbase.h"
     int IsWorkAlive(T* w) { if (pIsWorkAlive) { return pIsWorkAlive(w); } DBG_TOOL_HALT(); return 0; }
     void SetWorkAlive(T* w, int alive) { if (pSetWorkAlive) { pSetWorkAlive(w, alive); return; } DBG_TOOL_HALT(); }
@@ -823,17 +823,17 @@ template <class T> void cDbgEditWindow<T>::LocalDisp()
 // every area editor runs from its Tool* entry.
 template <class T> class cDbgToolMain {
 public:
-    cDbgWindow* pMenu;                 // 0x00
+    P32<cDbgWindow> pMenu;                 // 0x00
     cDbgEditWindow<T>* pEdit;          // 0x04
-    cDbgFileSelectWindow* pLoad;       // 0x08
-    cDbgFileSelectWindow* pSave;       // 0x0C
-    cDbgOkCancelWindow* pLoadOk;       // 0x10
-    cDbgOkCancelWindow* pSaveOk;       // 0x14
-    cDbgOkCancelWindow* pExitOk;       // 0x18
+    P32<cDbgFileSelectWindow> pLoad;       // 0x08
+    P32<cDbgFileSelectWindow> pSave;       // 0x0C
+    P32<cDbgOkCancelWindow> pLoadOk;       // 0x10
+    P32<cDbgOkCancelWindow> pSaveOk;       // 0x14
+    P32<cDbgOkCancelWindow> pExitOk;       // 0x18
     int mode;                          // 0x1C  0 menu 1 edit 2 load 3 save 4 option 5 quit 6 load? 7 save? 8 exit?
-    void* saveArg;                     // 0x20
-    void* loadArg;                     // 0x24
-    void* optionArg;                   // 0x28
+    P32<void> saveArg;                     // 0x20
+    P32<void> loadArg;                     // 0x24
+    P32<void> optionArg;                   // 0x28
     int (*pIsWorkAlive)(T* w);         // 0x2C
     void (*pSetWorkAlive)(T* w, int);  // 0x30
     int (*pGetWorkNo)(T* w);           // 0x34

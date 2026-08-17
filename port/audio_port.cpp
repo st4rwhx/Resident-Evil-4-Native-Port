@@ -25,6 +25,9 @@
 namespace nj::runtime::hle {
 void ax_hle_command_list(uint32_t list_addr, uint32_t size_words);   // runtime/src/hle/ax.cpp
 void ax_hle_set_native(const uint8_t* aram, uint32_t aram_size);
+#if PORT_P64
+void ax_hle_set_base(uintptr_t base);   // N7 : base de la fenetre de 4 Go (adresses du jeu = decalages)
+#endif
 }
 extern "C" void* port_aram_host(u32 addr, u32 length);   // port/aram.cpp
 extern "C" u32 __AXGetNumVoices(void);
@@ -208,6 +211,9 @@ void AIStartDMA(void)
     if (!aram_set) {
         aram_set = true;
         nj::runtime::hle::ax_hle_set_native((const uint8_t*) port_aram_host(0, 0x1000000u), 0x1000000u);
+#if PORT_P64
+        nj::runtime::hle::ax_hle_set_base(g_port_base);
+#endif
     }
     g_ai_running = sl_start();
 }

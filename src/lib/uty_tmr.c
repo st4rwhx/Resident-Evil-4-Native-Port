@@ -82,5 +82,5 @@ void UTY_InitTmr(Sint32 ch)
 		utytmr_unit = 1;
 		return;
 	}
-	utytmr_unit = (*(Uint32 *)0x800000F8) >> 2;
+	utytmr_unit = (*(Uint32 *)port_ptr64(0x800000F8)) >> 2;
 }

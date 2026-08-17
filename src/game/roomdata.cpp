@@ -142,7 +142,7 @@ void cRoomData::load(void* src)
 
     for (j = 0; j < h->num; j++, rec++) {
         for (i = 0; i < num; i++) {
-            dst = (RoomSave*) (i * sizeof(RoomSave) + (u32) pSave);
+            dst = (RoomSave*) port_ptr64((u32) (i * sizeof(RoomSave) + (u32) pSave));
             if (rec->id == dst->id) {
                 *dst = *rec;
                 break;
@@ -166,11 +166,11 @@ void cRoomData::clear(void* src)
         i = 0;
         if (i < num) {
             do {
-                dst = (RoomSave*) (i * sizeof(RoomSave) + (u32) pSave);
+                dst = (RoomSave*) port_ptr64((u32) (i * sizeof(RoomSave) + (u32) pSave));
                 id = rec->id;
                 if (id == dst->id) {
                     memclr_asm(dst, sizeof(RoomSave));
-                    ((RoomSave*) (i * sizeof(RoomSave) + (u32) pSave))->id = id;
+                    ((RoomSave*) port_ptr64((u32) (i * sizeof(RoomSave) + (u32) pSave)))->id = id;
                     break;
                 }
                 i++;
@@ -281,7 +281,7 @@ void cRoomData::linkRelData(u16 room)
     id = DvdRead(x1C, 0, 0, 0, 0, 0x104, __FILE__, __LINE__);
     while ((ret = Dvd.ReadCheck(id, 0, 0, (void**) &pModule)) != 1) {
         if (ret < 0) {
-            pLog->err(0, 0, "cRoomData::readRelData(): RelDataReadError! %s", FileTbl[x1C]);
+            pLog->err(0, 0, "cRoomData::readRelData(): RelDataReadError! %s", port_p(FileTbl[x1C].name));   // N7 : le décompilé passait la structure entière
             x1C = 0;
             pModule = 0;
             return;

@@ -261,7 +261,7 @@ int EspSeqSet(EspGenWork* rec, EspInfo* info, u32* seed, cModel* model, Mtx* mtx
               EspSeqOpt* p8, Vec* pos);
 
 // game/est.cpp
-extern cModel* EspEvModList[0x80];
+extern P32<cModel> EspEvModList[0x80];   // N7 : cases de 4 octets (lues par adresse + n * 4)
 
 // game/espgen10.cpp
 int EspgenDataSet(EspSeqData* head, int no, EspInfo* info, u32* seed, cModel* model, u16 parts, Mtx* mtx, Vec* pos,

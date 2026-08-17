@@ -111,10 +111,10 @@ struct ScrollWork {
     int row;          // 0x34  edit table row
     int top;          // 0x38  edit table first object
     JOY joy[2];       // 0x3C
-    char* names;      // 0x50C  object names read from the header file
+    P32<char> names;      // 0x50C  object names read from the header file
     char** nameTbl;   // 0x510  name per object id
-    u32* flagTbl;     // 0x514  flags per object id (1 G, 2 N, 4 S)
-    cLightTool* pLightTool;  // 0x518
+    P32<u32> flagTbl;     // 0x514  flags per object id (1 G, 2 N, 4 S)
+    P32<cLightTool> pLightTool;  // 0x518
     f32 logX;         // 0x51C
     f32 logY;         // 0x520
 };

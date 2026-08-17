@@ -67,11 +67,11 @@ struct SsMapWork {
     cModel treasure;     // 0x640
     cModel coin;         // 0x960
     cModel save;         // 0xC80
-    cModel* pGoal;       // 0xFA0
-    cModel* pMerchant;   // 0xFA4
-    cModel* pTreasure;   // 0xFA8
-    cModel* pCoin;       // 0xFAC
-    cModel* pSave;       // 0xFB0
+    P32<cModel> pGoal;       // 0xFA0
+    P32<cModel> pMerchant;   // 0xFA4
+    P32<cModel> pTreasure;   // 0xFA8
+    P32<cModel> pCoin;       // 0xFAC
+    P32<cModel> pSave;       // 0xFB0
     s8 nTreasure;        // 0xFB4  parts of the mark models = mark positions
     s8 nCoin;            // 0xFB5
     s8 nSave;            // 0xFB6

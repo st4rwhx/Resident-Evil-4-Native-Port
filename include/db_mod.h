@@ -10,7 +10,7 @@
 // One viewer slot (0x2754 bytes): the model pointer at 0x04.
 struct DbModSlot {
     u32 x0;
-    cModel* pModel;  // 0x04
+    P32<cModel> pModel;  // 0x04
     u8 pad_8[0x148 - 8];
     u16 seqFlag;     // 0x148  MotionSetCore flag word of the sequence (dbModMotionSetSeq; t_motseq copies its view flag here)
     u8 pad_14A[0x2754 - 0x14A];

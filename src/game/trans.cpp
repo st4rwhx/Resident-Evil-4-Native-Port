@@ -75,23 +75,23 @@ struct GxWork {
     GxStageWork stage;      // 0x000
     Mtx mtx[0xF8];          // 0x00C
     GXTexObj texObj[0xF8];  // 0x2E8C
-    u8* prim;               // 0x4D8C
+    P32<u8> prim;           // 0x4D8C  (N7 : 4 octets, sinon il écrase prim_rate/prim_cnt de GlobalWork en 64 bits)
 };
 #define GXWORK() ((GxWork*) &pG->gxStage)
 
 // cModel fields past the 0x1D8 the header declares (KNOWN DEBT: cModel is 0x320 in the original).
 struct cModelExt {
-    u8 pad_0[0x308];
-    void* pFootShadowTbl;  // 0x308
+    u8 pad_0[0x308 + PORT_VDELTA];   // N7 : cModel a une table virtuelle
+    P32<void> pFootShadowTbl;  // 0x308
     EmLightArea litArea;   // 0x30C
-    cTexChg* pTexChg;      // 0x31C
+    P32<cTexChg> pTexChg;  // 0x31C
 };
 #define MODEL_EXT(m) ((cModelExt*) (m))
 
 // Parts (cParts) fields past cCoord: the parts chain and the inverse bind matrix.
 struct cPartsWk {
-    u8 pad_0[0xF4];
-    cPartsWk* next;  // 0xF4
+    u8 pad_0[0xF4 + PORT_VDELTA];   // N7 : cCoord a une table virtuelle
+    P32<cPartsWk> next;  // 0xF4
     Mtx bindMat;     // 0xF8
 };
 

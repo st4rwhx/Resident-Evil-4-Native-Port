@@ -228,6 +228,14 @@ struct EspInfo {
 };
 
 // One effect sprite (game/esp.cpp, game/esp_sub.cpp). sizeof 0xF8; the vptr sits at 0xF4.
+// Emplacement d'un effet dans sys->pEspBuf (esp.cpp, est.cpp) : 0x150 sur GameCube. N7 (18/11) : en 64 bits le vptr de
+// 8 octets fait grandir les classes cEsp* (la plus grande : 0x158, tailles_32_64.py) -> 0x160.
+#if PORT_P64
+#define ESP_SLOT 0x160
+#else
+#define ESP_SLOT 0x150
+#endif
+
 class cEsp {
 public:
     EspInfo info;      // 0x00
@@ -434,7 +442,7 @@ int EspGetEfmTplAddr(int id, void** tpl);
  * ARENA_LO = 0x80300000), vide dans le natif. */
 #ifdef RE4_PORT
 #define PORT_ESP_COMMON_DL_ADDR 0x802FFF00u
-#define g_EspCommonDisplayList ((u8*) (unsigned long) PORT_ESP_COMMON_DL_ADDR)
+#define g_EspCommonDisplayList ((u8*) port_ptr64(PORT_ESP_COMMON_DL_ADDR))   // N7 : base | adresse GC
 #else
 extern u8 g_EspCommonDisplayList[0x60];
 #endif

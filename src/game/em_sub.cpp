@@ -59,7 +59,7 @@ public:
 
 // Entry `n` of a target list written index first: the sum is formed with the index as the base
 // register (`add r9, r9, r31` / `stwx r29, r9, r31`) instead of the pointer.
-#define WEP_LIST(n) ((WepTarget*) ((n) * sizeof(WepTarget) + (u32)(uintptr_t)(list)))
+#define WEP_LIST(n) ((WepTarget*) port_ptr64((u32) ((n) * sizeof(WepTarget) + (u32)(uintptr_t)(list))))
 
 #define VALID_PTR(p) ((u32)(uintptr_t)((p)) >= PORT_PTR_MIN && (u32)(uintptr_t)((p)) <= PORT_PTR_MAX)
 

@@ -9,7 +9,7 @@ int sprintf(char* buf, const char* fmt, ...);
 }
 
 static int usb_fd = -1;
-static void* usb_buf = (void*) 0x81800000;
+static void* usb_buf = (void*) port_ptr64(0x81800000);
 static int usb_size = 0;
 static int usb_pos = 0;
 

@@ -44,8 +44,8 @@
 // barred door, the claw-man ambush and the two bells above the hall.
 
 struct R201Work {
-    cEm* sw;             // 0x00
-    cEm* barred;         // 0x04
+    P32<cEm> sw;             // 0x00
+    P32<cEm> barred;         // 0x04
     u8 effKind;          // 0x08
     u8 pad_9[3];
     u32 snd0;            // 0x0C
@@ -53,12 +53,12 @@ struct R201Work {
     f32 doorY;           // 0x14  rest height of the battle-area door
     Vec sePos;           // 0x18
     Vec sePos2;          // 0x24
-    cDataUnit* evd;      // 0x30
+    P32<cDataUnit> evd;      // 0x30
     cEmWrap em[3];       // 0x34
     cEmWrap em2[3];      // 0x58
     u8 pad_7C[4];
-    cModel* gem[3];      // 0x80
-    cObj* bell[2];       // 0x8C
+    P32<cModel> gem[3];      // 0x80
+    P32<cObj> bell[2];       // 0x8C
     cSceObj altar;       // 0x94
     u32 strId;           // 0x18C
     u32 snd;             // 0x190

@@ -7,6 +7,11 @@
 // demandera l'ISO au premier lancement et appellera exactement ce point-la.
 #include <cstdio>
 #include <cstdlib>
+#include <pthread.h>
+#include <stddef.h>
+#if defined(__LP64__)
+extern "C" void* port_pile_fenetre(int slot, size_t* taille);   // port/os.cpp
+#endif
 
 void port_set_game_dir(const char *dir);
 extern "C" void port_install_crash_handler(void);
@@ -35,7 +40,26 @@ int main(int argc, char **argv)
     std::printf("[PORT] jeu : %s\n", dir);
     njlink_init();   // lance par l'appli Nightjar : images partagees et manette (njlink.cpp)
     port_set_game_dir(dir);
+#if PORT_P64
+    // N7 : le jeu tourne sur un fil dont la pile est DANS la fenetre de 4 Go (port/os.cpp port_pile_fenetre) : ses adresses
+    // de variables locales tiennent alors en 32 bits, comme sur la console.
+    int r = 0;
+    {
+        pthread_attr_t at;
+        pthread_attr_init(&at);
+        size_t t = 0;
+        void* pile = port_pile_fenetre(-1, &t);
+        pthread_attr_setstack(&at, pile, t);
+        pthread_t fil;
+        static int rendu;
+        pthread_create(&fil, &at, [](void*) -> void* { rendu = re4_main(); return nullptr; }, nullptr);
+        pthread_attr_destroy(&at);
+        pthread_join(fil, nullptr);
+        r = rendu;
+    }
+#else
     const int r = re4_main();
+#endif
     std::printf("[PORT] re4_main a rendu %d\n", r);
     return r;
 }

@@ -14,7 +14,7 @@ char* strcat(char* dst, const char* src);
 
 // One editable SIT/RIT parameter.
 struct TestPara {
-    void* ptr;   // 0x00  the field inside Snd_test_work.sit / .rit
+    P32<void> ptr;   // 0x00  the field inside Snd_test_work.sit / .rit
     s8 type;     // 0x04  0 s8, 1 s16, 3..7 flag bits, 8 s8 with max 3 (stream number)
     s8 kind;     // 0x05  move_type_tbl index
     s16 min;     // 0x06
@@ -30,7 +30,7 @@ struct EfxParaF {
     f32 max;
     f32 step;
     f32 fast;
-    f32* ptr[2];  // 0x10  AUX A / AUX B
+    P32<f32> ptr[2];  // 0x10  AUX A / AUX B
 };
 
 struct EfxParaU {
@@ -457,12 +457,12 @@ TestPara* test_get_tpara_adrs(SndTestWork* w)
 
     if (w->tbl == 0) {
         if (w->type == 3) {
-            p = (TestPara*) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_midi));
+            p = (TestPara*) port_ptr64((u32) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_midi)));
         } else {
-            p = (TestPara*) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_sit));
+            p = (TestPara*) port_ptr64((u32) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_sit)));
         }
     } else {
-        p = (TestPara*) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_rit));
+        p = (TestPara*) port_ptr64((u32) (w->cur * sizeof(TestPara) + (u32)(uintptr_t)(test_para_rit)));
     }
     return p;
 }

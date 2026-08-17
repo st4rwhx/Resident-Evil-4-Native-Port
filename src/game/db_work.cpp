@@ -170,15 +170,15 @@ void cDbWork::dispModel(cModel* m, int x, int y)
     y++;
     eprintf(x, y * 14, 0, 0, "SPEED    %7.0f %7.0f %7.0f", m->speed.x, m->speed.y, m->speed.z);
     y++;
-    eprintf(x, y * 14, 0, 0, "pCldShMd %08X", m->pCldShMd);
+    eprintf(x, y * 14, 0, 0, "pCldShMd %08X", port_p(m->pCldShMd));
     y++;
     eprintf(x, y * 14, 0, 0, "SHD COL  %02X", m->shdCol);
     y++;
     eprintf(x, y * 14, 0, 0, "CullMode %d", m->x135);
     y++;
-    eprintf(x, y * 14, 0, 0, "pModInfo %08X", m->pInfo);
+    eprintf(x, y * 14, 0, 0, "pModInfo %08X", port_p(m->pInfo));
     y++;
-    eprintf(x, y * 14, 0, 0, "pShMdIfo %08X", m->pShMdInfo);
+    eprintf(x, y * 14, 0, 0, "pShMdIfo %08X", port_p(m->pShMdInfo));
     y++;
     color = 0;
     if (m->lightInfo.getLightNum() > 5) {

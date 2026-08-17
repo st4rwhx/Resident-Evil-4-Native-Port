@@ -42,8 +42,8 @@
 // One fence: the scroll object, its collision piece and the raise direction.
 class cFence {
 public:
-    cObj* obj;     // 0x00
-    cSat* sat;     // 0x04
+    P32<cObj> obj;     // 0x00
+    P32<cSat> sat;     // 0x04
     Vec pos;       // 0x08  lowered position
     Vec dir;       // 0x14  raise vector
     f32 t;         // 0x20  0 lowered .. 1 raised
@@ -62,12 +62,12 @@ struct R20dFenceData {
 // One lantern the player can pick up and throw at an enemy.
 class cLanternUnit {
 public:
-    cEm* em;         // 0x00  the torch enemy
-    cEm* target;     // 0x04
+    P32<cEm> em;         // 0x00  the torch enemy
+    P32<cEm> target;     // 0x04
     u32 state;       // 0x08  0 idle, 1 being thrown, 2 done
     int step;        // 0x0C
     int active;      // 0x10
-    void* mot[6];    // 0x14  [0] the etc archive, [1..5] player motions
+    P32<void> mot[6];    // 0x14  [0] the etc archive, [1..5] player motions
 
     void destroy();
     void check();
@@ -78,7 +78,7 @@ public:
 
 class cLantern {
 public:
-    cLanternUnit* units;   // 0x00
+    P32<cLanternUnit> units;   // 0x00
     int num;               // 0x04
 
     void initLantern(void* arc, void* m1, void* m2, void* m3, void* m4, void* m5);
@@ -89,8 +89,8 @@ struct R20dWork {
     cLantern lantern;      // 0x00
     int nFence;            // 0x08
     cFence fence[3];       // 0x0C
-    cObj* crank[3];        // 0x78
-    cObj* roundSwitch;     // 0x84
+    P32<cObj> crank[3];        // 0x78
+    P32<cObj> roundSwitch;     // 0x84
     int rsFlip;            // 0x88
     int x8C;               // 0x8C
     int x90;               // 0x90
@@ -131,7 +131,7 @@ static const R20dThroughData r20d_throughData[10] = {
     {{-10242.0f, 0.0f, 12142.0f}, 3.1415927f, 1500.0f, -1},
 };
 
-static inline void ObjPSet(cObj*& d, cObj* v) { d = v; }
+template <class D> static inline void ObjPSet(D& d, cObj* v) { d = v; }   // cObj* ou P32<cObj>
 struct PlPtr { cPlayer* p; };
 #define pPLS (((PlPtr*) &pPL)->p)
 static inline void AtariFlagsAnd(cAtariInfo* a, u16 mask) { a->flags &= mask; }
@@ -496,7 +496,7 @@ static void r20d_operateCrank(int no)
     // `idx*36 + work + 0x2c` (mult first): the target adds the scaled index to the work pointer and
     // keeps 0x2c as the displacement (`add r11,r28,r11; lfs f31,0x2c(r11)`); the zero-inits of the
     // loop state follow the switch (issued in the block before the beginEvent calls).
-    t = *(f32*) (idx * sizeof(cFence) + (u32)(uintptr_t)(r20d_work.p) + 0x2c);
+    t = *(f32*) port_ptr64((u32) (idx * sizeof(cFence) + (u32)(uintptr_t)(r20d_work.p) + 0x2c));
     spd = 0;
     lastMot = 0;
     accel = 0;
@@ -1012,7 +1012,7 @@ void cLantern::checkLantern(cLantern* p)
         u32 i;
 
         for (i = 0; i < p->num; i++) {
-            cLanternUnit* u = (cLanternUnit*) (i * sizeof(cLanternUnit) + (u32)(uintptr_t)(p->units));
+            cLanternUnit* u = (cLanternUnit*) port_ptr64((u32) (i * sizeof(cLanternUnit) + (u32)(uintptr_t)(p->units)));
 
             if (u->active != 0) {
                 switch (u->state) {
@@ -1124,7 +1124,7 @@ void cLanternUnit::throwLantern(cLanternUnit* u)
     pPLS->dmg.set(0, 0x80);
     u->target = u->getTargetPos(&pos);
     // `u + st + 0x18` (not `u->mot + st + 4`): the target adds `u` first (`add r29,u,st`).
-    pPL->motionSet(*(void**) ((u8*) u + st + 0x18), 0xA, 0, 1, 0);
+    pPL->motionSet(*(P32<void>*) ((u8*) u + st + 0x18), 0xA, 0, 1, 0);
     u->em->be_flag |= 0x20;
     zero = 0.0f;
     turn = zero;

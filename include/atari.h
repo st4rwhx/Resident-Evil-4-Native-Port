@@ -84,7 +84,7 @@ public:
     u16 n1;          // 0x1A  group B
     u16 n2;          // 0x1C  group C (walls: flag 0x80 checks [n0 + n1, n0 + n1 + n2))
     u16 flag;        // 0x1E  bit0: `idx` holds a child cSatBlock
-    cSatBlock* next; // 0x20
+    P32<cSatBlock> next; // 0x20
     u16 idx[0];      // 0x24  polygon indices
 
     int lineOverlap(Vec* p, Vec* dir, Vec* absDir);
@@ -95,10 +95,10 @@ public:
 // the flag byte (emobj setSatMain / clrSat: bit2 = active).
 class cSat : public cUnit {
 public:
-    Vec* vtx;        // 0x0C  (the three table pointers double as the AtPolyData the at_sub checks take)
-    Vec* nrm;        // 0x10
-    Vec* edge;       // 0x14
-    AtPoly* poly;    // 0x18
+    P32<Vec> vtx;        // 0x0C  (the three table pointers double as the AtPolyData the at_sub checks take)
+    P32<Vec> nrm;        // 0x10
+    P32<Vec> edge;       // 0x14
+    P32<AtPoly> poly;    // 0x18
     u16 nVertex;     // 0x1C
     u16 nPoly;       // 0x1E
     u16 nA;          // 0x20
@@ -110,9 +110,9 @@ public:
     u8 pad_2B;
     u16 nEdge;       // 0x2C
     u8 pad_2E[2];
-    cSatBlock* block;  // 0x30  root block
+    P32<cSatBlock> block;  // 0x30  root block
     u8 pad_34[0x58 - 0x34];
-    cSatFile* pFile; // 0x58
+    P32<cSatFile> pFile; // 0x58
     u32 x5C;         // 0x5C
     Mtx mat;         // 0x60  piece -> world
     Mtx inv;         // 0x90  world -> piece

@@ -256,14 +256,14 @@ class cLightMgr : public cManager<cLight> {
 public:
     static const f32 FarDistance;  // dead-stripped from the DOL (keys the unit's static ctor name)
 
-    cLit* pLit;            // 0x34  lit the cuts are taken from (the room lit by default)
+    P32<cLit> pLit;            // 0x34  lit the cuts are taken from (the room lit by default)
     cLightEnv env;         // 0x38 .. 0x13C  current cut environment
     u32 kindFlags[8];      // 0x13C  kind enable bits (onKind / offKind)
     u8 pad_15C[0x17C - 0x15C];
-    LightPathHeader* pPath;  // 0x17C
-    cLit* x180;            // 0x180  core lit
-    cLit* x184;            // 0x184  room lit
-    cLit* x188;            // 0x188  third lit
+    P32<LightPathHeader> pPath;  // 0x17C
+    P32<cLit> x180;            // 0x180  core lit
+    P32<cLit> x184;            // 0x184  room lit
+    P32<cLit> x188;            // 0x188  third lit
     int cutNo;             // 0x18C
     u8 hokanCnt;           // 0x190  fog interpolation frames left
     u8 logOn;              // 0x191
@@ -273,7 +273,7 @@ public:
     GXColor tune[3];       // 0x19C
     f32 colBrendRate;      // 0x1A8
     u32 x1AC;              // 0x1AC
-    cLit* x1B0;            // 0x1B0  lit built by the light tool (db_light updateLit), x1AC bit0: valid
+    P32<cLit> x1B0;            // 0x1B0  lit built by the light tool (db_light updateLit), x1AC bit0: valid
     u8 pad_1B4[0x204 - 0x1B4];
     u32 x204;              // 0x204
 
@@ -332,7 +332,7 @@ public:
     int setMipmap(cLightEnv* cut);
     int loadLit(cLightWork* w, u32 n);
     int saveLit(cLightWork* w);
-    cLit** getLitPPtr();
+    P32<cLit>* getLitPPtr();   // N7 : adresse du champ P32 pLit
     int initPath(LightPathHeader* p);
     cLightPathData* getPathPtr(u8 no);
     LightPathHeader* getPathHeader();

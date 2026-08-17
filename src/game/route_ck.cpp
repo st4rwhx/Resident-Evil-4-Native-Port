@@ -135,7 +135,7 @@ int RouteCkToEm(cEm* em, cEm* target, Vec* out, int flag)
     }
     mask |= 0x80;
     pts = rtpPoint(rtpData());
-    pt = (RtpPoint*)(em->rckPoint * sizeof(RtpPoint) + (u32)(uintptr_t)(pts));
+    pt = (RtpPoint*)port_ptr64((u32) (em->rckPoint * sizeof(RtpPoint) + (u32)(uintptr_t)(pts)));
     d2 = (em->pos.x - pt->pos.x) * (em->pos.x - pt->pos.x) + (em->pos.z - pt->pos.z) * (em->pos.z - pt->pos.z);
     if (d2 < 62500.0f || (next != em->rckPoint && rckLineHitCheck(&a, &pts[next].pos, mask, flag) == 0)) {
         em->rckPoint = next;
@@ -280,7 +280,7 @@ int RouteCkToPos(cEm* em, Vec* target, Vec* out, int flag, f32* dist)
     }
     mask |= 0x80;
     pts = rtpPoint(rtpData());
-    pt = (RtpPoint*)(em->rckPoint * sizeof(RtpPoint) + (u32)(uintptr_t)(pts));
+    pt = (RtpPoint*)port_ptr64((u32) (em->rckPoint * sizeof(RtpPoint) + (u32)(uintptr_t)(pts)));
     d2 = (em->pos.x - pt->pos.x) * (em->pos.x - pt->pos.x) + (em->pos.z - pt->pos.z) * (em->pos.z - pt->pos.z);
     if (d2 < 62500.0f || (next != em->rckPoint && rckLineHitCheck(&a, &pts[next].pos, mask, flag) == 0)) {
         em->rckPoint = next;
@@ -364,10 +364,10 @@ int RouteCkPosToPos(Vec* from, Vec* to, Vec* out)
     {
         u32 base = (u32)(uintptr_t)(rtpPoint(rtp));
         pts = (RtpPoint*)port_ptr64(base);
-        pt = (RtpPoint*)(p * sizeof(RtpPoint) + base);
+        pt = (RtpPoint*)port_ptr64((u32) (p * sizeof(RtpPoint) + base));
         d2 = (a.x - pt->pos.x) * (a.x - pt->pos.x) + (a.z - pt->pos.z) * (a.z - pt->pos.z);
         if (d2 < 62500.0f) {
-            *out = ((RtpPoint*)(next * sizeof(RtpPoint) + base))->pos;
+            *out = ((RtpPoint*)port_ptr64((u32) (next * sizeof(RtpPoint) + base)))->pos;
             return 0;
         }
     }

@@ -91,7 +91,9 @@ extern int port_event_mode;
 unsigned long port_mem1_base(void);
 #define PORT_MEM1(a) (port_mem1_base() + ((unsigned long) (a) - 0x80000000ul))
 #else
-#define PORT_MEM1(a) ((unsigned long) (a))
+// N7 (18/11) : en 64 bits la memoire du jeu est dans la fenetre de 4 Go : base | adresse (en 32 bits port_ptr64 est
+// l'identite). `(u32) PORT_MEM1(x)` rend toujours x.
+#define PORT_MEM1(a) ((unsigned long) (uintptr_t) port_ptr64((uint32_t) (a)))
 #endif
 
 #if defined(RE4_PORT)

@@ -7,7 +7,7 @@
 // Collision polygon data block (game/at_sub.cpp, game/atari.cpp): vertex, face normal and
 // edge normal tables the polygons index into.
 struct AtPolyData {
-    u8 pad_0[0xC];
+    u8 pad_0[0xC + PORT_VDELTA];   // N7 : vue sur cSat (cUnit : table virtuelle)
     P32<Vec> vtx;    // 0x0C
     P32<Vec> nrm;    // 0x10  face normals
     P32<Vec> edge;   // 0x14  edge normals

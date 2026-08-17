@@ -347,7 +347,7 @@ char* cFileList::disp(int x, int y, int rows)
         if (i == cursor) {
             col = 6;
         }
-        eprintf(x, y, col, 0, "%s", list[i]);
+        eprintf(x, y, col, 0, "%s", port_p(list[i]));
         y += 16;
     }
     return list[cursor];

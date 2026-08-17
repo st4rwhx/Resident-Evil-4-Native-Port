@@ -177,7 +177,7 @@ int cBlock::checkBlockMemory()
     u32 j;
 
     for (i = 0; i < pData->nConnect; i++) {
-        BlockConnect* c = (BlockConnect*) (i * sizeof(BlockConnect) + (u32) pConnect);
+        BlockConnect* c = (BlockConnect*) port_ptr64((u32) (i * sizeof(BlockConnect) + (u32) pConnect));
         size = 0;
         if (c->flags & 1) {
             checkBlockConnect(c, pLink, &mramSet, &aramSet);

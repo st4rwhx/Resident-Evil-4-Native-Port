@@ -338,7 +338,7 @@ struct OSLowMem {
     u8 pad_0[0xF8];
     u32 busClock;  // 0xF8
 };
-#define OS_BUS_CLOCK (((OSLowMem*) 0x80000000)->busClock)
+#define OS_BUS_CLOCK (((OSLowMem*) port_ptr64(0x80000000))->busClock)
 #define OS_TIMER_CLOCK (OS_BUS_CLOCK / 4)
 #define OSTicksToMilliseconds(ticks) ((ticks) / (OS_TIMER_CLOCK / 1000))
 
@@ -359,8 +359,8 @@ struct DvdSndStrWork {
 extern "C" DvdSndStrWork Snd_str_work[4];
 
 #define ALIGN32(x) (((x) + 0x1F) & ~0x1F)
-#define DVD_BUFF ((void*) 0x80350000)
-#define DVD_BUFF2 ((void*) 0x80360000)
+#define DVD_BUFF ((void*) port_ptr64(0x80350000))
+#define DVD_BUFF2 ((void*) port_ptr64(0x80360000))
 
 // status field of cDvdQueue::flag
 enum {
@@ -899,7 +899,7 @@ void cDvdQueue::Initialize()
 
     if (w->fileNo != 0xFFFF) {
         entrynum = FileTbl[w->fileNo].entrynum;
-        sprintf(name, "%s", FileTbl[w->fileNo].name);
+        sprintf(name, "%s", port_p(FileTbl[w->fileNo].name));
     } else {
         entrynum = DVDConvertPathToEntrynum(w->name);
         sprintf(name, "%s", w->name);
@@ -2001,9 +2001,9 @@ int cDvd::GetDiscNo()
 void RomFontSetting()
 {
     if (OSGetFontEncode() == 1) {
-        pG->pFont = (void*) 0x816D3100;
+        pG->pFont = (void*) port_ptr64(0x816D3100);
     } else {
-        pG->pFont = (void*) 0x817D3EE0;
+        pG->pFont = (void*) port_ptr64(0x817D3EE0);
     }
     OSInitFont(pG->pFont);
 }

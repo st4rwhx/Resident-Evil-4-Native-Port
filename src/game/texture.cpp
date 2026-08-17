@@ -25,13 +25,13 @@ void cTexSys::Init(const char* name, u32 num)
 #line 53
     if ((pTexObj = (GXTexObj*) MEM_ALLOC(num * sizeof(GXTexObj), 1, 0xD)) == NULL) {
         nTexObj = 0;
-        pLog->err(0, 0, "%s::Init(): Memory Allocation Failed.", this->name);
+        pLog->err(0, 0, "%s::Init(): Memory Allocation Failed.", port_p(this->name));
         return;
     }
 #line 60
     if ((pFlag = (u8*) MEM_ALLOC(nTexObj / 8 + 1, 1, 0xD)) == NULL) {
         nTexObj = 0;
-        pLog->err(0, 0, "%s::Init(): Memory Allocation Failed.", this->name);
+        pLog->err(0, 0, "%s::Init(): Memory Allocation Failed.", port_p(this->name));
         return;
     }
     for (i = 0; i < nTexObj; i++) {
@@ -57,7 +57,7 @@ void cTexSys::Clear()
 int cTexSys::GetTexObjFlag(u32 no)
 {
     if (no >= nTexObj) {
-        pLog->err(0, 0, "%s::GetTexObjFlag : TexNo over [%d/%d]", name, no, nTexObj);
+        pLog->err(0, 0, "%s::GetTexObjFlag : TexNo over [%d/%d]", port_p(name), no, nTexObj);
         return 0;
     }
     if ((pFlag[no >> 3] >> (no & 7)) & 1) {
@@ -71,7 +71,7 @@ void cTexSys::SetTexObjFlag(u32 no, int flag)
     u8 bit;
 
     if (no >= nTexObj) {
-        pLog->err(0, 0, "%s::GetTexObjFlag : TexNo over [%d/%d]", name, no, nTexObj);
+        pLog->err(0, 0, "%s::GetTexObjFlag : TexNo over [%d/%d]", port_p(name), no, nTexObj);
     }
     bit = 1 << (no & 7);
     if (flag == 1) {
@@ -103,7 +103,7 @@ int cTexSys::DataLoad(TexData* data, u32 owner, int clamp)
     #endif
 
     if (data->version != 3) {
-        pLog->err(0, 0, "%s::DataLoad() : Data Invalid. [0x%x]", name, data);
+        pLog->err(0, 0, "%s::DataLoad() : Data Invalid. [0x%x]", port_p(name), data);
         return 0;
     }
     oI = data->ofsId;
@@ -145,7 +145,7 @@ GXTexObj* cTexSys::PullTexObj(u32 num)
     goto done;
 
 full:
-    pLog->err(0, 0, "%s::PullTexObj(): TEXOBJ MAX!!", name);
+    pLog->err(0, 0, "%s::PullTexObj(): TEXOBJ MAX!!", port_p(name));
     return NULL;
 
 done:
@@ -185,7 +185,7 @@ int cTexSys::TexRegist(TEXPalette* tpl, TexAnm* anm, u8 id, u32 owner, int clamp
 
     if (w->owner != 0) {
         if (check != 0) {
-            pLog->err(0, 0, "%s::TexRegist():TexId[%x] id already used.", name, id);
+            pLog->err(0, 0, "%s::TexRegist():TexId[%x] id already used.", port_p(name), id);
         }
         return 0;
     }
@@ -194,7 +194,7 @@ int cTexSys::TexRegist(TEXPalette* tpl, TexAnm* anm, u8 id, u32 owner, int clamp
     w->nTex = anm->numTex;
     w->pTexObj = PullTexObj(w->nTex);
     if (w->pTexObj == NULL) {
-        pLog->err(0, 0, "%s : ID[%02x] PullTexObj() work full!!", name, id);
+        pLog->err(0, 0, "%s : ID[%02x] PullTexObj() work full!!", port_p(name), id);
         return 0;
     }
     w->texHdr = desc->textureHeader;

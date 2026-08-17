@@ -34,9 +34,9 @@
 struct R106Work {
     int x0;
     int strOn;        // 0x04  battle stream running
-    cDataUnit* evd;   // 0x08  the event data file
-    cObj* closet;     // 0x0C  the closet scroll object
-    cEmRock* rock;    // 0x10  the boulder
+    P32<cDataUnit> evd;   // 0x08  the event data file
+    P32<cObj> closet;     // 0x0C  the closet scroll object
+    P32<cEmRock> rock;    // 0x10  the boulder
 };
 
 static R106Work* r106_work;

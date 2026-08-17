@@ -334,8 +334,8 @@ extern "C" int em10SearchParasite(cEm10* em);
         return 1;                                                                                  \
     }
 // Parts (cModel-shaped) fields model.h does not name: the rotation offset Vec at 0x128 and the flag word at 0x1C0.
-#define PARTS_ROT_OFS(p) (*(Vec*) ((u8*) (p) + 0x128))
-#define PARTS_FLAGS(p) (*(u32*) ((u8*) (p) + 0x1C0))
+#define PARTS_ROT_OFS(p) (*(Vec*) ((u8*) (p) + 0x128 + PORT_VDELTA))   // N7 : cParts (vptr)
+#define PARTS_FLAGS(p) (*(u32*) ((u8*) (p) + 0x1C0 + PORT_VDELTA))
 #define EMI_DATA ((EmiData*) pG->pRoomEmi)
 
 // EstSet with the enemy as owner argument (esp.h declares the int form).
@@ -25402,7 +25402,7 @@ extern "C" cModel* em10SearchTruck(cEm10* em)
     for (i = 0; i < EmMgr.nArray; i++) {
         cEm* e = (cEm*) ((u8*) EmMgr.pArray + EmMgr.size * i);
         if ((e->be_flag & 0x201) == 1 && e->id == 0x3B) {
-            *(cEm10**) ((u8*) e + 0x64C) = em;  // truck (em3b) work: driver
+            *(P32<cEm10>*) ((u8*) e + 0x64C + PORT_VDELTA) = em;  // truck (em3b) work: driver
             w->pTruck = e;
             return (cModel*) 1;
         }

@@ -858,7 +858,7 @@ void cDataCtrl::dispDebug()
                 break;
             }
             y += 0x10;
-            eprintf(0x28, y, 0, 0x17, "%08x:%s", u->addr, u->name);
+            eprintf(0x28, y, 0, 0x17, "%08x:%s", port_p(u->addr), u->name);
             x0 = (u32) ((f32) (addr - dispBase) * 400.0f / (f32) (dispEnd - dispBase));
             x1 = (u32) ((f32) (addr + size - dispBase) / (f32) (dispEnd - dispBase) * 400.0f);
             if (over == 0) {

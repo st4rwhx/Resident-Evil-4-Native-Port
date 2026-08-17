@@ -205,7 +205,7 @@ void R100Init()
             // The original's store is a scalar one through the pointer (the pG load after it is not
             // hoisted above it, and the address stays `0x378(pe)`): a member store is a struct store
             // and a reference setter folds the address into the frame.
-            *(PlArc**) ((u8*) pe + 0x378) = (PlArc*) EmReadSearch(0x12, 0, 0);
+            pe->subArc = (PlArc*) EmReadSearch(0x12, 0, 0);   // N7 : champ nomme (le +0x378 brut supposait la disposition CodeWarrior)
             EvtMgr.SetBin("em/pl07/pl0700a.bin", ROOM_ARC_PTR(pG->pRoomArc, 0x26), 0, 2);
             EvtMgr.SetBin("em/pl07/pl0700.bin", ROOM_ARC_PTR(pG->pRoomArc, 0x24), 0, 2);
             EvtMgr.SetBin("em/pl07/pl0700.tpl", ROOM_ARC_PTR(pG->pRoomArc, 0x25), 0, 2);

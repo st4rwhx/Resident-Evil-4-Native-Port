@@ -49,6 +49,8 @@ if os.environ.get('PORT_TYPES'):
 # PORT_UBSAN_FLOAT=1 : version de diagnostic (15/11). Chaque conversion flottant -> entier hors de l'intervalle du type
 # (surtout negatif -> non signe : le PowerPC et le x86 font le tour, l'ARM bloque a 0) appelle
 # __ubsan_handle_float_cast_overflow_minimal, defini par port/studio.cpp, qui note l'adresse pour le Studio.
+# PORT_CFLAGS (18/11) : options en plus, séparées par des espaces (compilations de diagnostic, ex. -DPORT_P32_VARARGS).
+COMMON.extend(os.environ.get('PORT_CFLAGS', '').split())
 if os.environ.get('PORT_UBSAN_FLOAT'):
     COMMON += ['-fsanitize=float-cast-overflow', '-fsanitize-minimal-runtime']
 # gnu++11 et pas gnu++17 : gnu++17 supprime `register` et rouvre 44 erreurs. -fdeclspec en
@@ -131,7 +133,7 @@ def units():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=max(4, (os.cpu_count() or 4)))
-    ap.add_argument('--out', default=os.path.join(ROOT, '_port_build_x86' if os.environ.get('PORT_ABI') == 'x86' else '_port_build'))
+    ap.add_argument('--out', default=os.path.join(ROOT, {'x86': '_port_build_x86', 'x86_64': '_port_build_x86_64', 'arm64': '_port_build_arm64'}.get(os.environ.get('PORT_ABI'), '_port_build')))
     ap.add_argument('--link', action='store_true')
     ap.add_argument('--quiet', action='store_true')
     ap.add_argument('--maxerr', type=int, default=15)
@@ -264,7 +266,8 @@ def main():
             fh.write('"%s"\n' % os.path.relpath(o, ROOT).replace('\\', '/'))
     # ARM : conversions flottant -> non signe avec le comportement du PowerPC (port/ppc_f2u.py, 15/11). x86 l'a deja ;
     # PORT_PPC_F2U=0 : sans (A/B). Idempotent : les objets en cache deja corriges ne changent plus.
-    if os.environ.get('PORT_ABI') != 'x86' and os.environ.get('PORT_PPC_F2U', '1') != '0':
+    # N7 : x86_64 se comporte comme x86 (conversion 64 bits puis troncature = tour complet) ; arm64 : outil a porter (Thumb).
+    if os.environ.get('PORT_ABI') not in ('x86', 'x86_64', 'arm64') and os.environ.get('PORT_PPC_F2U', '1') != '0':
         objdump = os.path.join(ndk, 'toolchains', 'llvm', 'prebuilt', 'windows-x86_64', 'bin', 'llvm-objdump.exe')
         r = subprocess.run([sys.executable, os.path.join(ROOT, 'port', 'ppc_f2u.py'), rsp, objdump], capture_output=True, text=True, cwd=ROOT)
         print((r.stdout + r.stderr).strip()[-600:])

@@ -41,7 +41,7 @@ class Widget {
 public:
     int num;         // 0x00  link table size
     Widget** link;   // 0x04
-    Widget* cur;     // 0x08  current widget of the chain (transit target)
+    P32<Widget> cur;     // 0x08  current widget of the chain (transit target)
     // 0x0C vptr
 
     Widget(int n = 1) {

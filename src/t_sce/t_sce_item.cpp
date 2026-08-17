@@ -62,9 +62,9 @@ struct SceAtWorkTbl {
 
 // game/sce_at.cpp's SceAtSysWork (static there; the REL imports it by name).
 struct TSceItemSys {
-    TSceItemFile* pAtData;   // 0x00
+    P32<TSceItemFile> pAtData;   // 0x00
     u32 pAtWork;             // 0x04
-    TSceItemFile* pItemData; // 0x08
+    P32<TSceItemFile> pItemData; // 0x08
     u8 pad_C[0x11D - 0xC];
     u8 x11D;                 // 0x11D  pItemData was allocated by the tool
     u8 pad_11E[2];

@@ -56,7 +56,7 @@ public:
     u8 step;        // 0x01
     u8 x2;
     u8 x3;
-    cObj* obj;      // 0x04
+    P32<cObj> obj;      // 0x04
     Vec pos0;       // 0x08  closed position
     f32 rotY0;      // 0x14  closed rot.y
     f32 openH;      // 0x18  height when open
@@ -67,8 +67,8 @@ public:
     int status;     // 0x2C  0 closed, 1 open, 4 moving
     int timer;      // 0x30
     int flagNo;     // 0x34  door flag bit (pG->flags_51BC ...)
-    cSat* sat;      // 0x38  collision of the rotating doors
-    cSat* eat;      // 0x3C  event collision of the lift
+    P32<cSat> sat;      // 0x38  collision of the rotating doors
+    P32<cSat> eat;      // 0x3C  event collision of the lift
 
     void init(u32 id);
     void move();
@@ -89,7 +89,7 @@ struct R209Em {
     int snipe;           // 0x10  1: the bowgun enemy walks the balcony (r209_BowgunMove)
     int active;          // 0x14
     int pathReset;       // 0x18  1: restart the path
-    Vec* path[5];        // 0x1C  waypoints (0 terminated)
+    P32<Vec> path[5];        // 0x1C  waypoints (0 terminated)
     int pathIdx;         // 0x30
 };
 
@@ -97,41 +97,41 @@ struct R209Work {
     cEmWrap leader;      // 0x000
     int leaderPointNo;   // 0x00C
     int pad_010[9];      // 0x010
-    cObj* head;          // 0x034  the leader's head object
+    P32<cObj> head;          // 0x034  the leader's head object
     R209Em em[23];       // 0x038
-    cEm* door9;          // 0x4E4
+    P32<cEm> door9;          // 0x4E4
     int pad_4E8;         // 0x4E8
-    cEm* door4;          // 0x4EC
-    cEm* door2;          // 0x4F0
-    cEm* door3;          // 0x4F4
+    P32<cEm> door4;          // 0x4EC
+    P32<cEm> door2;          // 0x4F0
+    P32<cEm> door3;          // 0x4F4
     u32 plInPlaceCnt;    // 0x4F8
     int leaderInPlace;   // 0x4FC
     int plInPlace;       // 0x500
     int doorState;       // 0x504
-    cObjGatling* gatling; // 0x508
-    cObj* bridgeObj;     // 0x50C
-    cObj* bridge[4];     // 0x510
+    P32<cObjGatling> gatling; // 0x508
+    P32<cObj> bridgeObj;     // 0x50C
+    P32<cObj> bridge[4];     // 0x510
     u32 atPrev[8];       // 0x520
     u32 atCur[8];        // 0x540
     u32 atOn[8];         // 0x560
     u32 atOff[8];        // 0x580
-    cDataUnit* evd;      // 0x5A0
+    P32<cDataUnit> evd;      // 0x5A0
     u8 panel[4];         // 0x5A4  bridge panel state (0/1)
     Vec bridgeOfs[4];    // 0x5A8
     int snipeCnt;        // 0x5D8
     int snipeIdx[8];     // 0x5DC
     int pad_5FC[2];      // 0x5FC
-    cSat* sat0;          // 0x604
-    cSat* sat1;          // 0x608
-    cSat* sat2;          // 0x60C
-    cSat* eat0;          // 0x610
-    cSat* eat1;          // 0x614
+    P32<cSat> sat0;          // 0x604
+    P32<cSat> sat1;          // 0x608
+    P32<cSat> sat2;          // 0x60C
+    P32<cSat> eat0;          // 0x610
+    P32<cSat> eat1;          // 0x614
     int pad_618;         // 0x618
     u32 strId;           // 0x61C
     u32 seId;            // 0x620
     cEmWrap picEm[2];    // 0x624
     cR209Door door[7];   // 0x63C
-    ScePrim* task[4];    // 0x7FC
+    P32<ScePrim> task[4];    // 0x7FC
 };
 
 // One-member struct: every store through the work reloads the pointer.
