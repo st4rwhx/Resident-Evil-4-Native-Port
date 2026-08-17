@@ -131,6 +131,10 @@ extern "C" int port_costume_live_take(void)
     return t;
 }
 extern "C" int port_costume_live_pending(void) { return g_costume_live; }
+// Camera de la scene du titre (18/11) : 0 plan normal, 1 cabine d'essayage de la garde-robe (plus pres, tour lent de Leon)
+static volatile int g_scene_cam = 0;
+extern "C" void port_scene_cam_set(int v) { g_scene_cam = v; }
+extern "C" int port_scene_cam(void) { return g_scene_cam; }
 
 // Sortie du titre (A2, 15/11, src/game/title.cpp titleExit) : choix direct au lieu du menu de salles de debug invisible.
 // RE4_ROOM_MENU=1 : menu de debug d'origine. Choix : port_title_choice_set() (demarrage Nightjar, a venir), sinon

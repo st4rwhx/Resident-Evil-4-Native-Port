@@ -241,6 +241,8 @@ void DoorFlagInit()
 #ifdef RE4_PORT
 extern "C" int port_costume_live_pending(void);
 extern "C" int port_costume_forced(void);
+extern "C" int port_menu_scene_active(void);
+extern "C" int port_scene_cam(void);
 extern "C" int port_costume_live_take(void);
 extern "C" volatile int g_port_thumb_ok;   // port/njstate.cpp : vraie partie a l'ecran (Leon, pas de menu ni de mort)
 void PlChangeData();
@@ -248,7 +250,8 @@ void PlChangeData();
 // PlSetCostume + PlChangeData, ecran noir le temps du rechargement de Leon.
 static void portWardrobeLive()
 {
-    if (!port_costume_live_pending() || pG->x20 != 3 || !g_port_thumb_ok || pG->x4FB8 != 0) {
+    // en partie (vraie partie a l'ecran) ou dans la scene du titre (cabine d'essayage de la garde-robe)
+    if (!port_costume_live_pending() || pG->x20 != 3 || !(g_port_thumb_ok || port_menu_scene_active()) || pG->x4FB8 != 0) {
         return;
     }
     port_costume_live_take();
@@ -415,6 +418,11 @@ void gameRoomInit()
     }
     BitOn(pG->flags_60, 0x200);
 #ifdef RE4_PORT
+    if (port_menu_scene_active()) {   // scene du menu titre : pas de cinematique d'entree ni d'appel radio d'ouverture
+        // (r100_StartEvent : readEvent 9 et OpeSetOpenTerm sautes quand l'ouverture est deja vue, comme apres Continuer) ;
+        // systemRestartInit efface tout GlobalWork a la remise a zero : une vraie nouvelle partie garde son ouverture
+        pG->flags_51C0 |= 0x10;
+    }
     {   // garde-robe : la tenue choisie s'applique des l'entree en salle (nouvelle partie comprise : le jeu ne
         // recalcule la tenue qu'au chargement et dans l'inventaire) ; rechargement de Leon seulement si elle change
         const int forced = port_costume_forced();
@@ -631,15 +639,27 @@ void portMenuSceneFrame()   // appelee par CameraMove (camera.cpp) avant le calc
         return;
     }
     t += 1.0f / 30.0f;
-    const f32 a = pPL->rot.y + 0.35f * sinf(t * 0.21f);
+    // garde-robe (18/11) : k va doucement de 0 (plan normal) a 1 (cabine : plus pres, Leon a droite de l'ecran, la liste a
+    // gauche, tour complet de Leon en ~30 s pour le voir de face, de profil et de dos)
+    static f32 k = 0.0f, turn = 0.0f;
+    const f32 want = port_scene_cam() == 1 ? 1.0f : 0.0f;
+    k += (want - k) * 0.06f;
+    if (k > 0.01f) {
+        turn += 0.21f / 30.0f;
+    } else {
+        turn = 0.0f;
+    }
+    const f32 a = pPL->rot.y + (0.35f * sinf(t * 0.21f)) * (1.0f - k) + turn * k;
+    const f32 dist = 2600.0f + (3300.0f - 2600.0f) * k;   // cabine : Leon en entier
+    const f32 side = -1150.0f * k;   // visee decalee : Leon sur le tiers droit de l ecran, la liste a gauche
     Vec at;
     Vec pos;
-    at.x = pPL->pos.x;
-    at.y = pPL->pos.y + 1150.0f;
-    at.z = pPL->pos.z;
-    pos.x = pPL->pos.x + sinf(a) * 2600.0f;
-    pos.y = pPL->pos.y + 1450.0f + 120.0f * sinf(t * 0.13f);
-    pos.z = pPL->pos.z + cosf(a) * 2600.0f;
+    at.x = pPL->pos.x + cosf(a) * side;
+    at.y = pPL->pos.y + 1150.0f + (900.0f - 1150.0f) * k;
+    at.z = pPL->pos.z - sinf(a) * side;
+    pos.x = pPL->pos.x + sinf(a) * dist + cosf(a) * side;
+    pos.y = pPL->pos.y + (1450.0f + (1000.0f - 1450.0f) * k) + 120.0f * sinf(t * 0.13f) * (1.0f - k);
+    pos.z = pPL->pos.z + cosf(a) * dist - sinf(a) * side;
     CameraSetWithRoll(&pG->Cam, &pos, &at, 0.0f, pG->Cam.param.fovy > 1.0f ? pG->Cam.param.fovy : 50.0f);
 }
 #endif
