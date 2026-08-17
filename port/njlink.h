@@ -31,6 +31,8 @@ enum {
     NJS_BINOCULARS = 1u << 8, NJS_TITLE_MENU = 1u << 9, NJS_WIDE = 1u << 10, NJS_PLAYER = 1u << 11,
     NJS_AIMING = 1u << 12, NJS_ASHLEY = 1u << 13, NJS_AIM_TARGET = 1u << 14, NJS_HAND = 1u << 15,
     NJS_CHOICE_VERTICAL = 1u << 16, NJS_TITLE_WAIT = 1u << 17,   // 17 : le titre attend une commande du menu de Nightjar
+    NJS_GAME_CLEARED = 1u << 18,  // 18 : jeu fini (pSys->x4 bit 30) : choix de la difficulte, Professionnel, Bonus
+    NJS_EASY_OK = 1u << 19,       // 19 : la version propose Facile au choix de difficulte (pas en anglais US, titleLevelInit)
 };
 
 typedef struct NjBoard {   // planche de la mallette (pzlBoard) : l'appli la projette elle-meme a l'ecran

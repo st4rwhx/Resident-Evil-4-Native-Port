@@ -21,6 +21,7 @@
 #include "id_sys.h"
 #include "event.h"
 #include "fade.h"
+#include "main.h"   // pSys : jeu fini, langue (menu titre de Nightjar)
 extern "C" int port_title_waiting(void);   // port/arm_hooks.cpp : menu titre de Nightjar
 extern "C" int port_menu_scene_active(void);
 extern "C" volatile int g_port_thumb_ok = 0;   // vraie partie a l'ecran : port/njgfx (image des sauvegardes)
@@ -185,7 +186,11 @@ extern "C" void njstate_fill(NjState* out)
         return;
     }
     s.bits |= NJS_VALID;
-    if (port_title_waiting() || port_menu_scene_active()) s.bits |= NJS_TITLE_WAIT;   // menu titre de Nightjar (18/11), scene comprise
+    if (port_title_waiting() || port_menu_scene_active()) s.bits |= NJS_TITLE_WAIT;
+    if (pSys != nullptr) {   // menu titre : difficulte comme le jeu (titleMain / titleLevelInit)
+        if (pSys->x4 & 0x40000000) s.bits |= NJS_GAME_CLEARED;
+        if (pSys->language != 1) s.bits |= NJS_EASY_OK;
+    }   // menu titre de Nightjar (18/11), scene comprise
     s.wep_no = g->wep_no;
     s.wep_type = g->wep_type;
     s.chapters_ended = g->x4F8A;

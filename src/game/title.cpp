@@ -592,7 +592,9 @@ static int portTitleAppSelect(TitleWork* w)
     }
     switch (port_title_cmd_take(&slot)) {
     case 1: port_title_choice_set(1); port_card_direct_set(-1); sel = 1; break;    // continuer
-    case 2: port_title_choice_set(2); port_card_direct_set(-2); sel = 1; break;    // nouvelle partie
+    case 2:   // nouvelle partie ; `slot` = difficulte choisie (3 facile, 5 normal, 6 professionnel), sinon celle du jeu
+        if (slot == 3 || slot == 5 || slot == 6) pG->x8354 = (u8) slot;
+        port_title_choice_set(2); port_card_direct_set(-2); sel = 1; break;
     case 3: port_title_choice_set(1); port_card_direct_set(-2); sel = 1; break;    // ecran de chargement du jeu
     case 4: port_title_choice_set(1); port_card_direct_set(slot); sel = 1; break;  // charger la sauvegarde `slot`
     case 5: sel = 5; break;                                                         // options du jeu
