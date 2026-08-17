@@ -25,6 +25,10 @@
 
 #include "port_log.h"
 
+#if PORT_P64
+extern "C" void port_fenetre_init();   // port/os.cpp : base de la fenêtre de 4 Go (N7)
+#endif
+
 namespace {
 
 const u32 ARAM_SIZE = 16u * 1024u * 1024u;
@@ -48,7 +52,12 @@ void aram_init()
 {
     if (g_aram)
         return;
+#if PORT_P64
+    port_fenetre_init();
+    void *want = port_ptr64((u32) ARAM_WANT);   // N7 : base + 0x82000000
+#else
     void *want = (void *) ARAM_WANT;
+#endif
     void *got = ::mmap(want, ARAM_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (got != MAP_FAILED && got == want) {
         g_aram = (u8 *) got;   // pages anonymes : deja a zero
@@ -146,10 +155,10 @@ void ARQPostRequest(ARQRequest *request, u32 owner, u32 type, u32 priority,
     if (length) {
         if (type == ARQ_TYPE_MRAM_TO_ARAM) {
             if (u8 *d = host(dest, length))
-                std::memcpy(d, (const void *) (unsigned long) source, length);
+                std::memcpy(d, port_ptr64(source), length);   // N7
         } else {
             if (const u8 *sp = host(source, length))
-                std::memcpy((void *) (unsigned long) dest, sp, length);
+                std::memcpy(port_ptr64(dest), sp, length);   // N7
         }
     }
     if (callback)
@@ -170,10 +179,10 @@ void ARStartDMA(u32 type, u32 mainmem_addr, u32 aram_addr, u32 length)
         return;
     if (type == ARQ_TYPE_MRAM_TO_ARAM) {
         if (u8 *d = host(aram_addr, length))
-            std::memcpy(d, (const void *) (unsigned long) mainmem_addr, length);
+            std::memcpy(d, port_ptr64(mainmem_addr), length);   // N7
     } else {
         if (const u8 *sp = host(aram_addr, length))
-            std::memcpy((void *) (unsigned long) mainmem_addr, sp, length);
+            std::memcpy(port_ptr64(mainmem_addr), sp, length);   // N7
     }
 }
 

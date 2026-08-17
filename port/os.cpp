@@ -26,6 +26,29 @@
 
 #include <dolphin.h>
 
+#if PORT_P64
+// N7 (18/11) : fenêtre de 4 Go des pointeurs comprimés (port/ptr32.h). Base = le bloc de 4 Go qui contient l'image du
+// programme (code et données statiques : les champs P32 qui les désignent n'en gardent que les 32 bits bas) ; MEM1 et
+// l'ARAM sont placées à base + leur adresse GameCube : la valeur 32 bits d'un pointeur = l'adresse GameCube.
+extern "C" uintptr_t g_port_base = 0;
+extern "C" void port_fenetre_init()
+{
+    if (g_port_base)
+        return;
+    static int donnee;
+    const uintptr_t code = (uintptr_t) &port_fenetre_init, data = (uintptr_t) &donnee;
+    g_port_base = code & ~(uintptr_t) 0xFFFFFFFFu;
+    if ((data & ~(uintptr_t) 0xFFFFFFFFu) != g_port_base) {
+        std::printf("[PORT] fenetre 64 bits : code (%lx) et donnees (%lx) dans deux blocs de 4 Go\n",
+                    (unsigned long) code, (unsigned long) data);
+        std::fflush(stdout);
+        std::abort();
+    }
+    std::printf("[PORT] fenetre 64 bits : base %lx (code %lx, donnees %lx)\n", (unsigned long) g_port_base,
+                (unsigned long) code, (unsigned long) data);
+}
+#endif
+
 namespace {
 
 // ---------------------------------------------------------------- arene
@@ -65,9 +88,16 @@ void arena_init()
 {
     if (g_arena)
         return;
+#if PORT_P64
+    port_fenetre_init();
+    void *want = port_ptr64(MEM1_BASE);
+    // sans MAP_FIXED : rien n'est écrasé ; une autre adresse rendue = arrêt ci-dessous
+    void *got = ::mmap(want, MEM1_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#else
     void *want = (void *) (unsigned long) MEM1_BASE;
     void *got = ::mmap(want, MEM1_SIZE, PROT_READ | PROT_WRITE,
                        MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+#endif
     if (got == MAP_FAILED || got != want) {
         // Sans MEM1 a la bonne adresse, rien de ce qui suit n a de sens : le jeu ecrirait
         // aussitot hors de toute zone valide. Mieux vaut le dire ici que laisser une faute de
@@ -88,8 +118,8 @@ void arena_init()
         low[0xFC / 4] = 486000000u;     // __OSCoreClock
     }
     g_arena = (u8 *) got;
-    g_arena_lo = (u8 *) (unsigned long) ARENA_LO;
-    g_arena_hi = (u8 *) (unsigned long) ARENA_HI;
+    g_arena_lo = (u8 *) port_ptr64(ARENA_LO);   // N7 : base | adresse GameCube (en 32 bits : l'adresse telle quelle)
+    g_arena_hi = (u8 *) port_ptr64(ARENA_HI);
 }
 
 // ---------------------------------------------------------------- tas

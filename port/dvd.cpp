@@ -233,7 +233,7 @@ bool load_image(const char *path)
         // port/port_prelude.h). Ecrire a l adresse GameCube brute plantait ici meme.
         const u32 MEM1_TOP = (u32) PORT_MEM1(0x81800000u);
         const u32 sz = (fst_sz + 31u) & ~31u;
-        g_fst_in_mem1 = (u8 *) (unsigned long) (MEM1_TOP - sz);
+        g_fst_in_mem1 = (u8 *) port_ptr64(MEM1_TOP - sz);   // N7 : base | adresse GC
         g_fst_size = fst_sz;
         std::memcpy(g_fst_in_mem1, fst, fst_sz);
     }

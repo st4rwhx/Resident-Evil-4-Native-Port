@@ -199,7 +199,7 @@ AIDCallback AIRegisterDMACallback(AIDCallback callback)
 }
 void AIInitDMA(u32 start_addr, u32 length)
 {
-    g_ai_buf = (const short*) (unsigned long) start_addr;
+    g_ai_buf = (const short*) port_ptr64(start_addr);   // N7 : base | adresse GC
     g_ai_len = length;
 }
 void AIStartDMA(void)
