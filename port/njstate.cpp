@@ -22,6 +22,7 @@
 #include "event.h"
 #include "fade.h"
 extern "C" int port_title_waiting(void);   // port/arm_hooks.cpp : menu titre de Nightjar
+extern "C" int port_menu_scene_active(void);
 extern "C" volatile int g_port_thumb_ok = 0;   // vraie partie a l'ecran : port/njgfx (image des sauvegardes)
 #include "joy.h"
 #include "act_btn.h"
@@ -184,7 +185,7 @@ extern "C" void njstate_fill(NjState* out)
         return;
     }
     s.bits |= NJS_VALID;
-    if (port_title_waiting()) s.bits |= NJS_TITLE_WAIT;   // menu titre de Nightjar (18/11)
+    if (port_title_waiting() || port_menu_scene_active()) s.bits |= NJS_TITLE_WAIT;   // menu titre de Nightjar (18/11), scene comprise
     s.wep_no = g->wep_no;
     s.wep_type = g->wep_type;
     s.chapters_ended = g->x4F8A;
@@ -245,7 +246,7 @@ extern "C" void njstate_fill(NjState* out)
     }
     const bool map = s.mode == M_SUBSCREEN && (sub_type == 2 || (sub_type == 1 && SubScreenWk.x265 == 2));
     if (map) s.bits |= NJS_MAP;
-    g_port_thumb_ok = s.mode == M_GAMEPLAY && !map && !(s.bits & (NJS_CARD | NJS_DEATH)) && pPL != nullptr;
+    g_port_thumb_ok = !port_menu_scene_active() && s.mode == M_GAMEPLAY && !map && !(s.bits & (NJS_CARD | NJS_DEATH)) && pPL != nullptr;
     if (s.mode == M_SUBSCREEN && sub_type == 1 && !map) s.bits |= NJS_INVENTORY;
 
     if (s.mode == M_EVENT && EvtMgr.pArray && EvtMgr.nArray > 0 && EvtMgr.nArray <= 64) {

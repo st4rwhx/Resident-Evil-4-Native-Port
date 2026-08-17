@@ -80,8 +80,25 @@ extern "C" void port_rodata_writable(void)
 
 #include <stdlib.h>
 // RE4_START_ROOM=0x100 : salle de depart imposee (banc d'essai uniquement).
+// Scene de menu (menu titre de Nightjar, etape 3, 18/11) : NJ_TITLE_SCENE=<salle> (pose par l'appli) -> au titre, sans
+// commande en attente, le jeu entre dans cette salle (chemin DEBUG GAME), la pad est ignoree, une camera lente remplace la
+// sienne (game.cpp) et l'accueil de l'appli reste affiche ; une commande -> remise a zero, puis le titre l'execute.
+// Etat : 0 hors scene, 1 en route (choix fait au titre), 2 active (salle chargee ou en chargement), 3 sortie demandee.
+static volatile int g_scene = 0;
+extern "C" unsigned port_scene_room(void)
+{
+    static const char *e = getenv("NJ_TITLE_SCENE");
+    return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
+}
+extern "C" int port_menu_scene_state(void) { return g_scene; }
+extern "C" void port_menu_scene_set(int v) { g_scene = v; }
+extern "C" int port_menu_scene_active(void) { return g_scene == 2; }
 extern "C" unsigned port_start_room(void)
 {
+    if (g_scene == 1) {   // la scene de menu passe par le meme chemin que la salle de test
+        g_scene = 2;
+        return port_scene_room();
+    }
     static const char *e = getenv("RE4_START_ROOM");
     return e ? (unsigned) strtoul(e, nullptr, 0) : 0u;
 }
@@ -114,6 +131,7 @@ extern "C" int port_title_cmd_take(int *slot)
     return c;
 }
 extern "C" void port_title_waiting_set(int v) { g_title_waiting = v; }
+extern "C" int port_title_cmd_pending(void) { return g_title_cmd != 0; }
 extern "C" int port_title_waiting(void) { return g_title_waiting; }
 extern "C" int port_card_direct(void) { return g_card_direct; }
 extern "C" void port_card_direct_set(int n) { g_card_direct = n; }

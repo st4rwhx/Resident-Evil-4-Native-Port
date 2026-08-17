@@ -570,12 +570,26 @@ extern "C" int port_title_cmd_take(int* slot);
 extern "C" void port_title_waiting_set(int v);
 extern "C" void port_title_choice_set(int choice);
 extern "C" void port_card_direct_set(int n);
+extern "C" unsigned port_scene_room(void);
+extern "C" int port_menu_scene_state(void);
+extern "C" void port_menu_scene_set(int v);
+extern "C" int port_title_cmd_pending(void);
 static int portTitleAppSelect(TitleWork* w)
 {
     int slot = -1;
     int sel = 0;
     (void) w;
+    if (!port_title_cmd_pending() && port_scene_room() != 0 && port_menu_scene_state() == 0) {
+        // scene de menu : on entre dans la salle (titleExit -> DEBUG GAME -> port_start_room rend la salle de la scene)
+        port_menu_scene_set(1);
+        port_title_choice_set(0);
+        port_title_waiting_set(0);
+        return 1;
+    }
     port_title_waiting_set(1);
+    if (port_title_cmd_pending()) {
+        port_menu_scene_set(0);   // la commande est pour le jeu : pas de scene ce tour-ci
+    }
     switch (port_title_cmd_take(&slot)) {
     case 1: port_title_choice_set(1); port_card_direct_set(-1); sel = 1; break;    // continuer
     case 2: port_title_choice_set(2); port_card_direct_set(-2); sel = 1; break;    // nouvelle partie

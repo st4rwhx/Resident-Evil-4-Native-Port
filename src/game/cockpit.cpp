@@ -47,8 +47,26 @@ void Cockpit::roomInit()
     countDown.roomInit();
 }
 
+#ifdef RE4_PORT
+extern "C" int port_menu_scene_active(void);   // port/arm_hooks.cpp : scene du menu titre de Nightjar
+#endif
+
 void Cockpit::move()
 {
+#ifdef RE4_PORT
+    {   // fond vivant du menu titre (18/11) : pas de jauge de vie ni de munitions (tout le type ID_LIFE masque)
+        static bool hidden = false;
+        if (port_menu_scene_active()) {
+            IdSys.dispSw(ID_LIFE, 0);
+            hidden = true;
+            return;
+        }
+        if (hidden) {
+            IdSys.dispSw(ID_LIFE, 1);
+            hidden = false;
+        }
+    }
+#endif
     if ((s32) pG->flags_60 < 0 && !(pG->flags_60 & 0x02000000)) {
         pG->flags_64 |= 0x80000000;
     } else {

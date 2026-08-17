@@ -576,6 +576,38 @@ void gameRoomInit()
     pG->game_mode = 0;
 }
 
+#ifdef RE4_PORT
+extern "C" int port_menu_scene_active(void);   // port/arm_hooks.cpp
+extern "C" void port_menu_scene_set(int v);
+extern "C" int port_title_cmd_pending(void);
+// Scene de menu (18/11) : la camera du jeu est remplacee par une camera devant Leon qui se balance doucement ; quand
+// l'appli envoie une commande (Continuer, Charger, Nouvelle partie), remise a zero : le titre execute la commande.
+void portMenuSceneFrame()   // appelee par CameraMove (camera.cpp) avant le calcul des matrices
+{
+    static f32 t = 0.0f;
+    if (!port_menu_scene_active() || pPL == NULL) {
+        t = 0.0f;
+        return;
+    }
+    if (port_title_cmd_pending()) {
+        port_menu_scene_set(3);
+        pG->flags_54 |= 0x04000000;   // remise a zero douce (systemResetCheck) ; la commande attend au titre
+        return;
+    }
+    t += 1.0f / 30.0f;
+    const f32 a = pPL->rot.y + 0.35f * sinf(t * 0.21f);
+    Vec at;
+    Vec pos;
+    at.x = pPL->pos.x;
+    at.y = pPL->pos.y + 1150.0f;
+    at.z = pPL->pos.z;
+    pos.x = pPL->pos.x + sinf(a) * 2600.0f;
+    pos.y = pPL->pos.y + 1450.0f + 120.0f * sinf(t * 0.13f);
+    pos.z = pPL->pos.z + cosf(a) * 2600.0f;
+    CameraSetWithRoll(&pG->Cam, &pos, &at, 0.0f, pG->Cam.param.fovy > 1.0f ? pG->Cam.param.fovy : 50.0f);
+}
+#endif
+
 void gameMainLoop()
 {
     static int other_slow = 3;

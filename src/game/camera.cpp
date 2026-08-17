@@ -93,6 +93,10 @@ void CameraRoomInit()
     CamDbg.gain = 1.0f;
 }
 
+#ifdef RE4_PORT
+void portMenuSceneFrame();   // game.cpp
+#endif
+
 void CameraMove()
 {
     Camera* cam = &pG->Cam;
@@ -134,6 +138,9 @@ void CameraMove()
                               (int) CamCtrl.state, (unsigned) CamCtrl.flags_2C, (unsigned) pG->flags_500C, (unsigned) pG->flags_170,
                               CamCtrl.IsMotionSet());
     }
+#endif
+#ifdef RE4_PORT
+    portMenuSceneFrame();   // scene du menu titre de Nightjar (game.cpp) : camera lente, avant le calcul des matrices
 #endif
     CamDbg.move(cam, &Joy[1], 0);
     if (cam->param.fovy == 0.0f) {

@@ -23,6 +23,7 @@ extern "C" void njstate_fill(NjState* out);   // port/njstate.cpp
 
 #include <dolphin.h>
 extern "C" int port_studio_pad(PADStatus* s);   // port/studio.cpp
+extern "C" int port_menu_scene_active(void);    // port/arm_hooks.cpp : scene du menu titre de Nightjar
 
 namespace {
 
@@ -108,6 +109,13 @@ u32 PADRead(PADStatus *status)
             status[0].substickY = np.substick_y;
             status[0].triggerLeft = np.trigger_l;
             status[0].triggerRight = np.trigger_r;
+        }
+    }
+    {   // scene du menu titre de Nightjar (18/11) : Leon ne bouge pas, l'accueil de l'appli a la main
+        if (port_menu_scene_active()) {
+            status[0].button = 0;
+            status[0].stickX = status[0].stickY = status[0].substickX = status[0].substickY = 0;
+            status[0].triggerLeft = status[0].triggerRight = 0;
         }
     }
     port_studio_pad(&status[0]);   // Nightjar Studio (port/studio.cpp) : manette imposee par une commande « pad »
