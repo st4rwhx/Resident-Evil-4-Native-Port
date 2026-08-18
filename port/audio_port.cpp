@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// Son du coeur natif (phase C du plan, nj-work/docs/PLAN_NATIF_REPRISE_2026-11-12.md).
+// Son du coeur natif (phase C du plan, documentation interne).
 //
 // La bibliotheque AX du SDK (src/lib/AX*.c) est compilee telle quelle : toutes les 5 ms, son rappel d'interruption AI
 // (__AXOutAiCallback) prepare une image : il met a jour les blocs de voix, construit une liste de commandes et l'envoie

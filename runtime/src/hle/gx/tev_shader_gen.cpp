@@ -189,7 +189,7 @@ void emit_texgen(std::ostream &vs, const GxRegs &st, int i) {
     vs << "        vTex"_g << i << " = t;\n    }\n"_g;
 }
 
-// Sommets tires (A1, nj-work/docs/REFLEXION_PROFONDE_2026-11-13.md) : les attributs deviennent des variables remplies
+// Sommets tires (A1, documentation interne) : les attributs deviennent des variables remplies
 // par pull_fetch() depuis les octets bruts du GX (texture tampon R32UI, renderer_gl.cpp pull::). Meme resultat que
 // ncp::decode + put_vertex (fifo_parser.cpp, renderer_gl.cpp). Index GL = (dessin << 16) | sommet du dessin ;
 // fiche du dessin (16 mots a uPullRec + 16 x dessin) : 0 debut du flux, 1 taille de sommet, 2-9 (biais, pas) position,

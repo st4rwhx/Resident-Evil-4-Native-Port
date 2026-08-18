@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// GX natif, etape 1 (nj-work/docs/INVENTAIRE_GX_NATIF_2026-11-14.md) : etat type des familles Attributs, Geometrie et
+// GX natif, etape 1 (documentation interne) : etat type des familles Attributs, Geometrie et
 // Transformation, tenu par notre code a chaque appel GX du jeu, sans registres ni octets.
 //
 // Double chemin pendant la mise au point : le lien remplace chaque fonction GX listee dans port/gxn_wrap.rsp par

@@ -3,7 +3,7 @@
 #  1. bibliotheque Nightjar + libmain (portable, branche natif-nj)  2. coeur (portable)  3. APK
 #  4. installation sur le S5, lancement de l'appli, journal du coeur resume (+ capture si CAPTURE=1)
 export MSYS_NO_PATHCONV=1
-M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"
+M="$(dirname "$0")"; A="/c/Android/platform-tools/adb "
 TAG=${1:?etiquette}; SEC=${2:-70}
 # le portable se coupe parfois du reseau : attendre qu'il reponde (jusqu'a 10 min)
 wait_laptop() { for i in $(seq 1 60); do ssh -o ConnectTimeout=8 user@laptop "echo ok" >/dev/null 2>&1 && return 0; sleep 10; done; echo "ARRET : portable injoignable"; exit 1; }

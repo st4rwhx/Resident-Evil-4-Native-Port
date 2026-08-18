@@ -7,7 +7,7 @@
     python -I studio.py "pad 0 0 90 0 0 60" etat          (Leon avance 2 s puis etat)
     python -I studio.py --suivre                           (evenements toutes les secondes, Ctrl+C pour arreter)
 
-Pose `adb forward tcp:7770 tcp:7770` sur l'appareil choisi (MuMu par defaut ; le S5 : --appareil 51b3af08).
+Pose `adb forward tcp:7770 tcp:7770` sur l'appareil choisi (MuMu par defaut ; le S5 : --appareil <device_id>).
 """
 import json
 import re
@@ -118,7 +118,7 @@ def lire(f, a, n):
     return bytes.fromhex(r['octets'])
 
 
-# ---- 17/11 : champs par leur nom (types DWARF de la build PORT_TYPES=1, voir LIRE_EN_PREMIER §2 ter)
+# ---- 17/11 : champs par leur nom (types DWARF de la build PORT_TYPES=1, types DWARF de la build PORT_TYPES=1)
 # `*pPL+cModel.pos` au lieu de `*pPL+0x94`. Les decalages viennent des objets compiles avec -g ; ils ne dependent pas
 # du binaire installe (meme source, memes en-tetes). STUDIO_TYPES = dossier des objets (defaut : build typee x86).
 _types = None

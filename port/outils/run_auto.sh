@@ -5,7 +5,7 @@
 #  - pilote par l'etat du jeu (port/pad.cpp RE4_AUTOLOAD : NEW GAME -> r100, puis plus aucune touche) ;
 #  - captures toutes les <pas> s entre <debut> et <fin>, planche, journal du coeur, mesures [NJGFX].
 export MSYS_NO_PATHCONV=1
-M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"; TAG=${1:?}; T1=${2:-90}; T2=${3:-200}; STEP=${4:-10}
+M="$(dirname "$0")"; A="/c/Android/platform-tools/adb "; TAG=${1:?}; T1=${2:-90}; T2=${3:-200}; STEP=${4:-10}
 F=/sdcard/Android/data/org.nightjar.natif/files
 WANT=8282fab82924588e
 # batterie : jamais d'essai sous 40 % (le S5 s'eteint sinon) ; MIN_BAT=<n> pour changer le seuil

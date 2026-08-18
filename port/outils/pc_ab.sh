@@ -4,7 +4,7 @@
 # ses compteurs (ligne [PERFCNT] compteurs dans core.log), puis il est remis a 1. Resultat : moyenne par image des
 # fenetres de 120 images apres l'entree dans la salle (la premiere ecartee).
 export MSYS_NO_PATHCONV=1
-M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb -s 51b3af08"; cd "$M"
+M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb "; cd "$M"
 F=/sdcard/Android/data/org.nightjar.natif/files
 PRE=$1; DUR=$2; shift 2
 for spec in "$@"; do

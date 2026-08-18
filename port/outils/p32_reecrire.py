@@ -11,7 +11,7 @@ import verite_dwarf as vd
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')).replace('\\', '/')
 COPIES = ['C:/re4n/re4port_pc']   # copies de travail du build (pc_build.sh) : ramenées au dépôt
-# Fichiers modifiés par d'autres sessions, non commités : ne jamais y écrire (règle du carnet §1).
+# Fichiers modifiés par d'autres sessions, non commités : ne jamais y écrire.
 INTERDITS = {'src/Tools/t_prim.cpp', 'src/Tools/t_util.cpp', 'src/Tools/tools.cpp', 'src/game/filter.cpp',
              'src/tools/db_light.cpp'}
 

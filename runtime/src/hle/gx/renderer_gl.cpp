@@ -834,7 +834,7 @@ static void BindBatchObjects() {
 }
 
 // ---------------------------------------------------------------- sommets tires par le nuanceur (NJ_PULL=1, A1)
-// nj-work/docs/REFLEXION_PROFONDE_2026-11-13.md. Le lot garde, par dessin, une fiche de 16 mots, les octets bruts du
+// documentation interne Le lot garde, par dessin, une fiche de 16 mots, les octets bruts du
 // flux d'index (gros-boutistes) et ceux des zones de tableaux copiees a l'analyse (GxOp::pull_blob) ; au vidage, une
 // zone d'un anneau R32UI lu par texelFetch, des indices (dessin << 16 | sommet) et UN glDrawElements.
 // Modele : Aurora 2026 (lib/gx/command_processor.cpp push_gx_draw). Banc A0 : 0 pixel d'ecart sur l'Adreno 420.
@@ -1586,7 +1586,7 @@ static float s_batch_xf_nrm[9]  = {1,0,0, 0,1,0, 0,0,1};
 static bool s_pend_open = false;
 
 // Le lot en cours (sommets d'un meme etat) part au GPU ; le prochain dessin en ouvrira un autre.
-// P3a (nj-work/docs/REFLEXION_P3_CHATEAU_2026-11-13.md) : ce qui a change depuis la derniere pose complete de l'etat.
+// P3a (documentation interne) : ce qui a change depuis la derniere pose complete de l'etat.
 // Texture seule (BP 0x80-0xBB) et/ou melange/profondeur (BP 0x40-0x42) : pose legere (pas de choix de programme ni
 // de renvoi de tous les uniformes). Tout le reste, et toute fermeture non classee (copies EFB, lectures, fin
 // d'image) : pose complete. NJ_FULLSTATE=1 : toujours complete (A/B).

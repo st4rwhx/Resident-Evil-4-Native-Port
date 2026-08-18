@@ -177,13 +177,13 @@ struct GxOp {
     float xf_pos[12] = {1,0,0,0, 0,1,0,0, 0,0,1,0};
     float xf_nrm[9]  = {1,0,0, 0,1,0, 0,0,1};
 
-    // Sommets tires par le nuanceur (NJ_PULL=1, A1 de nj-work/docs/REFLEXION_PROFONDE_2026-11-13.md) : aucun
+    // Sommets tires par le nuanceur (NJ_PULL=1, A1 de documentation interne) : aucun
     // decodage CPU ; a l'analyse, les octets bruts des zones de tableaux lues par le dessin sont copies dans pull_blob
     // (la memoire du jeu change a l'image suivante : peaux en double tampon). Adresse d'un element d'index i de
     // l'attribut a (0 position, 1 normale, 2 couleur 0, 3 coordonnee 0) dans pull_blob : pull_bias[a] + i * pas.
     // Une copie par tableau et par image, partagee par tous les dessins qui le lisent (parties d'un meme modele).
     bool pull = false;
-    // Liste compilee (V2, nj-work/docs/REFLEXION_COUCHE_DU_MILIEU_2026-11-13.md) : l'appel entier en UNE commande ;
+    // Liste compilee (V2, documentation interne) : l'appel entier en UNE commande ;
     // octets du flux et indices residents sur le GPU, tableaux de l'appel dans pull_blob.
     std::shared_ptr<const struct ListMesh> list;
     uint32_t pull_frame = 0;   // image du jeu a l'analyse (copies EFB -> XFB vues dans le flux) : cle des copies

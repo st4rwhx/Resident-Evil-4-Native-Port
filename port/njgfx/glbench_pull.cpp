@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// A0 (nj-work/docs/REFLEXION_PROFONDE_2026-11-13.md) : sommets tires par le nuanceur, inclus par glbench.cpp.
+// A0 (documentation interne) : sommets tires par le nuanceur, inclus par glbench.cpp.
 // Octets bruts au format GC (positions s16 gros-boutistes, pas 6, lues par un index u16 gros-boutiste du flux, comme
 // nos listes) dans des textures tampon R32UI ; le nuanceur decode (texelFetch). Compare au chemin classique (flottants
 // decodes par le CPU) : cout GPU et image identique (readPixels). Modele : Aurora 2026 (lib/gx/shader.cpp raw_fetch_*).

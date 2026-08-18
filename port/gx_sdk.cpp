@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// Rendu natif, cote jeu (phase N3 du plan natif, nj-work/docs/PLAN_NATIF_NIGHTJAR_2026-11-11.md).
+// Rendu natif, cote jeu (phase N3 du plan natif, documentation interne).
 //
 // La bibliotheque GX du SDK (src/lib/GX*.c, compilee telle quelle) calcule les registres du GPU et les
 // ecrit dans le tuyau. Ici le tuyau est un tampon d'octets, ranges dans l'ordre du materiel

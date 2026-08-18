@@ -1,6 +1,6 @@
 #include <chrono>
 // -*- coding: utf-8 -*-
-// Rendu natif, cote moteur (phase N3 du plan natif, nj-work/docs/PLAN_NATIF_NIGHTJAR_2026-11-11.md).
+// Rendu natif, cote moteur (phase N3 du plan natif, documentation interne).
 //
 // Compile avec les options et les en-tetes de Nightjar (C++20), lie avec libnjruntime.a : le lecteur de flux
 // et le rendu de Nightjar tournent DANS le coeur, sur la memoire du jeu (arene a 0x80000000 : une adresse
