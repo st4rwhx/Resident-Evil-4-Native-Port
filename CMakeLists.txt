@@ -43,6 +43,7 @@ if(NJ_PRECOMPILED)
         inst_count=retired is_running=alive exception_jmp_buf=exc_jump
         callback_depth=cb_nesting in_callback=inside_cb
         nwii_case_MemCreateHeap=nj_case_MemCreateHeap
+        nwii_char_gameInit=nj_char_gameInit
         nwii_char_gameRoomInit=nj_char_gameRoomInit
         nwii_dvd_CompareDiskID=nj_dvd_CompareDiskID
         nwii_wii_PlWepHitCheck2=nj_wii_PlWepHitCheck2

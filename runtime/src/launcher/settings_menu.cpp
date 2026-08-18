@@ -1560,11 +1560,22 @@ void menu_frame(SDL_Window *window) {
             // colonnes : les quatre rubriques du menu OPTIONS du jeu a gauche, celles de Nightjar a droite
             static const char *const kGame[] = {"Retry or load", "Controller setup", "Brightness adjust", "Audio setup"};
             for (auto &cc : cats) cc.column = in(cc.label, kGame, sizeof kGame / sizeof *kGame) ? 0 : 1;
-            {   // GARDE-ROBE (18/11) : rubrique du jeu, colonne de gauche (elle etait cachee au bout d'Affichage) ;
-                // toutes les tenues des le debut, une tenue choisie tient toute la partie ; appliquee en direct par le coeur.
-                // Le casier de la salle 312 ouvrira cette page (a venir).
+            {   // GARDE-ROBE ET PERSONNAGES (18/11) : rubrique du jeu, colonne de gauche
+                // Choix direct du personnage jouable (Leon, Ashley, Ada, HUNK, Krauser, Wesker, Luis) et tenue de Leon.
                 rm::Category wc;
                 wc.label = "Wardrobe"; wc.glyph = rm::kGlyphBox; wc.column = 0;
+                static const char *const char_names[] = {
+                    N_("Leon (Story default)"), N_("Leon S. Kennedy"), N_("Ashley Graham"), N_("Ada Wong"),
+                    N_("HUNK"), N_("Jack Krauser (Playable mod)"), N_("Albert Wesker"), N_("Luis Sera")
+                };
+                static const int char_values[] = {-1, 0, 1, 2, 3, 4, 5, 6};
+                rm::Option opt_char;
+                opt_char.label = "Character"; opt_char.kind = rm::Kind::Choice; opt_char.value = &g_character;
+                opt_char.names = char_names; opt_char.values = char_values; opt_char.n = 8;
+                opt_char.hint = "Choose player character: Leon, Ashley, Ada, HUNK, Krauser (with boss moves & mutant arm), Wesker, or Luis. Applies at next room transition or new game.";
+                opt_char.change_fn = [](int v) { g_character = v; };
+                wc.options.push_back(opt_char);
+
                 static const char *const lo_names[] = {N_("Automatic"), N_("Jacket"), N_("Shirt only"), N_("Vest"), N_("R.P.D.")};
                 static const int lo_values[] = {-1, 0, 1, 2, 3};
                 rm::Option w;
@@ -1825,9 +1836,28 @@ void title_home_frame(SDL_Window *window) {
     // A ou un toucher la fait porter (enregistree) ; Retour remet la tenue portee
     static int try_on = -2, hover_idx = -1;
     static double hover_since = 0.0;
-    static const int kOutfit[] = {-1, 0, 1, 2, 3};
+    struct WardrobeEntry {
+        const char *name;
+        const char *sub;
+        int outfit;    // -1..3 pour Leon, -100 si personnage
+        int character; // -1 Leon auto, 0 Leon, 1 Ashley, 2 Ada, 3 Hunk, 4 Krauser, 5 Wesker, 6 Luis
+    };
+    static const WardrobeEntry kWardrobeEntries[] = {
+        {N_("Leon (Automatic)"), N_("The game decides, as in the original"), -1, -1},
+        {N_("Leon (Jacket)"), N_("Leon keeps his iconic jacket all game long"), 0, 0},
+        {N_("Leon (Shirt only)"), N_("Tactical shirt, no jacket from the start"), 1, 0},
+        {N_("Leon (Tactical Vest)"), N_("Bulletproof SWAT vest look"), 2, 0},
+        {N_("Leon (R.P.D. Uniform)"), N_("Raccoon City Police Department classic uniform"), 3, 0},
+        {N_("Ashley Graham"), N_("Playable story partner in full campaign"), -100, 1},
+        {N_("Ada Wong"), N_("Assignment & Mercenaries moves, hookshot and arsenal"), -100, 2},
+        {N_("HUNK"), N_("The Grim Reaper, custom melee, neck breaker & TMP loadout"), -100, 3},
+        {N_("Jack Krauser"), N_("Playable mod: full boss moves, super dash, combat knife & mutant arm (R)"), -100, 4},
+        {N_("Albert Wesker"), N_("S.T.A.R.S. captain, thrust punch, chicane & heavy firearms"), -100, 5},
+        {N_("Luis Sera"), N_("Cabin defender, Red9 marksman & partner play"), -100, 6},
+    };
+    static const int kNumWardrobeEntries = (int)(sizeof(kWardrobeEntries) / sizeof(kWardrobeEntries[0]));
     auto wardrobe_close = [&]() {
-        if (try_on != g_leon_outfit) nj::native::setting(1, g_leon_outfit);
+        if (g_character <= 0 && try_on != g_leon_outfit) nj::native::setting(1, g_leon_outfit);
         nj::native::setting(2, 0);
         try_on = -2; hover_idx = -1;
     };
@@ -1905,17 +1935,21 @@ void title_home_frame(SDL_Window *window) {
         if (easy_ok) add(N_("Easy"), "", false, kLevel, 3);
         add(N_("Back"), "", false, kBack);
     }
-    if (page == 3) {   // garde-robe : toutes les tenues des le debut (demande de l'utilisateur)
+    if (page == 3) {   // garde-robe et personnages : tenues et heros jouables
         items.clear(); act.clear(); slot_of.clear();
-        heading = TXT("Wardrobe");
-        static const char *const names[] = {N_("Automatic"), N_("Jacket"), N_("Shirt only"), N_("Vest"), N_("R.P.D.")};
-        static const char *const subs[] = {N_("The game decides, as in the original"), N_("Leon keeps his jacket all game long"),
-                                           N_("No jacket, from the very start"), N_("The bulletproof vest look"),
-                                           N_("Raccoon City Police uniform")};
-        for (int i = 0; i < 5; ++i) {
-            std::string sub = TXT(subs[i]);
-            if (kOutfit[i] == g_leon_outfit) sub = std::string(TXT("Wearing")) + "  -  " + sub;
-            add(names[i], sub, false, kOutfitPick, kOutfit[i]);
+        heading = TXT("Wardrobe & Characters");
+        for (int i = 0; i < kNumWardrobeEntries; ++i) {
+            std::string sub = TXT(kWardrobeEntries[i].sub);
+            bool active = false;
+            if (kWardrobeEntries[i].character == -1 && g_character == -1 && g_leon_outfit == -1) {
+                active = true;
+            } else if (kWardrobeEntries[i].character == 0 && (g_character <= 0) && g_leon_outfit == kWardrobeEntries[i].outfit) {
+                active = true;
+            } else if (kWardrobeEntries[i].character > 0 && g_character == kWardrobeEntries[i].character) {
+                active = true;
+            }
+            if (active) sub = std::string(TXT("Equipped")) + "  -  " + sub;
+            add(kWardrobeEntries[i].name, sub, false, kOutfitPick, i);
         }
         add(N_("Back"), "", false, kBack);
     }
@@ -1970,12 +2004,15 @@ void title_home_frame(SDL_Window *window) {
             nj::native::setting(3, 10);
         last_cursor = cursor; last_page = page;
     }
-    if (page == 3) {   // essayage au survol (curseur arrete ~0,35 s sur une tenue)
+    if (page == 3) {   // essayage au survol (curseur arrete ~0,35 s sur une tenue de Leon)
         const double now = ImGui::GetTime();
         if (cursor != hover_idx) { hover_idx = cursor; hover_since = now; }
-        if (chosen < 0 && cursor >= 0 && cursor < 5 && now - hover_since > 0.35 && try_on != kOutfit[cursor]) {
-            try_on = kOutfit[cursor];
-            nj::native::setting(1, try_on);
+        if (chosen < 0 && cursor >= 0 && cursor < kNumWardrobeEntries && now - hover_since > 0.35) {
+            const int o = kWardrobeEntries[cursor].outfit;
+            if (o != -100 && try_on != o) {
+                try_on = o;
+                nj::native::setting(1, try_on);
+            }
         }
     }
     if (!attract && !scene_loading && page != 0 && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight, false))) {
@@ -2000,15 +2037,30 @@ void title_home_frame(SDL_Window *window) {
         case kWardrobe:
             page = 3;
             cursor = 0;
-            for (int i = 0; i < 5; ++i) if (kOutfit[i] == g_leon_outfit) cursor = i;
+            for (int i = 0; i < kNumWardrobeEntries; ++i) {
+                if (kWardrobeEntries[i].character == g_character) {
+                    if (g_character <= 0) {
+                        if (kWardrobeEntries[i].outfit == g_leon_outfit) { cursor = i; break; }
+                    } else {
+                        cursor = i; break;
+                    }
+                }
+            }
             try_on = g_leon_outfit; hover_idx = cursor; hover_since = ImGui::GetTime();
             nj::native::setting(2, 1);   // camera de cabine dans la scene du titre
             break;
-        case kOutfitPick:   // porter cette tenue : enregistree, appliquee tout de suite et a la prochaine partie
-            g_leon_outfit = slot_of[chosen];
-            if (try_on != g_leon_outfit) nj::native::setting(1, g_leon_outfit);
-            try_on = g_leon_outfit;
-            save_config(window);
+        case kOutfitPick: {   // equiper ce personnage ou cette tenue : enregistree, appliquee
+            const int idx = slot_of[chosen];
+            if (idx >= 0 && idx < kNumWardrobeEntries) {
+                const auto &e = kWardrobeEntries[idx];
+                g_character = e.character;
+                if (e.outfit != -100) {
+                    g_leon_outfit = e.outfit;
+                    if (try_on != g_leon_outfit) nj::native::setting(1, g_leon_outfit);
+                    try_on = g_leon_outfit;
+                }
+                save_config(window);
+            }
             break;
         }
     }

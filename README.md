@@ -181,7 +181,7 @@ Nightjar achieves unprecedented performance on mobile devices (including 30 FPS 
 | Real-Time In-Game Wardrobe Selection | Drivable Police Car Gameplay Mod |
 |:---:|:---:|
 | ![In-Game Wardrobe](images/wardrobe_costumes.png) | ![Drivable Police Car Mod](images/drivable_police_car.png) |
-| *Live 4-way wardrobe selector: Jacket, Shirt Only, Bulletproof Vest, and R.P.D. uniform in the village.* | *Fully functional drivable police car mod with dedicated vehicle HUD, passenger seating, and health gauge.* |
+| *Live wardrobe & character selector: Leon outfits (Jacket, Shirt, Vest, R.P.D.) and full character selection (Ashley, Ada, HUNK, Krauser with boss moves & mutant arm, Wesker, Luis).* | *Fully functional drivable police car mod with dedicated vehicle HUD, passenger seating, and health gauge.* |
 
 | Procedural Weapon & Attachment Icons (Zero Copyrighted Assets) | Rebuilt Adaptive Touch Controls HUD (0.1.7) |
 |:---:|:---:|

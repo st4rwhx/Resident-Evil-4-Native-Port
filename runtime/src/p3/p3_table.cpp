@@ -40,6 +40,7 @@ void nj_wii_PlWepHitCheck2(GuestCpu &, GuestFn);
 void nj_case_MemCreateHeap(GuestCpu &, GuestFn);
 void nj_wii_PlWepLockCtrl(GuestCpu &, GuestFn);
 void nj_dvd_CompareDiskID(GuestCpu &, GuestFn);
+void nj_char_gameInit(GuestCpu &, GuestFn);
 void nj_char_gameRoomInit(GuestCpu &, GuestFn);
 void nj_wii_getMarkerPos(GuestCpu &, GuestFn);
 void nj_wii_getPitch(GuestCpu &, GuestFn);
@@ -106,6 +107,7 @@ const Symbol kTable[] = {
     F("_Z20nj_wii_PlWepLockCtrlRN2nj7runtime8GuestCpuEPFvS2_E", &nj_wii_PlWepLockCtrl),
     F("_Z20nj_dvd_CompareDiskIDRN2nj7runtime8GuestCpuEPFvS2_E", &nj_dvd_CompareDiskID),
     F("_Z20nj_char_gameRoomInitRN2nj7runtime8GuestCpuEPFvS2_E", &nj_char_gameRoomInit),
+    F("_Z16nj_char_gameInitRN2nj7runtime8GuestCpuEPFvS2_E", &nj_char_gameInit),
     F("_Z19nj_wii_getMarkerPosRN2nj7runtime8GuestCpuEPFvS2_E", &nj_wii_getMarkerPos),
     F("_Z15nj_wii_getPitchRN2nj7runtime8GuestCpuEPFvS2_E", &nj_wii_getPitch),
     // C et C++ standard

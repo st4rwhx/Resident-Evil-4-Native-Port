@@ -716,6 +716,10 @@ void ReadPlayerData(int type, int costume)
         file = 0xC7;
         dll = 0xC8;
         break;
+    case 6:
+        file = 0x66;
+        dll = 0x67;
+        break;
     }
     name = (char*) FileTbl[file].name;
     SET_DRS_NAME(name);

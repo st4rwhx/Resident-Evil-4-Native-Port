@@ -22,6 +22,7 @@ void PADRead(nj::runtime::GuestCpu& ctx);
 void VIWaitForRetrace(nj::runtime::GuestCpu& ctx);
 }
 void nj_case_MemCreateHeap(nj::runtime::GuestCpu& ctx, void (*orig)(nj::runtime::GuestCpu&));
+void nj_char_gameInit(nj::runtime::GuestCpu& ctx, void (*orig)(nj::runtime::GuestCpu&));
 void nj_char_gameRoomInit(nj::runtime::GuestCpu& ctx, void (*orig)(nj::runtime::GuestCpu&));
 void nj_dvd_CompareDiskID(nj::runtime::GuestCpu& ctx, void (*orig)(nj::runtime::GuestCpu&));
 void nj_wii_PlWepHitCheck2(nj::runtime::GuestCpu& ctx, void (*orig)(nj::runtime::GuestCpu&));

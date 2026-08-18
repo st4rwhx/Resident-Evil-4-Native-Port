@@ -120,7 +120,7 @@ extern int g_aim_mode;
 // vise dans sa plage, le corps ne tourne qu'au-dela). [wii_aiming] detach_camera.
 extern int g_aim_detach;
 // character : -1 = celui que l'histoire donne ; 0 Leon, 1 Ashley, 2 Ada, 3 HUNK, 4 Krauser,
-// 5 Wesker (pG->x4FB8), applique au chargement de salle suivant (src/hle/char_select.cpp).
+// 5 Wesker, 6 Luis (pG->x4FB8), applique au chargement de salle suivant (src/hle/char_select.cpp).
 // [player] character.
 extern int g_character;
 

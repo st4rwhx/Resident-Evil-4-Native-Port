@@ -216,7 +216,7 @@ void Config::load(const std::string &path) {
         if (std::sscanf(sv->c_str(), "%f,%f,%f", &dx, &dy, &sc) == 3)
           input::layout_set_by_name(std::string(k.str()), dx, dy, sc);
       }
-  if (auto v = t["player"]["character"].value<int64_t>(); v && *v >= -1 && *v <= 5) g::g_character = (int)*v;
+  if (auto v = t["player"]["character"].value<int64_t>(); v && *v >= -1 && *v <= 6) g::g_character = (int)*v;
 
 #ifndef NJ_RELEASE
   // developpement seulement : identifiant de jeu force
