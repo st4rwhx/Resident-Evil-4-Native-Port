@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build SN Systems' GCC 2.95.3 ("SN BUILD v1.79 for Nintendo Gamecube") cc1plus and cc1
-# natively for Linux from SN's GPL source drop, and install them into the re4 project.
+# natively for Linux from SN's GPL source drop, and install them into the repository.
 #
 #   ./build.sh            build into ./cc1plus ./cc1 and copy to $RE4/build/compilers/ProDG/3.9.3-v1.79/
 #   ./build.sh clean      remove src/ obj/ and the binaries
