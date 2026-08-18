@@ -58,7 +58,12 @@ void aram_init()
 #else
     void *want = (void *) ARAM_WANT;
 #endif
+#if PORT_P64 && defined(__APPLE__)
+    // iOS : MAP_FIXED dans la réservation de port_fenetre_init (os.cpp), à nous seuls
+    void *got = ::mmap(want, ARAM_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+#else
     void *got = ::mmap(want, ARAM_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#endif
     if (got != MAP_FAILED && got == want) {
         g_aram = (u8 *) got;   // pages anonymes : deja a zero
         return;
