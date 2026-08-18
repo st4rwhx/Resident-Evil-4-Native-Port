@@ -31,6 +31,7 @@
 #include <dolphin/os/OSSemaphore.h>
 
 #include "port_log.h"
+extern "C" void port_marquer_fil_coeur(void);   // arm_hooks.cpp
 
 extern "C" void OSExitThread(void *val);
 #if PORT_P64
@@ -187,6 +188,7 @@ void reschedule_if_higher()
 
 void *trampoline(void *arg)
 {
+    port_marquer_fil_coeur();   // iOS : fil du jeu (tas du jeu), pas un fil du moteur
     PortThread *self = (PortThread *) arg;
     pthread_mutex_lock(&g_lock);
     while (g_current != self) {
