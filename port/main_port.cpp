@@ -26,6 +26,7 @@ extern "C" void port_rodata_writable(void);
 // iOS : le moteur Nightjar l'appelle dans un fil de son propre processus (NJ_LINK_INPROC=1, voir njlink.cpp) ; il ne
 // doit jamais appeler exit(). NJ_CORE_LOG=<fichier> : journal du coeur dans ce fichier (sur Android, l'appli redirige
 // deja la sortie du processus vers core.log).
+extern "C" void port_marquer_fil_coeur(void);   // arm_hooks.cpp : fil du jeu (iOS, meme processus)
 extern "C" int nj_core_main(int argc, char **argv)
 {
     if (const char *lg = std::getenv("NJ_CORE_LOG"))
@@ -62,7 +63,7 @@ extern "C" int nj_core_main(int argc, char **argv)
         pthread_attr_setstack(&at, pile, t);
         pthread_t fil;
         static int rendu;
-        pthread_create(&fil, &at, [](void*) -> void* { rendu = re4_main(); return nullptr; }, nullptr);
+        pthread_create(&fil, &at, [](void*) -> void* { port_marquer_fil_coeur(); rendu = re4_main(); return nullptr; }, nullptr);
         pthread_attr_destroy(&at);
         pthread_join(fil, nullptr);
         r = rendu;
