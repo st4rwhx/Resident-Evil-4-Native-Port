@@ -10,9 +10,21 @@
 #include <pthread.h>
 extern "C" int port_host_scope = 0;
 extern "C" unsigned long port_render_thread = 0;
+// iOS (19/11) : le coeur vit dans le processus du moteur. « Tout fil est un fil du jeu » (vrai sur Android, processus a
+// part) y est faux : les fils du moteur (icones du tactile...) allouaient dans le tas du jeu en meme temps que lui ->
+// tas corrompu, abort de libmalloc. Un fil du jeu = un fil cree par le coeur (re4_main, port/thread.cpp), marque ici.
+#if defined(__APPLE__)
+static thread_local int t_fil_coeur = 0;
+extern "C" void port_marquer_fil_coeur(void) { t_fil_coeur = 1; }
+#define PORT_FIL_COEUR (t_fil_coeur != 0)
+#else
+extern "C" void port_marquer_fil_coeur(void) {}
+#define PORT_FIL_COEUR 1
+#endif
 extern "C" int port_on_game_thread(void)
 {
-    return port_host_scope == 0 && (port_render_thread == 0 || (unsigned long) pthread_self() != port_render_thread);
+    return port_host_scope == 0 && PORT_FIL_COEUR &&
+           (port_render_thread == 0 || (unsigned long) pthread_self() != port_render_thread);
 }
 extern "C" int port_heap_trace(void) { return 0; }
 
