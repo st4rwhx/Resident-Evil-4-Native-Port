@@ -29,6 +29,7 @@ void ax_hle_command_list(uint32_t list_addr, uint32_t size_words);   // runtime/
 void ax_hle_set_native(const uint8_t* aram, uint32_t aram_size);
 #if PORT_P64
 void ax_hle_set_base(uintptr_t base);   // N7 : base de la fenetre de 4 Go (adresses du jeu = decalages)
+void ax_hle_set_img_base(uintptr_t base);   // iOS : base des adresses < 0x80000000 (donnees statiques)
 #endif
 }
 extern "C" void* port_aram_host(u32 addr, u32 length);   // port/aram.cpp
@@ -229,6 +230,9 @@ void AIStartDMA(void)
         nj::runtime::hle::ax_hle_set_native((const uint8_t*) port_aram_host(0, 0x1000000u), 0x1000000u);
 #if PORT_P64
         nj::runtime::hle::ax_hle_set_base(g_port_base);
+#if defined(__APPLE__)
+        nj::runtime::hle::ax_hle_set_img_base(g_port_img);   // ptr32.h : deux bases sur iOS
+#endif
 #endif
     }
     g_ai_running = sl_start();
