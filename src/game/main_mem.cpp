@@ -153,10 +153,21 @@ static bool in_game_heap(void* q) { return heap_owner_of(q) >= 0; }
 
 // Trois provenances possibles, trois sorties. Confondre les deux dernieres passe une adresse de
 // MEM1 a la libc, ce qui la fait tomber aussitot.
+#if defined(__APPLE__) && defined(__LP64__)
+extern "C" uintptr_t g_port_base;
+#endif
 static void port_free(void* q)
 {
     if (q == NULL)
         return;
+#if defined(__APPLE__) && defined(__LP64__)
+    // iOS (19/11) : meme processus que le moteur ; les tests ci-dessous ne lisent que les 32 bits bas. Un bloc du systeme
+    // (hors du bloc de 4 Go de MEM1) pouvait y passer pour un bloc du tas du jeu : il retourne a la libc, sans test.
+    if (((uintptr_t) q >> 32) != (g_port_base >> 32)) {
+        free(q);
+        return;
+    }
+#endif
     if (in_game_heap(q)) {
         Mem_free(q);
         return;
