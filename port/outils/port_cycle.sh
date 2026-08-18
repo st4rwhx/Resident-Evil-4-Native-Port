@@ -1,7 +1,7 @@
 #!/bin/bash
 # Phase N1 : compile notre port (portable), le pousse sur le S5 et le lance.  port_cycle.sh <secondes> [variables RE4_*...]
 export MSYS_NO_PATHCONV=1
-M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"
+M="$(dirname "$0")"; A="/c/Android/platform-tools/adb "
 SEC="${1:-120}"; shift
 bash "$M/laptop_port_build.sh" -O2 2>&1 | grep -E "build=|lie :|echec|ecarte" | head -6
 ssh user@laptop "cat /c/re4n/re4port/_port_build/re4" > "$M/re4_n1" || exit 1

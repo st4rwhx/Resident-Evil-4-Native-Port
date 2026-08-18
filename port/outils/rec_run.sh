@@ -2,7 +2,7 @@
 # rec_run.sh <etiquette> "<VAR=val ...>" [debut_s=50] : un essai (run_auto) + simpleperf record de tout le processus du coeur
 # (6 s, 1500 Hz) a <debut> s ; perf_harden remis a 1 ; rapport par fil puis par fonction (symboles : _port_build/re4).
 export MSYS_NO_PATHCONV=1
-M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb -s 51b3af08"; TAG=$1; EXTRA_V=$2; T0=${3:-50}
+M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb "; TAG=$1; EXTRA_V=$2; T0=${3:-50}
 SP=C:/Android/sdk/ndk/android-ndk-r27/simpleperf/bin/windows/x86_64/simpleperf.exe
 cd "$M"
 $A shell "setprop security.perf_harden 0"

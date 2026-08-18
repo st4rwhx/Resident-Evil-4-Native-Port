@@ -4,7 +4,7 @@
 #  - fil principal du coeur : cpu-cycles, task-clock ; images comptees par le journal (i/s) -> Mcycles/image.
 # perf_harden remis a 1 apres chaque mesure.
 export MSYS_NO_PATHCONV=1
-M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb -s 51b3af08"; cd "$M"
+M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb "; cd "$M"
 PRE=$1; shift; T0=110; DUR=15
 for spec in "$@"; do
   tag="${PRE}_${spec%%:*}"; ex="${spec#*:}"

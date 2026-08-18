@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// Lien avec l'appli Nightjar (phase N2 du plan natif, nj-work/docs/PLAN_NATIF_NIGHTJAR_2026-11-11.md).
+// Lien avec l'appli Nightjar (phase N2 du plan natif, documentation interne).
 //
 // Sur Android, la memoire du jeu doit etre a 0x80000000 (adresses GameCube) et cette zone est prise
 // dans le processus d'une appli (tas d'ART, mesure du 11/11 : 0x7C480000-0x91480000). Le jeu tourne

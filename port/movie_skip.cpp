@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// Films Sofdec : PROVISOIRE (phase N1 du plan natif, nj-work/docs/PLAN_NATIF_NIGHTJAR_2026-11-11.md).
+// Films Sofdec : PROVISOIRE (phase N1 du plan natif, documentation interne).
 //
 // Le lecteur de films CRI (src/lib/sfd_*, mpv_*, dct_*...) contient des boucles de decodage en
 // assembleur PowerPC : il sera rendu natif en phase N4. D'ici la, un film se termine des son

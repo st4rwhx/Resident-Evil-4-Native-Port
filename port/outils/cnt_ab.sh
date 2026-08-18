@@ -5,7 +5,7 @@
 # perf_harden mis a 0 au lancement, remis a 1 des que les deux compteurs sont ouverts (ou apres 120 s au plus ; trap).
 # Resultat : moyenne des 4 derniers releves (120 images chacun) de chaque fil. Salle : ROOM (defaut village 0x101).
 export MSYS_NO_PATHCONV=1
-M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb -s 51b3af08"; cd "$M"
+M="$(cd "$(dirname "$0")"; pwd)"; A="/c/Android/platform-tools/adb "; cd "$M"
 F=/sdcard/Android/data/org.nightjar.natif/files
 PRE=$1; shift
 harden1() { $A shell "setprop security.perf_harden 1"; }

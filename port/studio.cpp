@@ -1,5 +1,5 @@
 // -*- coding: utf-8 -*-
-// Nightjar Studio, brique S1 (15/11, nj-work/docs/NIGHTJAR_STUDIO_NATIF_2026-11-15.md) : le jeu parle en donnees et se
+// Nightjar Studio, brique S1 (15/11, documentation interne) : le jeu parle en donnees et se
 // pilote sans recompiler.
 //
 // Serveur TCP sur 127.0.0.1:7770 (adb forward tcp:7770 tcp:7770 : MuMu comme le S5), lu une fois par image depuis la
