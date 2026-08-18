@@ -282,6 +282,30 @@ FileTblEntry FileTbl[] = {
     {"rel/wep47.rel", 0},
 };
 
+#if defined(RE4_PORT) && defined(__APPLE__)
+// iOS (19/11) : le jeu reecrit en place l'extension de certains noms (SET_DRS_NAME, read.cpp : ".das" -> ".drs"), comme
+// sur GameCube ou ces chaines sont inscriptibles. Sur iOS les litteraux sont dans __TEXT,__cstring (segment signe,
+// jamais inscriptible : SIGBUS dans ReadPlayerData au 7e essai) ; sur Android port_rodata_writable() rend le segment
+// inscriptible. Ici : chaque nom est copie une fois dans une reserve inscriptible de l'image (adresse < 0x80000000 de son
+// bloc : un P32 la decode, ptr32.h), et la table pointe sur la copie.
+extern "C" void port_filetbl_writable(void)
+{
+    static char reserve[8192];
+    unsigned long used = 0;
+    for (unsigned long i = 0; i < sizeof(FileTbl) / sizeof(FileTbl[0]); ++i) {
+        const char* nom = FileTbl[i].name;
+        if (!nom)
+            continue;
+        const unsigned long n = __builtin_strlen(nom) + 1;
+        if (used + n > sizeof(reserve))
+            break;
+        __builtin_memcpy(reserve + used, nom, n);
+        FileTbl[i].name = reserve + used;
+        used += n;
+    }
+}
+#endif
+
 #include "global.h"
 #include "map_obj.h"
 #include "light.h"
