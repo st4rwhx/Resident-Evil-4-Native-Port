@@ -165,9 +165,11 @@ def main():
         bg.COMMON.extend(['-ferror-limit=0', '-Werror=int-to-pointer-cast', '-Werror=int-to-void-pointer-cast'])
     asm_flags = [] if x86 else (['-march=armv8-a'] if abi in ('arm64', 'ios') else ['-march=armv7-a'])
 
-    def alias_text(stubs):   # saut vers la vraie fonction : Thumb-2 sur ARM, jmp sur x86
+    def alias_text(stubs):   # saut vers la vraie fonction : Thumb-2 sur ARM32, b sur ARM64, jmp sur x86
         if x86:
             return ''.join('.globl %s\n.type %s,@function\n%s:\n    jmp %s\n' % (u, u, u, t) for u, t in stubs)
+        if abi in ('arm64', 'ios'):
+            return ''.join('.globl %s\n.type %s,%%function\n%s:\n    b %s\n' % (u, u, u, t) for u, t in stubs)
         return '.syntax unified\n.thumb\n' + ''.join(
             '.globl %s\n.type %s,%%function\n.thumb_func\n%s:\n    b.w %s\n' % (u, u, u, t) for u, t in stubs)
     objcopy = os.path.join(bindir, 'llvm-objcopy.exe')

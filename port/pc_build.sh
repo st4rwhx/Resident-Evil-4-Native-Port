@@ -21,6 +21,9 @@ if [ "$ABI" = x86 ]; then
 elif [ "$ABI" = x86_64 ]; then   # N7 (18/11) : coeur 64 bits pour MuMu ; moteur : scratchpad m1/laptop_x86_64_host.sh
     OUT=_port_build_x86_64; L=C:/re4n/android-x86_64-m1; TGT=x86_64-none-linux-android24; CXX=$B/x86_64-linux-android28-clang++.cmd
     ABIFLAGS=""; APKABI=x86_64; export PORT_ABI=x86_64
+elif [ "$ABI" = arm64 ] || [ "$ABI" = arm64-v8a ]; then   # N7 (19/11) : coeur 64 bits pour telephone Android ARM64
+    OUT=_port_build_arm64; L=C:/re4n/android-arm64-v8a-m1; TGT=aarch64-none-linux-android24; CXX=$B/aarch64-linux-android28-clang++.cmd
+    ABIFLAGS=""; APKABI=arm64-v8a; export PORT_ABI=arm64
 else
     OUT=_port_build; L=C:/re4n/android-armeabi-v7a-m1; TGT=armv7-none-linux-androideabi24; CXX=$B/armv7a-linux-androideabi28-clang++.cmd
     ABIFLAGS="-mfpu=neon-vfpv4 -march=armv7-a -mthumb"; APKABI=armeabi-v7a; unset PORT_ABI
