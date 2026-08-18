@@ -238,6 +238,7 @@ All versions follow the strict **Bring Your Own Game (BYOG)** policy under the *
 
 | Version | Release Date | Platforms | Key Highlights & Milestones |
 |---|---|---|---|
+| [**Nightly (Latest)**](releases/tag/nightly) | November 20, 2026 | Windows, Android, iOS | **100% Pure Native C++ Decompilation Rewrite**: Live in-game Wardrobe & full playable character roster (Leon 5 outfits, Ashley, Ada, HUNK, Krauser playable mod with boss moves & mutant arm, Wesker, Luis), rebuilt touch HUD (0.1.7+), procedural icons. |
 | [**v0.1.9**](tree/v0.1.9) | October 29, 2026 | iOS (Metal), PC, Android | **Apple iOS & 64-bit Core**: First native iOS `.ipa` running at 30 FPS via Metal / CAEAGLLayer bridge, floating virtual analog stick, extended settings menu. |
 | [**v0.1.8**](tree/v0.1.8) | October 22, 2026 | PC, Android (64/32/x86) | **Unified Multi-Region & RVZ**: Automated detection of USA (`G4BE08`) and Europe (`G4BP08`), direct reading of compressed `.rvz` archives, 100% offline startup. |
 | [**v0.1.7**](tree/v0.1.7) | October 21, 2026 | PC, Android (64/32/x86) | **Major Overhaul**: 0-second door transitions, 2x frametime reduction (16 ms in village), rebuilt adaptive touch HUD with real-time weapon preview, `.njmod` mod manager. |
