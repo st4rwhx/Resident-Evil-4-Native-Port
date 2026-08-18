@@ -97,6 +97,20 @@ Please review [LEGAL.md](LEGAL.md) for full compliance details.
 
 ---
 
+## Credits & Acknowledgements
+
+- **st4rwhx**: Project lead, native port architecture, GameCube platform abstraction layer (`port/`), Nightjar engine runtime, Android and iOS native implementations, dynamic touch controls, and initial symbol recovery pipeline (September 10, 2026).
+- **Aditya "Adonis" Singh**: Upstream GameCube matching decompilation codebase ([adonis-singh/re4](https://github.com/adonis-singh/re4)), dedicated to the public domain under CC0 1.0.
+- **Capcom & Nintendo**: Original creators of Resident Evil 4 and the Nintendo GameCube platform.
+- **Community & Third-Party Projects**:
+  - [SDL2](https://www.libsdl.org/) (zlib license)
+  - [Dear ImGui](https://github.com/ocornut/imgui) (MIT license)
+  - [zstd](https://github.com/facebook/zstd) (BSD license)
+  - [tomlplusplus](https://github.com/marzer/tomlplusplus) (MIT license)
+  - [Dolphin Emulator](https://dolphin-emu.org/) & [YAGCD](https://www.gc-forever.com/yagcd/) community for GameCube hardware documentation.
+
+---
+
 ## Community & Support
 
 - **Discord**: Join our community for help, bug reports, and discussion: [discord.gg/AXAzExECSv](https://discord.gg/AXAzExECSv)
