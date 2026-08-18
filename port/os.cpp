@@ -31,21 +31,55 @@
 // programme (code et données statiques : les champs P32 qui les désignent n'en gardent que les 32 bits bas) ; MEM1 et
 // l'ARAM sont placées à base + leur adresse GameCube : la valeur 32 bits d'un pointeur = l'adresse GameCube.
 extern "C" uintptr_t g_port_base = 0;
+extern "C" uintptr_t g_port_img = 0;
+static char g_fenetre_msg[200];   // rejoue par arena_init : sur iOS, stdout n'est pas encore le journal au chargement
+#if defined(__APPLE__)
+// Moitie haute de la fenetre reservee d'avance (PROT_NONE) : MEM1 0x80000000, ARAM 0x82000000, pile principale
+// 0x9E000000, piles des fils 0xA0000000 + n * 2 Mo -> 0xA8000000. Les projections suivantes s'y font en MAP_FIXED.
+static const uintptr_t FEN_RES_DEBUT = 0x80000000u, FEN_RES_TAILLE = 0x28000000u;
+#define PORT_MAP_FENETRE MAP_FIXED
+#else
+#define PORT_MAP_FENETRE 0
+#endif
 extern "C" void port_fenetre_init()
 {
     if (g_port_base)
         return;
     static int donnee;
     const uintptr_t code = (uintptr_t) &port_fenetre_init, data = (uintptr_t) &donnee;
-    g_port_base = code & ~(uintptr_t) 0xFFFFFFFFu;
-    if ((data & ~(uintptr_t) 0xFFFFFFFFu) != g_port_base) {
+    g_port_img = code & ~(uintptr_t) 0xFFFFFFFFu;
+    g_port_base = g_port_img;
+    if ((data & ~(uintptr_t) 0xFFFFFFFFu) != g_port_img) {
         std::printf("[PORT] fenetre 64 bits : code (%lx) et donnees (%lx) dans deux blocs de 4 Go\n",
                     (unsigned long) code, (unsigned long) data);
         std::fflush(stdout);
         std::abort();
     }
-    std::printf("[PORT] fenetre 64 bits : base %lx (code %lx, donnees %lx)\n", (unsigned long) g_port_base,
-                (unsigned long) code, (unsigned long) data);
+#if defined(__APPLE__)
+    if (((code | data) & 0x80000000u) != 0) {   // l'image doit etre dans la moitie basse de son bloc
+        std::printf("[PORT] fenetre iOS : image dans la moitie haute de son bloc (code %lx)\n", (unsigned long) code);
+        std::fflush(stdout);
+        std::abort();
+    }
+    g_port_base = 0;
+    for (uintptr_t k = 0; k < 64 && !g_port_base; ++k) {   // bloc de l'image d'abord, puis les suivants
+        void* voulu = (void*) (g_port_img + (k << 32) + FEN_RES_DEBUT);
+        void* p = mmap(voulu, FEN_RES_TAILLE, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (p == voulu)
+            g_port_base = g_port_img + (k << 32);
+        else if (p != MAP_FAILED)
+            munmap(p, FEN_RES_TAILLE);
+    }
+    if (!g_port_base) {
+        std::printf("[PORT] fenetre iOS : aucun bloc libre pour MEM1/ARAM/piles\n");
+        std::fflush(stdout);
+        std::abort();
+    }
+#endif
+    std::snprintf(g_fenetre_msg, sizeof g_fenetre_msg,
+                  "[PORT] fenetre 64 bits : base %lx, image %lx (code %lx, donnees %lx)\n", (unsigned long) g_port_base,
+                  (unsigned long) g_port_img, (unsigned long) code, (unsigned long) data);
+    std::fputs(g_fenetre_msg, stdout);
 }
 // La base ne dépend que de l'adresse de l'image : on la calcule au chargement, AVANT toutes les initialisations
 // statiques (priorité 101 = la première permise), car certaines rangent déjà des adresses GameCube
@@ -71,7 +105,7 @@ extern "C" void* port_pile_fenetre(int slot, size_t* taille)
     void*& f = faites[principal ? 63 : slot];
     if (!f) {
         void* voulu = port_ptr64(adr);
-        void* p = mmap(voulu, t, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        void* p = mmap(voulu, t, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | PORT_MAP_FENETRE, -1, 0);
         if (p != voulu) {
             std::printf("[PORT] pile du fil %d : 0x%08x occupe dans la fenetre (rendu %p)\n", slot, adr, p);
             std::abort();
@@ -125,9 +159,11 @@ void arena_init()
         return;
 #if PORT_P64
     port_fenetre_init();
+    std::fputs(g_fenetre_msg, stdout);
     void *want = port_ptr64(MEM1_BASE);
-    // sans MAP_FIXED : rien n'est écrasé ; une autre adresse rendue = arrêt ci-dessous
-    void *got = ::mmap(want, MEM1_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    // sans MAP_FIXED : rien n'est écrasé ; une autre adresse rendue = arrêt ci-dessous (iOS : MAP_FIXED dans la
+    // réservation faite par port_fenetre_init, à nous seuls)
+    void *got = ::mmap(want, MEM1_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | PORT_MAP_FENETRE, -1, 0);
 #else
     void *want = (void *) (unsigned long) MEM1_BASE;
     void *got = ::mmap(want, MEM1_SIZE, PROT_READ | PROT_WRITE,
