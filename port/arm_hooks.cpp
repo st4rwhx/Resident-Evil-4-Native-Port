@@ -72,8 +72,15 @@ extern "C" void port_note(const char *fmt, ...)
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
+#if defined(__APPLE__)
+extern "C" void port_filetbl_writable(void);   // src/game/dvd.cpp
+#endif
 extern "C" void port_rodata_writable(void)
 {
+#if defined(__APPLE__)
+    port_filetbl_writable();   // iOS : litteraux non inscriptibles -> copie des noms de FileTbl
+    return;
+#endif
     Dl_info di;
     if (!dladdr((void *) &port_rodata_writable, &di) || !di.dli_fbase)
         return;
