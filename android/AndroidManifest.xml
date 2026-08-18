@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Assemble par build_apk.sh (aapt2 link), sans Gradle. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ayano.nightjar"
+    android:versionCode="11">
+
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Connexion Discord (13/10) : voir l'appli Discord et les navigateurs (Android 11+) -->
+    <queries>
+        <package android:name="com.discord" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+    <application android:label="Nightjar"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:debuggable="true"
+        android:extractNativeLibs="true"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+        android:hardwareAccelerated="true">
+        <activity android:name="org.nightjar.re4.RE4Activity"
+            android:label="Nightjar"
+            android:alwaysRetainTaskState="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:preferMinimalPostProcessing="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- Pieces jointes du rapport (menu F10 > Report > Share), lecture seule, sur autorisation -->
+        <provider android:name="org.nightjar.re4.ReportProvider"
+            android:authorities="com.ayano.nightjar.report"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+        <!-- Retour de la connexion Discord (adresse declaree dans le portail des developpeurs) -->
+        <activity android:name="org.nightjar.re4.AuthCallback"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="discord-1559162514154201128" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

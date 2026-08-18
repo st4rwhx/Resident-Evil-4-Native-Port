@@ -1,8 +1,8 @@
 #!/bin/bash
 # Premiere compilation iOS du natif (18/11) sur le PORTABLE : synchro (meme que laptop_port_build.sh) + build_game.py PORT_ABI=ios
 set -e
-H=admin@192.168.1.124
-S="C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream"
+H=user@laptop
+S="."
 ssh -o ConnectTimeout=8 $H "mkdir -p /c/re4n/re4port"
 tar cf - -C "$S" --exclude=./.git --exclude=./_port_build --exclude=./_port_dbg . | ssh $H "cd /c/re4n/re4port && tar xf - 2>/dev/null"
 python "$(dirname "$0")/casse_tar.py" "$S" | ssh $H "cd /c/re4n/re4port && tar xf - && sed -i 's|\"tools/|\"tools_lc/|g' config/G4BE08/modules.py && grep -rl \"#include \\\"tools/\" src include | xargs -r sed -i 's|#include \"tools/|#include \"tools_lc/|g'"

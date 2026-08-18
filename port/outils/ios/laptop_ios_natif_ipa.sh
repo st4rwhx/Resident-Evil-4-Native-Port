@@ -5,14 +5,14 @@
 #     + ld64.lld (LLVM 18) ; chaine d'outils toolchain_natif.cmake (copie de toolchain_laptop.cmake, LLVM 20 absent)
 #   -> C:/re4n/ios_ipa/Nightjar-natif.ipa (SideStore + LiveContainer)
 set -e
-H=admin@192.168.1.124
+H=user@laptop
 M="$(dirname "$0")"
 bash "$M/laptop_ios_natif.sh" 2>&1 | tail -3
 ssh $H "mkdir -p /c/re4n/nj-local-natif/src"
 tar cf - -C C:/re4n/nj-m1 runtime ios recomp tools | ssh $H "cd /c/re4n/nj-local-natif/src && tar xmf -"
 ssh -o ServerAliveInterval=15 $H 'bash -s' <<'EOS'
 set -e
-export PATH="/c/Program Files/CMake/bin:/c/Users/Admin/AppData/Local/Microsoft/WinGet/Links:$PATH"
+export PATH="/c/Program Files/CMake/bin:/c/Users/User/AppData/Local/Microsoft/WinGet/Links:$PATH"
 cd /c/re4n/nj-local-natif
 [ -d src/p3profils ] || cp -r /c/re4n/nj-local/src/p3profils src/ 2>/dev/null || true
 sed -e 's#C:/re4n/llvm20/bin/ld64.lld.exe#C:/re4n/lld18/bin/ld64.lld.exe#' \

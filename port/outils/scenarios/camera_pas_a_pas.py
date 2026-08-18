@@ -1,7 +1,7 @@
 # Arret au changement d'etat de CamCtrl en r100, puis images une par une avec releve des cameras.
 #   python -I pas_a_pas.py <appareil> <binaire> <images>
 import sys, time, json, struct
-sys.path.insert(0, r'C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream/port/outils')
+sys.path.insert(0, r'./port/outils')
 import studio
 dev, binaire, nimg = sys.argv[1], sys.argv[2], int(sys.argv[3])
 s, f = studio.connect(dev)

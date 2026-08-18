@@ -1,7 +1,7 @@
 """port/quat.cpp : les fonctions C_QUAT* du SDK (src/lib/quat.c), sans les variantes PSQUAT* en assembleur PowerPC."""
 import re
 
-ROOT = r'C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream/'
+ROOT = r'./'
 src = open(ROOT + 'src/lib/quat.c', encoding='utf-8').read().splitlines()
 out, i, n = [], 0, 0
 while i < len(src):

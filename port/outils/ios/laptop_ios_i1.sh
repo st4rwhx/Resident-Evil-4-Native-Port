@@ -1,6 +1,6 @@
 #!/bin/bash
 # I1 (18/11) : chaine iOS locale sans LLVM 20 : clang du NDK r26d + vrai SDK iPhoneOS + ld64.lld (LLVM 18). Test C++ + Objective-C + lien.
-H=admin@192.168.1.124
+H=user@laptop
 ssh -o ServerAliveInterval=15 $H 'bash -s' <<'EOS'
 B=C:/re4n/llvm/build-win64/bin   # clang 23.1.2, notre build de LLVM (lecture seule, ne rien y ecrire)
 SDK=C:/re4n/ios_sdk/iPhoneOS.sdk

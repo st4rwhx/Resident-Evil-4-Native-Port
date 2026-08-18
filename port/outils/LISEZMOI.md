@@ -1,6 +1,6 @@
 # Outils du portage natif (phase N1, 11/11/2026)
 
-- `laptop_port_build.sh [PORT_OPT]` : copie le depot sur le portable (ssh admin@192.168.1.124, C:/re4n/re4port), corrige la
+- `laptop_port_build.sh [PORT_OPT]` : copie le depot sur le portable (ssh user@laptop, C:/re4n/re4port), corrige la
   collision de casse `src/Tools` / `src/tools` dans la copie (`casse_tar.py` : contenus pris dans git, minuscules dans
   `src/tools_lc`, `modules.py` et les `#include "tools/` rediriges), puis compile dans l'ordre : objets du DOL, modules REL
   (`build_rel.py` lit `_port_build/obj` pour savoir ce que le DOL definit), lien. -O2 par defaut.

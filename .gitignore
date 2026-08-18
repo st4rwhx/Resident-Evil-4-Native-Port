@@ -1,3 +1,5 @@
+_port_build*/
+_port_dbg*/
 build/
 build.ninja
 .ninja_deps

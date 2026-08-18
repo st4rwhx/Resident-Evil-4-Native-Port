@@ -4,11 +4,11 @@
 # hote  = C:/re4n/android-arm64-v8a-m1/libmain.so (laptop_arm64_host.sh)
 # coeur = notre portage (C:/re4n/re4port/_port_build_arm64/re4), range en libnjcore.so
 set -e
-H=admin@192.168.1.124
+H=user@laptop
 TAG=${1:?etiquette}
 ssh -o ConnectTimeout=8 $H "echo joignable" >/dev/null
 ssh -o ServerAliveInterval=15 $H 'set -e
-export PATH="/c/Python314:/c/Program Files/CMake/bin:/c/Users/Admin/AppData/Local/Microsoft/WinGet/Links:/usr/bin:$PATH"
+export PATH="/c/Python314:/c/Program Files/CMake/bin:/c/Users/User/AppData/Local/Microsoft/WinGet/Links:/usr/bin:$PATH"
 mkdir -p /c/re4n/apk/m1arm64
 [ -f /c/re4n/apk/m1arm64/Nightjar_connu_avant_m1arm64.apk ] || cp -p /c/re4n/apk/Nightjar.apk /c/re4n/apk/m1arm64/Nightjar_connu_avant_m1arm64.apk 2>/dev/null || true
 cd /c/re4n/nj-m1/android

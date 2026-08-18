@@ -17,7 +17,7 @@ import os
 import struct
 import sys
 
-sys.path.insert(0, r"C:\Users\Admin\Downloads\RE4444")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from tools import re4tpl  # noqa: E402
 
 # Octets par tuile et taille de tuile, pour savoir combien d'octets bruts recopier.

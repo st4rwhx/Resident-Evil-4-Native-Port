@@ -1,0 +1,2 @@
+2026-09-25_14:45:42 lot3c_mmu_noinline mips_med=15.3518 fps=1.03 cpu0_khz_med=1190400 fin=56C
+2026-09-29_00:33:56 nj_base_1x mips_med=54.8406 fps=0.95 cpu0_khz_med=1574400 fin=75C

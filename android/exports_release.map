@@ -1,0 +1,11 @@
+/* Build de diffusion : seul le point d'entree que SDLActivity cherche par son nom reste visible.
+   Tout le reste (runtime, code recompile, bibliotheques statiques) est local a libmain.so. */
+{
+  global:
+    SDL_main;
+    JNI_OnLoad;
+    /* methodes natives de SDLActivity (SDL lie en statique), cherchees par leur nom par Java */
+    Java_org_libsdl_app_*;
+  local:
+    *;
+};

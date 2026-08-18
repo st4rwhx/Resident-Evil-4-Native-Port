@@ -1,0 +1,25 @@
+// Icone et informations de version de l'executable Windows (Nightjar).
+// Icone originale dessinee par tools/nightjar_icon.py (aucun element du jeu).
+1 ICON "nightjar.ico"
+
+1 VERSIONINFO
+FILEVERSION 0,1,9,0
+PRODUCTVERSION 0,1,9,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "Ayano"
+      VALUE "FileDescription", "Nightjar"
+      VALUE "ProductName", "Nightjar"
+      VALUE "FileVersion", "0.1.9"
+      VALUE "ProductVersion", "0.1.9"
+      VALUE "OriginalFilename", "Nightjar.exe"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

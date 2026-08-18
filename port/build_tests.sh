@@ -6,8 +6,7 @@
 #   * sous Git Bash, MSYS_NO_PATHCONV=1 est obligatoire, sinon /data/local/tmp devient un
 #     chemin Windows et adb ne trouve rien ;
 #   * adb push **remet les permissions a zero** : il faut rechmod 755 apres chaque envoi ;
-#   * le chemin du projet contient une espace ("RE4 PROJECT") : tout -I doit etre entre
-#     guillemets, faute de quoi la compilation echoue de facon illisible.
+#   * les chemins contenant des espaces : tout -I doit etre entre guillemets.
 #
 # usage : NDK=<racine du ndk> ADB=<adb.exe> sh port/build_tests.sh [cible ...]
 set -e
@@ -34,17 +33,13 @@ mkdir -p "$OUT"
 #   * os.h masque OSPhysicalToCached et consorts par des macros sous #if !DEBUG, macros qui
 #     rendent les souches correspondantes inecrivables.
 CFLAGS="-std=gnu++11 -fdeclspec -DRE4_PORT -DDEBUG=1 -Oz -fno-exceptions -fno-rtti"
-# Deux -I **separes** et chacun entre guillemets : regroupes dans une seule variable, l espace
-# de "RE4 PROJECT" les coupe en deux et clang annonce seulement "dolphin.h file not found".
+# Deux -I **separes** et chacun entre guillemets pour proteger les chemins contenant des espaces.
 INC1="-I$ROOT/include"
 INC2="-I$ROOT/port"
 
 # Les sources de plateforme dont chaque harnais a besoin. texobj.cpp et gx.cpp tirent GLES.
-# Les listes de sources passent par un **fichier reponse** : le chemin du projet contient une
-# espace, et toute liste developpee par le shell s y coupe en deux ("no such file or directory:
-# C:/Users/Admin/Downloads/RE4"). Un fichier reponse met un chemin par ligne, sans ambiguite -
-# a condition d y ecrire des barres obliques, clang traitant les antislashs comme des
-# echappements.
+# Les listes de sources passent par un **fichier reponse** pour gerer proprement les espaces.
+# Un fichier reponse met un chemin par ligne, sans ambiguite.
 PLAT_CORE="os dvd vi pad port_log stubs_generated"
 PLAT_GL="gx texture texobj"
 

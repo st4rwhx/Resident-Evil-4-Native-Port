@@ -1,13 +1,13 @@
 #!/bin/bash
 # Hote Nightjar (ARM64-v8a) construit sur le PORTABLE depuis l'arbre C:/re4n/nj-m1
 set -e
-H=admin@192.168.1.124
+H=user@laptop
 S=/c/re4n/nj-m1
 ssh -o ConnectTimeout=8 $H "echo joignable" >/dev/null
 ssh $H "mkdir -p /c/re4n/nj-m1"
 tar cf - -C $S --exclude=./build --exclude=./.git --exclude=./ios --exclude=./docs . | ssh $H "cd /c/re4n/nj-m1 && tar xf - 2>/dev/null"
 ssh $H "cd /c/re4n/nj-m1 && find runtime/src runtime/include android -mmin -240 -type f -exec touch {} +"
-ssh -o ServerAliveInterval=15 $H 'export PATH="/c/Python314:/c/Program Files/CMake/bin:/c/Users/Admin/AppData/Local/Microsoft/WinGet/Links:/usr/bin:$PATH"
+ssh -o ServerAliveInterval=15 $H 'export PATH="/c/Python314:/c/Program Files/CMake/bin:/c/Users/User/AppData/Local/Microsoft/WinGet/Links:/usr/bin:$PATH"
 NDK=C:/android/android-ndk-r26d
 D=C:/re4n/nightjar-gen/build/_deps
 B=C:/re4n/android-arm64-v8a-m1

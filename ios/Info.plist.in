@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleExecutable</key><string>Nightjar</string>
+    <key>CFBundleIdentifier</key><string>com.ayano.nightjar</string>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+    <key>CFBundleName</key><string>Nightjar</string>
+    <key>CFBundleDisplayName</key><string>Nightjar</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>0.1.9</string>
+    <key>CFBundleVersion</key><string>11</string>
+    <!-- icone : PNG opaques a la racine du paquet (sans catalogue d'actifs, qui exige Xcode) ; LiveContainer et SideStore les lisent ici -->
+    <key>CFBundleIcons</key>
+    <dict><key>CFBundlePrimaryIcon</key><dict>
+        <key>CFBundleIconFiles</key><array><string>AppIcon60x60</string></array>
+        <key>CFBundleIconName</key><string>AppIcon</string>
+    </dict></dict>
+    <key>CFBundleIcons~ipad</key>
+    <dict><key>CFBundlePrimaryIcon</key><dict>
+        <key>CFBundleIconFiles</key><array><string>AppIcon60x60</string><string>AppIcon76x76</string><string>AppIcon83.5x83.5</string></array>
+        <key>CFBundleIconName</key><string>AppIcon</string>
+    </dict></dict>
+    <key>LSRequiresIPhoneOS</key><true/>
+    <key>MinimumOSVersion</key><string>16.0</string>
+    <key>UIDeviceFamily</key><array><integer>1</integer><integer>2</integer></array>
+    <key>UIRequiresFullScreen</key><true/>
+    <key>UIStatusBarHidden</key><true/>
+    <key>UILaunchStoryboardName</key><string></string>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <!-- fichiers du joueur (disques, sauvegardes, mods) visibles dans l'app Fichiers -->
+    <key>UIFileSharingEnabled</key><true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key><true/>
+    <!-- retour de la connexion Discord (meme adresse que sur Android) -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key><string>com.ayano.nightjar.discord</string>
+            <key>CFBundleURLSchemes</key><array><string>discord-1559162514154201128</string></array>
+        </dict>
+    </array>
+    <key>LSApplicationQueriesSchemes</key><array><string>discord</string></array>
+    <key>GCSupportsControllerUserInteraction</key><true/>
+</dict>
+</plist>

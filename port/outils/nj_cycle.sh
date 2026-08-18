@@ -6,7 +6,7 @@ export MSYS_NO_PATHCONV=1
 M="$(dirname "$0")"; A="/c/Android/platform-tools/adb -s 51b3af08"
 TAG=${1:?etiquette}; SEC=${2:-70}
 # le portable se coupe parfois du reseau : attendre qu'il reponde (jusqu'a 10 min)
-wait_laptop() { for i in $(seq 1 60); do ssh -o ConnectTimeout=8 admin@192.168.1.124 "echo ok" >/dev/null 2>&1 && return 0; sleep 10; done; echo "ARRET : portable injoignable"; exit 1; }
+wait_laptop() { for i in $(seq 1 60); do ssh -o ConnectTimeout=8 user@laptop "echo ok" >/dev/null 2>&1 && return 0; sleep 10; done; echo "ARRET : portable injoignable"; exit 1; }
 wait_laptop
 rm -f "C:/re4n/ce4_m1_out/apk/$TAG.apk"
 [ "${3:-host}" = host ] && bash "$M/laptop_m1_host.sh" 2>&1 | grep -E "ninja=|error:" | head -5
@@ -28,7 +28,7 @@ if [ -n "${CAPTURE:-}" ]; then
 fi
 if $A shell "grep -a -q 'signal' $F/core.log"; then
   $A shell "grep -a -A16 'signal' $F/core.log" | tr -d '\r' > "$M/${TAG}_crash.txt"
-  ssh admin@192.168.1.124 "cat /c/re4n/re4port/_port_build/re4" > "$M/re4_${TAG}"
+  ssh user@laptop "cat /c/re4n/re4port/_port_build/re4" > "$M/re4_${TAG}"
   ADDRS=$(grep -oE "libnjcore.so \+ 0x[0-9a-f]+" "$M/${TAG}_crash.txt" | awk '{print $3}' | tr '\n' ' ')
   /c/Android/android-ndk-r26d/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-addr2line.exe -e "$M/re4_${TAG}" -f -C $ADDRS 2>&1 | paste - - | cut -c1-190 | grep -v on_fault | head -12
 fi

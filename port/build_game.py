@@ -293,7 +293,7 @@ def main():
     if os.environ.get('RE4_EXTRA_LINK'):
         cmd += os.environ['RE4_EXTRA_LINK'].split() + ['-Wl,--allow-multiple-definition']
     # Le .cmd de clang coupe les arguments aux espaces : chemins relatifs, depuis la racine du depot
-    # ("RE4 PROJECT" contient une espace, c'etait la cause du faux "lien en echec").
+    # (les chemins avec espace etaient la cause du faux "lien en echec").
     cmd[1] = '@' + os.path.relpath(rsp, ROOT).replace(os.sep, '/')
     cmd[cmd.index('-o') + 1] = os.path.relpath(exe, ROOT).replace(os.sep, '/')
     r = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)

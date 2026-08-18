@@ -6,11 +6,11 @@
 # L'APK connu (C:/re4n/apk/Nightjar.apk du 27-29/10) est d'abord copie a cote ; la sortie est rangee dans C:/re4n/apk/m1/
 # puis rapatriee dans C:/re4n/ce4_m1_out/apk/<etiquette>.apk. Rien n'est installe ici.
 set -e
-H=admin@192.168.1.124
+H=user@laptop
 TAG=${1:?etiquette}
 ssh -o ConnectTimeout=8 $H "echo joignable" >/dev/null
 ssh -o ServerAliveInterval=15 $H 'set -e
-export PATH="/c/Python314:/c/Program Files/CMake/bin:/c/Users/Admin/AppData/Local/Microsoft/WinGet/Links:/usr/bin:$PATH"
+export PATH="/c/Python314:/c/Program Files/CMake/bin:/c/Users/User/AppData/Local/Microsoft/WinGet/Links:/usr/bin:$PATH"
 mkdir -p /c/re4n/apk/m1
 [ -f /c/re4n/apk/m1/Nightjar_connu_avant_m1.apk ] || cp -p /c/re4n/apk/Nightjar.apk /c/re4n/apk/m1/Nightjar_connu_avant_m1.apk
 cd /c/re4n/nj-m1/android

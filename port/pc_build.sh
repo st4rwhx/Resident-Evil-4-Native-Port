@@ -9,7 +9,7 @@
 set -e
 ABI=${1:?x86 ou arm}
 TAG=${2:-}
-SRC="C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream"
+SRC="$(cd "$(dirname "$0")/.." && pwd)"
 W=/c/re4n/re4port_pc
 NDK=C:/android/android-ndk-r26d
 B=/c/android/android-ndk-r26d/toolchains/llvm/prebuilt/windows-x86_64/bin
@@ -32,7 +32,7 @@ mkdir -p $W
 T0=$(date +%s)
 # 1. copie (rsync absent : tar ; les fichiers inchanges gardent leur date, donc le cache de build_game reste valable)
 tar cf - -C "$SRC" --exclude=./.git --exclude=./_port_build --exclude=./_port_build_x86 --exclude=./_port_build_x86_64 --exclude=./_port_dbg . | (cd $W && tar xf - 2>/dev/null)
-$PY "C:/Users/Admin/AppData/Local/Temp/claude/b1655763106ab44b/803bda34-669c-4bb9-b360-e05a864e00ed/scratchpad/m1/casse_tar.py" "$SRC" | (cd $W && tar xf -)
+$PY "$SRC/port/outils/casse_tar.py" "$SRC" | (cd $W && tar xf -)
 cd $W
 sed -i 's|"tools/|"tools_lc/|g' config/G4BE08/modules.py
 grep -rl '#include "tools/' src include | xargs -r sed -i 's|#include "tools/|#include "tools_lc/|g'

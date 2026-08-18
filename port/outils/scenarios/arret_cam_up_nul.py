@@ -1,7 +1,7 @@
 # Ecran beige : arreter le jeu au moment exact ou pG->Cam.up devient nul, puis inspecter (sans compiler).
 #   python -I enquete_beige.py <appareil> <binaire_non_epure>
 import sys, time, json
-sys.path.insert(0, r'C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream/port/outils')
+sys.path.insert(0, r'./port/outils')
 import studio
 dev, binaire = sys.argv[1], sys.argv[2]
 s, f = studio.connect(dev)

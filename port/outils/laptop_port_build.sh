@@ -2,8 +2,8 @@
 # Phase N1 : notre port natif (re4-decomp-upstream + port/) compile sur le PORTABLE (ARM32, -O2 par defaut).
 #   laptop_port_build.sh [PORT_OPT]
 set -e
-H=admin@192.168.1.124
-S="C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream"
+H=user@laptop
+S="."
 OPT="${1:--O2}"
 ssh -o ConnectTimeout=8 $H "mkdir -p /c/re4n/re4port"
 tar cf - -C "$S" --exclude=./.git --exclude=./_port_build --exclude=./_port_dbg . | ssh $H "cd /c/re4n/re4port && tar xf - 2>/dev/null"

@@ -2,8 +2,8 @@
 # Compilation du coeur natif en ARM64 (Android arm64-v8a) sur le PORTABLE (-O2 par defaut).
 #   laptop_arm64_port_build.sh [PORT_OPT]
 set -e
-H=admin@192.168.1.124
-S="C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream"
+H=user@laptop
+S="."
 OPT="${1:--O2}"
 ssh -o ConnectTimeout=8 $H "mkdir -p /c/re4n/re4port"
 tar cf - -C "$S" --exclude=./.git --exclude=./_port_build --exclude=./_port_build_x86 --exclude=./_port_build_x86_64 --exclude=./_port_build_arm64 --exclude=./_port_build_ios --exclude=./_port_dbg . | ssh $H "cd /c/re4n/re4port && tar xf - 2>/dev/null"

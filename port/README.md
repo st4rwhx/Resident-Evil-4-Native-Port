@@ -133,8 +133,8 @@ de travail sont dans **`port/ENDIANNESS.md`**.
 - `texobj.cpp` — `GXTexObj` / `GXTlutObj` poses sur des textures GLES, avec cache et
   invalidation. `PortTexObj` tient dans les 32 octets de `GXTexObj`, `static_assert` a l'appui.
 - `build_tests.sh` — construit, pousse et prepare les harnais. Il porte les trois pieges de
-  l'environnement (MSYS_NO_PATHCONV, le rechmod apres `adb push`, l'espace dans "RE4 PROJECT"
-  qui impose un fichier reponse avec un chemin entre guillemets par ligne).
+  l'environnement (MSYS_NO_PATHCONV, le rechmod apres `adb push`, les chemins contenant des espaces
+  qui imposent un fichier reponse avec un chemin entre guillemets par ligne).
 - `make_tex_cases.py` — fabrique les cas de test des textures depuis de vrais TPL.
 
 ## Une correction generale

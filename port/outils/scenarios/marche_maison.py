@@ -1,7 +1,7 @@
 # Nouvelle partie sans rien passer (comme cine_faces) : en r100, camera relevee et captures pendant la marche.
 #   python -I marche.py <appareil> <duree_s> <dossier>
 import os, sys, time, json
-sys.path.insert(0, r'C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream/port/outils')
+sys.path.insert(0, r'./port/outils')
 import studio
 dev, duree, out = sys.argv[1], float(sys.argv[2]), sys.argv[3]
 os.makedirs(out, exist_ok=True)

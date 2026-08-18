@@ -1,7 +1,7 @@
 # Essai visages : titre -> NEW GAME, puis pendant la cinematique d'ouverture : evenements forme_* + captures.
 #   python -I cine_faces.py <appareil> <duree_s> <dossier_sortie>
 import json, os, subprocess, sys, time
-sys.path.insert(0, r'C:/Users/Admin/Downloads/RE4 PROJECT/re4-decomp-upstream/port/outils')
+sys.path.insert(0, r'./port/outils')
 import studio
 
 dev, duree, out = sys.argv[1], float(sys.argv[2]), sys.argv[3]

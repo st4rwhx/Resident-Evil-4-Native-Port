@@ -42,8 +42,7 @@ Il faut GCC, et pas clang : voir `ENDIANNESS.md`, c'est `scalar_storage_order` q
 Or aurora vise MSVC ou clang sous Windows. Six obstacles, tous franchis ; ils sont notes ici
 parce qu'aucun n'est devinable.
 
-1. **Chemin sans espace.** Le compilateur de ressources coupe sur l'espace de
-   « RE4 PROJECT ». Tout se construit sous `C:\re4port`. (Le meme piege avait deja frappe
+1. **Chemin sans espace.** Le compilateur de ressources coupe sur les espaces. Tout se construit sous un chemin sans espace. (Le meme piege avait deja frappe
    clang et les fichiers de reponse.)
 
 2. **Paquet de certificats.** Le cmake de MinGW n'en embarque aucun, et tous les
