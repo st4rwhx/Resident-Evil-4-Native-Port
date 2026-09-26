@@ -17,11 +17,27 @@ the debug build's own HUD.*
 
 | platform | state |
 |---|---|
-| **Windows** | Playable: village, textures, lighting, HUD, sound in game. ~20 fps. No music, FMV or saves yet |
+| **Windows** | Playable: village, textures, lighting, HUD, sound in game, **saves**. ~20 fps. No music or FMV yet |
 | **Android** | Boots and draws the village on a real phone, with full touch controls. Too slow to play for now (~1-2 fps) |
 | **iOS** | Planned, after Android |
 
 Target build: the **Nov 25 2004 debug build** (G4BE08).
+
+**Next step: a closed beta on the Discord.**
+
+## What's new
+
+- **Saves.** The memory card works: the game detects it, formats it, and saves and loads at
+  the typewriters. The card is a single file next to the game, kept between sessions.
+  Save/load is in its final round of testing.
+- **Wii Edition features.** 16:9 widescreen, and **pointer-style aiming**: the crosshair follows
+  your mouse or stick freely instead of the GameCube's slow laser.
+- **Fixes:**
+  - quitting from the loading screen (*Exit? → Yes*) no longer freezes the game;
+  - the memory card is detected on every boot;
+  - a low-level bug that silently affected about 500 places in the game's code is fixed;
+  - disc reads and memory card transfers now behave like the real hardware, which removed
+    several rare hangs.
 
 ## How you will play it
 
@@ -32,7 +48,18 @@ computer from your disc**. Nothing from the game is ever downloaded from here.
 - Windows: the installer produces the game executable.
 - Android: the same installer, run on your PC, builds the app and installs it on your phone.
 
-**There is no release yet.** Watch the repository or join the Discord to know when testing opens.
+**There is no public release yet.** Watch the repository or join the Discord to know when
+testing opens.
+
+## The launcher
+
+- **Version check:** on start, the launcher makes one read-only request to this repository to
+  see whether a newer version is out. Nothing about you or your machine is sent. Old versions
+  ask you to update, so everyone reports bugs on the same build.
+- **Disc check:** your disc image is verified before anything is built. A wrong or damaged
+  image is refused with a clear message.
+- **Release builds are clean:** no console window, no debug log, no hidden developer options,
+  on Windows and on Android.
 
 ## Touch controls (Android)
 
@@ -46,10 +73,18 @@ in the attaché case or in a cutscene:
 - tap menu text directly; tap an item in the attaché case, then *Equip*;
 - a skip button that only appears in cutscenes.
 
+## Roadmap
+
+1. Closed beta on the Discord (Windows first).
+2. Music and FMV cutscenes.
+3. Performance, on PC and above all on Android, to make it playable on phones.
+4. Public release of the installer.
+5. iOS.
+
 ## Reporting bugs
 
 Open an issue with your platform, device or GPU, what you were doing, and a screenshot if you
-can. **Never attach game files or disc images.**
+can. **Never attach game files, disc images or save files.**
 
 ## Legal
 
@@ -66,6 +101,7 @@ can. **Never attach game files or disc images.**
   attribution.
 - The **RE4 GameCube decompilation** project.
 - **SDL2**, for windowing, input and audio.
+- **Dear ImGui**, for the launcher and in-game menus.
 - **Dolphin** and **YAGCD**, for GameCube hardware documentation.
 - **Dusklight**, **melee-pc**, **UnleashedRecomp-Android**, **N64Recomp / PS2Recomp**: for
   inspiration and their public notes.
