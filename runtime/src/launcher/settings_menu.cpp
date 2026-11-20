@@ -1790,6 +1790,14 @@ LogoPlace home_draw_logo(ImDrawList *dl, float x, float y, float w, float alpha)
     lp.cx = x + w * 0.5f; lp.bottom = y + h; lp.w = w; lp.on = t != 0;
     return lp;
 }
+#if defined(_WIN32)
+static inline struct tm *nj_localtime_r(const time_t *timep, struct tm *result) {
+    localtime_s(result, timep);
+    return result;
+}
+#define localtime_r nj_localtime_r
+#endif
+
 std::string home_save_line(const SaveCard &c, bool with_file) {
     char t[200];
     char date[48] = "";
@@ -2062,6 +2070,7 @@ void title_home_frame(SDL_Window *window) {
                 save_config(window);
             }
             break;
+        }
         }
     }
     ImGui::End();

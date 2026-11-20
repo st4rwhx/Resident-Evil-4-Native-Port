@@ -34,7 +34,7 @@ nj_module(core alloc_prof build_tag config console_boot crash_report dev_tour di
 nj_module(input bindings input_manager input_setup mouse_events mouse_turn)
 nj_module(input/sources autostart_source debug_menu_skip_source gamepad_source mouse_keyboard_source remote_source script_source)
 nj_module(input/touch icon_gen icon_render re4_context touch_overlay touch_source)
-nj_module(hle ax case_models char_select fallback_cpu gx os_dispatch pad texture_cache_gl virtual_disc wii_aim)
+nj_module(hle ax case_models char_select fallback_cpu gx krauser_mod os_dispatch pad texture_cache_gl virtual_disc wii_aim)
 nj_module(native native_core disc_extract)
 nj_module(hle/gx chunk_adapter efb_peek fifo_parser fifo_record frame_interp gx_direct renderer_gl shader_key tev_shader_gen tex_decode)
 nj_module(hw hw_ai hw_all hw_cp hw_di hw_dsp hw_exi hw_pe hw_pi hw_si hw_vi io_bus)
